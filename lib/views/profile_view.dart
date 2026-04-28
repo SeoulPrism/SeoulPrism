@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:cupertino_native_better/cupertino_native_better.dart';
 import 'package:flutter/material.dart';
 
+import '../main.dart';
 import 'settings_view.dart';
 
 class ProfileView extends StatefulWidget {
@@ -136,9 +137,9 @@ class _ProfileViewState extends State<ProfileView> {
             ),
           ),
           const SizedBox(height: 14),
-          const Text(
-            '사용자',
-            style: TextStyle(
+          Text(
+            supabase.auth.currentUser?.userMetadata?['username'] ?? '사용자',
+            style: const TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.w800,
               color: Colors.white,
@@ -146,7 +147,7 @@ class _ProfileViewState extends State<ProfileView> {
           ),
           const SizedBox(height: 4),
           Text(
-            'user_id',
+            supabase.auth.currentUser?.email ?? '',
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w400,

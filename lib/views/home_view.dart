@@ -3,8 +3,8 @@ import 'dart:ui';
 import 'package:cupertino_native_better/cupertino_native_better.dart';
 import 'package:flutter/material.dart';
 
+import 'map_view.dart';
 import 'route_search_view.dart';
-
 import 'profile_view.dart';
 
 class HomeView extends StatefulWidget {
@@ -44,8 +44,8 @@ class _HomeViewState extends State<HomeView> {
       body: Stack(
         clipBehavior: Clip.none,
         children: [
-          // Dark map placeholder
-          const Positioned.fill(child: _DarkMapPlaceholder()),
+          // 3D 지도
+          const Positioned.fill(child: MapView()),
 
           // Top bar (search + profile + weather)
           Positioned(
@@ -351,157 +351,6 @@ class _HomeViewState extends State<HomeView> {
   }
 }
 
-// ─── Dark Map Placeholder ──────────────────────────────────
-
-class _DarkMapPlaceholder extends StatelessWidget {
-  const _DarkMapPlaceholder();
-
-  @override
-  Widget build(BuildContext context) {
-    return CustomPaint(
-      painter: _DarkMapPainter(),
-      child: const SizedBox.expand(),
-    );
-  }
-}
-
-class _DarkMapPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final rect = Rect.fromLTWH(0, 0, size.width, size.height);
-
-    // Dark base gradient
-    canvas.drawRect(
-      rect,
-      Paint()
-        ..shader = const LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Color(0xFF0C1018), Color(0xFF0A0D14), Color(0xFF080A10)],
-        ).createShader(rect),
-    );
-
-    // Subtle grid pattern (map-like)
-    final gridPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.03)
-      ..strokeWidth = 0.5;
-
-    const gridSpacing = 40.0;
-    for (var x = 0.0; x < size.width; x += gridSpacing) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), gridPaint);
-    }
-    for (var y = 0.0; y < size.height; y += gridSpacing) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
-    }
-
-    // Faint "road" lines
-    final roadPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.05)
-      ..strokeWidth = 2.0
-      ..strokeCap = StrokeCap.round;
-
-    // Horizontal roads
-    canvas.drawLine(
-      Offset(0, size.height * 0.35),
-      Offset(size.width, size.height * 0.35),
-      roadPaint,
-    );
-    canvas.drawLine(
-      Offset(0, size.height * 0.60),
-      Offset(size.width, size.height * 0.60),
-      roadPaint,
-    );
-
-    // Vertical roads
-    canvas.drawLine(
-      Offset(size.width * 0.30, 0),
-      Offset(size.width * 0.30, size.height),
-      roadPaint,
-    );
-    canvas.drawLine(
-      Offset(size.width * 0.70, 0),
-      Offset(size.width * 0.70, size.height),
-      roadPaint,
-    );
-
-    // Diagonal road
-    canvas.drawLine(
-      Offset(size.width * 0.15, size.height * 0.20),
-      Offset(size.width * 0.85, size.height * 0.80),
-      roadPaint,
-    );
-
-    // Subway line (colored)
-    final subwayPaint = Paint()
-      ..color = const Color(0xFF2563EB).withValues(alpha: 0.15)
-      ..strokeWidth = 3.0
-      ..strokeCap = StrokeCap.round;
-
-    final path = Path()
-      ..moveTo(size.width * 0.10, size.height * 0.25)
-      ..quadraticBezierTo(
-        size.width * 0.40,
-        size.height * 0.30,
-        size.width * 0.50,
-        size.height * 0.45,
-      )
-      ..quadraticBezierTo(
-        size.width * 0.60,
-        size.height * 0.60,
-        size.width * 0.90,
-        size.height * 0.65,
-      );
-
-    canvas.drawPath(
-      path,
-      subwayPaint..style = PaintingStyle.stroke,
-    );
-
-    // Station dots along the subway line
-    final stationPaint = Paint()
-      ..color = const Color(0xFF2563EB).withValues(alpha: 0.25);
-    final stationPositions = [
-      Offset(size.width * 0.15, size.height * 0.255),
-      Offset(size.width * 0.30, size.height * 0.275),
-      Offset(size.width * 0.50, size.height * 0.45),
-      Offset(size.width * 0.70, size.height * 0.57),
-      Offset(size.width * 0.85, size.height * 0.64),
-    ];
-    for (final pos in stationPositions) {
-      canvas.drawCircle(pos, 4, stationPaint);
-      canvas.drawCircle(
-        pos,
-        2,
-        Paint()..color = const Color(0xFF2563EB).withValues(alpha: 0.40),
-      );
-    }
-
-    // Ambient glow in center
-    canvas.drawCircle(
-      Offset(size.width * 0.5, size.height * 0.45),
-      200,
-      Paint()
-        ..color = const Color(0xFF1A2A4A).withValues(alpha: 0.15)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 120),
-    );
-
-    // Vignette
-    canvas.drawRect(
-      rect,
-      Paint()
-        ..shader = RadialGradient(
-          radius: 0.85,
-          colors: [
-            Colors.transparent,
-            Colors.black.withValues(alpha: 0.50),
-          ],
-        ).createShader(rect),
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
 
 // ─── Glass Search Bar ──────────────────────────────────────
 

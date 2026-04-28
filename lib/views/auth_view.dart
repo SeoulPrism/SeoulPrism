@@ -1,9 +1,17 @@
+import 'dart:convert';
+import 'dart:math';
 import 'dart:ui';
 
+import 'package:crypto/crypto.dart';
 import 'package:cupertino_native_better/cupertino_native_better.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../main.dart';
 import 'home_view.dart';
 
 enum AuthMode { login, signUp }
@@ -19,6 +27,8 @@ class _AuthViewState extends State<AuthView> {
   AuthMode _mode = AuthMode.login;
   bool _hidePassword = true;
   bool _hideConfirmPassword = true;
+  bool _loading = false;
+  static bool _googleInitialized = false;
 
   final _idController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -140,23 +150,10 @@ class _AuthViewState extends State<AuthView> {
               ),
               const SizedBox(height: 20),
               CNButton(
-                label: _isLogin ? '로그인' : '회원가입',
-                onPressed: () {
-                  Navigator.of(context).pushReplacement(
-                    PageRouteBuilder(
-                      pageBuilder: (context, animation, secondaryAnimation) =>
-                          const HomeView(),
-                      transitionsBuilder:
-                          (context, animation, secondaryAnimation, child) {
-                        return FadeTransition(
-                          opacity: animation,
-                          child: child,
-                        );
-                      },
-                      transitionDuration: const Duration(milliseconds: 500),
-                    ),
-                  );
-                },
+                label: _loading
+                    ? '처리 중...'
+                    : (_isLogin ? '로그인' : '회원가입'),
+                onPressed: _loading ? null : _handleAuth,
                 config: const CNButtonConfig(
                   style: CNButtonStyle.glass,
                   minHeight: 50,
@@ -194,9 +191,10 @@ class _AuthViewState extends State<AuthView> {
       key: const ValueKey('login'),
       children: [
         _GlassInputField(
-          label: '아이디',
-          hintText: '아이디를 입력해주세요',
-          controller: _idController,
+          label: '이메일',
+          hintText: '이메일을 입력해주세요',
+          controller: _emailController,
+          keyboardType: TextInputType.emailAddress,
         ),
         const SizedBox(height: 16),
         _GlassInputField(
@@ -347,7 +345,7 @@ class _AuthViewState extends State<AuthView> {
         // Google
         CNButton.icon(
           customIcon: IconData(FontAwesomeIcons.google.codePoint, fontFamily: FontAwesomeIcons.google.fontFamily, fontPackage: FontAwesomeIcons.google.fontPackage),
-          onPressed: () {},
+          onPressed: _loading ? null : _signInWithGoogle,
           tint: const Color(0xFF4285F4),
           config: const CNButtonConfig(
             style: CNButtonStyle.glass,
@@ -355,11 +353,11 @@ class _AuthViewState extends State<AuthView> {
           ),
         ),
         const SizedBox(width: 16),
-        // Facebook
+        // Kakao
         CNButton.icon(
-          customIcon: IconData(FontAwesomeIcons.facebookF.codePoint, fontFamily: FontAwesomeIcons.facebookF.fontFamily, fontPackage: FontAwesomeIcons.facebookF.fontPackage),
-          onPressed: () {},
-          tint: const Color(0xFF1877F2),
+          customIcon: IconData(FontAwesomeIcons.comment.codePoint, fontFamily: FontAwesomeIcons.comment.fontFamily, fontPackage: FontAwesomeIcons.comment.fontPackage),
+          onPressed: _loading ? null : _signInWithKakao,
+          tint: const Color(0xFFFEE500),
           config: const CNButtonConfig(
             style: CNButtonStyle.glass,
             customIconSize: 20,
@@ -369,13 +367,223 @@ class _AuthViewState extends State<AuthView> {
         // Apple
         CNButton.icon(
           customIcon: IconData(FontAwesomeIcons.apple.codePoint, fontFamily: FontAwesomeIcons.apple.fontFamily, fontPackage: FontAwesomeIcons.apple.fontPackage),
-          onPressed: () {},
+          onPressed: _loading ? null : _signInWithApple,
           config: const CNButtonConfig(
             style: CNButtonStyle.glass,
             customIconSize: 22,
           ),
         ),
       ],
+    );
+  }
+
+  Future<void> _signInWithGoogle() async {
+    setState(() => _loading = true);
+    try {
+      const iosClientId =
+          '846573810111-bnlgpg0flbcg5ffdqce2o7g986dpm8dc.apps.googleusercontent.com';
+      const webClientId =
+          '846573810111-4mtaobbv1tq60e11bte5q6j6lsfgjk7s.apps.googleusercontent.com';
+
+      final googleSignIn = GoogleSignIn.instance;
+      if (!_googleInitialized) {
+        await googleSignIn.initialize(
+          clientId: iosClientId,
+          serverClientId: webClientId,
+        );
+        _googleInitialized = true;
+      }
+
+      final googleUser = await googleSignIn.authenticate();
+      final idToken = googleUser.authentication.idToken;
+
+      if (idToken == null) {
+        if (mounted) _showError('Google 인증에 실패했습니다');
+        return;
+      }
+
+      await supabase.auth.signInWithIdToken(
+        provider: OAuthProvider.google,
+        idToken: idToken,
+      );
+
+      if (mounted) _goHome();
+    } on AuthException catch (e) {
+      if (mounted) _showError(_translateAuthError(e.message));
+    } catch (e) {
+      if (mounted) _showError('Google 로그인에 실패했습니다');
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _signInWithKakao() async {
+    setState(() => _loading = true);
+    try {
+      await supabase.auth.signInWithOAuth(
+        OAuthProvider.kakao,
+        redirectTo: _redirectUrl,
+      );
+    } on AuthException catch (e) {
+      if (mounted) _showError(_translateAuthError(e.message));
+    } catch (e) {
+      if (mounted) _showError('카카오 로그인에 실패했습니다');
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _signInWithApple() async {
+    setState(() => _loading = true);
+    try {
+      final rawNonce = _generateNonce();
+      final hashedNonce = sha256.convert(utf8.encode(rawNonce)).toString();
+
+      final credential = await SignInWithApple.getAppleIDCredential(
+        scopes: [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+        nonce: hashedNonce,
+      );
+
+      final idToken = credential.identityToken;
+      if (idToken == null) {
+        if (mounted) _showError('Apple 인증에 실패했습니다');
+        return;
+      }
+
+      await supabase.auth.signInWithIdToken(
+        provider: OAuthProvider.apple,
+        idToken: idToken,
+        nonce: rawNonce,
+      );
+
+      if (mounted) _goHome();
+    } on SignInWithAppleAuthorizationException catch (e) {
+      if (e.code == AuthorizationErrorCode.canceled) return;
+      if (mounted) _showError('Apple 로그인이 취소되었습니다');
+    } on AuthException catch (e) {
+      if (mounted) _showError(_translateAuthError(e.message));
+    } catch (e) {
+      if (mounted) _showError('Apple 로그인에 실패했습니다');
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  String get _redirectUrl {
+    if (kIsWeb) return Uri.base.origin;
+    return 'com.seoul.prism://login-callback';
+  }
+
+  String _generateNonce([int length = 32]) {
+    const charset = '0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._';
+    final random = Random.secure();
+    return List.generate(length, (_) => charset[random.nextInt(charset.length)]).join();
+  }
+
+  Future<void> _handleAuth() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+
+    if (email.isEmpty || password.isEmpty) {
+      _showError('이메일과 비밀번호를 입력해주세요');
+      return;
+    }
+
+    if (!_isLogin) {
+      final username = _idController.text.trim();
+      final confirm = _confirmPasswordController.text;
+      if (username.isEmpty) {
+        _showError('아이디를 입력해주세요');
+        return;
+      }
+      if (password != confirm) {
+        _showError('비밀번호가 일치하지 않습니다');
+        return;
+      }
+      if (password.length < 6) {
+        _showError('비밀번호는 6자 이상이어야 합니다');
+        return;
+      }
+    }
+
+    setState(() => _loading = true);
+
+    try {
+      if (_isLogin) {
+        await supabase.auth.signInWithPassword(
+          email: email,
+          password: password,
+        );
+        if (mounted) _goHome();
+      } else {
+        final username = _idController.text.trim();
+        await supabase.auth.signUp(
+          email: email,
+          password: password,
+          data: {'username': username},
+        );
+        if (mounted) {
+          _showMessage('가입이 완료되었습니다');
+          _goHome();
+        }
+      }
+    } on AuthException catch (e) {
+      if (mounted) _showError(_translateAuthError(e.message));
+    } catch (e) {
+      if (mounted) _showError('오류가 발생했습니다');
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  String _translateAuthError(String message) {
+    if (message.contains('Invalid login credentials')) {
+      return '이메일 또는 비밀번호가 올바르지 않습니다';
+    }
+    if (message.contains('already registered')) {
+      return '이미 가입된 이메일입니다';
+    }
+    if (message.contains('invalid email')) {
+      return '올바른 이메일 형식을 입력해주세요';
+    }
+    return message;
+  }
+
+  void _goHome() {
+    Navigator.of(context).pushReplacement(
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            const HomeView(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(opacity: animation, child: child);
+        },
+        transitionDuration: const Duration(milliseconds: 500),
+      ),
+    );
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: const Color(0xFFFF453A),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+  }
+
+  void _showMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: const Color(0xFF2C2C2E),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
     );
   }
 
@@ -419,6 +627,7 @@ class _FindAccountPage extends StatefulWidget {
 class _FindAccountPageState extends State<_FindAccountPage> {
   final _emailController = TextEditingController();
   final _idController = TextEditingController();
+  bool _loading = false;
 
   @override
   void dispose() {
@@ -427,10 +636,98 @@ class _FindAccountPageState extends State<_FindAccountPage> {
     super.dispose();
   }
 
+  bool get _isIdMode => widget.mode == _FindSheetMode.id;
+
+  Future<void> _handleFind() async {
+    final email = _emailController.text.trim();
+    if (email.isEmpty) {
+      _showSnack('이메일을 입력해주세요', isError: true);
+      return;
+    }
+
+    setState(() => _loading = true);
+
+    try {
+      if (_isIdMode) {
+        final result = await supabase.rpc(
+          'find_username_by_email',
+          params: {'lookup_email': email},
+        );
+        if (!mounted) return;
+        if (result == null || (result as String).isEmpty) {
+          _showSnack('해당 이메일로 가입된 계정을 찾을 수 없습니다', isError: true);
+        } else {
+          _showResultDialog(result);
+        }
+      } else {
+        await supabase.auth.resetPasswordForEmail(
+          email,
+          redirectTo: 'com.seoul.prism://login-callback',
+        );
+        if (!mounted) return;
+        _showSnack('비밀번호 재설정 링크를 이메일로 보냈습니다');
+      }
+    } catch (e) {
+      if (mounted) {
+        _showSnack(
+          _isIdMode ? '아이디 찾기에 실패했습니다' : '이메일 전송에 실패했습니다',
+          isError: true,
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  void _showResultDialog(String username) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1C1C1E),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('아이디 찾기 결과', style: TextStyle(color: Colors.white)),
+        content: RichText(
+          text: TextSpan(
+            style: const TextStyle(fontSize: 16, color: Colors.white70),
+            children: [
+              const TextSpan(text: '회원님의 아이디는 '),
+              TextSpan(
+                text: username,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              const TextSpan(text: ' 입니다.'),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              Navigator.pop(context);
+            },
+            child: const Text('확인'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showSnack(String message, {bool isError = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: isError ? const Color(0xFFFF453A) : const Color(0xFF2C2C2E),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final isIdMode = widget.mode == _FindSheetMode.id;
-
     return Scaffold(
       resizeToAvoidBottomInset: true,
       body: Stack(
@@ -502,7 +799,7 @@ class _FindAccountPageState extends State<_FindAccountPage> {
                                   crossAxisAlignment: CrossAxisAlignment.stretch,
                                   children: [
                                     Text(
-                                      isIdMode ? '아이디 찾기' : '비밀번호 찾기',
+                                      _isIdMode ? '아이디 찾기' : '비밀번호 찾기',
                                       style: const TextStyle(
                                         fontSize: 22,
                                         fontWeight: FontWeight.w800,
@@ -511,9 +808,9 @@ class _FindAccountPageState extends State<_FindAccountPage> {
                                     ),
                                     const SizedBox(height: 8),
                                     Text(
-                                      isIdMode
+                                      _isIdMode
                                           ? '가입 시 사용한 이메일을 입력하면\n아이디를 알려드립니다.'
-                                          : '아이디와 이메일을 입력하면\n비밀번호 재설정 링크를 보내드립니다.',
+                                          : '이메일을 입력하면\n비밀번호 재설정 링크를 보내드립니다.',
                                       style: TextStyle(
                                         fontSize: 14,
                                         height: 1.5,
@@ -521,14 +818,6 @@ class _FindAccountPageState extends State<_FindAccountPage> {
                                       ),
                                     ),
                                     const SizedBox(height: 24),
-                                    if (!isIdMode) ...[
-                                      _GlassInputField(
-                                        label: '아이디',
-                                        hintText: '아이디를 입력해주세요',
-                                        controller: _idController,
-                                      ),
-                                      const SizedBox(height: 16),
-                                    ],
                                     _GlassInputField(
                                       label: '이메일',
                                       hintText: '가입한 이메일을 입력해주세요',
@@ -537,8 +826,10 @@ class _FindAccountPageState extends State<_FindAccountPage> {
                                     ),
                                     const SizedBox(height: 24),
                                     CNButton(
-                                      label: isIdMode ? '아이디 찾기' : '재설정 링크 받기',
-                                      onPressed: () => Navigator.pop(context),
+                                      label: _loading
+                                          ? '처리 중...'
+                                          : (_isIdMode ? '아이디 찾기' : '재설정 링크 받기'),
+                                      onPressed: _loading ? null : _handleFind,
                                       config: const CNButtonConfig(
                                         style: CNButtonStyle.glass,
                                         minHeight: 50,

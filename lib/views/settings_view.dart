@@ -2,6 +2,8 @@ import 'package:cupertino_native_better/cupertino_native_better.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../main.dart';
+import 'auth_view.dart';
 
 class SettingsView extends StatefulWidget {
   const SettingsView({super.key});
@@ -167,7 +169,24 @@ class _SettingsViewState extends State<SettingsView> {
             ),
             const SizedBox(height: 16),
 
-            // Section 5: 앱 정보
+            // Section 5: 계정
+            _GlassSectionCard(
+              children: [
+                _ChevronItem(
+                  label: '로그아웃',
+                  onTap: () => _confirmLogout(),
+                ),
+                const _ItemDivider(),
+                _ChevronItem(
+                  label: '회원 탈퇴',
+                  isDestructive: true,
+                  onTap: () => _confirmDeleteAccount(),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // Section 6: 앱 정보
             _GlassSectionCard(
               children: [
                 _InfoItem(label: '앱 버전', value: '1.0.0'),
@@ -217,6 +236,83 @@ class _SettingsViewState extends State<SettingsView> {
               );
             },
             child: const Text('삭제'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmLogout() {
+    showCupertinoDialog(
+      context: context,
+      builder: (context) => CupertinoAlertDialog(
+        title: const Text('로그아웃'),
+        content: const Text('로그아웃 하시겠습니까?'),
+        actions: [
+          CupertinoDialogAction(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('취소'),
+          ),
+          CupertinoDialogAction(
+            isDestructiveAction: true,
+            onPressed: () async {
+              Navigator.pop(context);
+              await supabase.auth.signOut();
+              if (mounted) {
+                Navigator.of(this.context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (_) => const AuthView()),
+                  (route) => false,
+                );
+              }
+            },
+            child: const Text('로그아웃'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmDeleteAccount() {
+    showCupertinoDialog(
+      context: context,
+      builder: (context) => CupertinoAlertDialog(
+        title: const Text('회원 탈퇴'),
+        content: const Text(
+          '계정과 모든 데이터가 영구적으로 삭제됩니다.\n이 작업은 되돌릴 수 없습니다.',
+        ),
+        actions: [
+          CupertinoDialogAction(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('취소'),
+          ),
+          CupertinoDialogAction(
+            isDestructiveAction: true,
+            onPressed: () async {
+              Navigator.pop(context);
+              try {
+                await supabase.rpc('delete_user');
+                await supabase.auth.signOut();
+                if (mounted) {
+                  Navigator.of(this.context).pushAndRemoveUntil(
+                    MaterialPageRoute(builder: (_) => const AuthView()),
+                    (route) => false,
+                  );
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(this.context).showSnackBar(
+                    SnackBar(
+                      content: const Text('탈퇴 처리 중 오류가 발생했습니다'),
+                      behavior: SnackBarBehavior.floating,
+                      backgroundColor: const Color(0xFFFF453A),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                    ),
+                  );
+                }
+              }
+            },
+            child: const Text('탈퇴'),
           ),
         ],
       ),
