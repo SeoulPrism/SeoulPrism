@@ -1,0 +1,35 @@
+PODS:
+  - CocoaLumberjack (3.9.1):
+    - CocoaLumberjack/Core (= 3.9.1)
+  - CocoaLumberjack/Core (3.9.1)
+  - cupertino_native_better (0.0.1):
+    - Flutter
+    - SVGKit (~> 3.0)
+  - Flutter (1.0.0)
+  - SVGKit (3.0.0):
+    - CocoaLumberjack (~> 3.0)
+
+DEPENDENCIES:
+  - cupertino_native_better (from `.symlinks/plugins/cupertino_native_better/ios`)
+  - Flutter (from `Flutter`)
+
+SPEC REPOS:
+  trunk:
+    - CocoaLumberjack
+    - SVGKit
+
+EXTERNAL SOURCES:
+  cupertino_native_better:
+    :path: ".symlinks/plugins/cupertino_native_better/ios"
+  Flutter:
+    :path: Flutter
+
+SPEC CHECKSUMS:
+  CocoaLumberjack: e4ba3b414dfca8c1916c6303d37f63b3a95134c6
+  cupertino_native_better: 56964e07f30aa564188d4e3e2171ccb1c75f7a98
+  Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
+  SVGKit: 1ad7513f8c74d9652f94ed64ddecda1a23864dea
+
+PODFILE CHECKSUM: ce2a4dd764e1c7aeed6a7cdc5e61d092b6dc6d32
+
+COCOAPODS: 1.16.2
