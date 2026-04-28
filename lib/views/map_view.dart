@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:cupertino_native_better/cupertino_native_better.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
@@ -25,7 +26,8 @@ import 'dart:math';
 typedef MapView = DashboardScreen;
 
 class DashboardScreen extends StatefulWidget {
-  const DashboardScreen({super.key});
+  final VoidCallback? onProfileTap;
+  const DashboardScreen({super.key, this.onProfileTap});
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
 }
@@ -304,6 +306,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             onFocusChanged: (focused) {
               setState(() => _isSearchFocused = focused);
             },
+            onProfileTap: widget.onProfileTap,
           ),
 
           // 날씨/시간 위젯 (검색바 아래 좌측, 검색 포커스/길찾기 시 페이드아웃)
@@ -400,17 +403,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   // ── 설정 오버레이 패널 ──
   Widget _buildSettingsOverlay(BuildContext context, double screenHeight, double bottomInset) {
-    final panelHeight = screenHeight * 0.55;
+    final panelHeight = screenHeight * 0.58;
 
     return AnimatedPositioned(
-      duration: const Duration(milliseconds: 350),
+      duration: const Duration(milliseconds: 400),
       curve: _settingsOpen ? Curves.easeOutCubic : Curves.easeInCubic,
       bottom: _settingsOpen ? 0 : -panelHeight - 50,
       left: 0,
       right: 0,
       height: panelHeight,
       child: AnimatedOpacity(
-        duration: const Duration(milliseconds: 300),
+        duration: const Duration(milliseconds: 350),
         opacity: _settingsOpen ? 1.0 : 0.0,
         child: SettingsPanel(
           subwayController: _subwayController,
@@ -444,72 +447,154 @@ class SettingsPanel extends StatefulWidget {
 class _SettingsPanelState extends State<SettingsPanel> {
   String _lightPreset = SettingsService.instance.lightPreset;
 
+  /// 현재 지도가 밝은 모드인지 판별
+  bool get _isBrightMap {
+    final preset = _lightPreset;
+    if (preset == 'day' || preset == 'dawn') return true;
+    if (preset == 'auto') {
+      final env = widget.subwayController.environment;
+      if (env != null) {
+        return env.lightPreset == 'day' || env.lightPreset == 'dawn';
+      }
+    }
+    return false;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface.withValues(alpha: 0.96),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(AppSpacing.xl)),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.5), blurRadius: AppSpacing.xl, offset: const Offset(0, -4)),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // 드래그 핸들 + 닫기
-          Padding(
-            padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.md, AppSpacing.sm, 0),
-            child: Row(
-              children: [
-                Text('설정', style: AppTypography.titleMd),
-                const Spacer(),
-                IconButton(
-                  icon: Icon(Icons.close, size: AppSpacing.xl, color: AppColors.textTertiary),
-                  onPressed: widget.onClose,
+    final bright = _isBrightMap;
+
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: bright
+                  ? [
+                      Colors.black.withValues(alpha: 0.50),
+                      Colors.black.withValues(alpha: 0.60),
+                      Colors.black.withValues(alpha: 0.72),
+                    ]
+                  : [
+                      Colors.white.withValues(alpha: 0.12),
+                      Colors.white.withValues(alpha: 0.05),
+                      Colors.black.withValues(alpha: 0.20),
+                    ],
+            ),
+            border: Border(
+              top: BorderSide(
+                color: bright
+                    ? Colors.white.withValues(alpha: 0.10)
+                    : Colors.white24,
+                width: 0.5,
+              ),
+            ),
+          ),
+          child: Column(
+            children: [
+              // 드래그 핸들
+              Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: Center(
+                  child: Container(
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(2),
+                      color: Colors.white.withValues(alpha: 0.25),
+                    ),
+                  ),
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(height: 16),
+              // 타이틀
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    '설정',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white.withValues(alpha: 0.95),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              // 컨텐츠 스크롤
+              Expanded(
+                child: ListView(
+                  padding: EdgeInsets.fromLTRB(24, 0, 24, MediaQuery.of(context).padding.bottom + 80),
+                  children: [
+                    _sectionHeader('지하철'),
+                    _buildSubwaySection(),
+                    const SizedBox(height: 24),
+                    _sectionHeader('표시'),
+                    _buildToggleSection(),
+                    const SizedBox(height: 24),
+                    _sectionHeader('노선 필터'),
+                    _buildLineFilterSection(),
+                    const SizedBox(height: 24),
+                    _sectionHeader('성능'),
+                    _buildQualitySection(),
+                    const SizedBox(height: 24),
+                    _sectionHeader('라이팅'),
+                    _buildLightingSection(),
+                    const SizedBox(height: 24),
+                    _sectionHeader('정보'),
+                    _buildInfoSection(),
+                  ],
+                ),
+              ),
+            ],
           ),
-          // 컨텐츠 스크롤
-          Expanded(
-            child: ListView(
-              padding: EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.xs, AppSpacing.lg, MediaQuery.of(context).padding.bottom + 65),
-              children: [
-                _sectionHeader('지하철'),
-                _buildSubwaySection(),
-                const SizedBox(height: AppSpacing.lg),
-                _sectionHeader('표시'),
-                _buildToggleSection(),
-                const SizedBox(height: AppSpacing.lg),
-                _sectionHeader('노선 필터'),
-                _buildLineFilterSection(),
-                const SizedBox(height: AppSpacing.lg),
-                _sectionHeader('성능'),
-                _buildQualitySection(),
-                const SizedBox(height: AppSpacing.lg),
-                _sectionHeader('라이팅'),
-                _buildLightingSection(),
-                const SizedBox(height: AppSpacing.lg),
-                _sectionHeader('정보'),
-                _buildInfoSection(),
-              ],
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
 
   Widget _sectionHeader(String title) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      padding: const EdgeInsets.only(bottom: 12),
       child: Text(
         title,
-        style: AppTypography.caption.copyWith(
-          fontWeight: FontWeight.bold,
-          color: AppColors.accent,
-          letterSpacing: 1.0,
+        style: TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w700,
+          color: Colors.white.withValues(alpha: 0.45),
+          letterSpacing: 1.2,
+        ),
+      ),
+    );
+  }
+
+  Widget _glassCard({required Widget child}) {
+    final bright = _isBrightMap;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            color: bright
+                ? Colors.black.withValues(alpha: 0.25)
+                : Colors.white.withValues(alpha: 0.06),
+            border: Border.all(
+              color: bright
+                  ? Colors.white.withValues(alpha: 0.06)
+                  : Colors.white.withValues(alpha: 0.10),
+              width: 0.5,
+            ),
+          ),
+          child: child,
         ),
       ),
     );
@@ -520,11 +605,9 @@ class _SettingsPanelState extends State<SettingsPanel> {
     final isActive = ctrl.isActive;
     final isDemo = ctrl.mode == SubwayMode.demo;
 
-    return Card(
-      color: AppColors.surfaceCard,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSpacing.md)),
+    return _glassCard(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Column(
           children: [
             // 전원 + 모드
@@ -612,11 +695,9 @@ class _SettingsPanelState extends State<SettingsPanel> {
   }
 
   Widget _buildToggleSection() {
-    return Card(
-      color: AppColors.surfaceCard,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSpacing.md)),
+    return _glassCard(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         child: Column(
           children: [
             _toggleRow('노선 경로', widget.subwayController.showRoutes, (v) {
@@ -648,11 +729,9 @@ class _SettingsPanelState extends State<SettingsPanel> {
 
   Widget _buildLineFilterSection() {
     final ctrl = widget.subwayController;
-    return Card(
-      color: AppColors.surfaceCard,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSpacing.md)),
+    return _glassCard(
       child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.md),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -705,14 +784,22 @@ class _SettingsPanelState extends State<SettingsPanel> {
   }
 
   Widget _toggleRow(String label, bool value, ValueChanged<bool> onChanged) {
-    return SizedBox(
-      height: 32,
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: AppTypography.bodySm.copyWith(color: AppColors.textSecondary)),
+          Expanded(
+            child: Text(
+              label,
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.85),
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
           Transform.scale(
-            scale: 0.7,
+            scale: 0.75,
             child: Switch.adaptive(
               value: value,
               onChanged: onChanged,
@@ -729,149 +816,169 @@ class _SettingsPanelState extends State<SettingsPanel> {
     final current = ctrl.qualityPreset;
     final isAndroid = Platform.isAndroid;
 
-    final presets = <String, (String, String, IconData)>{
-      'high':   ('고사양', '60fps · 부드러운 애니메이션', Icons.hd),
-      'medium': ('중간',   '30fps · 균형 잡힌 성능', Icons.sd),
-      'low':    ('저사양', '10fps · 배터리 절약', Icons.battery_saver),
-    };
+    final presetKeys = ['high', 'medium', 'low'];
+    final presetLabels = ['높음', '보통', '낮음'];
+    final selectedIndex = presetKeys.indexOf(current).clamp(0, 2);
 
-    return Card(
-      color: AppColors.surfaceCard,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSpacing.md)),
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 품질 프리셋 선택
-            ...presets.entries.map((e) {
-              final key = e.key;
-              final (label, desc, icon) = e.value;
-              final isSelected = current == key;
-              return GestureDetector(
-                onTap: () {
-                  ctrl.setQualityPreset(key);
-                  setState(() {});
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
-                  margin: const EdgeInsets.only(bottom: AppSpacing.xs),
-                  decoration: BoxDecoration(
-                    color: isSelected ? AppColors.accent.withValues(alpha: 0.15) : Colors.transparent,
-                    border: Border.all(
-                      color: isSelected ? AppColors.accent : AppColors.surfaceOverlay,
-                      width: isSelected ? 1.2 : 0.5,
-                    ),
-                    borderRadius: BorderRadius.circular(AppSpacing.sm),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(icon, size: 18, color: isSelected ? AppColors.accent : AppColors.textDisabled),
-                      const SizedBox(width: AppSpacing.md),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(label, style: AppTypography.bodySm.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: isSelected ? AppColors.textPrimary : AppColors.textSecondary,
-                            )),
-                            Text(desc, style: AppTypography.caption.copyWith(
-                              color: isSelected ? AppColors.textTertiary : AppColors.textMuted,
-                            )),
-                          ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 세그먼트 프리셋 (전 디자인 스타일)
+        _glassCard(
+          child: Padding(
+            padding: const EdgeInsets.all(4),
+            child: Row(
+              children: List.generate(presetLabels.length, (i) {
+                final isSelected = i == selectedIndex;
+                return Expanded(
+                  child: GestureDetector(
+                    onTap: () {
+                      ctrl.setQualityPreset(presetKeys[i]);
+                      setState(() {});
+                    },
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 250),
+                      curve: Curves.easeOutCubic,
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        color: isSelected
+                            ? Colors.white.withValues(alpha: 0.12)
+                            : Colors.transparent,
+                        border: isSelected
+                            ? Border.all(
+                                color: Colors.white.withValues(alpha: 0.15),
+                                width: 0.5,
+                              )
+                            : null,
+                      ),
+                      child: Center(
+                        child: Text(
+                          presetLabels[i],
+                          style: TextStyle(
+                            color: isSelected
+                                ? Colors.white.withValues(alpha: 0.95)
+                                : Colors.white.withValues(alpha: 0.40),
+                            fontSize: 14,
+                            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                          ),
                         ),
                       ),
-                      if (isSelected)
-                        Icon(Icons.check_circle, size: AppSpacing.lg, color: AppColors.accent),
-                    ],
+                    ),
                   ),
-                ),
-              );
-            }),
-            Divider(height: AppSpacing.lg, color: AppColors.surfaceOverlay),
-            // 시스템 정보
-            Row(
-              children: [
-                Icon(Icons.memory, size: 14, color: AppColors.textMuted),
-                const SizedBox(width: AppSpacing.sm),
-                Text(
-                  '렌더링: ${isAndroid ? "OpenGL ES" : "Metal"} · GeoJSON 캐싱',
-                  style: AppTypography.caption.copyWith(color: AppColors.textMuted),
-                ),
-              ],
+                );
+              }),
             ),
-          ],
+          ),
         ),
-      ),
+        const SizedBox(height: 8),
+        // 시스템 정보
+        Padding(
+          padding: const EdgeInsets.only(left: 4),
+          child: Row(
+            children: [
+              Icon(Icons.memory, size: 14, color: Colors.white.withValues(alpha: 0.35)),
+              const SizedBox(width: 8),
+              Text(
+                '렌더링: ${isAndroid ? "OpenGL ES" : "Metal"} · GeoJSON 캐싱',
+                style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.35)),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
   Widget _buildLightingSection() {
-    return Card(
-      color: AppColors.surfaceCard,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSpacing.md)),
+    final presets = ['auto', 'day', 'night', 'dawn', 'dusk'];
+    final labels = ['자동', '주간', '야간', '새벽', '석양'];
+    final selectedIndex = presets.indexOf(_lightPreset).clamp(0, presets.length - 1);
+
+    return _glassCard(
       child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('라이트 프리셋', style: AppTypography.bodySm.copyWith(color: AppColors.textSecondary)),
-            const SizedBox(height: AppSpacing.sm),
-            Wrap(
-              spacing: AppSpacing.sm,
-              children: ['auto', 'day', 'night', 'dawn', 'dusk'].map((preset) {
-                final isSelected = _lightPreset == preset;
-                return ChoiceChip(
-                  label: Text(preset.toUpperCase(), style: AppTypography.caption.copyWith(
-                    color: isSelected ? AppColors.textPrimary : AppColors.textTertiary,
-                  )),
-                  selected: isSelected,
-                  selectedColor: AppColors.accent,
-                  backgroundColor: AppColors.surfaceOverlay,
-                  onSelected: (_) {
-                    setState(() => _lightPreset = preset);
-                    widget.subwayController.autoLighting = (preset == 'auto');
-                    SettingsService.instance.setLightPreset(preset);
-                    SettingsService.instance.setAutoLighting(preset == 'auto');
-                    if (preset == 'auto') {
-                      final env = widget.subwayController.environment;
-                      if (env != null) {
-                        widget.mapController?.applyWeatherEffect(lightPreset: env.lightPreset);
-                      }
-                    } else {
-                      widget.mapController?.setLightPreset(preset);
+        padding: const EdgeInsets.all(4),
+        child: Row(
+          children: List.generate(presets.length, (i) {
+            final isSelected = i == selectedIndex;
+            return Expanded(
+              child: GestureDetector(
+                onTap: () {
+                  final preset = presets[i];
+                  setState(() => _lightPreset = preset);
+                  widget.subwayController.autoLighting = (preset == 'auto');
+                  SettingsService.instance.setLightPreset(preset);
+                  SettingsService.instance.setAutoLighting(preset == 'auto');
+                  if (preset == 'auto') {
+                    final env = widget.subwayController.environment;
+                    if (env != null) {
+                      widget.mapController?.applyWeatherEffect(lightPreset: env.lightPreset);
                     }
-                  },
-                );
-              }).toList(),
-            ),
-          ],
+                  } else {
+                    widget.mapController?.setLightPreset(preset);
+                  }
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 250),
+                  curve: Curves.easeOutCubic,
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    color: isSelected
+                        ? Colors.white.withValues(alpha: 0.12)
+                        : Colors.transparent,
+                    border: isSelected
+                        ? Border.all(
+                            color: Colors.white.withValues(alpha: 0.15),
+                            width: 0.5,
+                          )
+                        : null,
+                  ),
+                  child: Center(
+                    child: Text(
+                      labels[i],
+                      style: TextStyle(
+                        color: isSelected
+                            ? Colors.white.withValues(alpha: 0.95)
+                            : Colors.white.withValues(alpha: 0.40),
+                        fontSize: 13,
+                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }),
         ),
       ),
     );
   }
 
   Widget _buildInfoSection() {
-    return Card(
-      color: AppColors.surfaceCard,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSpacing.md)),
-      child: Column(
-        children: [
-          _settingTile(
-            icon: Icons.info_outline,
-            title: '맵 엔진',
-            subtitle: 'Mapbox Maps SDK v11',
-          ),
-          Divider(height: 1, color: AppColors.divider),
-          _settingTile(
-            icon: Icons.phone_android,
-            title: '플랫폼',
-            subtitle: Platform.isAndroid
-                ? 'Android (${Platform.operatingSystemVersion})'
-                : 'iOS (${Platform.operatingSystemVersion})',
-          ),
-        ],
+    return _glassCard(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Column(
+          children: [
+            _settingTile(
+              icon: Icons.info_outline,
+              title: '맵 엔진',
+              subtitle: 'Mapbox Maps SDK v11',
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Divider(height: 1, color: Colors.white.withValues(alpha: 0.08)),
+            ),
+            _settingTile(
+              icon: Icons.phone_android,
+              title: '플랫폼',
+              subtitle: Platform.isAndroid
+                  ? 'Android (${Platform.operatingSystemVersion})'
+                  : 'iOS (${Platform.operatingSystemVersion})',
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -880,15 +987,28 @@ class _SettingsPanelState extends State<SettingsPanel> {
     required IconData icon,
     required String title,
     required String subtitle,
-    Widget? trailing,
   }) {
-    return ListTile(
-      leading: Icon(icon, size: 18, color: AppColors.textTertiary),
-      title: Text(title, style: AppTypography.bodySm),
-      subtitle: Text(subtitle, style: AppTypography.caption.copyWith(color: AppColors.textDisabled)),
-      trailing: trailing,
-      dense: true,
-      visualDensity: VisualDensity.compact,
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: Colors.white.withValues(alpha: 0.50)),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.white.withValues(alpha: 0.85),
+              )),
+              Text(subtitle, style: TextStyle(
+                fontSize: 12,
+                color: Colors.white.withValues(alpha: 0.40),
+              )),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
