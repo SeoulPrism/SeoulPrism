@@ -21,6 +21,6 @@ HOMEBREW_NO_AUTO_UPDATE=1 brew install cocoapods
 # 5. iOS 빌드 설정 파일 생성 (핵심: Generated.xcconfig 생성)
 cd ios
 pod install
-flutter build ios --config-only --release
+flutter build ios --config-only --release --no-tree-shake-icons
 
 exit 0
