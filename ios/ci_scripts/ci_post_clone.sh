@@ -40,15 +40,17 @@ class ApiKeys {
 DART
 
 # 4. Flutter 환경 확인 및 의존성 설치
-flutter precache
+flutter precache --ios
 flutter pub get
 
-# 5. CocoaPods 설치
-HOMEBREW_NO_AUTO_UPDATE=1 brew install cocoapods 2>/dev/null || true
+# 5. Generated.xcconfig에 올바른 FLUTTER_ROOT 설정
+FLUTTER_ROOT="$(which flutter | xargs dirname | xargs dirname)"
+echo "FLUTTER_ROOT=$FLUTTER_ROOT" > ios/Flutter/Generated.xcconfig
+flutter build ios --config-only --release --no-tree-shake-icons
 
-# 6. iOS 빌드 설정 파일 생성
+# 6. CocoaPods 설치
+HOMEBREW_NO_AUTO_UPDATE=1 brew install cocoapods 2>/dev/null || true
 cd ios
 pod install
-flutter build ios --config-only --release --no-tree-shake-icons
 
 exit 0
