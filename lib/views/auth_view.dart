@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:math';
 import 'dart:ui';
 
@@ -371,7 +372,8 @@ class _AuthViewState extends State<AuthView> {
       final googleSignIn = GoogleSignIn.instance;
       if (!_googleInitialized) {
         await googleSignIn.initialize(
-          clientId: iosClientId,
+          // Android: clientId 생략 (google-services.json 또는 Credential Manager에서 자동)
+          clientId: Platform.isIOS ? iosClientId : null,
           serverClientId: webClientId,
         );
         _googleInitialized = true;
