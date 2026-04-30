@@ -4,6 +4,7 @@ import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'core/api_keys.dart';
+import 'services/device_profile_service.dart';
 import 'services/settings_service.dart';
 import 'views/auth_view.dart';
 import 'views/home_view.dart';
@@ -25,6 +26,9 @@ Future<void> main() async {
 
   // Settings 초기화
   await SettingsService.init();
+
+  // 기기 프로필 감지 (Android: 기기별 최적화)
+  await DeviceProfileService.init();
 
   // Supabase 초기화
   await Supabase.initialize(

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -12,6 +13,7 @@ import '../data/subway_geojson_loader.dart';
 import '../data/route_geometry.dart';
 import '../core/map_interface.dart';
 import '../services/environment_service.dart';
+import '../services/device_profile_service.dart';
 import '../services/settings_service.dart';
 import '../services/congestion_service.dart';
 import '../services/closure_service.dart';
@@ -49,11 +51,18 @@ class SubwayOverlayController {
         _showStations = SettingsService.instance.showStations,
         _mode = SettingsService.instance.mode == 'live' ? SubwayMode.live : SubwayMode.demo,
         autoLighting = SettingsService.instance.autoLighting {
-    // 품질 프리셋 초기 적용
-    switch (_qualityPreset) {
-      case 'medium': _animIntervalMs = 33; break;
-      case 'low': _animIntervalMs = 100; break;
-      default: _animIntervalMs = 16; break;
+    // 기기 프로필 기반 초기 적용
+    if (Platform.isAndroid) {
+      final dp = DeviceProfileService.instance.profile;
+      _animIntervalMs = (1000 / dp.animFps).round();
+      _naverApiFetchMs = dp.naverPollMs;
+      _qualityPreset = dp.qualityPreset;
+    } else {
+      switch (_qualityPreset) {
+        case 'medium': _animIntervalMs = 33; break;
+        case 'low': _animIntervalMs = 100; break;
+        default: _animIntervalMs = 16; break;
+      }
     }
   }
 
@@ -72,7 +81,7 @@ class SubwayOverlayController {
   int _animIntervalMs = 16; // ~60fps (high), 33ms=30fps (medium), 100ms=10fps (low)
   // Live 모드: 네이버 10초 (메인) + 서울시 600초 (보조, 네이버 미지원 노선만)
   static const int _liveApiFetchSec = 60; // 1분 (1호선/수인분당/신분당 등 7개 노선만)
-  static const int _naverApiFetchMs = 100;   // 0.1초 (병렬 요청, 무제한)
+  int _naverApiFetchMs = Platform.isAndroid ? 500 : 100; // Android 0.5초, iOS 0.1초
   Timer? _naverRefreshTimer;
   bool _isNaverFetching = false; // 겹침 방지 가드
   bool _naverFieldsLogged = false; // API 필드 로그 1회용
@@ -329,7 +338,7 @@ class SubwayOverlayController {
       if (useNaverApi) {
         _fetchNaverApi();
         _naverRefreshTimer = Timer.periodic(
-          const Duration(milliseconds: _naverApiFetchMs), (_) => _fetchNaverApi(),
+          Duration(milliseconds: _naverApiFetchMs), (_) => _fetchNaverApi(),
         );
       }
       debugPrint('[SubwayOverlay] 📡 Live 모드 시작 '
@@ -551,7 +560,7 @@ class SubwayOverlayController {
       _naverRefreshTimer?.cancel();
       if (v) {
         _naverRefreshTimer = Timer.periodic(
-          const Duration(milliseconds: _naverApiFetchMs), (_) => _fetchNaverApi(),
+          Duration(milliseconds: _naverApiFetchMs), (_) => _fetchNaverApi(),
         );
         _fetchNaverApi(); // 즉시 1회 호출
       } else {
@@ -561,23 +570,58 @@ class SubwayOverlayController {
     onStateChanged?.call();
   }
 
+  /// 현재 애니메이션 FPS (읽기 전용)
+  int get animFps => (1000 / _animIntervalMs).round().clamp(5, 60);
+
+  /// 현재 네이버 폴링 주기 ms (읽기 전용)
+  int get naverPollMs => _naverApiFetchMs;
+
   /// 품질 프리셋 적용
-  /// high: 60fps, medium: 30fps, low: 10fps
+  /// high: 60fps(iOS)/30fps(Android), medium: 30fps, low: 10fps
+  /// 네이버 폴링도 프리셋에 연동
   void setQualityPreset(String preset) {
     _qualityPreset = preset;
     SettingsService.instance.setQualityPreset(preset);
+    final isAndroid = Platform.isAndroid;
     switch (preset) {
       case 'high':
-        _animIntervalMs = 16; // ~60fps
+        _animIntervalMs = isAndroid ? 33 : 16;
+        _naverApiFetchMs = isAndroid ? 300 : 100;
         break;
       case 'medium':
-        _animIntervalMs = 33; // ~30fps
+        _animIntervalMs = 33;
+        _naverApiFetchMs = isAndroid ? 500 : 200;
         break;
       case 'low':
-        _animIntervalMs = 100; // ~10fps
+        _animIntervalMs = 100;
+        _naverApiFetchMs = 1000;
         break;
     }
-    // 실행 중이면 애니메이션 타이머 재시작
+    _restartTimersIfActive();
+    onStateChanged?.call();
+  }
+
+  /// 애니메이션 FPS 직접 설정 (커스텀)
+  void setAnimFps(int fps) {
+    _animIntervalMs = (1000 / fps.clamp(5, 60)).round();
+    _restartTimersIfActive();
+    onStateChanged?.call();
+  }
+
+  /// 네이버 폴링 주기 직접 설정 (커스텀, ms)
+  void setNaverPollMs(int ms) {
+    _naverApiFetchMs = ms.clamp(100, 5000);
+    if (_isActive && _naverRefreshTimer != null) {
+      _naverRefreshTimer?.cancel();
+      _naverRefreshTimer = Timer.periodic(
+        Duration(milliseconds: _naverApiFetchMs), (_) => _fetchNaverApi(),
+      );
+    }
+    onStateChanged?.call();
+  }
+
+  void _restartTimersIfActive() {
+    // 애니메이션 타이머 재시작
     if (_isActive && _animationTimer != null) {
       _animationTimer?.cancel();
       _animationTimer = Timer.periodic(
@@ -585,7 +629,13 @@ class SubwayOverlayController {
         (_) => _animationTick(),
       );
     }
-    onStateChanged?.call();
+    // 네이버 타이머 재시작
+    if (_isActive && _naverRefreshTimer != null) {
+      _naverRefreshTimer?.cancel();
+      _naverRefreshTimer = Timer.periodic(
+        Duration(milliseconds: _naverApiFetchMs), (_) => _fetchNaverApi(),
+      );
+    }
   }
 
   /// 특정 역의 도착 정보 조회

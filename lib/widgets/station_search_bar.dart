@@ -33,9 +33,39 @@ String _getChosung(String text) {
   return buffer.toString();
 }
 
+/// 한글 자모 분해 (초성+중성+종성 → 낱자 나열)
+String _decomposeHangul(String text) {
+  const jungsung = [
+    'ㅏ','ㅐ','ㅑ','ㅒ','ㅓ','ㅔ','ㅕ','ㅖ','ㅗ','ㅘ','ㅙ','ㅚ',
+    'ㅛ','ㅜ','ㅝ','ㅞ','ㅟ','ㅠ','ㅡ','ㅢ','ㅣ',
+  ];
+  const jongsung = [
+    '','ㄱ','ㄲ','ㄳ','ㄴ','ㄵ','ㄶ','ㄷ','ㄹ','ㄺ','ㄻ','ㄼ',
+    'ㄽ','ㄾ','ㄿ','ㅀ','ㅁ','ㅂ','ㅄ','ㅅ','ㅆ','ㅇ','ㅈ','ㅉ',
+    'ㅊ','ㅋ','ㅌ','ㅍ','ㅎ',
+  ];
+  final buf = StringBuffer();
+  for (final c in text.runes) {
+    if (c >= 0xAC00 && c <= 0xD7A3) {
+      final offset = c - 0xAC00;
+      buf.write(_chosung[offset ~/ 588]);
+      buf.write(jungsung[(offset % 588) ~/ 28]);
+      final jong = offset % 28;
+      if (jong > 0) buf.write(jongsung[jong]);
+    } else {
+      buf.writeCharCode(c);
+    }
+  }
+  return buf.toString();
+}
+
 bool _matchesQuery(String stationName, String query) {
+  // 1. 직접 포함
   if (stationName.contains(query)) return true;
+  // 2. 초성 매칭 (ㅈㄹ → 종로)
   if (_getChosung(stationName).contains(query)) return true;
+  // 3. 자모 분해 매칭 (한글 입력 중간 상태 대응: "종로3ㄱ" → "종로3가" 매칭)
+  if (_decomposeHangul(stationName).contains(_decomposeHangul(query))) return true;
   return false;
 }
 
@@ -171,10 +201,13 @@ class _StationSearchBarState extends State<StationSearchBar>
   // ── 일반 검색 ──
   void _onSearchChanged(String q) {
     final r = _search(q);
-    final was = _isSearching;
     setState(() { _searchResults = r; _isSearching = q.isNotEmpty; });
-    if (_isSearching && r.isNotEmpty && !was) _dropCtrl.forward(from: 0);
-    else if (!_isSearching || r.isEmpty) _dropCtrl.reverse();
+    // 텍스트가 있으면 드롭다운 유지 (결과 0개여도 닫지 않음 — 한글 IME 조합 중간 상태 대응)
+    if (q.isNotEmpty && r.isNotEmpty) {
+      _dropCtrl.forward(from: _dropCtrl.value > 0 ? _dropCtrl.value : 0);
+    } else if (q.isEmpty) {
+      _dropCtrl.reverse();
+    }
   }
 
   void _selectSearch(StationSearchResult r) {
@@ -439,21 +472,32 @@ class _StationSearchBarState extends State<StationSearchBar>
   }
 
   Widget _buildNavField(TextEditingController ctrl, FocusNode focus, String hint) {
+    final isM3 = Platform.isAndroid;
+    final cs = Theme.of(context).colorScheme;
     const navTextColor = Color(0xFFB0B0B0);
     const navPlaceholder = Color(0xFF8E8E93);
+
     return SizedBox(
       height: AppSpacing.inputHeight,
       child: AdaptiveTextField(
         controller: ctrl,
         focusNode: focus,
         placeholder: hint,
-        placeholderStyle: const TextStyle(color: navPlaceholder, fontSize: 14),
-        style: AppTypography.bodyMd.copyWith(color: navTextColor),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+        placeholderStyle: TextStyle(
+          color: isM3 ? cs.onSurfaceVariant.withValues(alpha: 0.6) : navPlaceholder,
+          fontSize: 14,
         ),
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+        style: AppTypography.bodyMd.copyWith(
+          color: isM3 ? cs.onSurface : navTextColor,
+        ),
+        decoration: BoxDecoration(
+          color: isM3 ? cs.surfaceContainerHighest : Colors.white.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(isM3 ? 12.0 : AppSpacing.radiusMd),
+        ),
+        padding: EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: isM3 ? 12 : 0,
+        ),
         onChanged: _onNavSearch,
         onSubmitted: (_) { if (_navResults.isNotEmpty) _selectNav(_navResults.first); },
       ),

@@ -44,8 +44,10 @@ class AdaptiveTextField extends StatelessWidget {
       );
     }
 
-    // Android: Material 3 TextField
+    // Android: Material 3 TextField (컴팩트)
     final cs = Theme.of(context).colorScheme;
+    final bgColor = decoration?.color ?? cs.surfaceContainerHighest;
+    final radius = decoration?.borderRadius as BorderRadius? ?? BorderRadius.circular(12);
 
     return TextField(
       controller: controller,
@@ -60,16 +62,17 @@ class AdaptiveTextField extends StatelessWidget {
             TextStyle(color: cs.onSurfaceVariant.withValues(alpha: 0.6)),
         contentPadding: padding,
         filled: true,
-        fillColor: decoration?.color ?? cs.surfaceContainerHighest,
+        fillColor: bgColor,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: radius,
           borderSide: BorderSide.none,
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: cs.primary, width: 2),
+          borderRadius: radius,
+          borderSide: BorderSide(color: cs.primary, width: 1.5),
         ),
         isDense: true,
+        isCollapsed: true,
       ),
     );
   }

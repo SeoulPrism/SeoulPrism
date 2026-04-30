@@ -12,6 +12,7 @@ import '../widgets/weather_widget.dart';
 import '../widgets/subway_panel.dart';
 import '../widgets/station_search_bar.dart';
 import '../data/seoul_subway_data.dart';
+import '../services/device_profile_service.dart';
 import '../services/settings_service.dart';
 import '../services/path_finding_service.dart';
 import '../data/subway_geojson_loader.dart';
@@ -265,6 +266,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
     mc.clearCircleMarkers();
   }
 
+  bool _profileShown = false;
+  bool _showProfileToast = false;
+
   void _onMapCreated(IMapController controller) {
     _mapController = controller;
     _subwayController.attachMap(controller);
@@ -275,6 +279,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
     // 자동으로 데모 모드 시작
     if (!_subwayController.isActive) {
       _subwayController.start();
+    }
+    // 기기 프로필 안내 (최초 1회, 페이드 토스트)
+    if (!_profileShown) {
+      _profileShown = true;
+      Future.delayed(const Duration(milliseconds: 1200), () {
+        if (!mounted) return;
+        setState(() => _showProfileToast = true);
+        Future.delayed(const Duration(seconds: 3), () {
+          if (mounted) setState(() => _showProfileToast = false);
+        });
+      });
     }
   }
 
@@ -376,7 +391,53 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
           // 설정 패널 오버레이 (바텀시트 스타일)
           _buildSettingsOverlay(context, screenHeight, bottomInset),
+
+          // 기기 프로필 토스트 (페이드인/아웃)
+          _buildProfileToast(),
         ],
+      ),
+    );
+  }
+
+  Widget _buildProfileToast() {
+    final dp = DeviceProfileService.instance;
+    final tierLabel = switch (dp.profile.tier) {
+      DeviceTier.flagship => '플래그십',
+      DeviceTier.high => '상위',
+      DeviceTier.mid => '중급',
+      DeviceTier.low => '저사양',
+    };
+
+    return Positioned(
+      bottom: MediaQuery.of(context).padding.bottom + 80,
+      left: 24,
+      right: 24,
+      child: IgnorePointer(
+        child: AnimatedOpacity(
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+          opacity: _showProfileToast ? 1.0 : 0.0,
+          child: Center(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.7),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                '${dp.rawModel} · $tierLabel\n'
+                '${dp.profile.animFps}fps · 폴링 ${dp.profile.naverPollMs}ms 최적화 적용',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  height: 1.4,
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -908,6 +969,45 @@ class _SettingsPanelState extends State<SettingsPanel> {
             ),
           ),
         ),
+        const SizedBox(height: 12),
+        // FPS 슬라이더
+        _glassCard(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Column(
+              children: [
+                _sliderRow(
+                  label: '프레임',
+                  value: '${ctrl.animFps} fps',
+                  slider: Slider(
+                    value: ctrl.animFps.toDouble().clamp(5, isAndroid ? 30 : 60),
+                    min: 5,
+                    max: isAndroid ? 30 : 60,
+                    divisions: isAndroid ? 5 : 11,
+                    onChanged: (v) {
+                      ctrl.setAnimFps(v.round());
+                      setState(() {});
+                    },
+                  ),
+                ),
+                _sliderRow(
+                  label: '네이버 폴링',
+                  value: '${ctrl.naverPollMs}ms',
+                  slider: Slider(
+                    value: ctrl.naverPollMs.toDouble(),
+                    min: 100,
+                    max: 2000,
+                    divisions: 19,
+                    onChanged: (v) {
+                      ctrl.setNaverPollMs(v.round());
+                      setState(() {});
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
         const SizedBox(height: 8),
         // 시스템 정보
         Padding(
@@ -921,6 +1021,40 @@ class _SettingsPanelState extends State<SettingsPanel> {
                 style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.35)),
               ),
             ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _sliderRow({required String label, required String value, required Widget slider}) {
+    final isM3 = Platform.isAndroid;
+    final cs = Theme.of(context).colorScheme;
+
+    return Row(
+      children: [
+        SizedBox(
+          width: 72,
+          child: Text(
+            label,
+            style: TextStyle(
+              color: isM3 ? cs.onSurface : Colors.white.withValues(alpha: 0.85),
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        Expanded(child: slider),
+        SizedBox(
+          width: 52,
+          child: Text(
+            value,
+            textAlign: TextAlign.right,
+            style: TextStyle(
+              color: isM3 ? cs.onSurfaceVariant : Colors.white.withValues(alpha: 0.50),
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ),
       ],
@@ -993,6 +1127,14 @@ class _SettingsPanelState extends State<SettingsPanel> {
   }
 
   Widget _buildInfoSection() {
+    final dp = DeviceProfileService.instance;
+    final tierLabel = switch (dp.profile.tier) {
+      DeviceTier.flagship => '플래그십',
+      DeviceTier.high => '상위',
+      DeviceTier.mid => '중급',
+      DeviceTier.low => '저사양',
+    };
+
     return _glassCard(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -1009,10 +1151,17 @@ class _SettingsPanelState extends State<SettingsPanel> {
             ),
             _settingTile(
               icon: Icons.phone_android,
-              title: '플랫폼',
-              subtitle: Platform.isAndroid
-                  ? 'Android (${Platform.operatingSystemVersion})'
-                  : 'iOS (${Platform.operatingSystemVersion})',
+              title: '기기',
+              subtitle: dp.rawModel,
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Divider(height: 1, color: Colors.white.withValues(alpha: 0.08)),
+            ),
+            _settingTile(
+              icon: Icons.speed,
+              title: '성능 등급',
+              subtitle: '$tierLabel (${dp.profile.animFps}fps · ${dp.profile.naverPollMs}ms)',
             ),
           ],
         ),

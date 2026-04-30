@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// 앱 설정 영속화 서비스
@@ -37,7 +38,8 @@ class SettingsService {
   bool get autoLighting => _prefs.getBool(_kAutoLighting) ?? true;
   String get lightPreset => _prefs.getString(_kLightPreset) ?? 'auto';
 
-  String get qualityPreset => _prefs.getString(_kQualityPreset) ?? 'high';
+  String get qualityPreset =>
+      _prefs.getString(_kQualityPreset) ?? (Platform.isAndroid ? 'medium' : 'high');
   bool get useSeoulApi => _prefs.getBool(_kUseSeoulApi) ?? true;
   bool get useNaverApi => _prefs.getBool(_kUseNaverApi) ?? true;
 
