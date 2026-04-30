@@ -54,8 +54,7 @@ class AdaptiveSurfaceCard extends StatelessWidget {
   }
 }
 
-/// iOS: 반투명 글라스 섹션 카드
-/// Android: Material 3 Outlined Card
+/// 설정/프로필 등 페이지용 섹션 카드 — 테마 따름
 class AdaptiveSectionCard extends StatelessWidget {
   final List<Widget> children;
   final double borderRadius;
@@ -68,24 +67,6 @@ class AdaptiveSectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (Platform.isIOS) {
-      return Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(borderRadius),
-          color: Colors.white.withValues(alpha: 0.08),
-          border: Border.all(
-            color: Colors.white.withValues(alpha: 0.10),
-            width: 0.5,
-          ),
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(borderRadius),
-          child: Column(children: children),
-        ),
-      );
-    }
-
-    // Android: Material 3
     final cs = Theme.of(context).colorScheme;
     return Card(
       elevation: 0,

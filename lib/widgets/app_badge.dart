@@ -147,6 +147,10 @@ class AppCircleButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final defaultBg = color ?? cs.surfaceContainerHighest.withValues(alpha: 0.5);
+    final defaultIcon = borderColor ?? cs.onSurfaceVariant;
+
     return Semantics(
       label: semanticLabel,
       button: true,
@@ -157,12 +161,12 @@ class AppCircleButton extends StatelessWidget {
           height: size,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: color ?? Colors.white10,
+            color: defaultBg,
             border: borderColor != null
                 ? Border.all(color: borderColor!, width: 1.5)
                 : null,
           ),
-          child: Icon(icon, size: iconSize, color: borderColor ?? AppColors.textTertiary),
+          child: Icon(icon, size: iconSize, color: defaultIcon),
         ),
       ),
     );

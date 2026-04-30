@@ -84,7 +84,7 @@ class _SubwayControlPanelState extends State<SubwayControlPanel> {
               fontWeight: FontWeight.bold,
               color: widget.controller.mode == SubwayMode.demo
                   ? AppColors.warning
-                  : AppColors.textPrimary,
+                  : Theme.of(context).colorScheme.onSurface,
               letterSpacing: 1.2,
             ),
           ),
@@ -172,7 +172,7 @@ class _SubwayControlPanelState extends State<SubwayControlPanel> {
                       border: Border.all(color: lineColor, width: 0.5),
                     ),
                     child: Text(lineName,
-                      style: AppTypography.caption.copyWith(color: AppColors.textPrimary)),
+                      style: AppTypography.caption.copyWith(color: Theme.of(context).colorScheme.onSurface)),
                   ),
                   const SizedBox(width: AppSpacing.xs),
                 ],
@@ -323,7 +323,7 @@ class _SubwayControlPanelState extends State<SubwayControlPanel> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: AppTypography.caption.copyWith(color: Colors.grey)),
-          Text(value, style: AppTypography.caption.copyWith(color: AppColors.textPrimary)),
+          Text(value, style: AppTypography.caption.copyWith(color: Theme.of(context).colorScheme.onSurface)),
         ],
       ),
     );
@@ -461,7 +461,7 @@ class StationArrivalPanel extends StatelessWidget {
               children: [
                 Text(
                   info.trainLineName,
-                  style: AppTypography.bodySm.copyWith(color: AppColors.textPrimary),
+                  style: AppTypography.bodySm.copyWith(color: Colors.white),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -541,7 +541,7 @@ class TrainDetailPanel extends StatelessWidget {
       width: double.infinity,
       margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
       decoration: BoxDecoration(
-        color: AppColors.surfaceCard.withValues(alpha: 0.94),
+        color: Theme.of(context).colorScheme.surfaceContainer,
         borderRadius: BorderRadius.circular(AppSpacing.xl),
         border: Border.all(color: lineColor.withValues(alpha: 0.4), width: 1),
       ),
@@ -573,7 +573,7 @@ class TrainDetailPanel extends StatelessWidget {
                       _lineShortName(train.subwayId),
                       style: AppTypography.bodySm.copyWith(
                         fontWeight: FontWeight.w900,
-                        color: AppColors.textPrimary,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                   ),
@@ -938,7 +938,7 @@ class StationDetailPanel extends StatelessWidget {
         height: panelHeight,
         child: DecoratedBox(
           decoration: BoxDecoration(
-            color: AppColors.surfaceCard.withValues(alpha: 0.94),
+            color: Theme.of(context).colorScheme.surfaceContainer,
             borderRadius: BorderRadius.circular(AppSpacing.xl),
             border: Border.all(color: primaryColor.withValues(alpha: 0.3), width: 1),
           ),
@@ -964,7 +964,7 @@ class StationDetailPanel extends StatelessWidget {
                         child: Center(
                           child: Text(
                             _lineShortName(primaryColor),
-                            style: AppTypography.bodySm.copyWith(fontWeight: FontWeight.w900, color: AppColors.textPrimary),
+                            style: AppTypography.bodySm.copyWith(fontWeight: FontWeight.w900, color: Theme.of(context).colorScheme.onSurface),
                           ),
                         ),
                       )
@@ -989,7 +989,7 @@ class StationDetailPanel extends StatelessWidget {
                                   child: Center(
                                     child: Text(
                                       _lineShortName(lineColors[i]),
-                                      style: AppTypography.caption.copyWith(fontWeight: FontWeight.w900, color: AppColors.textPrimary),
+                                      style: AppTypography.caption.copyWith(fontWeight: FontWeight.w900, color: Theme.of(context).colorScheme.onSurface),
                                     ),
                                   ),
                                 ),
@@ -1104,7 +1104,7 @@ class StationDetailPanel extends StatelessWidget {
               children: [
                 Text(
                   info.trainLineName,
-                  style: AppTypography.bodySm.copyWith(color: AppColors.textPrimary),
+                  style: AppTypography.bodySm.copyWith(color: Colors.white),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),

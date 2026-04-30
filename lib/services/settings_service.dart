@@ -29,6 +29,7 @@ class SettingsService {
   static const _kQualityPreset = 'quality_preset'; // 'high' | 'medium' | 'low'
   static const _kUseSeoulApi = 'use_seoul_api';
   static const _kUseNaverApi = 'use_naver_api';
+  static const _kThemeMode = 'theme_mode'; // 'system' | 'light' | 'dark'
 
   // ── Getters ──
   bool get showRoutes => _prefs.getBool(_kShowRoutes) ?? true;
@@ -42,6 +43,7 @@ class SettingsService {
       _prefs.getString(_kQualityPreset) ?? (Platform.isAndroid ? 'medium' : 'high');
   bool get useSeoulApi => _prefs.getBool(_kUseSeoulApi) ?? true;
   bool get useNaverApi => _prefs.getBool(_kUseNaverApi) ?? true;
+  String get themeMode => _prefs.getString(_kThemeMode) ?? 'dark';
 
   Set<String>? get selectedLines {
     final val = _prefs.getString(_kSelectedLines);
@@ -59,6 +61,7 @@ class SettingsService {
   Future<void> setQualityPreset(String v) => _prefs.setString(_kQualityPreset, v);
   Future<void> setUseSeoulApi(bool v) => _prefs.setBool(_kUseSeoulApi, v);
   Future<void> setUseNaverApi(bool v) => _prefs.setBool(_kUseNaverApi, v);
+  Future<void> setThemeMode(String v) => _prefs.setString(_kThemeMode, v);
 
   Future<void> setSelectedLines(Set<String>? lines) async {
     if (lines == null) {

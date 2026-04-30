@@ -5,6 +5,7 @@ import '../widgets/adaptive/adaptive.dart';
 import 'package:flutter/material.dart';
 
 import '../main.dart';
+import 'notifications_view.dart';
 import 'settings_view.dart';
 
 class ProfileView extends StatefulWidget {
@@ -26,12 +27,10 @@ class _ProfileViewState extends State<ProfileView> {
 
   @override
   Widget build(BuildContext context) {
-    final isM3 = Platform.isAndroid;
+    final cs = Theme.of(context).colorScheme;
 
     return Scaffold(
-      backgroundColor: isM3
-          ? Theme.of(context).colorScheme.surface
-          : const Color(0xFF0A0A0A),
+      backgroundColor: cs.surface,
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
@@ -70,7 +69,11 @@ class _ProfileViewState extends State<ProfileView> {
           const Spacer(),
           AdaptiveGlassIconButton(
             icon: Icons.notifications_none_rounded,
-            onPressed: () {},
+            onPressed: () {
+              Navigator.push(context, MaterialPageRoute(
+                builder: (_) => const NotificationsView(),
+              ));
+            },
           ),
           const SizedBox(width: 8),
           AdaptiveGlassIconButton(
@@ -108,7 +111,7 @@ class _ProfileViewState extends State<ProfileView> {
 
   Widget _buildUserInfo() {
     final cs = Theme.of(context).colorScheme;
-    final isM3 = Platform.isAndroid;
+    const isM3 = true;
 
     return Center(
       child: Column(
@@ -133,10 +136,10 @@ class _ProfileViewState extends State<ProfileView> {
           const SizedBox(height: 14),
           Text(
             supabase.auth.currentUser?.userMetadata?['username'] ?? '사용자',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.w800,
-              color: Colors.white,
+              color: cs.onSurface,
             ),
           ),
           const SizedBox(height: 4),
@@ -145,7 +148,7 @@ class _ProfileViewState extends State<ProfileView> {
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w400,
-              color: Colors.white.withValues(alpha: 0.50),
+              color: cs.onSurfaceVariant,
             ),
           ),
         ],
@@ -166,7 +169,7 @@ class _ProfileViewState extends State<ProfileView> {
         itemBuilder: (context, index) {
           final isSelected = _selectedCategoryIndex == index;
           final cs = Theme.of(context).colorScheme;
-          final isM3 = Platform.isAndroid;
+          const isM3 = true;
 
           if (isM3) {
             return FilterChip(
@@ -222,7 +225,7 @@ class _ProfileViewState extends State<ProfileView> {
 
   Widget _buildCategoryContent() {
     final cs = Theme.of(context).colorScheme;
-    final isM3 = Platform.isAndroid;
+    const isM3 = true;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -265,12 +268,12 @@ class _ProfileViewState extends State<ProfileView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             '내 타임라인',
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w800,
-              color: Colors.white,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: 16),
@@ -336,7 +339,7 @@ class _ProfileViewState extends State<ProfileView> {
     required String subtitle,
   }) {
     final cs = Theme.of(context).colorScheme;
-    final isM3 = Platform.isAndroid;
+    const isM3 = true;
 
     return AdaptiveSurfaceCard(
       borderRadius: 20,
@@ -399,7 +402,7 @@ class _ProfileViewState extends State<ProfileView> {
       child: Column(
         children: [
           Divider(
-            color: Colors.white.withValues(alpha: 0.10),
+            color: Theme.of(context).colorScheme.outlineVariant,
             height: 1,
           ),
           const SizedBox(height: 20),
@@ -408,7 +411,7 @@ class _ProfileViewState extends State<ProfileView> {
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: Colors.white.withValues(alpha: 0.30),
+              color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
             ),
           ),
           const SizedBox(height: 4),
@@ -417,7 +420,7 @@ class _ProfileViewState extends State<ProfileView> {
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w400,
-              color: Colors.white.withValues(alpha: 0.20),
+              color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.35),
             ),
           ),
         ],

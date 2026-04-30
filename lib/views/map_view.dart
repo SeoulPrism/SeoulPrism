@@ -449,25 +449,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   // ── 하단 탭바 (리퀴드 글라스) ──
   Widget _buildBottomTabBar() {
+    // 순서: 설정(0) | 지도(1, 가운데) | AI 플랜(2)
+    final currentIndex = _settingsOpen ? 0 : (_aiPlanOpen ? 2 : 1);
+
     return AdaptiveTabBar(
-      currentIndex: _aiPlanOpen ? 2 : (_settingsOpen ? 1 : 0),
+      currentIndex: currentIndex,
       onTap: (index) {
         setState(() {
           if (index == 0) {
-            _settingsOpen = false;
-            _aiPlanOpen = false;
-          } else if (index == 1) {
             _aiPlanOpen = false;
             _settingsOpen = !_settingsOpen;
+          } else if (index == 1) {
+            _settingsOpen = false;
+            _aiPlanOpen = false;
           } else if (index == 2) {
             _settingsOpen = false;
-            _aiPlanOpen = true;
+            _aiPlanOpen = !_aiPlanOpen;
           }
         });
       },
       items: const [
-        AdaptiveTabItem(label: '지도', icon: Icons.map),
         AdaptiveTabItem(label: '설정', icon: Icons.settings),
+        AdaptiveTabItem(label: '지도', icon: Icons.map),
         AdaptiveTabItem(label: 'AI 플랜', icon: Icons.auto_awesome),
       ],
     );
@@ -487,10 +490,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
       child: AnimatedOpacity(
         duration: const Duration(milliseconds: 350),
         opacity: _aiPlanOpen ? 1.0 : 0.0,
-        child: SnsUploadView(
-          onClose: () => setState(() => _aiPlanOpen = false),
-          mapController: _mapController,
-          subwayController: _subwayController,
+        child: GestureDetector(
+          onVerticalDragEnd: (details) {
+            if (details.velocity.pixelsPerSecond.dy > 200) {
+              setState(() => _aiPlanOpen = false);
+            }
+          },
+          child: SnsUploadView(
+            onClose: () => setState(() => _aiPlanOpen = false),
+            mapController: _mapController,
+            subwayController: _subwayController,
+          ),
         ),
       ),
     );
@@ -510,10 +520,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
       child: AnimatedOpacity(
         duration: const Duration(milliseconds: 350),
         opacity: _settingsOpen ? 1.0 : 0.0,
-        child: SettingsPanel(
-          subwayController: _subwayController,
-          mapController: _mapController,
-          onClose: () => setState(() => _settingsOpen = false),
+        child: GestureDetector(
+          onVerticalDragEnd: (details) {
+            if (details.velocity.pixelsPerSecond.dy > 200) {
+              setState(() => _settingsOpen = false);
+            }
+          },
+          child: SettingsPanel(
+            subwayController: _subwayController,
+            mapController: _mapController,
+            onClose: () => setState(() => _settingsOpen = false),
+          ),
         ),
       ),
     );
@@ -572,9 +589,7 @@ class _SettingsPanelState extends State<SettingsPanel> {
               height: 4,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(2),
-                color: isM3
-                    ? cs.onSurfaceVariant.withValues(alpha: 0.4)
-                    : Colors.white.withValues(alpha: 0.25),
+                color: _panelTextMuted,
               ),
             ),
           ),
@@ -590,7 +605,7 @@ class _SettingsPanelState extends State<SettingsPanel> {
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.w800,
-                color: isM3 ? cs.onSurface : Colors.white.withValues(alpha: 0.95),
+                color: _panelTextPrimary,
               ),
             ),
           ),
@@ -635,6 +650,7 @@ class _SettingsPanelState extends State<SettingsPanel> {
       );
     }
 
+    final lightPanel = _isLightTheme;
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
       child: BackdropFilter(
@@ -645,22 +661,22 @@ class _SettingsPanelState extends State<SettingsPanel> {
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: bright
+              colors: lightPanel
                   ? [
-                      Colors.black.withValues(alpha: 0.50),
-                      Colors.black.withValues(alpha: 0.60),
-                      Colors.black.withValues(alpha: 0.72),
+                      Colors.white.withValues(alpha: 0.70),
+                      Colors.white.withValues(alpha: 0.75),
+                      Colors.white.withValues(alpha: 0.85),
                     ]
                   : [
-                      Colors.white.withValues(alpha: 0.12),
-                      Colors.white.withValues(alpha: 0.05),
-                      Colors.black.withValues(alpha: 0.20),
+                      Colors.black.withValues(alpha: 0.40),
+                      Colors.black.withValues(alpha: 0.50),
+                      Colors.black.withValues(alpha: 0.65),
                     ],
             ),
             border: Border(
               top: BorderSide(
-                color: bright
-                    ? Colors.white.withValues(alpha: 0.10)
+                color: lightPanel
+                    ? Colors.black.withValues(alpha: 0.08)
                     : Colors.white24,
                 width: 0.5,
               ),
@@ -672,10 +688,18 @@ class _SettingsPanelState extends State<SettingsPanel> {
     );
   }
 
-  Widget _sectionHeader(String title) {
-    final isM3 = Platform.isAndroid;
-    final cs = Theme.of(context).colorScheme;
+  /// 패널 내 텍스트 색상 — 앱 테마 모드 기준
+  /// 라이트모드: 밝은 글라스 + 검정 글씨, 다크모드: 어두운 글라스 + 흰 글씨
+  bool get _isLightTheme => Theme.of(context).brightness == Brightness.light;
 
+  Color get _panelTextPrimary =>
+      _isLightTheme ? Colors.black.withValues(alpha: 0.85) : Colors.white.withValues(alpha: 0.85);
+  Color get _panelTextSecondary =>
+      _isLightTheme ? Colors.black.withValues(alpha: 0.55) : Colors.white.withValues(alpha: 0.45);
+  Color get _panelTextMuted =>
+      _isLightTheme ? Colors.black.withValues(alpha: 0.35) : Colors.white.withValues(alpha: 0.35);
+
+  Widget _sectionHeader(String title) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Text(
@@ -683,7 +707,7 @@ class _SettingsPanelState extends State<SettingsPanel> {
         style: TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w700,
-          color: isM3 ? cs.onSurfaceVariant : Colors.white.withValues(alpha: 0.45),
+          color: _panelTextSecondary,
           letterSpacing: 1.2,
         ),
       ),
@@ -705,7 +729,7 @@ class _SettingsPanelState extends State<SettingsPanel> {
       );
     }
 
-    final bright = _isBrightMap;
+    final light = _isLightTheme;
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
       child: BackdropFilter(
@@ -713,12 +737,12 @@ class _SettingsPanelState extends State<SettingsPanel> {
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
-            color: bright
-                ? Colors.black.withValues(alpha: 0.25)
+            color: light
+                ? Colors.white.withValues(alpha: 0.30)
                 : Colors.white.withValues(alpha: 0.06),
             border: Border.all(
-              color: bright
-                  ? Colors.white.withValues(alpha: 0.06)
+              color: light
+                  ? Colors.black.withValues(alpha: 0.08)
                   : Colors.white.withValues(alpha: 0.10),
               width: 0.5,
             ),
@@ -748,7 +772,7 @@ class _SettingsPanelState extends State<SettingsPanel> {
                   isActive ? (isDemo ? 'DEMO 실행 중' : 'LIVE 실행 중') : '꺼짐',
                   style: AppTypography.bodySm.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: isActive ? AppColors.textPrimary : Colors.grey,
+                    color: isActive ? _panelTextPrimary : Colors.grey,
                   ),
                 ),
                 const Spacer(),
@@ -808,11 +832,11 @@ class _SettingsPanelState extends State<SettingsPanel> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text('열차 ${ctrl.currentTrains.length}대',
-                      style: AppTypography.caption.copyWith(color: AppColors.textSecondary)),
+                      style: AppTypography.caption.copyWith(color: _panelTextSecondary)),
                   if (ctrl.lastUpdate != null)
                     Text(
                       '갱신 ${ctrl.lastUpdate!.hour.toString().padLeft(2, '0')}:${ctrl.lastUpdate!.minute.toString().padLeft(2, '0')}:${ctrl.lastUpdate!.second.toString().padLeft(2, '0')}',
-                      style: AppTypography.caption.copyWith(color: AppColors.textDisabled),
+                      style: AppTypography.caption.copyWith(color: _panelTextMuted),
                     ),
                 ],
               ),
@@ -866,7 +890,7 @@ class _SettingsPanelState extends State<SettingsPanel> {
           children: [
             Row(
               children: [
-                Text('표시할 노선 선택', style: AppTypography.caption.copyWith(color: AppColors.textSecondary)),
+                Text('표시할 노선 선택', style: AppTypography.caption.copyWith(color: _panelTextSecondary)),
                 const Spacer(),
                 GestureDetector(
                   onTap: () {
@@ -913,9 +937,6 @@ class _SettingsPanelState extends State<SettingsPanel> {
   }
 
   Widget _toggleRow(String label, bool value, ValueChanged<bool> onChanged) {
-    final isM3 = Platform.isAndroid;
-    final cs = Theme.of(context).colorScheme;
-
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
@@ -924,7 +945,7 @@ class _SettingsPanelState extends State<SettingsPanel> {
             child: Text(
               label,
               style: TextStyle(
-                color: isM3 ? cs.onSurface : Colors.white.withValues(alpha: 0.85),
+                color: _panelTextPrimary,
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
               ),
@@ -975,11 +996,11 @@ class _SettingsPanelState extends State<SettingsPanel> {
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(12),
                         color: isSelected
-                            ? Colors.white.withValues(alpha: 0.12)
+                            ? _panelTextPrimary.withValues(alpha: 0.12)
                             : Colors.transparent,
                         border: isSelected
                             ? Border.all(
-                                color: Colors.white.withValues(alpha: 0.15),
+                                color: _panelTextPrimary.withValues(alpha: 0.15),
                                 width: 0.5,
                               )
                             : null,
@@ -989,8 +1010,8 @@ class _SettingsPanelState extends State<SettingsPanel> {
                           presetLabels[i],
                           style: TextStyle(
                             color: isSelected
-                                ? Colors.white.withValues(alpha: 0.95)
-                                : Colors.white.withValues(alpha: 0.40),
+                                ? _panelTextPrimary
+                                : _panelTextSecondary,
                             fontSize: 14,
                             fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                           ),
@@ -1048,11 +1069,11 @@ class _SettingsPanelState extends State<SettingsPanel> {
           padding: const EdgeInsets.only(left: 4),
           child: Row(
             children: [
-              Icon(Icons.memory, size: 14, color: Colors.white.withValues(alpha: 0.35)),
+              Icon(Icons.memory, size: 14, color: _panelTextMuted),
               const SizedBox(width: 8),
               Text(
                 '렌더링: ${isAndroid ? "OpenGL ES" : "Metal"} · GeoJSON 캐싱',
-                style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.35)),
+                style: TextStyle(fontSize: 12, color: _panelTextMuted),
               ),
             ],
           ),
@@ -1062,9 +1083,6 @@ class _SettingsPanelState extends State<SettingsPanel> {
   }
 
   Widget _sliderRow({required String label, required String value, required Widget slider}) {
-    final isM3 = Platform.isAndroid;
-    final cs = Theme.of(context).colorScheme;
-
     return Row(
       children: [
         SizedBox(
@@ -1072,7 +1090,7 @@ class _SettingsPanelState extends State<SettingsPanel> {
           child: Text(
             label,
             style: TextStyle(
-              color: isM3 ? cs.onSurface : Colors.white.withValues(alpha: 0.85),
+              color: _panelTextPrimary,
               fontSize: 13,
               fontWeight: FontWeight.w600,
             ),
@@ -1085,7 +1103,7 @@ class _SettingsPanelState extends State<SettingsPanel> {
             value,
             textAlign: TextAlign.right,
             style: TextStyle(
-              color: isM3 ? cs.onSurfaceVariant : Colors.white.withValues(alpha: 0.50),
+              color: _panelTextSecondary,
               fontSize: 12,
               fontWeight: FontWeight.w500,
             ),
@@ -1130,11 +1148,11 @@ class _SettingsPanelState extends State<SettingsPanel> {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
                     color: isSelected
-                        ? Colors.white.withValues(alpha: 0.12)
+                        ? _panelTextPrimary.withValues(alpha: 0.12)
                         : Colors.transparent,
                     border: isSelected
                         ? Border.all(
-                            color: Colors.white.withValues(alpha: 0.15),
+                            color: _panelTextPrimary.withValues(alpha: 0.15),
                             width: 0.5,
                           )
                         : null,
@@ -1144,8 +1162,8 @@ class _SettingsPanelState extends State<SettingsPanel> {
                       labels[i],
                       style: TextStyle(
                         color: isSelected
-                            ? Colors.white.withValues(alpha: 0.95)
-                            : Colors.white.withValues(alpha: 0.40),
+                            ? _panelTextPrimary
+                            : _panelTextSecondary,
                         fontSize: 13,
                         fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                       ),
@@ -1181,7 +1199,7 @@ class _SettingsPanelState extends State<SettingsPanel> {
             ),
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Divider(height: 1, color: Colors.white.withValues(alpha: 0.08)),
+              child: Divider(height: 1, color: _panelTextMuted.withValues(alpha: 0.15)),
             ),
             _settingTile(
               icon: Icons.phone_android,
@@ -1190,7 +1208,7 @@ class _SettingsPanelState extends State<SettingsPanel> {
             ),
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Divider(height: 1, color: Colors.white.withValues(alpha: 0.08)),
+              child: Divider(height: 1, color: _panelTextMuted.withValues(alpha: 0.15)),
             ),
             _settingTile(
               icon: Icons.speed,
@@ -1210,7 +1228,7 @@ class _SettingsPanelState extends State<SettingsPanel> {
   }) {
     return Row(
       children: [
-        Icon(icon, size: 18, color: Colors.white.withValues(alpha: 0.50)),
+        Icon(icon, size: 18, color: _panelTextSecondary),
         const SizedBox(width: 12),
         Expanded(
           child: Column(
@@ -1219,11 +1237,11 @@ class _SettingsPanelState extends State<SettingsPanel> {
               Text(title, style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: Colors.white.withValues(alpha: 0.85),
+                color: _panelTextPrimary,
               )),
               Text(subtitle, style: TextStyle(
                 fontSize: 12,
-                color: Colors.white.withValues(alpha: 0.40),
+                color: _panelTextMuted,
               )),
             ],
           ),

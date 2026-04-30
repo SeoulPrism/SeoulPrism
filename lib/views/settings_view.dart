@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../main.dart';
+import '../services/settings_service.dart';
 import '../widgets/adaptive/adaptive.dart';
 import 'auth_view.dart';
 
@@ -18,16 +19,14 @@ class _SettingsViewState extends State<SettingsView> {
   bool _screenAutoLockOff = false;
   bool _autoRotate = false;
   bool _alwaysMyLocation = true;
-  String _themeMode = '시스템';
+  String _themeMode = SettingsService.instance.themeMode == 'light' ? '라이트' : '다크';
   String _language = '한국어';
   String _mapHome = '기본';
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Platform.isIOS
-          ? const Color(0xFF0A0A0A)
-          : Theme.of(context).colorScheme.surface,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -50,9 +49,7 @@ class _SettingsViewState extends State<SettingsView> {
         title: Text(
           '설정',
           style: TextStyle(
-            color: Platform.isAndroid
-                ? Theme.of(context).colorScheme.onSurface
-                : Colors.white.withValues(alpha: 0.85),
+            color: Theme.of(context).colorScheme.onSurface,
             fontSize: 17,
             fontWeight: FontWeight.w600,
           ),
@@ -103,9 +100,13 @@ class _SettingsViewState extends State<SettingsView> {
                   trailing: '$_themeMode >',
                   onTap: () => _showPicker(
                     title: '화면 테마',
-                    options: ['시스템', '라이트', '다크'],
+                    options: ['라이트', '다크'],
                     selected: _themeMode,
-                    onSelected: (v) => setState(() => _themeMode = v),
+                    onSelected: (v) {
+                      setState(() => _themeMode = v);
+                      final mode = v == '라이트' ? 'light' : 'dark';
+                      SeoulPrismApp.setThemeMode(context, mode);
+                    },
                   ),
                 ),
                 const _ItemDivider(),
@@ -357,7 +358,7 @@ class _ChevronItemState extends State<_ChevronItem> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final isM3 = Platform.isAndroid;
+    const isM3 = true; // 설정 페이지는 항상 테마 기반
 
     return GestureDetector(
       onTapDown: (_) => setState(() => _pressed = true),
@@ -420,7 +421,7 @@ class _TrailingTextItemState extends State<_TrailingTextItem> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final isM3 = Platform.isAndroid;
+    const isM3 = true; // 설정 페이지는 항상 테마 기반
 
     return GestureDetector(
       onTapDown: (_) => setState(() => _pressed = true),
@@ -472,7 +473,7 @@ class _InfoItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final isM3 = Platform.isAndroid;
+    const isM3 = true; // 설정 페이지는 항상 테마 기반
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -518,7 +519,7 @@ class _SwitchItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final isM3 = Platform.isAndroid;
+    const isM3 = true; // 설정 페이지는 항상 테마 기반
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),

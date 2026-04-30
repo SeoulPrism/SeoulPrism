@@ -142,7 +142,10 @@ class _SnsUploadViewState extends State<SnsUploadView> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final isM3 = Platform.isAndroid;
+    final bright = Theme.of(context).brightness == Brightness.light;
+    final textPrimary = bright ? Colors.black.withValues(alpha: 0.85) : Colors.white.withValues(alpha: 0.95);
+    final textSecondary = bright ? Colors.black.withValues(alpha: 0.55) : Colors.white.withValues(alpha: 0.50);
+
     Widget content = Column(
       children: [
         // 드래그 핸들
@@ -154,8 +157,8 @@ class _SnsUploadViewState extends State<SnsUploadView> {
               height: 4,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(2),
-                color: isM3
-                    ? cs.onSurfaceVariant.withValues(alpha: 0.4)
+                color: bright
+                    ? Colors.black.withValues(alpha: 0.20)
                     : Colors.white.withValues(alpha: 0.25),
               ),
             ),
@@ -172,7 +175,7 @@ class _SnsUploadViewState extends State<SnsUploadView> {
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.w800,
-                color: isM3 ? cs.onSurface : Colors.white.withValues(alpha: 0.95),
+                color: textPrimary,
               ),
             ),
           ),
@@ -186,7 +189,7 @@ class _SnsUploadViewState extends State<SnsUploadView> {
               'SNS 콘텐츠로 서울 하루 플랜 만들기',
               style: TextStyle(
                 fontSize: 14,
-                color: isM3 ? cs.onSurfaceVariant : Colors.white.withValues(alpha: 0.50),
+                color: textSecondary,
               ),
             ),
           ),
@@ -198,29 +201,29 @@ class _SnsUploadViewState extends State<SnsUploadView> {
             padding: EdgeInsets.fromLTRB(24, 0, 24, MediaQuery.of(context).padding.bottom + 80),
             children: [
               // 이미지
-              _sectionLabel('사진', isM3, cs),
+              _sectionLabel('사진', bright, cs),
               const SizedBox(height: 8),
-              _buildImageSection(isM3, cs),
+              _buildImageSection(bright, cs),
               const SizedBox(height: 20),
               // 텍스트
-              _sectionLabel('설명', isM3, cs),
+              _sectionLabel('설명', bright, cs),
               const SizedBox(height: 8),
               _buildTextField(
                 controller: _textController,
                 hint: '가고 싶은 곳, 하고 싶은 것을 적어주세요',
                 maxLines: 3,
-                isM3: isM3,
+                bright: bright,
                 cs: cs,
               ),
               const SizedBox(height: 20),
               // URL
-              _sectionLabel('SNS 링크', isM3, cs),
+              _sectionLabel('SNS 링크', bright, cs),
               const SizedBox(height: 8),
               _buildTextField(
                 controller: _urlController,
                 hint: 'Instagram, TikTok URL',
                 maxLines: 1,
-                isM3: isM3,
+                bright: bright,
                 cs: cs,
               ),
               const SizedBox(height: 24),
@@ -246,7 +249,7 @@ class _SnsUploadViewState extends State<SnsUploadView> {
     );
 
     // 패널 외관: 설정 패널과 동일한 스타일
-    if (isM3) {
+    if (Platform.isAndroid) {
       return Material(
         elevation: 6,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
@@ -257,7 +260,6 @@ class _SnsUploadViewState extends State<SnsUploadView> {
       );
     }
 
-    final bright = _isBrightMap;
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
       child: BackdropFilter(
@@ -270,20 +272,20 @@ class _SnsUploadViewState extends State<SnsUploadView> {
               end: Alignment.bottomCenter,
               colors: bright
                   ? [
-                      Colors.black.withValues(alpha: 0.50),
-                      Colors.black.withValues(alpha: 0.60),
-                      Colors.black.withValues(alpha: 0.72),
+                      Colors.white.withValues(alpha: 0.70),
+                      Colors.white.withValues(alpha: 0.75),
+                      Colors.white.withValues(alpha: 0.85),
                     ]
                   : [
-                      Colors.white.withValues(alpha: 0.12),
-                      Colors.white.withValues(alpha: 0.05),
-                      Colors.black.withValues(alpha: 0.20),
+                      Colors.black.withValues(alpha: 0.40),
+                      Colors.black.withValues(alpha: 0.50),
+                      Colors.black.withValues(alpha: 0.65),
                     ],
             ),
             border: Border(
               top: BorderSide(
                 color: bright
-                    ? Colors.white.withValues(alpha: 0.10)
+                    ? Colors.black.withValues(alpha: 0.08)
                     : Colors.white24,
                 width: 0.5,
               ),
@@ -295,34 +297,34 @@ class _SnsUploadViewState extends State<SnsUploadView> {
     );
   }
 
-  Widget _sectionLabel(String text, bool isM3, ColorScheme cs) {
+  Widget _sectionLabel(String text, bool light, ColorScheme cs) {
     return Text(
       text,
       style: TextStyle(
         fontSize: 14,
         fontWeight: FontWeight.w700,
-        color: isM3 ? cs.onSurfaceVariant : Colors.white.withValues(alpha: 0.50),
+        color: light ? Colors.black.withValues(alpha: 0.55) : Colors.white.withValues(alpha: 0.50),
         letterSpacing: 0.5,
       ),
     );
   }
 
-  Widget _buildImageSection(bool isM3, ColorScheme cs) {
+  Widget _buildImageSection(bool bright, ColorScheme cs) {
     return SizedBox(
       height: 100,
       child: ListView(
         scrollDirection: Axis.horizontal,
         children: [
           // 추가 버튼들
-          _imageAddButton(Icons.photo_library_outlined, '갤러리', _pickImages, isM3, cs),
+          _imageAddButton(Icons.photo_library_outlined, '갤러리', _pickImages, bright, cs),
           const SizedBox(width: 8),
-          _imageAddButton(Icons.camera_alt_outlined, '카메라', _takePhoto, isM3, cs),
+          _imageAddButton(Icons.camera_alt_outlined, '카메라', _takePhoto, bright, cs),
           const SizedBox(width: 8),
           // 선택된 이미지들
           ..._imagePaths.asMap().entries.map((entry) {
             return Padding(
               padding: const EdgeInsets.only(right: 8),
-              child: _buildImageThumbnail(entry.key, entry.value, isM3, cs),
+              child: _buildImageThumbnail(entry.key, entry.value, bright, cs),
             );
           }),
         ],
@@ -330,7 +332,7 @@ class _SnsUploadViewState extends State<SnsUploadView> {
     );
   }
 
-  Widget _imageAddButton(IconData icon, String label, VoidCallback onTap, bool isM3, ColorScheme cs) {
+  Widget _imageAddButton(IconData icon, String label, VoidCallback onTap, bool bright, ColorScheme cs) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -338,20 +340,20 @@ class _SnsUploadViewState extends State<SnsUploadView> {
         height: 100,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
-          color: isM3 ? cs.surfaceContainerHighest : Colors.white.withValues(alpha: 0.08),
+          color: bright ? Colors.white.withValues(alpha: 0.40) : Colors.white.withValues(alpha: 0.08),
           border: Border.all(
-            color: isM3 ? cs.outlineVariant : Colors.white.withValues(alpha: 0.15),
+            color: bright ? Colors.black.withValues(alpha: 0.10) : Colors.white.withValues(alpha: 0.15),
             width: 1,
           ),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 24, color: isM3 ? cs.onSurfaceVariant : Colors.white60),
+            Icon(icon, size: 24, color: bright ? Colors.black54 : Colors.white60),
             const SizedBox(height: 4),
             Text(label, style: TextStyle(
               fontSize: 11,
-              color: isM3 ? cs.onSurfaceVariant : Colors.white60,
+              color: bright ? Colors.black54 : Colors.white60,
             )),
           ],
         ),
@@ -359,7 +361,7 @@ class _SnsUploadViewState extends State<SnsUploadView> {
     );
   }
 
-  Widget _buildImageThumbnail(int index, String path, bool isM3, ColorScheme cs) {
+  Widget _buildImageThumbnail(int index, String path, bool bright, ColorScheme cs) {
     return Stack(
       children: [
         ClipRRect(
@@ -395,10 +397,10 @@ class _SnsUploadViewState extends State<SnsUploadView> {
     required TextEditingController controller,
     required String hint,
     required int maxLines,
-    required bool isM3,
+    required bool bright,
     required ColorScheme cs,
   }) {
-    if (isM3) {
+    if (bright) {
       return TextField(
         controller: controller,
         maxLines: maxLines,

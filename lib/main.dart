@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/api_keys.dart';
 import 'services/device_profile_service.dart';
 import 'services/settings_service.dart';
+import 'theme/app_theme.dart';
 import 'views/auth_view.dart';
 import 'views/home_view.dart';
 
@@ -43,16 +44,23 @@ final supabase = Supabase.instance.client;
 class SeoulPrismApp extends StatefulWidget {
   const SeoulPrismApp({super.key});
 
+  /// 외부에서 테마 변경 시 호출
+  static void setThemeMode(BuildContext context, String mode) {
+    context.findAncestorStateOfType<_SeoulPrismAppState>()?.setThemeMode(mode);
+  }
+
   @override
   State<SeoulPrismApp> createState() => _SeoulPrismAppState();
 }
 
 class _SeoulPrismAppState extends State<SeoulPrismApp> {
   final _navigatorKey = GlobalKey<NavigatorState>();
+  late ThemeMode _themeMode;
 
   @override
   void initState() {
     super.initState();
+    _themeMode = _parseThemeMode(SettingsService.instance.themeMode);
     supabase.auth.onAuthStateChange.listen((data) {
       final event = data.event;
       final session = data.session;
@@ -65,22 +73,26 @@ class _SeoulPrismAppState extends State<SeoulPrismApp> {
     });
   }
 
+  void setThemeMode(String mode) {
+    setState(() => _themeMode = _parseThemeMode(mode));
+    SettingsService.instance.setThemeMode(mode);
+  }
+
+  ThemeMode _parseThemeMode(String mode) => switch (mode) {
+    'light' => ThemeMode.light,
+    'dark' => ThemeMode.dark,
+    _ => ThemeMode.dark,
+  };
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       navigatorKey: _navigatorKey,
       title: 'Seoul Vista',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        brightness: Brightness.dark,
-        fontFamily: 'Roboto',
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF6E7BFF),
-          brightness: Brightness.dark,
-        ),
-        scaffoldBackgroundColor: Colors.transparent,
-      ),
+      theme: AppTheme.light,
+      darkTheme: AppTheme.dark,
+      themeMode: _themeMode,
       home: supabase.auth.currentSession != null
           ? const HomeView()
           : const AuthView(),

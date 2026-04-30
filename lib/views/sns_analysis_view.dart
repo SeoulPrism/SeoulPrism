@@ -117,7 +117,7 @@ class _SnsAnalysisViewState extends State<SnsAnalysisView> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final isM3 = Platform.isAndroid;
+    const isM3 = true;
     final bottomPadding = MediaQuery.of(context).padding.bottom;
 
     return Scaffold(
