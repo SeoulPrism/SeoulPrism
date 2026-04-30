@@ -1,9 +1,10 @@
-import 'package:cupertino_native_better/cupertino_native_better.dart';
+import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../main.dart';
+import '../widgets/adaptive/adaptive.dart';
 import 'auth_view.dart';
 
 class SettingsView extends StatefulWidget {
@@ -24,7 +25,9 @@ class _SettingsViewState extends State<SettingsView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0A0A),
+      backgroundColor: Platform.isIOS
+          ? const Color(0xFF0A0A0A)
+          : Theme.of(context).colorScheme.surface,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -36,13 +39,10 @@ class _SettingsViewState extends State<SettingsView> {
             child: _SafeNativeView(
               fallback: Icon(Icons.arrow_back_ios_rounded,
                   color: Colors.white.withValues(alpha: 0.85), size: 20),
-              child: CNButton.icon(
-                customIcon: Icons.arrow_back_ios_rounded,
+              child: AdaptiveGlassIconButton(
+                icon: Icons.arrow_back_ios_rounded,
                 onPressed: () => Navigator.of(context).pop(),
-                config: const CNButtonConfig(
-                  style: CNButtonStyle.glass,
-                  customIconSize: 18,
-                ),
+                iconSize: 18,
               ),
             ),
           ),
@@ -50,7 +50,9 @@ class _SettingsViewState extends State<SettingsView> {
         title: Text(
           '설정',
           style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.85),
+            color: Platform.isAndroid
+                ? Theme.of(context).colorScheme.onSurface
+                : Colors.white.withValues(alpha: 0.85),
             fontSize: 17,
             fontWeight: FontWeight.w600,
           ),
@@ -61,7 +63,7 @@ class _SettingsViewState extends State<SettingsView> {
         child: Column(
           children: [
             // Section 1: 지도 관련
-            _GlassSectionCard(
+            AdaptiveSectionCard(
               children: [
                 _ChevronItem(label: '지도', onTap: () {}),
                 const _ItemDivider(),
@@ -73,7 +75,7 @@ class _SettingsViewState extends State<SettingsView> {
             const SizedBox(height: 16),
 
             // Section 2: 서비스
-            _GlassSectionCard(
+            AdaptiveSectionCard(
               children: [
                 _ChevronItem(label: '네이버 예약', onTap: () {}),
                 const _ItemDivider(),
@@ -83,7 +85,7 @@ class _SettingsViewState extends State<SettingsView> {
             const SizedBox(height: 16),
 
             // Section 3: 일반 설정
-            _GlassSectionCard(
+            AdaptiveSectionCard(
               children: [
                 _TrailingTextItem(
                   label: '언어',
@@ -157,7 +159,7 @@ class _SettingsViewState extends State<SettingsView> {
             const SizedBox(height: 16),
 
             // Section 4: 데이터
-            _GlassSectionCard(
+            AdaptiveSectionCard(
               children: [
                 _ChevronItem(
                   label: '사용 기록 전체 삭제',
@@ -171,7 +173,7 @@ class _SettingsViewState extends State<SettingsView> {
             const SizedBox(height: 16),
 
             // Section 5: 계정
-            _GlassSectionCard(
+            AdaptiveSectionCard(
               children: [
                 _ChevronItem(
                   label: '로그아웃',
@@ -188,7 +190,7 @@ class _SettingsViewState extends State<SettingsView> {
             const SizedBox(height: 16),
 
             // Section 6: 앱 정보
-            _GlassSectionCard(
+            AdaptiveSectionCard(
               children: [
                 _InfoItem(label: '앱 버전', value: '1.0.0'),
                 const _ItemDivider(),
@@ -220,111 +222,76 @@ class _SettingsViewState extends State<SettingsView> {
   }
 
   void _confirmDeleteHistory() {
-    showCupertinoDialog(
+    showAdaptiveConfirmDialog(
       context: context,
-      builder: (context) => CupertinoAlertDialog(
-        title: const Text('사용 기록 삭제'),
-        content: const Text('모든 사용 기록이 삭제됩니다.\n이 작업은 되돌릴 수 없습니다.'),
-        actions: [
-          CupertinoDialogAction(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('취소'),
+      title: '사용 기록 삭제',
+      content: '모든 사용 기록이 삭제됩니다.\n이 작업은 되돌릴 수 없습니다.',
+      confirmText: '삭제',
+      isDestructive: true,
+      onConfirm: () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('사용 기록이 삭제되었습니다'),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: const Color(0xFF2C2C2E),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12)),
           ),
-          CupertinoDialogAction(
-            isDestructiveAction: true,
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(this.context).showSnackBar(
-                SnackBar(
-                  content: const Text('사용 기록이 삭제되었습니다'),
-                  behavior: SnackBarBehavior.floating,
-                  backgroundColor: const Color(0xFF2C2C2E),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                ),
-              );
-            },
-            child: const Text('삭제'),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
   void _confirmLogout() {
-    showCupertinoDialog(
+    showAdaptiveConfirmDialog(
       context: context,
-      builder: (context) => CupertinoAlertDialog(
-        title: const Text('로그아웃'),
-        content: const Text('로그아웃 하시겠습니까?'),
-        actions: [
-          CupertinoDialogAction(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('취소'),
-          ),
-          CupertinoDialogAction(
-            isDestructiveAction: true,
-            onPressed: () async {
-              Navigator.pop(context);
-              await supabase.auth.signOut();
-              if (mounted) {
-                Navigator.of(this.context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (_) => const AuthView()),
-                  (route) => false,
-                );
-              }
-            },
-            child: const Text('로그아웃'),
-          ),
-        ],
-      ),
+      title: '로그아웃',
+      content: '로그아웃 하시겠습니까?',
+      confirmText: '로그아웃',
+      isDestructive: true,
+      onConfirm: () async {
+        await supabase.auth.signOut();
+        if (mounted) {
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (_) => const AuthView()),
+            (route) => false,
+          );
+        }
+      },
     );
   }
 
   void _confirmDeleteAccount() {
-    showCupertinoDialog(
+    showAdaptiveConfirmDialog(
       context: context,
-      builder: (context) => CupertinoAlertDialog(
-        title: const Text('회원 탈퇴'),
-        content: const Text(
-          '계정과 모든 데이터가 영구적으로 삭제됩니다.\n이 작업은 되돌릴 수 없습니다.',
-        ),
-        actions: [
-          CupertinoDialogAction(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('취소'),
-          ),
-          CupertinoDialogAction(
-            isDestructiveAction: true,
-            onPressed: () async {
-              Navigator.pop(context);
-              try {
-                await supabase.rpc('delete_user');
-                await supabase.auth.signOut();
-                if (mounted) {
-                  Navigator.of(this.context).pushAndRemoveUntil(
-                    MaterialPageRoute(builder: (_) => const AuthView()),
-                    (route) => false,
-                  );
-                }
-              } catch (e) {
-                if (mounted) {
-                  ScaffoldMessenger.of(this.context).showSnackBar(
-                    SnackBar(
-                      content: const Text('탈퇴 처리 중 오류가 발생했습니다'),
-                      behavior: SnackBarBehavior.floating,
-                      backgroundColor: const Color(0xFFFF453A),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                    ),
-                  );
-                }
-              }
-            },
-            child: const Text('탈퇴'),
-          ),
-        ],
-      ),
+      title: '회원 탈퇴',
+      content: '계정과 모든 데이터가 영구적으로 삭제됩니다.\n이 작업은 되돌릴 수 없습니다.',
+      confirmText: '탈퇴',
+      isDestructive: true,
+      onConfirm: () async {
+        try {
+          await supabase.rpc('delete_user');
+          await supabase.auth.signOut();
+          if (mounted) {
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (_) => const AuthView()),
+              (route) => false,
+            );
+          }
+        } catch (e) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text('탈퇴 처리 중 오류가 발생했습니다'),
+                behavior: SnackBarBehavior.floating,
+                backgroundColor: const Color(0xFFFF453A),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+              ),
+            );
+          }
+        }
+      },
     );
   }
 
@@ -334,56 +301,17 @@ class _SettingsViewState extends State<SettingsView> {
     required String selected,
     required ValueChanged<String> onSelected,
   }) {
-    showCupertinoModalPopup(
+    showAdaptivePicker(
       context: context,
-      builder: (context) => CupertinoActionSheet(
-        title: Text(title),
-        actions: options.map((option) {
-          return CupertinoActionSheetAction(
-            isDefaultAction: option == selected,
-            onPressed: () {
-              Navigator.pop(context);
-              onSelected(option);
-            },
-            child: Text(option),
-          );
-        }).toList(),
-        cancelButton: CupertinoActionSheetAction(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('취소'),
-        ),
-      ),
+      title: title,
+      options: options,
+      selected: selected,
+      onSelected: onSelected,
     );
   }
 }
 
-// ─── Glass Section Card ────────────────────────────────────
-
-class _GlassSectionCard extends StatelessWidget {
-  const _GlassSectionCard({required this.children});
-
-  final List<Widget> children;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        color: Colors.white.withValues(alpha: 0.08),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.10),
-          width: 0.5,
-        ),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: Column(
-          children: children,
-        ),
-      ),
-    );
-  }
-}
+// ─── Glass Section Card (replaced by AdaptiveSectionCard from adaptive.dart) ──
 
 // ─── Item Divider ──────────────────────────────────────────
 
@@ -392,12 +320,15 @@ class _ItemDivider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Divider(
         height: 0.5,
         thickness: 0.5,
-        color: Colors.white.withValues(alpha: 0.10),
+        color: Platform.isIOS
+            ? Colors.white.withValues(alpha: 0.10)
+            : cs.outlineVariant.withValues(alpha: 0.5),
       ),
     );
   }
@@ -425,6 +356,9 @@ class _ChevronItemState extends State<_ChevronItem> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final isM3 = Platform.isAndroid;
+
     return GestureDetector(
       onTapDown: (_) => setState(() => _pressed = true),
       onTapUp: (_) => setState(() => _pressed = false),
@@ -434,7 +368,7 @@ class _ChevronItemState extends State<_ChevronItem> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 100),
         color: _pressed
-            ? Colors.white.withValues(alpha: 0.08)
+            ? (isM3 ? cs.onSurface.withValues(alpha: 0.08) : Colors.white.withValues(alpha: 0.08))
             : Colors.transparent,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(
@@ -444,8 +378,8 @@ class _ChevronItemState extends State<_ChevronItem> {
                 widget.label,
                 style: TextStyle(
                   color: widget.isDestructive
-                      ? const Color(0xFFFF453A)
-                      : Colors.white.withValues(alpha: 0.85),
+                      ? cs.error
+                      : (isM3 ? cs.onSurface : Colors.white.withValues(alpha: 0.85)),
                   fontSize: 15,
                   fontWeight: FontWeight.w400,
                 ),
@@ -453,7 +387,7 @@ class _ChevronItemState extends State<_ChevronItem> {
             ),
             Icon(
               Icons.chevron_right,
-              color: Colors.white.withValues(alpha: 0.30),
+              color: isM3 ? cs.onSurfaceVariant : Colors.white.withValues(alpha: 0.30),
               size: 20,
             ),
           ],
@@ -485,6 +419,9 @@ class _TrailingTextItemState extends State<_TrailingTextItem> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final isM3 = Platform.isAndroid;
+
     return GestureDetector(
       onTapDown: (_) => setState(() => _pressed = true),
       onTapUp: (_) => setState(() => _pressed = false),
@@ -494,7 +431,7 @@ class _TrailingTextItemState extends State<_TrailingTextItem> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 100),
         color: _pressed
-            ? Colors.white.withValues(alpha: 0.08)
+            ? (isM3 ? cs.onSurface.withValues(alpha: 0.08) : Colors.white.withValues(alpha: 0.08))
             : Colors.transparent,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(
@@ -503,7 +440,7 @@ class _TrailingTextItemState extends State<_TrailingTextItem> {
               child: Text(
                 widget.label,
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.85),
+                  color: isM3 ? cs.onSurface : Colors.white.withValues(alpha: 0.85),
                   fontSize: 15,
                   fontWeight: FontWeight.w400,
                 ),
@@ -511,8 +448,8 @@ class _TrailingTextItemState extends State<_TrailingTextItem> {
             ),
             Text(
               widget.trailing,
-              style: const TextStyle(
-                color: Color(0xFF3B82F6),
+              style: TextStyle(
+                color: cs.primary,
                 fontSize: 14,
                 fontWeight: FontWeight.w400,
               ),
@@ -534,6 +471,9 @@ class _InfoItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final isM3 = Platform.isAndroid;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: Row(
@@ -542,7 +482,7 @@ class _InfoItem extends StatelessWidget {
             child: Text(
               label,
               style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.85),
+                color: isM3 ? cs.onSurface : Colors.white.withValues(alpha: 0.85),
                 fontSize: 15,
                 fontWeight: FontWeight.w400,
               ),
@@ -551,7 +491,7 @@ class _InfoItem extends StatelessWidget {
           Text(
             value,
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.40),
+              color: isM3 ? cs.onSurfaceVariant : Colors.white.withValues(alpha: 0.40),
               fontSize: 14,
               fontWeight: FontWeight.w400,
             ),
@@ -577,6 +517,9 @@ class _SwitchItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final isM3 = Platform.isAndroid;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       child: Row(
@@ -585,17 +528,23 @@ class _SwitchItem extends StatelessWidget {
             child: Text(
               label,
               style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.85),
+                color: isM3 ? cs.onSurface : Colors.white.withValues(alpha: 0.85),
                 fontSize: 15,
                 fontWeight: FontWeight.w400,
               ),
             ),
           ),
-          CupertinoSwitch(
-            value: value,
-            onChanged: onChanged,
-            activeTrackColor: const Color(0xFF3B82F6),
-          ),
+          if (isM3)
+            Switch(
+              value: value,
+              onChanged: onChanged,
+            )
+          else
+            CupertinoSwitch(
+              value: value,
+              onChanged: onChanged,
+              activeTrackColor: const Color(0xFF3B82F6),
+            ),
         ],
       ),
     );

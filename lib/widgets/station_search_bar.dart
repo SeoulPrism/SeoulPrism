@@ -1,7 +1,8 @@
+import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:cupertino_native_better/cupertino_native.dart';
+import 'adaptive/adaptive.dart';
 import '../data/seoul_subway_data.dart';
 import '../models/subway_models.dart';
 import '../services/path_finding_service.dart';
@@ -344,15 +345,11 @@ class _StationSearchBarState extends State<StationSearchBar>
     return Semantics(
       label: '길찾기',
       button: true,
-      child: CNButton.icon(
-        customIcon: CupertinoIcons.arrow_turn_down_right,
+      child: AdaptiveGlassIconButton(
+        icon: CupertinoIcons.arrow_turn_down_right,
         onPressed: _enterNav,
-        config: const CNButtonConfig(
-          style: CNButtonStyle.glass,
-          minHeight: _kProfileSize,
-          width: _kProfileSize,
-          customIconSize: 20,
-        ),
+        size: _kProfileSize,
+        iconSize: 20,
       ),
     );
   }
@@ -361,15 +358,11 @@ class _StationSearchBarState extends State<StationSearchBar>
     return Semantics(
       label: '프로필',
       button: true,
-      child: CNButton.icon(
-        customIcon: CupertinoIcons.person_fill,
+      child: AdaptiveGlassIconButton(
+        icon: CupertinoIcons.person_fill,
         onPressed: widget.onProfileTap ?? () {},
-        config: const CNButtonConfig(
-          style: CNButtonStyle.glass,
-          minHeight: _kProfileSize,
-          width: _kProfileSize,
-          customIconSize: 22,
-        ),
+        size: _kProfileSize,
+        iconSize: 22,
       ),
     );
   }
@@ -381,13 +374,8 @@ class _StationSearchBarState extends State<StationSearchBar>
   Widget _buildNavHeader() {
     return Container(
       margin: const EdgeInsets.fromLTRB(_kHPadding, 8, _kHPadding, 0),
-      child: LiquidGlassContainer(
-        config: LiquidGlassConfig(
-          effect: CNGlassEffect.regular,
-          shape: CNGlassEffectShape.rect,
-          cornerRadius: _kBarRadius,
-          interactive: true,
-        ),
+      child: AdaptiveGlassContainer.rect(
+        cornerRadius: _kBarRadius,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.md, AppSpacing.sm, AppSpacing.md),
           child: Column(
@@ -455,7 +443,7 @@ class _StationSearchBarState extends State<StationSearchBar>
     const navPlaceholder = Color(0xFF8E8E93);
     return SizedBox(
       height: AppSpacing.inputHeight,
-      child: CupertinoTextField(
+      child: AdaptiveTextField(
         controller: ctrl,
         focusNode: focus,
         placeholder: hint,
@@ -494,18 +482,18 @@ class _StationSearchBarState extends State<StationSearchBar>
               padding: const EdgeInsets.symmetric(vertical: 7),
               margin: const EdgeInsets.symmetric(horizontal: 3),
               decoration: BoxDecoration(
-                color: sel ? CupertinoColors.activeBlue.withValues(alpha: 0.2) : Colors.transparent,
+                color: sel ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.2) : Colors.transparent,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: sel ? CupertinoColors.activeBlue : Colors.white12, width: sel ? 1.2 : 0.5),
+                border: Border.all(color: sel ? Theme.of(context).colorScheme.primary : Colors.white12, width: sel ? 1.2 : 0.5),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(icon, size: 13, color: sel ? CupertinoColors.activeBlue : AppColors.textTertiary),
+                  Icon(icon, size: 13, color: sel ? Theme.of(context).colorScheme.primary : AppColors.textTertiary),
                   const SizedBox(width: AppSpacing.xs),
                   Text(label, style: AppTypography.bodySm.copyWith(
                     fontWeight: sel ? FontWeight.bold : FontWeight.normal,
-                    color: sel ? CupertinoColors.activeBlue : AppColors.textTertiary,
+                    color: sel ? Theme.of(context).colorScheme.primary : AppColors.textTertiary,
                   )),
                 ],
               ),
@@ -524,7 +512,9 @@ class _StationSearchBarState extends State<StationSearchBar>
     if (_isPathLoading) {
       return _resultCard(
         child: Column(children: [
-          const CupertinoActivityIndicator(),
+          Platform.isAndroid
+              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+              : const CupertinoActivityIndicator(),
           const SizedBox(height: AppSpacing.sm),
           Text('경로 검색 중...', style: AppTypography.bodySm.copyWith(color: AppColors.textTertiary)),
         ]),
@@ -548,17 +538,8 @@ class _StationSearchBarState extends State<StationSearchBar>
       ),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(_kHPadding, 6, _kHPadding, 0),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(_kBarRadius),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
-            child: Container(
-              constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.42),
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: AppColors.glassDropOpacity),
-                borderRadius: BorderRadius.circular(_kBarRadius),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.15), width: 0.5),
-              ),
+        child: _overlayCard(
+          constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.42),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -595,26 +576,56 @@ class _StationSearchBarState extends State<StationSearchBar>
             ],
           ),
         ),
-        ),
-        ),
       ),
     );
   }
 
   Widget _resultCard({required Widget child}) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(_kHPadding, AppSpacing.sm, _kHPadding, 0),
+      child: _overlayCard(
+        padding: const EdgeInsets.all(AppSpacing.xl),
+        child: Center(child: child),
+      ),
+    );
+  }
+
+  /// 지도 위 오버레이 카드 — iOS: 글라스, Android: M3 Surface
+  Widget _overlayCard({
+    required Widget child,
+    BoxConstraints? constraints,
+    EdgeInsets? padding,
+  }) {
+    if (Platform.isAndroid) {
+      final cs = Theme.of(context).colorScheme;
+      return Material(
+        elevation: 3,
+        shadowColor: cs.shadow.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(_kBarRadius),
+        color: cs.surfaceContainer,
+        surfaceTintColor: cs.surfaceTint,
+        clipBehavior: Clip.antiAlias,
+        child: Container(
+          constraints: constraints,
+          padding: padding,
+          child: child,
+        ),
+      );
+    }
+
     return ClipRRect(
       borderRadius: BorderRadius.circular(_kBarRadius),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
         child: Container(
-          margin: const EdgeInsets.fromLTRB(_kHPadding, AppSpacing.sm, _kHPadding, 0),
-          padding: const EdgeInsets.all(AppSpacing.xl),
+          constraints: constraints,
+          padding: padding,
           decoration: BoxDecoration(
             color: Colors.black.withValues(alpha: AppColors.glassDropOpacity),
             borderRadius: BorderRadius.circular(_kBarRadius),
             border: Border.all(color: Colors.white.withValues(alpha: 0.15), width: 0.5),
           ),
-          child: Center(child: child),
+          child: child,
         ),
       ),
     );
@@ -679,6 +690,30 @@ class _StationSearchBarState extends State<StationSearchBar>
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   Widget _buildDropdown(List<StationSearchResult> results, void Function(StationSearchResult) onSelect) {
+    final isM3 = Platform.isAndroid;
+
+    if (isM3) {
+      final cs = Theme.of(context).colorScheme;
+      return Material(
+        elevation: 3,
+        shadowColor: cs.shadow.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(_kBarRadius),
+        color: cs.surfaceContainer,
+        surfaceTintColor: cs.surfaceTint,
+        clipBehavior: Clip.antiAlias,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxHeight: 280),
+          child: ListView.separated(
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+            shrinkWrap: true,
+            itemCount: results.length,
+            separatorBuilder: (_, __) => Divider(height: 1, indent: 48, color: cs.outlineVariant.withValues(alpha: 0.5)),
+            itemBuilder: (_, i) => _buildTile(results[i], onSelect),
+          ),
+        ),
+      );
+    }
+
     return ClipRRect(
       borderRadius: BorderRadius.circular(_kBarRadius),
       child: BackdropFilter(
@@ -798,12 +833,7 @@ class _GlassSearchFieldState extends State<_GlassSearchField>
 
     final glassBar = SizedBox(
       height: _kBarHeight,
-      child: LiquidGlassContainer(
-        config: const LiquidGlassConfig(
-          effect: CNGlassEffect.regular,
-          shape: CNGlassEffectShape.capsule,
-          interactive: true,
-        ),
+      child: AdaptiveGlassContainer.capsule(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
           child: Row(
@@ -811,16 +841,14 @@ class _GlassSearchFieldState extends State<_GlassSearchField>
               const Icon(CupertinoIcons.search, size: 20, color: placeholderColor),
               const SizedBox(width: AppSpacing.md),
               Expanded(
-                child: CupertinoTextField(
+                child: AdaptiveSearchField(
                   controller: widget.controller,
                   focusNode: widget.focusNode,
                   placeholder: '지하철역 검색',
                   placeholderStyle: const TextStyle(color: placeholderColor, fontSize: 14, fontWeight: FontWeight.w400),
                   style: AppTypography.bodyMd.copyWith(color: textColor),
-                  decoration: null,
-                  padding: EdgeInsets.zero,
                   onChanged: widget.onChanged,
-                  onSubmitted: (_) => widget.onSubmitted(),
+                  onSubmitted: widget.onSubmitted,
                 ),
               ),
               ValueListenableBuilder<TextEditingValue>(

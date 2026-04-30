@@ -3,7 +3,7 @@ import 'dart:math';
 import 'dart:ui';
 
 import 'package:crypto/crypto.dart';
-import 'package:cupertino_native_better/cupertino_native_better.dart';
+import '../widgets/adaptive/adaptive.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -52,15 +52,15 @@ class _AuthViewState extends State<AuthView> {
     return Scaffold(
       resizeToAvoidBottomInset: false,
       extendBody: true,
-      bottomNavigationBar: CNTabBar(
+      bottomNavigationBar: AdaptiveTabBar(
         items: const [
-          CNTabBarItem(
+          AdaptiveTabItem(
             label: '회원가입',
-            customIcon: Icons.person_add_rounded,
+            icon: Icons.person_add_rounded,
           ),
-          CNTabBarItem(
+          AdaptiveTabItem(
             label: '로그인',
-            customIcon: Icons.login_rounded,
+            icon: Icons.login_rounded,
           ),
         ],
         currentIndex: _isLogin ? 1 : 0,
@@ -123,13 +123,9 @@ class _AuthViewState extends State<AuthView> {
   Widget _buildAuthPanel() {
     return ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 400),
-      child: LiquidGlassContainer(
-        config: const LiquidGlassConfig(
-          effect: CNGlassEffect.prominent,
-          shape: CNGlassEffectShape.rect,
-          cornerRadius: 24,
-          interactive: true,
-        ),
+      child: AdaptiveGlassContainer.rect(
+        cornerRadius: 24,
+        prominent: true,
         child: ClipRRect(
           borderRadius: BorderRadius.circular(24),
           child: CustomPaint(
@@ -149,15 +145,11 @@ class _AuthViewState extends State<AuthView> {
                 sizeCurve: Curves.easeOutCubic,
               ),
               const SizedBox(height: 20),
-              CNButton(
+              AdaptiveGlassButton(
                 label: _loading
                     ? '처리 중...'
                     : (_isLogin ? '로그인' : '회원가입'),
                 onPressed: _loading ? null : _handleAuth,
-                config: const CNButtonConfig(
-                  style: CNButtonStyle.glass,
-                  minHeight: 50,
-                ),
               ),
               AnimatedSize(
                 duration: const Duration(milliseconds: 600),
@@ -343,35 +335,26 @@ class _AuthViewState extends State<AuthView> {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         // Google
-        CNButton.icon(
-          customIcon: FontAwesomeIcons.google.data,
+        AdaptiveGlassIconButton(
+          icon: FontAwesomeIcons.google.data,
           onPressed: _loading ? null : _signInWithGoogle,
           tint: const Color(0xFF4285F4),
-          config: const CNButtonConfig(
-            style: CNButtonStyle.glass,
-            customIconSize: 20,
-          ),
+          iconSize: 20,
         ),
         const SizedBox(width: 16),
         // Kakao
-        CNButton.icon(
-          customIcon: FontAwesomeIcons.comment.data,
+        AdaptiveGlassIconButton(
+          icon: FontAwesomeIcons.comment.data,
           onPressed: _loading ? null : _signInWithKakao,
           tint: const Color(0xFFFEE500),
-          config: const CNButtonConfig(
-            style: CNButtonStyle.glass,
-            customIconSize: 20,
-          ),
+          iconSize: 20,
         ),
         const SizedBox(width: 16),
         // Apple
-        CNButton.icon(
-          customIcon: FontAwesomeIcons.apple.data,
+        AdaptiveGlassIconButton(
+          icon: FontAwesomeIcons.apple.data,
           onPressed: _loading ? null : _signInWithApple,
-          config: const CNButtonConfig(
-            style: CNButtonStyle.glass,
-            customIconSize: 22,
-          ),
+          iconSize: 22,
         ),
       ],
     );
@@ -853,15 +836,11 @@ class _FindAccountPageState extends State<_FindAccountPage> {
                                       keyboardType: TextInputType.emailAddress,
                                     ),
                                     const SizedBox(height: 24),
-                                    CNButton(
+                                    AdaptiveGlassButton(
                                       label: _loading
                                           ? '처리 중...'
                                           : (_isIdMode ? '아이디 찾기' : '재설정 링크 받기'),
                                       onPressed: _loading ? null : _handleFind,
-                                      config: const CNButtonConfig(
-                                        style: CNButtonStyle.glass,
-                                        minHeight: 50,
-                                      ),
                                     ),
                                   ],
                                 ),

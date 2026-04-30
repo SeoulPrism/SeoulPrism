@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:cupertino_native_better/cupertino_native_better.dart';
+import '../widgets/adaptive/adaptive.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import '../core/map_interface.dart';
 import '../core/api_keys.dart';
@@ -383,7 +383,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   // ── 하단 탭바 (리퀴드 글라스) ──
   Widget _buildBottomTabBar() {
-    return CNTabBar(
+    return AdaptiveTabBar(
       currentIndex: _settingsOpen ? 1 : 0,
       onTap: (index) {
         setState(() {
@@ -395,8 +395,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
         });
       },
       items: const [
-        CNTabBarItem(label: '지도', customIcon: Icons.map),
-        CNTabBarItem(label: '설정', customIcon: Icons.settings),
+        AdaptiveTabItem(label: '지도', icon: Icons.map),
+        AdaptiveTabItem(label: '설정', icon: Icons.settings),
       ],
     );
   }
@@ -463,6 +463,82 @@ class _SettingsPanelState extends State<SettingsPanel> {
   @override
   Widget build(BuildContext context) {
     final bright = _isBrightMap;
+    final isM3 = Platform.isAndroid;
+    final cs = Theme.of(context).colorScheme;
+
+    final content = Column(
+      children: [
+        // 드래그 핸들
+        Padding(
+          padding: const EdgeInsets.only(top: 12),
+          child: Center(
+            child: Container(
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(2),
+                color: isM3
+                    ? cs.onSurfaceVariant.withValues(alpha: 0.4)
+                    : Colors.white.withValues(alpha: 0.25),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        // 타이틀
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              '설정',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w800,
+                color: isM3 ? cs.onSurface : Colors.white.withValues(alpha: 0.95),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 20),
+        // 컨텐츠 스크롤
+        Expanded(
+          child: ListView(
+            padding: EdgeInsets.fromLTRB(24, 0, 24, MediaQuery.of(context).padding.bottom + 80),
+            children: [
+              _sectionHeader('지하철'),
+              _buildSubwaySection(),
+              const SizedBox(height: 24),
+              _sectionHeader('표시'),
+              _buildToggleSection(),
+              const SizedBox(height: 24),
+              _sectionHeader('노선 필터'),
+              _buildLineFilterSection(),
+              const SizedBox(height: 24),
+              _sectionHeader('성능'),
+              _buildQualitySection(),
+              const SizedBox(height: 24),
+              _sectionHeader('라이팅'),
+              _buildLightingSection(),
+              const SizedBox(height: 24),
+              _sectionHeader('정보'),
+              _buildInfoSection(),
+            ],
+          ),
+        ),
+      ],
+    );
+
+    if (isM3) {
+      return Material(
+        elevation: 6,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        color: cs.surfaceContainerHigh,
+        surfaceTintColor: cs.surfaceTint,
+        clipBehavior: Clip.antiAlias,
+        child: content,
+      );
+    }
 
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
@@ -495,72 +571,16 @@ class _SettingsPanelState extends State<SettingsPanel> {
               ),
             ),
           ),
-          child: Column(
-            children: [
-              // 드래그 핸들
-              Padding(
-                padding: const EdgeInsets.only(top: 12),
-                child: Center(
-                  child: Container(
-                    width: 36,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(2),
-                      color: Colors.white.withValues(alpha: 0.25),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              // 타이틀
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    '설정',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.white.withValues(alpha: 0.95),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              // 컨텐츠 스크롤
-              Expanded(
-                child: ListView(
-                  padding: EdgeInsets.fromLTRB(24, 0, 24, MediaQuery.of(context).padding.bottom + 80),
-                  children: [
-                    _sectionHeader('지하철'),
-                    _buildSubwaySection(),
-                    const SizedBox(height: 24),
-                    _sectionHeader('표시'),
-                    _buildToggleSection(),
-                    const SizedBox(height: 24),
-                    _sectionHeader('노선 필터'),
-                    _buildLineFilterSection(),
-                    const SizedBox(height: 24),
-                    _sectionHeader('성능'),
-                    _buildQualitySection(),
-                    const SizedBox(height: 24),
-                    _sectionHeader('라이팅'),
-                    _buildLightingSection(),
-                    const SizedBox(height: 24),
-                    _sectionHeader('정보'),
-                    _buildInfoSection(),
-                  ],
-                ),
-              ),
-            ],
-          ),
+          child: content,
         ),
       ),
     );
   }
 
   Widget _sectionHeader(String title) {
+    final isM3 = Platform.isAndroid;
+    final cs = Theme.of(context).colorScheme;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Text(
@@ -568,7 +588,7 @@ class _SettingsPanelState extends State<SettingsPanel> {
         style: TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w700,
-          color: Colors.white.withValues(alpha: 0.45),
+          color: isM3 ? cs.onSurfaceVariant : Colors.white.withValues(alpha: 0.45),
           letterSpacing: 1.2,
         ),
       ),
@@ -576,6 +596,20 @@ class _SettingsPanelState extends State<SettingsPanel> {
   }
 
   Widget _glassCard({required Widget child}) {
+    if (Platform.isAndroid) {
+      final cs = Theme.of(context).colorScheme;
+      return Card(
+        elevation: 0,
+        margin: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.5)),
+        ),
+        color: cs.surfaceContainerLow,
+        child: child,
+      );
+    }
+
     final bright = _isBrightMap;
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
@@ -784,6 +818,9 @@ class _SettingsPanelState extends State<SettingsPanel> {
   }
 
   Widget _toggleRow(String label, bool value, ValueChanged<bool> onChanged) {
+    final isM3 = Platform.isAndroid;
+    final cs = Theme.of(context).colorScheme;
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
@@ -792,7 +829,7 @@ class _SettingsPanelState extends State<SettingsPanel> {
             child: Text(
               label,
               style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.85),
+                color: isM3 ? cs.onSurface : Colors.white.withValues(alpha: 0.85),
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
               ),

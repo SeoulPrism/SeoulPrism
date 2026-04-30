@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:cupertino_native_better/cupertino_native.dart';
+import 'adaptive/adaptive.dart';
 import '../services/environment_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
@@ -40,12 +40,8 @@ class WeatherTimeWidget extends StatelessWidget {
 
     return Semantics(
       label: '현재 시간 $timeStr, 기온 ${env.temperature.toStringAsFixed(0)}도',
-      child: LiquidGlassContainer(
-        config: const LiquidGlassConfig(
-          effect: CNGlassEffect.regular,
-          shape: CNGlassEffectShape.capsule,
-          interactive: false,
-        ),
+      child: AdaptiveGlassContainer.capsule(
+        interactive: false,
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.md),
           child: Column(

@@ -1,6 +1,7 @@
+import 'dart:io';
 import 'dart:ui';
 
-import 'package:cupertino_native_better/cupertino_native_better.dart';
+import '../widgets/adaptive/adaptive.dart';
 import 'package:flutter/material.dart';
 
 import '../main.dart';
@@ -25,8 +26,12 @@ class _ProfileViewState extends State<ProfileView> {
 
   @override
   Widget build(BuildContext context) {
+    final isM3 = Platform.isAndroid;
+
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0A0A),
+      backgroundColor: isM3
+          ? Theme.of(context).colorScheme.surface
+          : const Color(0xFF0A0A0A),
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
@@ -58,26 +63,18 @@ class _ProfileViewState extends State<ProfileView> {
       padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
       child: Row(
         children: [
-          CNButton.icon(
-            customIcon: Icons.close_rounded,
+          AdaptiveGlassIconButton(
+            icon: Icons.close_rounded,
             onPressed: () => Navigator.pop(context),
-            config: const CNButtonConfig(
-              style: CNButtonStyle.glass,
-              customIconSize: 22,
-            ),
           ),
           const Spacer(),
-          CNButton.icon(
-            customIcon: Icons.notifications_none_rounded,
+          AdaptiveGlassIconButton(
+            icon: Icons.notifications_none_rounded,
             onPressed: () {},
-            config: const CNButtonConfig(
-              style: CNButtonStyle.glass,
-              customIconSize: 22,
-            ),
           ),
           const SizedBox(width: 8),
-          CNButton.icon(
-            customIcon: Icons.settings_outlined,
+          AdaptiveGlassIconButton(
+            icon: Icons.settings_outlined,
             onPressed: () {
               Navigator.of(context).push(
                 PageRouteBuilder(
@@ -101,10 +98,6 @@ class _ProfileViewState extends State<ProfileView> {
                 ),
               );
             },
-            config: const CNButtonConfig(
-              style: CNButtonStyle.glass,
-              customIconSize: 22,
-            ),
           ),
         ],
       ),
@@ -114,6 +107,9 @@ class _ProfileViewState extends State<ProfileView> {
   // ─── User Info ───────────────────────────────────────────────
 
   Widget _buildUserInfo() {
+    final cs = Theme.of(context).colorScheme;
+    final isM3 = Platform.isAndroid;
+
     return Center(
       child: Column(
         children: [
@@ -123,15 +119,15 @@ class _ProfileViewState extends State<ProfileView> {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               border: Border.all(
-                color: Colors.white.withValues(alpha: 0.15),
+                color: isM3 ? cs.outlineVariant : Colors.white.withValues(alpha: 0.15),
                 width: 1.5,
               ),
-              color: Colors.white.withValues(alpha: 0.08),
+              color: isM3 ? cs.secondaryContainer : Colors.white.withValues(alpha: 0.08),
             ),
             child: Icon(
               Icons.person_rounded,
               size: 40,
-              color: Colors.white.withValues(alpha: 0.50),
+              color: isM3 ? cs.onSecondaryContainer : Colors.white.withValues(alpha: 0.50),
             ),
           ),
           const SizedBox(height: 14),
@@ -169,6 +165,18 @@ class _ProfileViewState extends State<ProfileView> {
         separatorBuilder: (_, _) => const SizedBox(width: 10),
         itemBuilder: (context, index) {
           final isSelected = _selectedCategoryIndex == index;
+          final cs = Theme.of(context).colorScheme;
+          final isM3 = Platform.isAndroid;
+
+          if (isM3) {
+            return FilterChip(
+              selected: isSelected,
+              label: Text(_categories[index]),
+              onSelected: (_) => setState(() => _selectedCategoryIndex = index),
+              showCheckmark: false,
+            );
+          }
+
           return GestureDetector(
             onTap: () => setState(() => _selectedCategoryIndex = index),
             child: ClipRRect(
@@ -213,43 +221,35 @@ class _ProfileViewState extends State<ProfileView> {
   // ─── Category Content (empty placeholder) ────────────────────
 
   Widget _buildCategoryContent() {
+    final cs = Theme.of(context).colorScheme;
+    final isM3 = Platform.isAndroid;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-          child: Container(
-            width: double.infinity,
-            height: 160,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              color: Colors.white.withValues(alpha: 0.08),
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.15),
-                width: 0.5,
-              ),
-            ),
-            child: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.folder_open_rounded,
-                    size: 36,
-                    color: Colors.white.withValues(alpha: 0.25),
+      child: AdaptiveSurfaceCard(
+        borderRadius: 20,
+        child: SizedBox(
+          width: double.infinity,
+          height: 160,
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.folder_open_rounded,
+                  size: 36,
+                  color: isM3 ? cs.onSurfaceVariant : Colors.white.withValues(alpha: 0.25),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  '저장된 장소가 없습니다',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                    color: isM3 ? cs.onSurfaceVariant : Colors.white.withValues(alpha: 0.35),
                   ),
-                  const SizedBox(height: 10),
-                  Text(
-                    '저장된 장소가 없습니다',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w400,
-                      color: Colors.white.withValues(alpha: 0.35),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),
@@ -275,11 +275,8 @@ class _ProfileViewState extends State<ProfileView> {
           ),
           const SizedBox(height: 16),
           // Map preview card
-          LiquidGlassContainer(
-            config: const LiquidGlassConfig(
-              shape: CNGlassEffectShape.rect,
-              cornerRadius: 24,
-            ),
+          AdaptiveGlassContainer.rect(
+            cornerRadius: 24,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(24),
               child: BackdropFilter(
@@ -338,68 +335,58 @@ class _ProfileViewState extends State<ProfileView> {
     required String title,
     required String subtitle,
   }) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(20),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            color: Colors.white.withValues(alpha: 0.08),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.12),
-              width: 0.5,
+    final cs = Theme.of(context).colorScheme;
+    final isM3 = Platform.isAndroid;
+
+    return AdaptiveSurfaceCard(
+      borderRadius: 20,
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              color: isM3 ? cs.secondaryContainer : Colors.white.withValues(alpha: 0.10),
+            ),
+            child: Icon(
+              icon,
+              size: 20,
+              color: isM3 ? cs.onSecondaryContainer : Colors.white.withValues(alpha: 0.50),
             ),
           ),
-          child: Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  color: Colors.white.withValues(alpha: 0.10),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: isM3 ? cs.onSurface : Colors.white,
+                  ),
                 ),
-                child: Icon(
-                  icon,
-                  size: 20,
-                  color: Colors.white.withValues(alpha: 0.50),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w400,
+                    color: isM3 ? cs.onSurfaceVariant : Colors.white.withValues(alpha: 0.40),
+                  ),
                 ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w400,
-                        color: Colors.white.withValues(alpha: 0.40),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Icon(
-                Icons.chevron_right_rounded,
-                size: 20,
-                color: Colors.white.withValues(alpha: 0.30),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
+          Icon(
+            Icons.chevron_right_rounded,
+            size: 20,
+            color: isM3 ? cs.onSurfaceVariant : Colors.white.withValues(alpha: 0.30),
+          ),
+        ],
       ),
     );
   }
