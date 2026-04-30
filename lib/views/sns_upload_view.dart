@@ -1,0 +1,457 @@
+import 'dart:io';
+import 'dart:ui';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import '../models/sns_content_models.dart';
+import '../services/gemini_service.dart';
+import '../services/settings_service.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_typography.dart';
+import '../theme/app_spacing.dart';
+import '../widgets/adaptive/adaptive.dart';
+import '../widgets/subway_overlay.dart';
+import 'sns_analysis_view.dart';
+import '../core/map_interface.dart';
+
+class SnsUploadView extends StatefulWidget {
+  final VoidCallback onClose;
+  final IMapController? mapController;
+  final SubwayOverlayController? subwayController;
+
+  const SnsUploadView({
+    super.key,
+    required this.onClose,
+    this.mapController,
+    this.subwayController,
+  });
+
+  @override
+  State<SnsUploadView> createState() => _SnsUploadViewState();
+}
+
+class _SnsUploadViewState extends State<SnsUploadView> {
+  final _textController = TextEditingController();
+  final _urlController = TextEditingController();
+  final _imagePicker = ImagePicker();
+  final List<String> _imagePaths = [];
+  bool _loading = false;
+
+  /// 설정 패널과 동일한 밝은 맵 감지
+  bool get _isBrightMap {
+    final preset = SettingsService.instance.lightPreset;
+    if (preset == 'day' || preset == 'dawn') return true;
+    if (preset == 'auto') {
+      final env = widget.subwayController?.environment;
+      if (env != null) {
+        return env.lightPreset == 'day' || env.lightPreset == 'dawn';
+      }
+    }
+    return false;
+  }
+
+  @override
+  void dispose() {
+    _textController.dispose();
+    _urlController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickImages() async {
+    final images = await _imagePicker.pickMultiImage(limit: 5);
+    if (images.isNotEmpty) {
+      setState(() {
+        _imagePaths.addAll(images.map((x) => x.path));
+        if (_imagePaths.length > 5) {
+          _imagePaths.removeRange(0, _imagePaths.length - 5);
+        }
+      });
+    }
+  }
+
+  Future<void> _takePhoto() async {
+    final photo = await _imagePicker.pickImage(source: ImageSource.camera);
+    if (photo != null) {
+      setState(() {
+        if (_imagePaths.length >= 5) _imagePaths.removeAt(0);
+        _imagePaths.add(photo.path);
+      });
+    }
+  }
+
+  void _removeImage(int index) {
+    setState(() => _imagePaths.removeAt(index));
+  }
+
+  bool get _hasContent =>
+      _imagePaths.isNotEmpty ||
+      _textController.text.trim().isNotEmpty ||
+      _urlController.text.trim().isNotEmpty;
+
+  Future<void> _analyze() async {
+    if (!_hasContent || _loading) return;
+
+    setState(() => _loading = true);
+
+    try {
+      final content = SnsContent(
+        imagePaths: _imagePaths,
+        text: _textController.text.trim(),
+        url: _urlController.text.trim(),
+      );
+
+      final result = await GeminiService.instance.analyzeContent(content);
+      final geocoded = await GeminiService.instance.geocodeAll(result.places);
+
+      if (!mounted) return;
+
+      final analysisResult = SnsAnalysisResult(
+        places: geocoded,
+        overallMood: result.overallMood,
+        keywords: result.keywords,
+      );
+
+      Navigator.of(context).push(
+        PageRouteBuilder(
+          pageBuilder: (context, animation, secondaryAnimation) =>
+              SnsAnalysisView(
+            result: analysisResult,
+            mapController: widget.mapController,
+          ),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return FadeTransition(opacity: animation, child: child);
+          },
+          transitionDuration: const Duration(milliseconds: 300),
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('분석 실패: $e'),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final isM3 = Platform.isAndroid;
+    Widget content = Column(
+      children: [
+        // 드래그 핸들
+        Padding(
+          padding: const EdgeInsets.only(top: 12),
+          child: Center(
+            child: Container(
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(2),
+                color: isM3
+                    ? cs.onSurfaceVariant.withValues(alpha: 0.4)
+                    : Colors.white.withValues(alpha: 0.25),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        // 타이틀
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              'AI 플랜',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w800,
+                color: isM3 ? cs.onSurface : Colors.white.withValues(alpha: 0.95),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              'SNS 콘텐츠로 서울 하루 플랜 만들기',
+              style: TextStyle(
+                fontSize: 14,
+                color: isM3 ? cs.onSurfaceVariant : Colors.white.withValues(alpha: 0.50),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        // 컨텐츠
+        Expanded(
+          child: ListView(
+            padding: EdgeInsets.fromLTRB(24, 0, 24, MediaQuery.of(context).padding.bottom + 80),
+            children: [
+              // 이미지
+              _sectionLabel('사진', isM3, cs),
+              const SizedBox(height: 8),
+              _buildImageSection(isM3, cs),
+              const SizedBox(height: 20),
+              // 텍스트
+              _sectionLabel('설명', isM3, cs),
+              const SizedBox(height: 8),
+              _buildTextField(
+                controller: _textController,
+                hint: '가고 싶은 곳, 하고 싶은 것을 적어주세요',
+                maxLines: 3,
+                isM3: isM3,
+                cs: cs,
+              ),
+              const SizedBox(height: 20),
+              // URL
+              _sectionLabel('SNS 링크', isM3, cs),
+              const SizedBox(height: 8),
+              _buildTextField(
+                controller: _urlController,
+                hint: 'Instagram, TikTok URL',
+                maxLines: 1,
+                isM3: isM3,
+                cs: cs,
+              ),
+              const SizedBox(height: 24),
+              // 버튼
+              SizedBox(
+                height: 48,
+                child: _loading
+                    ? Center(
+                        child: Platform.isIOS
+                            ? const CupertinoActivityIndicator()
+                            : const CircularProgressIndicator(),
+                      )
+                    : AdaptiveGlassButton(
+                        label: '분석하기',
+                        onPressed: _hasContent ? _analyze : null,
+                        minHeight: 48,
+                      ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+
+    // 패널 외관: 설정 패널과 동일한 스타일
+    if (isM3) {
+      return Material(
+        elevation: 6,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        color: cs.surfaceContainerHigh,
+        surfaceTintColor: cs.surfaceTint,
+        clipBehavior: Clip.antiAlias,
+        child: content,
+      );
+    }
+
+    final bright = _isBrightMap;
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: bright
+                  ? [
+                      Colors.black.withValues(alpha: 0.50),
+                      Colors.black.withValues(alpha: 0.60),
+                      Colors.black.withValues(alpha: 0.72),
+                    ]
+                  : [
+                      Colors.white.withValues(alpha: 0.12),
+                      Colors.white.withValues(alpha: 0.05),
+                      Colors.black.withValues(alpha: 0.20),
+                    ],
+            ),
+            border: Border(
+              top: BorderSide(
+                color: bright
+                    ? Colors.white.withValues(alpha: 0.10)
+                    : Colors.white24,
+                width: 0.5,
+              ),
+            ),
+          ),
+          child: content,
+        ),
+      ),
+    );
+  }
+
+  Widget _sectionLabel(String text, bool isM3, ColorScheme cs) {
+    return Text(
+      text,
+      style: TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.w700,
+        color: isM3 ? cs.onSurfaceVariant : Colors.white.withValues(alpha: 0.50),
+        letterSpacing: 0.5,
+      ),
+    );
+  }
+
+  Widget _buildImageSection(bool isM3, ColorScheme cs) {
+    return SizedBox(
+      height: 100,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        children: [
+          // 추가 버튼들
+          _imageAddButton(Icons.photo_library_outlined, '갤러리', _pickImages, isM3, cs),
+          const SizedBox(width: 8),
+          _imageAddButton(Icons.camera_alt_outlined, '카메라', _takePhoto, isM3, cs),
+          const SizedBox(width: 8),
+          // 선택된 이미지들
+          ..._imagePaths.asMap().entries.map((entry) {
+            return Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: _buildImageThumbnail(entry.key, entry.value, isM3, cs),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+  Widget _imageAddButton(IconData icon, String label, VoidCallback onTap, bool isM3, ColorScheme cs) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 80,
+        height: 100,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          color: isM3 ? cs.surfaceContainerHighest : Colors.white.withValues(alpha: 0.08),
+          border: Border.all(
+            color: isM3 ? cs.outlineVariant : Colors.white.withValues(alpha: 0.15),
+            width: 1,
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 24, color: isM3 ? cs.onSurfaceVariant : Colors.white60),
+            const SizedBox(height: 4),
+            Text(label, style: TextStyle(
+              fontSize: 11,
+              color: isM3 ? cs.onSurfaceVariant : Colors.white60,
+            )),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildImageThumbnail(int index, String path, bool isM3, ColorScheme cs) {
+    return Stack(
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: Image.file(
+            File(path),
+            width: 80,
+            height: 100,
+            fit: BoxFit.cover,
+          ),
+        ),
+        Positioned(
+          top: 4,
+          right: 4,
+          child: GestureDetector(
+            onTap: () => _removeImage(index),
+            child: Container(
+              width: 22,
+              height: 22,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.black.withValues(alpha: 0.6),
+              ),
+              child: const Icon(Icons.close, size: 14, color: Colors.white),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String hint,
+    required int maxLines,
+    required bool isM3,
+    required ColorScheme cs,
+  }) {
+    if (isM3) {
+      return TextField(
+        controller: controller,
+        maxLines: maxLines,
+        cursorColor: cs.primary,
+        style: TextStyle(color: cs.onSurface, fontSize: 14),
+        decoration: InputDecoration(
+          hintText: hint,
+          hintStyle: TextStyle(color: cs.onSurfaceVariant.withValues(alpha: 0.6)),
+          filled: true,
+          fillColor: cs.surfaceContainerHighest,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: cs.primary, width: 1.5),
+          ),
+          contentPadding: const EdgeInsets.all(16),
+        ),
+      );
+    }
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+        child: TextField(
+          controller: controller,
+          maxLines: maxLines,
+          cursorColor: Colors.white,
+          style: const TextStyle(color: Colors.white, fontSize: 14),
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.35)),
+            filled: true,
+            fillColor: Colors.white.withValues(alpha: 0.08),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.15)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.15)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.30)),
+            ),
+            contentPadding: const EdgeInsets.all(16),
+          ),
+        ),
+      ),
+    );
+  }
+}

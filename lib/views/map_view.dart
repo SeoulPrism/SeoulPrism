@@ -14,6 +14,7 @@ import '../widgets/station_search_bar.dart';
 import '../data/seoul_subway_data.dart';
 import '../services/device_profile_service.dart';
 import '../services/settings_service.dart';
+import 'sns_upload_view.dart';
 import '../services/path_finding_service.dart';
 import '../data/subway_geojson_loader.dart';
 import '../theme/app_theme.dart';
@@ -36,6 +37,7 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   IMapController? _mapController;
   bool _settingsOpen = false;
+  bool _aiPlanOpen = false;
 
   final CameraInfo _cameraInfo = CameraInfo(
     lat: 37.5665, lng: 126.9780, zoom: 13.0, pitch: 45.0, bearing: 0.0,
@@ -389,6 +391,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ),
 
+          // AI 플랜 오버레이 (바텀시트 스타일)
+          _buildAiPlanOverlay(context, screenHeight, bottomInset),
+
           // 설정 패널 오버레이 (바텀시트 스타일)
           _buildSettingsOverlay(context, screenHeight, bottomInset),
 
@@ -445,20 +450,49 @@ class _DashboardScreenState extends State<DashboardScreen> {
   // ── 하단 탭바 (리퀴드 글라스) ──
   Widget _buildBottomTabBar() {
     return AdaptiveTabBar(
-      currentIndex: _settingsOpen ? 1 : 0,
+      currentIndex: _aiPlanOpen ? 2 : (_settingsOpen ? 1 : 0),
       onTap: (index) {
         setState(() {
-          if (index == 1) {
-            _settingsOpen = !_settingsOpen;
-          } else {
+          if (index == 0) {
             _settingsOpen = false;
+            _aiPlanOpen = false;
+          } else if (index == 1) {
+            _aiPlanOpen = false;
+            _settingsOpen = !_settingsOpen;
+          } else if (index == 2) {
+            _settingsOpen = false;
+            _aiPlanOpen = true;
           }
         });
       },
       items: const [
         AdaptiveTabItem(label: '지도', icon: Icons.map),
         AdaptiveTabItem(label: '설정', icon: Icons.settings),
+        AdaptiveTabItem(label: 'AI 플랜', icon: Icons.auto_awesome),
       ],
+    );
+  }
+
+  // ── AI 플랜 오버레이 패널 ──
+  Widget _buildAiPlanOverlay(BuildContext context, double screenHeight, double bottomInset) {
+    final panelHeight = screenHeight * 0.65;
+
+    return AnimatedPositioned(
+      duration: const Duration(milliseconds: 400),
+      curve: _aiPlanOpen ? Curves.easeOutCubic : Curves.easeInCubic,
+      bottom: _aiPlanOpen ? 0 : -panelHeight - 50,
+      left: 0,
+      right: 0,
+      height: panelHeight,
+      child: AnimatedOpacity(
+        duration: const Duration(milliseconds: 350),
+        opacity: _aiPlanOpen ? 1.0 : 0.0,
+        child: SnsUploadView(
+          onClose: () => setState(() => _aiPlanOpen = false),
+          mapController: _mapController,
+          subwayController: _subwayController,
+        ),
+      ),
     );
   }
 
