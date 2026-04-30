@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -9,6 +10,13 @@ import 'views/home_view.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // 폰에서는 세로 고정, 태블릿은 자유 회전
+  final data = WidgetsBinding.instance.platformDispatcher.views.first;
+  final shortSide = data.physicalSize.shortestSide / data.devicePixelRatio;
+  if (shortSide < 600) {
+    await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+  }
 
   // Mapbox 초기화
   debugPrint('[DEBUG] Mapbox token: ${ApiKeys.mapboxAccessToken}');

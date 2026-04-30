@@ -50,37 +50,24 @@ class _AuthViewState extends State<AuthView> {
   @override
   Widget build(BuildContext context) {
     final keyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isTablet = screenWidth >= 600;
+
+    if (!isTablet) return _buildPhoneLayout(keyboardOpen);
+    return _buildTabletLayout(keyboardOpen);
+  }
+
+  /// 폰: 기존 레이아웃 고정
+  Widget _buildPhoneLayout(bool keyboardOpen) {
     return Scaffold(
       resizeToAvoidBottomInset: false,
       extendBody: true,
-      bottomNavigationBar: AdaptiveTabBar(
-        items: const [
-          AdaptiveTabItem(
-            label: '회원가입',
-            icon: Icons.person_add_rounded,
-          ),
-          AdaptiveTabItem(
-            label: '로그인',
-            icon: Icons.login_rounded,
-          ),
-        ],
-        currentIndex: _isLogin ? 1 : 0,
-        onTap: (index) {
-          setState(() {
-            _mode = index == 0 ? AuthMode.signUp : AuthMode.login;
-          });
-        },
-      ),
+      bottomNavigationBar: _buildTabBar(),
       body: Stack(
         children: [
-          // Background image
           Positioned.fill(
-            child: Image.asset(
-              'images/bgimg.png',
-              fit: BoxFit.cover,
-            ),
+            child: Image.asset('images/bgimg.png', fit: BoxFit.cover),
           ),
-          // Content
           SafeArea(
             bottom: false,
             child: Padding(
@@ -97,9 +84,7 @@ class _AuthViewState extends State<AuthView> {
                         ? const ClampingScrollPhysics()
                         : const NeverScrollableScrollPhysics(),
                     child: ConstrainedBox(
-                      constraints: BoxConstraints(
-                        minHeight: constraints.maxHeight,
-                      ),
+                      constraints: BoxConstraints(minHeight: constraints.maxHeight),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -121,9 +106,66 @@ class _AuthViewState extends State<AuthView> {
     );
   }
 
-  Widget _buildAuthPanel() {
+  /// 태블릿: 가운데 정렬 + 넓은 패널
+  Widget _buildTabletLayout(bool keyboardOpen) {
+    final isLandscape = MediaQuery.of(context).size.width > MediaQuery.of(context).size.height;
+
+    return Scaffold(
+      resizeToAvoidBottomInset: false,
+      extendBody: true,
+      bottomNavigationBar: _buildTabBar(),
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          Positioned.fill(
+            child: Image.asset('images/bgimg.png', fit: BoxFit.cover),
+          ),
+          SafeArea(
+            bottom: false,
+            child: Center(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.fromLTRB(
+                  24, isLandscape ? 16 : 0, 24,
+                  keyboardOpen
+                      ? MediaQuery.of(context).viewInsets.bottom + 16
+                      : MediaQuery.of(context).padding.bottom + 80,
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (!keyboardOpen && !isLandscape) ...[
+                      const _SeoulPrismLogo(size: 200),
+                      const SizedBox(height: 24),
+                    ],
+                    _buildAuthPanel(isTablet: true),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTabBar() {
+    return AdaptiveTabBar(
+      items: const [
+        AdaptiveTabItem(label: '회원가입', icon: Icons.person_add_rounded),
+        AdaptiveTabItem(label: '로그인', icon: Icons.login_rounded),
+      ],
+      currentIndex: _isLogin ? 1 : 0,
+      onTap: (index) {
+        setState(() {
+          _mode = index == 0 ? AuthMode.signUp : AuthMode.login;
+        });
+      },
+    );
+  }
+
+  Widget _buildAuthPanel({bool isTablet = false}) {
     return ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 400),
+      constraints: BoxConstraints(maxWidth: isTablet ? 520 : 400),
       child: AdaptiveGlassContainer.rect(
         cornerRadius: 24,
         prominent: true,
@@ -754,8 +796,11 @@ class _FindAccountPageState extends State<_FindAccountPage> {
           SafeArea(
             child: LayoutBuilder(
               builder: (context, constraints) {
+                final screenW = MediaQuery.of(context).size.width;
+                final tabletPad = screenW >= 600 ? screenW * 0.15 : 24.0;
+
                 return SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(24, 12, 24, 28),
+                  padding: EdgeInsets.fromLTRB(tabletPad, 12, tabletPad, 28),
                   child: ConstrainedBox(
                     constraints: BoxConstraints(
                       minHeight: constraints.maxHeight - 40,
@@ -1113,13 +1158,14 @@ class _GlassInputPainter extends CustomPainter {
 }
 
 class _SeoulPrismLogo extends StatelessWidget {
-  const _SeoulPrismLogo();
+  final double size;
+  const _SeoulPrismLogo({this.size = 160});
 
   @override
   Widget build(BuildContext context) {
     return Image.asset(
       'images/logo.png',
-      width: 160,
+      width: size,
       fit: BoxFit.contain,
     );
   }
