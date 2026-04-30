@@ -69,9 +69,7 @@ class _ProfileViewState extends State<ProfileView> {
           const Spacer(),
           CNButton.icon(
             customIcon: Icons.notifications_none_rounded,
-            onPressed: () {
-              // TODO: notifications
-            },
+            onPressed: () {},
             config: const CNButtonConfig(
               style: CNButtonStyle.glass,
               customIconSize: 22,

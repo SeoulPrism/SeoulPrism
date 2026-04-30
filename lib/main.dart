@@ -11,6 +11,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Mapbox 초기화
+  debugPrint('[DEBUG] Mapbox token: ${ApiKeys.mapboxAccessToken}');
   MapboxOptions.setAccessToken(ApiKeys.mapboxAccessToken);
   MapboxMapsOptions.setLanguage('ko');
 
@@ -19,8 +20,8 @@ Future<void> main() async {
 
   // Supabase 초기화
   await Supabase.initialize(
-    url: 'https://aqigicmkzthuqwmconqb.supabase.co',
-    anonKey: 'sb_publishable_YVBZin5LSf5_YiZNRf_JFA_HeNY52IF',
+    url: ApiKeys.supabaseUrl,
+    anonKey: ApiKeys.supabaseAnonKey,
   );
   runApp(const SeoulPrismApp());
 }
@@ -42,7 +43,8 @@ class _SeoulPrismAppState extends State<SeoulPrismApp> {
     super.initState();
     supabase.auth.onAuthStateChange.listen((data) {
       final event = data.event;
-      if (event == AuthChangeEvent.signedIn) {
+      final session = data.session;
+      if (event == AuthChangeEvent.signedIn && session != null) {
         _navigatorKey.currentState?.pushAndRemoveUntil(
           MaterialPageRoute(builder: (_) => const HomeView()),
           (_) => false,
@@ -55,7 +57,7 @@ class _SeoulPrismAppState extends State<SeoulPrismApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       navigatorKey: _navigatorKey,
-      title: 'Seoul Prism',
+      title: 'Seoul Vista',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         brightness: Brightness.dark,

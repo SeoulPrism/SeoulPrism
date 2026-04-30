@@ -2,6 +2,7 @@ import 'package:cupertino_native_better/cupertino_native_better.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../main.dart';
 import 'auth_view.dart';
 
@@ -192,11 +193,19 @@ class _SettingsViewState extends State<SettingsView> {
                 _InfoItem(label: '앱 버전', value: '1.0.0'),
                 const _ItemDivider(),
                 _ChevronItem(
+                  label: '개인정보처리방침',
+                  onTap: () => launchUrl(
+                    Uri.parse('https://seoulprism.github.io/SeoulPrism_Docs/privacy-policy.html'),
+                    mode: LaunchMode.externalApplication,
+                  ),
+                ),
+                const _ItemDivider(),
+                _ChevronItem(
                   label: '오픈소스 라이선스',
                   onTap: () {
                     showLicensePage(
                       context: context,
-                      applicationName: 'Seoul Prism',
+                      applicationName: 'Seoul Vista',
                       applicationVersion: '1.0.0',
                     );
                   },

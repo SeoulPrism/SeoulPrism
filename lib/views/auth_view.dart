@@ -344,7 +344,7 @@ class _AuthViewState extends State<AuthView> {
       children: [
         // Google
         CNButton.icon(
-          customIcon: IconData(FontAwesomeIcons.google.codePoint, fontFamily: FontAwesomeIcons.google.fontFamily, fontPackage: FontAwesomeIcons.google.fontPackage),
+          customIcon: FontAwesomeIcons.google.data,
           onPressed: _loading ? null : _signInWithGoogle,
           tint: const Color(0xFF4285F4),
           config: const CNButtonConfig(
@@ -355,7 +355,7 @@ class _AuthViewState extends State<AuthView> {
         const SizedBox(width: 16),
         // Kakao
         CNButton.icon(
-          customIcon: IconData(FontAwesomeIcons.comment.codePoint, fontFamily: FontAwesomeIcons.comment.fontFamily, fontPackage: FontAwesomeIcons.comment.fontPackage),
+          customIcon: FontAwesomeIcons.comment.data,
           onPressed: _loading ? null : _signInWithKakao,
           tint: const Color(0xFFFEE500),
           config: const CNButtonConfig(
@@ -366,7 +366,7 @@ class _AuthViewState extends State<AuthView> {
         const SizedBox(width: 16),
         // Apple
         CNButton.icon(
-          customIcon: IconData(FontAwesomeIcons.apple.codePoint, fontFamily: FontAwesomeIcons.apple.fontFamily, fontPackage: FontAwesomeIcons.apple.fontPackage),
+          customIcon: FontAwesomeIcons.apple.data,
           onPressed: _loading ? null : _signInWithApple,
           config: const CNButtonConfig(
             style: CNButtonStyle.glass,
@@ -520,14 +520,18 @@ class _AuthViewState extends State<AuthView> {
         if (mounted) _goHome();
       } else {
         final username = _idController.text.trim();
-        await supabase.auth.signUp(
+        final response = await supabase.auth.signUp(
           email: email,
           password: password,
           data: {'username': username},
         );
         if (mounted) {
-          _showMessage('가입이 완료되었습니다');
-          _goHome();
+          if (response.session != null) {
+            _goHome();
+          } else {
+            _showConfirmEmailDialog(email);
+            setState(() => _mode = AuthMode.login);
+          }
         }
       }
     } on AuthException catch (e) {
@@ -549,6 +553,9 @@ class _AuthViewState extends State<AuthView> {
     if (message.contains('invalid email')) {
       return '올바른 이메일 형식을 입력해주세요';
     }
+    if (message.contains('Email not confirmed') || message.contains('email_not_confirmed')) {
+      return '이메일 인증이 완료되지 않았습니다. 메일함을 확인해주세요.';
+    }
     return message;
   }
 
@@ -561,6 +568,27 @@ class _AuthViewState extends State<AuthView> {
           return FadeTransition(opacity: animation, child: child);
         },
         transitionDuration: const Duration(milliseconds: 500),
+      ),
+    );
+  }
+
+  void _showConfirmEmailDialog(String email) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1C1C1E),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('이메일 인증 필요', style: TextStyle(color: Colors.white)),
+        content: Text(
+          '$email로 인증 메일을 보냈습니다.\n메일함을 확인하고 인증을 완료한 후 로그인해주세요.',
+          style: const TextStyle(color: Colors.white70, height: 1.5),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('확인', style: TextStyle(color: Color(0xFF6E7BFF))),
+          ),
+        ],
       ),
     );
   }

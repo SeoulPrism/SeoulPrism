@@ -1376,6 +1376,7 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
   Widget build(BuildContext context) {
     return MapWidget(
       onMapCreated: _onMapCreated,
+      textureView: true,
       cameraOptions: CameraOptions(
         center: Point(coordinates: Position(widget.initialCamera.lng, widget.initialCamera.lat)),
         zoom: widget.initialCamera.zoom,

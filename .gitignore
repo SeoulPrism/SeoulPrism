@@ -44,3 +44,16 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
+# Release signing
+android/key.properties
+android/app/upload-keystore.jks
+
+# API keys
+lib/core/api_keys.dart
+
+# MCP config (contains project refs)
+.mcp.json
+
+# Android Mapbox token
+android/app/src/main/res/values/strings.xml
+
