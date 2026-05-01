@@ -192,8 +192,10 @@ class GeminiLiveService {
 
     try {
       final uri = Uri.parse('$_wsUrl?key=${ApiKeys.geminiApiKey}');
+      debugPrint('[GeminiLive] Connecting to: $uri');
       _channel = WebSocketChannel.connect(uri);
       await _channel!.ready;
+      debugPrint('[GeminiLive] WebSocket connected');
 
       // 서버 메시지 수신
       _subscription = _channel!.stream.listen(
@@ -204,8 +206,7 @@ class GeminiLiveService {
 
       // Setup 메시지 전송
       _sendSetup();
-      _setState(LiveSessionState.listening);
-      _startSilenceTimer();
+      // listening 전환은 setupComplete 수신 시 처리
     } catch (e) {
       debugPrint('[GeminiLive] Connection failed: $e');
       _setState(LiveSessionState.idle);
@@ -213,12 +214,14 @@ class GeminiLiveService {
   }
 
   /// Setup 메시지 (세션 초기화)
+  /// 공식 문서: https://ai.google.dev/api/live
+  /// 최상위 키 "setup" 안에 model, generationConfig, systemInstruction, tools
   void _sendSetup() {
     final setup = {
       'setup': {
-        'model': 'models/gemini-2.5-flash-preview-native-audio-dialog',
+        'model': 'models/gemini-2.5-flash-live-001',
         'generationConfig': {
-          'responseModalities': ['AUDIO', 'TEXT'],
+          'responseModalities': ['AUDIO'],
           'speechConfig': {
             'voiceConfig': {
               'prebuiltVoiceConfig': {
@@ -236,8 +239,9 @@ class GeminiLiveService {
       },
     };
 
-    _channel?.sink.add(jsonEncode(setup));
-    debugPrint('[GeminiLive] Setup sent');
+    final jsonStr = jsonEncode(setup);
+    debugPrint('[GeminiLive] Setup sending: ${jsonStr.length} bytes');
+    _channel?.sink.add(jsonStr);
   }
 
   /// 오디오 데이터 전송 (마이크 → Gemini)
@@ -334,11 +338,27 @@ class GeminiLiveService {
   /// 서버 메시지 처리
   void _onMessage(dynamic data) {
     try {
-      final json = jsonDecode(data as String) as Map<String, dynamic>;
+      final dataStr = data as String;
+      // 짧은 메시지는 전체 출력, 긴 메시지는 앞부분만
+      if (dataStr.length < 500) {
+        debugPrint('[GeminiLive] Received: $dataStr');
+      } else {
+        debugPrint('[GeminiLive] Received: ${dataStr.substring(0, 200)}... (${dataStr.length} bytes)');
+      }
 
-      // Setup complete
+      final json = jsonDecode(dataStr) as Map<String, dynamic>;
+
+      // Setup complete → listening 전환
       if (json.containsKey('setupComplete')) {
-        debugPrint('[GeminiLive] Setup complete');
+        debugPrint('[GeminiLive] ✓ Setup complete — ready to listen');
+        _setState(LiveSessionState.listening);
+        _startSilenceTimer();
+        return;
+      }
+
+      // 에러 메시지 처리
+      if (json.containsKey('error')) {
+        debugPrint('[GeminiLive] ✗ Server error: ${json['error']}');
         return;
       }
 
@@ -353,6 +373,9 @@ class GeminiLiveService {
         _handleToolCall(toolCall);
         return;
       }
+
+      // 알 수 없는 메시지 타입
+      debugPrint('[GeminiLive] Unknown message keys: ${json.keys.toList()}');
     } catch (e) {
       debugPrint('[GeminiLive] Message parse error: $e');
     }
@@ -473,12 +496,15 @@ class GeminiLiveService {
   }
 
   void _onError(dynamic error) {
-    debugPrint('[GeminiLive] WebSocket error: $error');
+    debugPrint('[GeminiLive] ✗ WebSocket error: $error');
+    debugPrint('[GeminiLive] Error type: ${error.runtimeType}');
     endSession();
   }
 
   void _onDone() {
-    debugPrint('[GeminiLive] WebSocket closed');
+    final closeCode = _channel?.closeCode;
+    final closeReason = _channel?.closeReason;
+    debugPrint('[GeminiLive] WebSocket closed — code: $closeCode, reason: $closeReason');
     if (_state != LiveSessionState.idle) {
       _setState(LiveSessionState.idle);
     }
