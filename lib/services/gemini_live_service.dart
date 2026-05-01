@@ -178,11 +178,12 @@ class GeminiLiveService {
 
 규칙:
 - 장소 추천 시 가장 가까운 지하철역 정보 포함
-- URL이나 이미지가 필요하면 사용자에게 요청하고 해당 function 호출
 - 지하철역 관련 질문은 navigate_to_station 또는 show_station_info 호출
 - "서울역 어디야?" 같은 질문에는 navigate_to_station을 호출해서 지도로 보여줘
 - 일정 생성 요청 시 create_plan function 호출
 - 한 번에 하나의 function만 호출
+- 사용자가 이미지를 보내면 이미지가 대화에 직접 포함되어 있으므로, analyze_image를 호출하지 말고 이미지를 직접 분석하여 서울 관련 장소를 찾아 답변해
+- URL이 필요하면 사용자에게 텍스트로 입력하라고 요청해
 ''';
 
   /// 세션 시작

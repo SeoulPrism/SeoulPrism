@@ -122,10 +122,11 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
 
     _actionSub = _liveService.actionStream.listen((action) {
       widget.onAction?.call(action);
-      // Function call에 대한 응답 전송
+      // Function call별 의미있는 응답 전송
+      final response = _buildFunctionResponse(action);
       _liveService.sendFunctionResponse(
         _actionToFunctionName(action.action),
-        {'status': 'success', 'message': '액션이 실행되었습니다.'},
+        response,
       );
     });
 
@@ -161,6 +162,45 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
         return 'create_plan';
       case AiAction.searchPlace:
         return 'search_place';
+    }
+  }
+
+  /// Function call별 의미있는 응답 생성
+  Map<String, dynamic> _buildFunctionResponse(AiActionEvent action) {
+    switch (action.action) {
+      case AiAction.navigateToStation:
+        final name = action.params['stationName'] as String? ?? '';
+        return {
+          'status': 'success',
+          'message': '$name역으로 지도를 이동했습니다. 사용자에게 해당 역에 대해 안내해주세요.',
+        };
+      case AiAction.showStationInfo:
+        final name = action.params['stationName'] as String? ?? '';
+        return {
+          'status': 'success',
+          'message': '$name역의 실시간 도착 정보를 표시했습니다.',
+        };
+      case AiAction.analyzeUrl:
+        return {
+          'status': 'processing',
+          'message': 'URL을 분석 중입니다. 결과가 나오면 지도에 표시됩니다. 사용자에게 잠시 기다리라고 안내해주세요.',
+        };
+      case AiAction.analyzeImage:
+        return {
+          'status': 'success',
+          'message': '이미지가 이미 대화에 포함되어 있습니다. 이미지를 직접 분석하여 서울의 관련 장소를 찾아 사용자에게 안내해주세요. function을 다시 호출하지 마세요.',
+        };
+      case AiAction.createPlan:
+        return {
+          'status': 'processing',
+          'message': '일정을 생성 중입니다. 사용자에게 잠시 기다리라고 안내해주세요.',
+        };
+      case AiAction.searchPlace:
+        final query = action.params['query'] as String? ?? '';
+        return {
+          'status': 'success',
+          'message': '"$query" 검색 결과를 사용자에게 직접 추천해주세요. 가장 가까운 지하철역 정보도 포함해주세요.',
+        };
     }
   }
 
