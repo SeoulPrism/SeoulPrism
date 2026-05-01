@@ -338,7 +338,16 @@ class GeminiLiveService {
   /// 서버 메시지 처리
   void _onMessage(dynamic data) {
     try {
-      final dataStr = data as String;
+      String dataStr;
+      if (data is String) {
+        dataStr = data;
+      } else if (data is Uint8List) {
+        dataStr = utf8.decode(data);
+      } else {
+        debugPrint('[GeminiLive] Unknown data type: ${data.runtimeType}');
+        return;
+      }
+
       // 짧은 메시지는 전체 출력, 긴 메시지는 앞부분만
       if (dataStr.length < 500) {
         debugPrint('[GeminiLive] Received: $dataStr');
