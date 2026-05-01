@@ -36,6 +36,10 @@ class ApiKeys {
     'DATA_GO_KR_API_KEY',
     defaultValue: '',
   );
+  static const String geminiApiKey = String.fromEnvironment(
+    'GEMINI_API_KEY',
+    defaultValue: '',
+  );
 }
 DART
 
