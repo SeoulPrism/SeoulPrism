@@ -489,30 +489,56 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
+  /// AI가 보낸 역명으로 StationInfo 찾기
+  /// "서울" → "서울역", "강남" → "강남" 등 유연하게 매칭
+  StationInfo? _resolveStation(String name) {
+    // 1) 정확히 매칭
+    var station = SeoulSubwayData.findStation(name);
+    if (station != null) return station;
+
+    // 2) "역" 붙여서 매칭 (AI가 "서울"로 보내면 "서울역"으로)
+    station = SeoulSubwayData.findStation('$name역');
+    if (station != null) return station;
+
+    // 3) "역" 떼고 매칭 ("서울역" → "서울")
+    if (name.endsWith('역')) {
+      station = SeoulSubwayData.findStation(name.substring(0, name.length - 1));
+      if (station != null) return station;
+    }
+
+    return null;
+  }
+
   /// AI Function Calling 액션 처리
   void _handleAiAction(AiActionEvent event) {
     switch (event.action) {
       case AiAction.navigateToStation:
         final stationName = event.params['stationName'] as String?;
         if (stationName != null) {
-          // AI 닫고 역으로 이동
-          _dismissAi();
-          Future.delayed(const Duration(milliseconds: 600), () {
-            _subwayController.selectStation(stationName);
-            // 역 좌표로 카메라 이동
-            final station = SeoulSubwayData.findStation(stationName);
-            if (station != null) {
-              _mapController?.moveTo(station.lat, station.lng, zoom: 15, pitch: 45);
-            }
-          });
+          final station = _resolveStation(stationName);
+          if (station != null) {
+            // AI 닫고 → 카메라 줌 이동 → 역 선택
+            _dismissAi();
+            Future.delayed(const Duration(milliseconds: 600), () {
+              _mapController?.moveTo(station.lat, station.lng, zoom: 16, pitch: 50);
+              // 카메라 이동 후 역 선택
+              Future.delayed(const Duration(milliseconds: 800), () {
+                _subwayController.selectStation(station.name);
+              });
+            });
+          }
         }
         break;
       case AiAction.showStationInfo:
         final stationName = event.params['stationName'] as String?;
         if (stationName != null) {
+          final station = _resolveStation(stationName);
           _dismissAi();
           Future.delayed(const Duration(milliseconds: 600), () {
-            _subwayController.selectStation(stationName);
+            if (station != null) {
+              _mapController?.moveTo(station.lat, station.lng, zoom: 15, pitch: 45);
+            }
+            _subwayController.selectStation(station?.name ?? stationName);
           });
         }
         break;
