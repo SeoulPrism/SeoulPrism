@@ -554,7 +554,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
         break;
       case AiAction.createPlan:
         final style = event.params['style'] as String? ?? 'efficient';
-        _createPlanFromAi(style, event.params['places'] as String?);
+        final places = event.params['extractedPlaces'] as List<ExtractedPlace>?;
+        if (places != null && places.isNotEmpty) {
+          _createPlanFromPlaces(places);
+        } else {
+          _createPlanFromAi(style, event.params['places'] as String?);
+        }
         break;
       case AiAction.searchPlace:
         // 검색은 AI가 음성으로 결과를 안내
@@ -584,10 +589,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
-  /// AI 요청으로 플랜 생성
+  /// 추출된 장소로 플랜 생성
+  Future<void> _createPlanFromPlaces(List<ExtractedPlace> places) async {
+    try {
+      final plans = await DayPlanService.instance.generatePlans(places);
+      if (plans.isNotEmpty && mounted) {
+        _dismissAi();
+        Future.delayed(const Duration(milliseconds: 600), () {
+          if (mounted) setState(() => _dayPlans = plans);
+        });
+      }
+    } catch (e) {
+      debugPrint('[AI Action] 플랜 생성 실패: $e');
+    }
+  }
+
+  /// AI 요청으로 플랜 생성 (텍스트 기반)
   Future<void> _createPlanFromAi(String style, String? placesJson) async {
-    // 이전 분석 결과가 있으면 사용, 없으면 빈 리스트
-    // 실제로는 _liveService에서 받은 장소 데이터를 활용
     debugPrint('[AI Action] Create plan: style=$style');
   }
 

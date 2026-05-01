@@ -4,7 +4,9 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../services/gemini_live_service.dart';
+import '../services/gemini_service.dart';
 import '../services/audio_service.dart';
+import '../models/sns_content_models.dart';
 
 /// 통합 AI 뷰 — Glow 애니메이션 + Gemini Live 음성 대화
 class AiView extends StatefulWidget {
@@ -48,6 +50,11 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
   bool _textModeActive = false;
   final TextEditingController _textController = TextEditingController();
   final FocusNode _textFocusNode = FocusNode();
+
+  // ── 장소 분석 결과 패널 ──
+  bool _showPlacesPanel = false;
+  List<ExtractedPlace> _extractedPlaces = [];
+  bool _analyzingImage = false;
 
   // ── 스트림 구독 ──
   StreamSubscription? _stateSub;
@@ -337,15 +344,80 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
     _hideTextInputField();
   }
 
-  // ── 이미지 첨부 ──
+  // ── 이미지 첨부 + 분석 ──
   Future<void> _pickImage(ImageSource source) async {
     final picker = ImagePicker();
     final picked = await picker.pickImage(source: source, maxWidth: 2048);
     if (picked == null) return;
 
-    final bytes = await File(picked.path).readAsBytes();
-    _liveService.sendImage(bytes);
-    setState(() => _transcript = '이미지 분석 중...');
+    setState(() {
+      _analyzingImage = true;
+      _transcript = '이미지 분석 중...';
+    });
+
+    try {
+      // 기존 GeminiService로 장소 분석
+      final content = SnsContent(imagePaths: [picked.path], text: '', url: '');
+      final result = await GeminiService.instance.analyzeContent(content);
+
+      if (!mounted) return;
+
+      if (result.places.isNotEmpty) {
+        // 좌표 확보
+        final geoPlaces = await GeminiService.instance.geocodeAll(result.places);
+
+        if (!mounted) return;
+        setState(() {
+          _extractedPlaces = geoPlaces;
+          _showPlacesPanel = true;
+          _analyzingImage = false;
+          _transcript = '${geoPlaces.length}개 장소를 찾았어요! 아래에서 확인해보세요.';
+        });
+
+        // Live AI에게도 알려주기
+        _liveService.sendText(
+          '사용자가 보낸 이미지에서 ${geoPlaces.length}개 장소를 찾았습니다: '
+          '${geoPlaces.map((p) => "${p.name}(${p.category})").join(", ")}. '
+          '사용자에게 간단히 어떤 장소들인지 설명해주세요.',
+        );
+      } else {
+        setState(() {
+          _analyzingImage = false;
+          _transcript = '장소를 찾지 못했어요. 다른 사진을 시도해보세요.';
+        });
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _analyzingImage = false;
+        _transcript = '분석 중 오류가 발생했어요.';
+      });
+    }
+  }
+
+  void _removePlace(int index) {
+    setState(() {
+      _extractedPlaces.removeAt(index);
+      if (_extractedPlaces.isEmpty) _showPlacesPanel = false;
+    });
+  }
+
+  void _generatePlanFromPlaces() {
+    if (_extractedPlaces.isEmpty) return;
+    // onAction으로 플랜 생성 요청
+    widget.onAction?.call(AiActionEvent(
+      AiAction.createPlan,
+      {
+        'style': 'efficient',
+        'extractedPlaces': _extractedPlaces,
+      },
+    ));
+    setState(() => _showPlacesPanel = false);
+
+    _liveService.sendText(
+      '사용자가 ${_extractedPlaces.length}개 장소로 일정 생성을 요청했습니다. '
+      '효율적인 경로로 일정을 만들었다고 안내해주세요.',
+    );
   }
 
   @override
@@ -401,11 +473,25 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
         if (_sessionState == LiveSessionState.idlePrompt && !_textModeActive)
           _buildIdlePrompt(),
 
-        // 5. 텍스트 입력 필드 (슬라이드 업)
+        // 5. 분석 중 로딩 인디케이터
+        if (_analyzingImage)
+          Positioned(
+            bottom: MediaQuery.of(context).size.height * 0.45,
+            left: 0,
+            right: 0,
+            child: const Center(
+              child: CircularProgressIndicator(color: Colors.white70),
+            ),
+          ),
+
+        // 6. 장소 분석 결과 패널 (슬라이드 업)
+        _buildPlacesPanel(),
+
+        // 7. 텍스트 입력 필드 (슬라이드 업)
         _buildTextInputOverlay(),
 
-        // 6. 하단 액션 버튼
-        if (!_showTextInput)
+        // 8. 하단 액션 버튼
+        if (!_showTextInput && !_showPlacesPanel)
           Positioned(
             bottom: MediaQuery.of(context).padding.bottom + 80,
             left: 0,
@@ -693,6 +779,220 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
         ],
       ),
     );
+  }
+
+  // ── 장소 분석 결과 패널 (슬라이드 업) ──
+  Widget _buildPlacesPanel() {
+    final panelHeight = MediaQuery.of(context).size.height * 0.45;
+    final bottomPad = MediaQuery.of(context).padding.bottom;
+
+    return AnimatedPositioned(
+      duration: const Duration(milliseconds: 400),
+      curve: _showPlacesPanel ? Curves.easeOutCubic : Curves.easeInCubic,
+      bottom: _showPlacesPanel ? 0 : -panelHeight - 50,
+      left: 0,
+      right: 0,
+      height: panelHeight,
+      child: AnimatedOpacity(
+        duration: const Duration(milliseconds: 300),
+        opacity: _showPlacesPanel ? 1.0 : 0.0,
+        child: GestureDetector(
+          onVerticalDragEnd: (details) {
+            if (details.velocity.pixelsPerSecond.dy > 200) {
+              setState(() => _showPlacesPanel = false);
+            }
+          },
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.85),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+              border: Border(
+                top: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+              ),
+            ),
+            child: Column(
+              children: [
+                // 드래그 핸들
+                Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: Container(
+                    width: 36, height: 4,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(2),
+                      color: Colors.white.withValues(alpha: 0.3),
+                    ),
+                  ),
+                ),
+                // 헤더
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
+                  child: Row(
+                    children: [
+                      Text(
+                        '발견된 장소 (${_extractedPlaces.length})',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const Spacer(),
+                      GestureDetector(
+                        onTap: () => setState(() => _showPlacesPanel = false),
+                        child: Icon(Icons.close, color: Colors.white.withValues(alpha: 0.6), size: 22),
+                      ),
+                    ],
+                  ),
+                ),
+                // 장소 리스트
+                Expanded(
+                  child: ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+                    itemCount: _extractedPlaces.length,
+                    itemBuilder: (context, index) => _buildPlaceCard(index),
+                  ),
+                ),
+                // 일정 만들기 버튼
+                Padding(
+                  padding: EdgeInsets.fromLTRB(16, 4, 16, bottomPad + 12),
+                  child: GestureDetector(
+                    onTap: _generatePlanFromPlaces,
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(14),
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFFBC82F3), Color(0xFF8D9FFF)],
+                        ),
+                      ),
+                      child: Text(
+                        '일정 만들기 (${_extractedPlaces.length}곳)',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPlaceCard(int index) {
+    final place = _extractedPlaces[index];
+    final color = _categoryColor(place.category);
+    final icon = _categoryIcon(place.category);
+
+    return Dismissible(
+      key: ValueKey('${place.name}_$index'),
+      direction: DismissDirection.endToStart,
+      onDismissed: (_) => _removePlace(index),
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 20),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(14),
+          color: Colors.red.withValues(alpha: 0.2),
+        ),
+        child: const Icon(Icons.delete, color: Colors.red),
+      ),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(14),
+          color: Colors.white.withValues(alpha: 0.08),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 36, height: 36,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: color.withValues(alpha: 0.2),
+              ),
+              child: Icon(icon, size: 18, color: color),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          place.name,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(6),
+                          color: color.withValues(alpha: 0.2),
+                        ),
+                        child: Text(
+                          place.category,
+                          style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: color),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    place.activity,
+                    style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.6)),
+                  ),
+                  if (place.nearestStation != null)
+                    Text(
+                      '${place.nearestStation}역 · ${place.estimatedMinutes}분',
+                      style: TextStyle(fontSize: 10, color: Colors.white.withValues(alpha: 0.4)),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Color _categoryColor(String category) {
+    return switch (category) {
+      '맛집' => Colors.orange,
+      '카페' => Colors.brown,
+      '관광' => Colors.blue,
+      '쇼핑' => Colors.pink,
+      '문화' => Colors.purple,
+      '자연' => Colors.green,
+      _ => const Color(0xFFBC82F3),
+    };
+  }
+
+  IconData _categoryIcon(String category) {
+    return switch (category) {
+      '맛집' => Icons.restaurant,
+      '카페' => Icons.coffee,
+      '관광' => Icons.photo_camera,
+      '쇼핑' => Icons.shopping_bag,
+      '문화' => Icons.museum,
+      '자연' => Icons.park,
+      _ => Icons.place,
+    };
   }
 }
 
