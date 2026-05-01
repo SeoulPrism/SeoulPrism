@@ -43,6 +43,9 @@ post_install do |installer|
     target.build_configurations.each do |config|
       config.build_settings['RUN_CLANG_STATIC_ANALYZER'] = 'NO'
       config.build_settings['GCC_WARN_INHIBIT_ALL_WARNINGS'] = 'YES'
+      if config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'].to_f < 15.0
+        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'
+      end
     end
   end
 end
