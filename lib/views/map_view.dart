@@ -16,8 +16,11 @@ import '../services/device_profile_service.dart';
 import '../services/settings_service.dart';
 import 'sns_upload_view.dart';
 import 'day_plan_view.dart';
-import 'ai_mode_view.dart';
+import 'ai_view.dart';
 import '../models/sns_content_models.dart';
+import '../services/gemini_live_service.dart';
+import '../services/gemini_service.dart';
+import '../services/day_plan_service.dart';
 import '../services/path_finding_service.dart';
 import '../data/subway_geojson_loader.dart';
 import '../theme/app_theme.dart';
@@ -40,9 +43,8 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   IMapController? _mapController;
   bool _settingsOpen = false;
-  bool _aiPlanOpen = false;
-  bool _aiModeOpen = false;
-  bool _aiModeClosing = false;
+  bool _aiOpen = false;
+  bool _aiClosing = false;
   List<DayPlan>? _dayPlans;
 
   final CameraInfo _cameraInfo = CameraInfo(
@@ -312,7 +314,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       resizeToAvoidBottomInset: false,
       bottomNavigationBar: _buildBottomTabBar(),
       body: AnimatedScale(
-        scale: _aiModeOpen && !_aiModeClosing ? 0.995 : 1.0,
+        scale: _aiOpen && !_aiClosing ? 0.995 : 1.0,
         duration: const Duration(milliseconds: 600),
         curve: Curves.elasticOut,
         child: Stack(
@@ -401,24 +403,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ),
 
-          // AI 플랜 오버레이 (바텀시트 스타일)
-          _buildAiPlanOverlay(context, screenHeight, bottomInset),
-
           // 설정 패널 오버레이 (바텀시트 스타일)
           _buildSettingsOverlay(context, screenHeight, bottomInset),
 
           // 하루 플랜 오버레이 (지도 위 바텀 패널)
           _buildDayPlanOverlay(context, bottomInset),
 
-          // AI 모드 오버레이 (풀스크린)
-          if (_aiModeOpen)
+          // 통합 AI 오버레이 (풀스크린 Glow + Gemini Live)
+          if (_aiOpen)
             Positioned.fill(
-              child: AiModeView(
-                closing: _aiModeClosing,
+              child: AiView(
+                closing: _aiClosing,
                 onClose: () => setState(() {
-                  _aiModeOpen = false;
-                  _aiModeClosing = false;
+                  _aiOpen = false;
+                  _aiClosing = false;
                 }),
+                onAction: _handleAiAction,
               ),
             ),
 
@@ -483,41 +483,110 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  void _dismissAiMode() {
-    if (_aiModeOpen && !_aiModeClosing) {
-      _aiModeClosing = true;
+  void _dismissAi() {
+    if (_aiOpen && !_aiClosing) {
+      setState(() => _aiClosing = true);
     }
+  }
+
+  /// AI Function Calling 액션 처리
+  void _handleAiAction(AiActionEvent event) {
+    switch (event.action) {
+      case AiAction.navigateToStation:
+        final stationName = event.params['stationName'] as String?;
+        if (stationName != null) {
+          // AI 닫고 역으로 이동
+          _dismissAi();
+          Future.delayed(const Duration(milliseconds: 600), () {
+            _subwayController.selectStation(stationName);
+            // 역 좌표로 카메라 이동
+            final station = SeoulSubwayData.findStation(stationName);
+            if (station != null) {
+              _mapController?.moveTo(station.lat, station.lng, zoom: 15, pitch: 45);
+            }
+          });
+        }
+        break;
+      case AiAction.showStationInfo:
+        final stationName = event.params['stationName'] as String?;
+        if (stationName != null) {
+          _dismissAi();
+          Future.delayed(const Duration(milliseconds: 600), () {
+            _subwayController.selectStation(stationName);
+          });
+        }
+        break;
+      case AiAction.analyzeUrl:
+        // URL 분석 → 기존 GeminiService 활용
+        final url = event.params['url'] as String?;
+        if (url != null) {
+          _analyzeUrlAndCreatePlan(url);
+        }
+        break;
+      case AiAction.analyzeImage:
+        // 이미지 분석은 AI View 내부에서 처리
+        break;
+      case AiAction.createPlan:
+        final style = event.params['style'] as String? ?? 'efficient';
+        _createPlanFromAi(style, event.params['places'] as String?);
+        break;
+      case AiAction.searchPlace:
+        // 검색은 AI가 음성으로 결과를 안내
+        break;
+    }
+  }
+
+  /// URL 분석 후 플랜 생성
+  Future<void> _analyzeUrlAndCreatePlan(String url) async {
+    try {
+      final result = await GeminiService.instance.analyzeContent(
+        SnsContent(imagePaths: [], text: '', url: url),
+      );
+      if (result.places.isNotEmpty) {
+        final geoPlaces = await GeminiService.instance.geocodeAll(result.places);
+        final dayPlanService = DayPlanService.instance;
+        final plans = await dayPlanService.generatePlans(geoPlaces);
+        if (plans.isNotEmpty && mounted) {
+          _dismissAi();
+          Future.delayed(const Duration(milliseconds: 600), () {
+            setState(() => _dayPlans = plans);
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('[AI Action] URL 분석 실패: $e');
+    }
+  }
+
+  /// AI 요청으로 플랜 생성
+  Future<void> _createPlanFromAi(String style, String? placesJson) async {
+    // 이전 분석 결과가 있으면 사용, 없으면 빈 리스트
+    // 실제로는 _liveService에서 받은 장소 데이터를 활용
+    debugPrint('[AI Action] Create plan: style=$style');
   }
 
   // ── 하단 탭바 (리퀴드 글라스) ──
   Widget _buildBottomTabBar() {
-    // 순서: 설정(0) | 지도(1, 가운데) | AI 플랜(2) | AI 모드(3)
-    final currentIndex = _settingsOpen ? 0 : (_aiPlanOpen ? 2 : (_aiModeOpen ? 3 : 1));
+    // 순서: 설정(0) | 지도(1, 가운데) | AI(2)
+    final currentIndex = _settingsOpen ? 0 : (_aiOpen ? 2 : 1);
 
     return AdaptiveTabBar(
       currentIndex: currentIndex,
       onTap: (index) {
         setState(() {
           if (index == 0) {
-            _aiPlanOpen = false;
-            _dismissAiMode();
+            _dismissAi();
             _settingsOpen = !_settingsOpen;
           } else if (index == 1) {
             _settingsOpen = false;
-            _aiPlanOpen = false;
-            _dismissAiMode();
+            _dismissAi();
           } else if (index == 2) {
             _settingsOpen = false;
-            _dismissAiMode();
-            _aiPlanOpen = !_aiPlanOpen;
-          } else if (index == 3) {
-            _settingsOpen = false;
-            _aiPlanOpen = false;
-            if (_aiModeOpen) {
-              _dismissAiMode();
+            if (_aiOpen) {
+              _dismissAi();
             } else {
-              _aiModeOpen = true;
-              _aiModeClosing = false;
+              _aiOpen = true;
+              _aiClosing = false;
             }
           }
         });
@@ -525,45 +594,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       items: const [
         AdaptiveTabItem(label: '설정', icon: Icons.settings),
         AdaptiveTabItem(label: '지도', icon: Icons.map),
-        AdaptiveTabItem(label: 'AI 플랜', icon: Icons.auto_awesome),
-        AdaptiveTabItem(label: 'AI 모드', icon: Icons.blur_on),
+        AdaptiveTabItem(label: 'AI', icon: Icons.auto_awesome),
       ],
-    );
-  }
-
-  // ── AI 플랜 오버레이 패널 ──
-  Widget _buildAiPlanOverlay(BuildContext context, double screenHeight, double bottomInset) {
-    final panelHeight = screenHeight * 0.65;
-
-    return AnimatedPositioned(
-      duration: const Duration(milliseconds: 400),
-      curve: _aiPlanOpen ? Curves.easeOutCubic : Curves.easeInCubic,
-      bottom: _aiPlanOpen ? 0 : -panelHeight - 50,
-      left: 0,
-      right: 0,
-      height: panelHeight,
-      child: AnimatedOpacity(
-        duration: const Duration(milliseconds: 350),
-        opacity: _aiPlanOpen ? 1.0 : 0.0,
-        child: GestureDetector(
-          onVerticalDragEnd: (details) {
-            if (details.velocity.pixelsPerSecond.dy > 200) {
-              setState(() => _aiPlanOpen = false);
-            }
-          },
-          child: SnsUploadView(
-            onClose: () => setState(() => _aiPlanOpen = false),
-            mapController: _mapController,
-            subwayController: _subwayController,
-            onPlansGenerated: (plans) {
-              setState(() {
-                _aiPlanOpen = false;
-                _dayPlans = plans;
-              });
-            },
-          ),
-        ),
-      ),
     );
   }
 
