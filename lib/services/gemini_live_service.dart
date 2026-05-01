@@ -219,7 +219,7 @@ class GeminiLiveService {
   void _sendSetup() {
     final setup = {
       'setup': {
-        'model': 'models/gemini-2.5-flash-live-preview',
+        'model': 'models/gemini-2.5-flash-native-audio-latest',
         'generationConfig': {
           'responseModalities': ['AUDIO'],
           'speechConfig': {
