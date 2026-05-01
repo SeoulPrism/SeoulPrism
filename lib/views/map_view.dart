@@ -15,6 +15,9 @@ import '../data/seoul_subway_data.dart';
 import '../services/device_profile_service.dart';
 import '../services/settings_service.dart';
 import 'sns_upload_view.dart';
+import 'day_plan_view.dart';
+import 'ai_mode_view.dart';
+import '../models/sns_content_models.dart';
 import '../services/path_finding_service.dart';
 import '../data/subway_geojson_loader.dart';
 import '../theme/app_theme.dart';
@@ -38,6 +41,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
   IMapController? _mapController;
   bool _settingsOpen = false;
   bool _aiPlanOpen = false;
+  bool _aiModeOpen = false;
+  bool _aiModeClosing = false;
+  List<DayPlan>? _dayPlans;
 
   final CameraInfo _cameraInfo = CameraInfo(
     lat: 37.5665, lng: 126.9780, zoom: 13.0, pitch: 45.0, bearing: 0.0,
@@ -305,7 +311,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
       extendBody: true,
       resizeToAvoidBottomInset: false,
       bottomNavigationBar: _buildBottomTabBar(),
-      body: Stack(
+      body: AnimatedScale(
+        scale: _aiModeOpen && !_aiModeClosing ? 0.995 : 1.0,
+        duration: const Duration(milliseconds: 600),
+        curve: Curves.elasticOut,
+        child: Stack(
         children: [
           // 지도 엔진 (항상 렌더링)
           Positioned.fill(child: MapboxEngine(initialCamera: _cameraInfo, onMapCreated: _onMapCreated)),
@@ -397,9 +407,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
           // 설정 패널 오버레이 (바텀시트 스타일)
           _buildSettingsOverlay(context, screenHeight, bottomInset),
 
+          // 하루 플랜 오버레이 (지도 위 바텀 패널)
+          _buildDayPlanOverlay(context, bottomInset),
+
+          // AI 모드 오버레이 (풀스크린)
+          if (_aiModeOpen)
+            Positioned.fill(
+              child: AiModeView(
+                closing: _aiModeClosing,
+                onClose: () => setState(() {
+                  _aiModeOpen = false;
+                  _aiModeClosing = false;
+                }),
+              ),
+            ),
+
           // 기기 프로필 토스트 (페이드인/아웃)
           _buildProfileToast(),
         ],
+      ),
       ),
     );
   }
@@ -423,23 +449,33 @@ class _DashboardScreenState extends State<DashboardScreen> {
           curve: Curves.easeInOut,
           opacity: _showProfileToast ? 1.0 : 0.0,
           child: Center(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.7),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                '${dp.rawModel} · $tierLabel\n'
-                '${dp.profile.animFps}fps · 폴링 ${dp.profile.naverPollMs}ms 최적화 적용',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  height: 1.4,
-                ),
-              ),
+            child: Builder(
+              builder: (context) {
+                final isDark = Theme.of(context).brightness == Brightness.dark;
+                return Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? Colors.black.withValues(alpha: 0.7)
+                        : Colors.white.withValues(alpha: 0.85),
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: isDark
+                        ? null
+                        : [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 8)],
+                  ),
+                  child: Text(
+                    '${dp.rawModel} · $tierLabel\n'
+                    '${dp.profile.animFps}fps · 폴링 ${dp.profile.naverPollMs}ms 최적화 적용',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: isDark ? Colors.white : Colors.black87,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      height: 1.4,
+                    ),
+                  ),
+                );
+              },
             ),
           ),
         ),
@@ -447,10 +483,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  void _dismissAiMode() {
+    if (_aiModeOpen && !_aiModeClosing) {
+      _aiModeClosing = true;
+    }
+  }
+
   // ── 하단 탭바 (리퀴드 글라스) ──
   Widget _buildBottomTabBar() {
-    // 순서: 설정(0) | 지도(1, 가운데) | AI 플랜(2)
-    final currentIndex = _settingsOpen ? 0 : (_aiPlanOpen ? 2 : 1);
+    // 순서: 설정(0) | 지도(1, 가운데) | AI 플랜(2) | AI 모드(3)
+    final currentIndex = _settingsOpen ? 0 : (_aiPlanOpen ? 2 : (_aiModeOpen ? 3 : 1));
 
     return AdaptiveTabBar(
       currentIndex: currentIndex,
@@ -458,13 +500,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
         setState(() {
           if (index == 0) {
             _aiPlanOpen = false;
+            _dismissAiMode();
             _settingsOpen = !_settingsOpen;
           } else if (index == 1) {
             _settingsOpen = false;
             _aiPlanOpen = false;
+            _dismissAiMode();
           } else if (index == 2) {
             _settingsOpen = false;
+            _dismissAiMode();
             _aiPlanOpen = !_aiPlanOpen;
+          } else if (index == 3) {
+            _settingsOpen = false;
+            _aiPlanOpen = false;
+            if (_aiModeOpen) {
+              _dismissAiMode();
+            } else {
+              _aiModeOpen = true;
+              _aiModeClosing = false;
+            }
           }
         });
       },
@@ -472,6 +526,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         AdaptiveTabItem(label: '설정', icon: Icons.settings),
         AdaptiveTabItem(label: '지도', icon: Icons.map),
         AdaptiveTabItem(label: 'AI 플랜', icon: Icons.auto_awesome),
+        AdaptiveTabItem(label: 'AI 모드', icon: Icons.blur_on),
       ],
     );
   }
@@ -500,6 +555,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
             onClose: () => setState(() => _aiPlanOpen = false),
             mapController: _mapController,
             subwayController: _subwayController,
+            onPlansGenerated: (plans) {
+              setState(() {
+                _aiPlanOpen = false;
+                _dayPlans = plans;
+              });
+            },
           ),
         ),
       ),
@@ -530,6 +591,53 @@ class _DashboardScreenState extends State<DashboardScreen> {
             subwayController: _subwayController,
             mapController: _mapController,
             onClose: () => setState(() => _settingsOpen = false),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── 하루 플랜 오버레이 ──
+  Widget _buildDayPlanOverlay(BuildContext context, double bottomInset) {
+    final show = _dayPlans != null && _dayPlans!.isNotEmpty;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return AnimatedPositioned(
+      duration: const Duration(milliseconds: 400),
+      curve: show ? Curves.easeOutCubic : Curves.easeInCubic,
+      bottom: show ? 0 : -600,
+      left: 0,
+      right: 0,
+      child: AnimatedOpacity(
+        duration: const Duration(milliseconds: 350),
+        opacity: show ? 1.0 : 0.0,
+        child: GestureDetector(
+          onVerticalDragEnd: (details) {
+            if (details.velocity.pixelsPerSecond.dy > 200) {
+              setState(() => _dayPlans = null);
+            }
+          },
+          child: Container(
+            decoration: BoxDecoration(
+              color: isDark
+                  ? Colors.black.withValues(alpha: 0.85)
+                  : Colors.white.withValues(alpha: 0.92),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.2),
+                  blurRadius: 20,
+                  offset: const Offset(0, -4),
+                ),
+              ],
+            ),
+            child: show
+                ? DayPlanView(
+                    plans: _dayPlans!,
+                    mapController: _mapController,
+                    onClose: () => setState(() => _dayPlans = null),
+                  )
+                : const SizedBox.shrink(),
           ),
         ),
       ),

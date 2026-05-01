@@ -1,10 +1,7 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import '../models/sns_content_models.dart';
 import '../models/subway_models.dart';
 import '../theme/app_colors.dart';
-import '../theme/app_typography.dart';
-import '../theme/app_spacing.dart';
 import '../widgets/adaptive/adaptive.dart';
 import '../core/map_interface.dart';
 import '../data/seoul_subway_data.dart';
@@ -14,11 +11,13 @@ import 'dart:math';
 class DayPlanView extends StatefulWidget {
   final List<DayPlan> plans;
   final IMapController? mapController;
+  final VoidCallback? onClose;
 
   const DayPlanView({
     super.key,
     required this.plans,
     this.mapController,
+    this.onClose,
   });
 
   @override
@@ -27,17 +26,20 @@ class DayPlanView extends StatefulWidget {
 
 class _DayPlanViewState extends State<DayPlanView> {
   int _selectedPlanIndex = 0;
+  int _animId = 0;
+  bool _animating = false;
 
   DayPlan get _currentPlan => widget.plans[_selectedPlanIndex];
 
   @override
   void initState() {
     super.initState();
-    _drawPlanOnMap();
+    _drawPlanAnimated();
   }
 
   @override
   void dispose() {
+    _animId++;
     _clearMap();
     super.dispose();
   }
@@ -47,71 +49,156 @@ class _DayPlanViewState extends State<DayPlanView> {
     widget.mapController?.clearCircleMarkers();
   }
 
-  Future<void> _drawPlanOnMap() async {
+  Future<void> _drawPlanAnimated() async {
     final mc = widget.mapController;
     if (mc == null) return;
+
     _clearMap();
+    final animId = ++_animId;
+    setState(() => _animating = true);
 
     final plan = _currentPlan;
-    if (plan.stops.isEmpty) return;
+    if (plan.stops.isEmpty) {
+      setState(() => _animating = false);
+      return;
+    }
+
+    // GeoJSON 선로 좌표 로드
+    final geojsonRoutes = await SubwayGeoJsonLoader.load();
 
     // 바운딩 박스 계산
     double minLat = 90, maxLat = -90, minLng = 180, maxLng = -180;
-
-    // 장소 마커
-    for (int i = 0; i < plan.stops.length; i++) {
-      final stop = plan.stops[i];
-      final place = stop.place;
-      if (!place.hasCoordinates) continue;
-
-      final color = _stopColor(i, plan.stops.length);
-      mc.addCircleMarker(
-        'plan_$i', place.lat!, place.lng!,
-        color: color,
-        radius: 12,
-        strokeColor: Colors.white,
-        strokeWidth: 3,
-      );
-
-      if (place.lat! < minLat) minLat = place.lat!;
-      if (place.lat! > maxLat) maxLat = place.lat!;
-      if (place.lng! < minLng) minLng = place.lng!;
-      if (place.lng! > maxLng) maxLng = place.lng!;
+    for (final stop in plan.stops) {
+      final p = stop.place;
+      if (!p.hasCoordinates) continue;
+      if (p.lat! < minLat) minLat = p.lat!;
+      if (p.lat! > maxLat) maxLat = p.lat!;
+      if (p.lng! < minLng) minLng = p.lng!;
+      if (p.lng! > maxLng) maxLng = p.lng!;
     }
 
-    // 경로 폴리라인
-    for (int i = 0; i < plan.stops.length; i++) {
-      final route = plan.stops[i].routeFromPrevious;
-      if (route == null) continue;
-
-      for (int s = 0; s < route.segments.length; s++) {
-        final seg = route.segments[s];
-        if (seg.isTransfer || seg.stations.length < 2) continue;
-
-        final coords = seg.stations
-            .map((n) => SeoulSubwayData.findStation(n))
-            .where((s) => s != null)
-            .map((s) => [s!.lat, s.lng])
-            .toList();
-
-        if (coords.length >= 2) {
-          final lineColor = SubwayColors.lineColors[seg.lineId] ?? AppColors.accent;
-          await mc.addPolyline(
-            'plan_route_${i}_$s', coords,
-            color: lineColor, width: 4.0, opacity: 0.7,
-          );
-        }
-      }
-    }
-
-    // 카메라 이동
+    // 카메라 이동 (하단 패널에 가리지 않도록 중심을 약간 위로)
     if (minLat < maxLat && minLng < maxLng) {
       final centerLat = (minLat + maxLat) / 2;
       final centerLng = (minLng + maxLng) / 2;
       final span = max(maxLat - minLat, maxLng - minLng);
-      final zoom = span > 0.3 ? 10.0 : span > 0.15 ? 11.0 : span > 0.08 ? 12.0 : 13.0;
-      mc.moveTo(centerLat, centerLng, zoom: zoom, pitch: 30);
+      final zoom = span > 0.3 ? 10.0 : span > 0.15 ? 11.0 : span > 0.08 ? 12.0 : 12.5;
+      // 패널이 하단을 차지하므로 중심을 살짝 북쪽으로
+      mc.moveTo(centerLat - span * 0.15, centerLng, zoom: zoom - 0.5, pitch: 20);
     }
+
+    await Future.delayed(const Duration(milliseconds: 400));
+    if (_animId != animId) return;
+
+    // 장소별 순차 애니메이션
+    for (int i = 0; i < plan.stops.length; i++) {
+      if (_animId != animId) return;
+      final stop = plan.stops[i];
+      final place = stop.place;
+
+      // 장소 마커
+      if (place.hasCoordinates) {
+        final color = _stopColor(i, plan.stops.length);
+        await mc.addCircleMarker(
+          'plan_$i', place.lat!, place.lng!,
+          color: color,
+          radius: i == 0 || i == plan.stops.length - 1 ? 14 : 10,
+          strokeColor: Colors.white,
+          strokeWidth: i == 0 || i == plan.stops.length - 1 ? 4 : 3,
+        );
+      }
+
+      // 경로 애니메이션 (이전 장소에서 현재 장소까지)
+      final route = stop.routeFromPrevious;
+      if (route != null) {
+        for (int s = 0; s < route.segments.length; s++) {
+          if (_animId != animId) return;
+          final seg = route.segments[s];
+          if (seg.isTransfer || seg.stations.length < 2) continue;
+
+          // GeoJSON에서 실제 선로 좌표 추출
+          final firstStn = SeoulSubwayData.findStation(seg.stations.first);
+          final lastStn = SeoulSubwayData.findStation(seg.stations.last);
+          if (firstStn == null || lastStn == null) continue;
+
+          final lineCoords = geojsonRoutes[seg.lineId];
+          List<List<double>> segCoords;
+          if (lineCoords != null && lineCoords.length >= 2) {
+            segCoords = _extractSegmentFromRoute(lineCoords, firstStn, lastStn);
+          } else {
+            segCoords = seg.stations
+                .map((n) => SeoulSubwayData.findStation(n))
+                .where((st) => st != null)
+                .map((st) => [st!.lat, st.lng])
+                .toList();
+          }
+          if (segCoords.length < 2) continue;
+
+          final lineColor = SubwayColors.lineColors[seg.lineId] ?? AppColors.accent;
+
+          // 점진적으로 폴리라인 그리기
+          final totalPoints = segCoords.length;
+          final step = max(1, totalPoints ~/ 8);
+
+          for (int p = step; p <= totalPoints; p += step) {
+            if (_animId != animId) return;
+            final partial = segCoords.sublist(0, min(p, totalPoints));
+            if (partial.length >= 2) {
+              mc.removePolyline('plan_route_${i}_$s');
+              await mc.addPolyline('plan_route_${i}_$s', partial,
+                  color: lineColor, width: 5.0, opacity: 0.85);
+            }
+            await Future.delayed(const Duration(milliseconds: 40));
+          }
+
+          // 전체 좌표로 확정
+          if (_animId != animId) return;
+          mc.removePolyline('plan_route_${i}_$s');
+          await mc.addPolyline('plan_route_${i}_$s', segCoords,
+              color: lineColor, width: 5.0, opacity: 0.85);
+        }
+
+        // 구간 사이 딜레이
+        if (i < plan.stops.length - 1) {
+          await Future.delayed(const Duration(milliseconds: 150));
+        }
+      }
+    }
+
+    if (mounted) setState(() => _animating = false);
+  }
+
+  List<List<double>> _extractSegmentFromRoute(
+    List<List<double>> routeCoords,
+    StationInfo startStation,
+    StationInfo endStation,
+  ) {
+    int startIdx = _findClosestIndex(routeCoords, startStation.lat, startStation.lng);
+    int endIdx = _findClosestIndex(routeCoords, endStation.lat, endStation.lng);
+    if (startIdx == endIdx) {
+      return [[startStation.lat, startStation.lng], [endStation.lat, endStation.lng]];
+    }
+    if (startIdx > endIdx) {
+      final temp = startIdx;
+      startIdx = endIdx;
+      endIdx = temp;
+    }
+    return routeCoords.sublist(startIdx, endIdx + 1);
+  }
+
+  int _findClosestIndex(List<List<double>> coords, double lat, double lng) {
+    int bestIdx = 0;
+    double bestDist = double.infinity;
+    for (int i = 0; i < coords.length; i++) {
+      final dLat = coords[i][0] - lat;
+      final dLng = coords[i][1] - lng;
+      final d = dLat * dLat + dLng * dLng;
+      if (d < bestDist) {
+        bestDist = d;
+        bestIdx = i;
+      }
+    }
+    return bestIdx;
   }
 
   Color _stopColor(int index, int total) {
@@ -123,124 +210,139 @@ class _DayPlanViewState extends State<DayPlanView> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    const isM3 = true;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final bottomPadding = MediaQuery.of(context).padding.bottom;
 
-    return Scaffold(
-      backgroundColor: isM3 ? cs.surface : const Color(0xFF0A0A0A),
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_rounded),
-          onPressed: () {
-            _clearMap();
-            Navigator.pop(context);
-          },
-        ),
-        title: Text(
-          '하루 플랜',
-          style: TextStyle(
-            fontSize: 17,
-            fontWeight: FontWeight.w600,
-            color: isM3 ? cs.onSurface : Colors.white,
+    if (widget.plans.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // 헤더
+        Container(
+          padding: const EdgeInsets.fromLTRB(20, 12, 8, 0),
+          child: Row(
+            children: [
+              if (_animating)
+                Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: SizedBox(
+                    width: 16, height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: cs.primary,
+                    ),
+                  ),
+                ),
+              Text(
+                '하루 플랜',
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w700,
+                  color: isDark ? Colors.white : cs.onSurface,
+                ),
+              ),
+              const Spacer(),
+              IconButton(
+                icon: Icon(Icons.close, color: isDark ? Colors.white70 : cs.onSurfaceVariant),
+                onPressed: () {
+                  _animId++;
+                  _clearMap();
+                  widget.onClose?.call();
+                },
+              ),
+            ],
           ),
         ),
-        centerTitle: true,
-      ),
-      body: widget.plans.isEmpty
-          ? Center(child: Text('플랜을 생성할 수 없습니다', style: TextStyle(color: isM3 ? cs.onSurfaceVariant : Colors.white60)))
-          : Column(
-              children: [
-                // 스타일 선택 탭
-                SizedBox(
-                  height: 100,
-                  child: ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    itemCount: widget.plans.length,
-                    itemBuilder: (context, i) => _buildStyleCard(i, isM3, cs),
-                  ),
-                ),
 
-                // 요약
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-                  child: Row(
-                    children: [
-                      _summaryChip('🕐 ${_currentPlan.startTime}–${_currentPlan.endTime}', isM3, cs),
-                      const SizedBox(width: 8),
-                      _summaryChip('🚇 이동 ${_currentPlan.totalTransitMinutes}분', isM3, cs),
-                      const SizedBox(width: 8),
-                      if (_currentPlan.transferCount > 0)
-                        _summaryChip('🔄 환승 ${_currentPlan.transferCount}회', isM3, cs),
-                    ],
-                  ),
-                ),
+        // 스타일 선택 탭
+        SizedBox(
+          height: 84,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            itemCount: widget.plans.length,
+            itemBuilder: (context, i) => _buildStyleCard(i, cs, isDark),
+          ),
+        ),
 
-                // 타임라인
-                Expanded(
-                  child: ListView.builder(
-                    padding: EdgeInsets.fromLTRB(20, 12, 20, bottomPadding + 24),
-                    itemCount: _currentPlan.stops.length,
-                    itemBuilder: (context, i) => _buildStopItem(i, isM3, cs),
-                  ),
-                ),
+        // 요약
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+          child: Row(
+            children: [
+              _summaryChip('🕐 ${_currentPlan.startTime}–${_currentPlan.endTime}', cs, isDark),
+              const SizedBox(width: 8),
+              _summaryChip('🚇 ${_currentPlan.totalTransitMinutes}분', cs, isDark),
+              if (_currentPlan.transferCount > 0) ...[
+                const SizedBox(width: 8),
+                _summaryChip('🔄 ${_currentPlan.transferCount}회', cs, isDark),
               ],
-            ),
+            ],
+          ),
+        ),
+
+        // 타임라인
+        SizedBox(
+          height: 280,
+          child: ListView.builder(
+            padding: EdgeInsets.fromLTRB(20, 8, 20, bottomPadding + 16),
+            itemCount: _currentPlan.stops.length,
+            itemBuilder: (context, i) => _buildStopItem(i, cs, isDark),
+          ),
+        ),
+      ],
     );
   }
 
-  Widget _buildStyleCard(int index, bool isM3, ColorScheme cs) {
+  Widget _buildStyleCard(int index, ColorScheme cs, bool isDark) {
     final plan = widget.plans[index];
     final selected = index == _selectedPlanIndex;
 
     return GestureDetector(
       onTap: () {
         setState(() => _selectedPlanIndex = index);
-        _drawPlanOnMap();
+        _drawPlanAnimated();
       },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        width: 140,
+        width: 130,
         margin: const EdgeInsets.only(right: 10),
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
           color: selected
-              ? (isM3 ? cs.primaryContainer : AppColors.accent.withValues(alpha: 0.2))
-              : (isM3 ? cs.surfaceContainerLow : Colors.white.withValues(alpha: 0.06)),
+              ? cs.primaryContainer
+              : (isDark ? Colors.white.withValues(alpha: 0.06) : cs.surfaceContainerLow),
           border: Border.all(
-            color: selected
-                ? (isM3 ? cs.primary : AppColors.accent)
-                : (isM3 ? cs.outlineVariant : Colors.white12),
+            color: selected ? cs.primary : cs.outlineVariant,
             width: selected ? 1.5 : 0.5,
           ),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Text(plan.style.icon, style: const TextStyle(fontSize: 20)),
-            const SizedBox(height: 6),
+            Text(plan.style.icon, style: const TextStyle(fontSize: 14)),
+            const SizedBox(height: 2),
             Text(
               plan.style.label,
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 12,
                 fontWeight: FontWeight.w700,
-                color: selected
-                    ? (isM3 ? cs.onPrimaryContainer : Colors.white)
-                    : (isM3 ? cs.onSurface : Colors.white70),
+                color: selected ? cs.onPrimaryContainer : (isDark ? Colors.white70 : cs.onSurface),
               ),
             ),
             Text(
               '${plan.stops.length}곳 · ${plan.totalTransitMinutes}분',
               style: TextStyle(
-                fontSize: 11,
+                fontSize: 10,
                 color: selected
-                    ? (isM3 ? cs.onPrimaryContainer.withValues(alpha: 0.7) : Colors.white60)
-                    : (isM3 ? cs.onSurfaceVariant : Colors.white38),
+                    ? cs.onPrimaryContainer.withValues(alpha: 0.7)
+                    : (isDark ? Colors.white38 : cs.onSurfaceVariant),
               ),
             ),
           ],
@@ -249,25 +351,25 @@ class _DayPlanViewState extends State<DayPlanView> {
     );
   }
 
-  Widget _summaryChip(String text, bool isM3, ColorScheme cs) {
+  Widget _summaryChip(String text, ColorScheme cs, bool isDark) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(10),
-        color: isM3 ? cs.surfaceContainerHighest : Colors.white.withValues(alpha: 0.08),
+        color: isDark ? Colors.white.withValues(alpha: 0.08) : cs.surfaceContainerHighest,
       ),
       child: Text(
         text,
         style: TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w500,
-          color: isM3 ? cs.onSurface : Colors.white70,
+          color: isDark ? Colors.white70 : cs.onSurface,
         ),
       ),
     );
   }
 
-  Widget _buildStopItem(int index, bool isM3, ColorScheme cs) {
+  Widget _buildStopItem(int index, ColorScheme cs, bool isDark) {
     final stop = _currentPlan.stops[index];
     final place = stop.place;
     final isFirst = index == 0;
@@ -276,31 +378,25 @@ class _DayPlanViewState extends State<DayPlanView> {
 
     return Column(
       children: [
-        // 이동 구간 (첫 번째 제외)
+        // 이동 구간
         if (!isFirst && stop.transitMinutes > 0)
           Padding(
             padding: const EdgeInsets.only(left: 19, bottom: 4),
             child: Row(
               children: [
-                Container(width: 2, height: 24, color: isM3 ? cs.outlineVariant : Colors.white12),
+                Container(width: 2, height: 20, color: isDark ? Colors.white12 : cs.outlineVariant),
                 const SizedBox(width: 14),
-                Icon(Icons.subway, size: 14, color: isM3 ? cs.onSurfaceVariant : Colors.white38),
+                Icon(Icons.subway, size: 14, color: isDark ? Colors.white38 : cs.onSurfaceVariant),
                 const SizedBox(width: 6),
                 Text(
-                  '${stop.transitMinutes}분 이동',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: isM3 ? cs.onSurfaceVariant : Colors.white38,
-                  ),
+                  '${stop.transitMinutes}분',
+                  style: TextStyle(fontSize: 12, color: isDark ? Colors.white38 : cs.onSurfaceVariant),
                 ),
                 if (stop.routeFromPrevious != null && stop.routeFromPrevious!.transferCount > 0) ...[
-                  const SizedBox(width: 6),
+                  const SizedBox(width: 4),
                   Text(
-                    '(환승 ${stop.routeFromPrevious!.transferCount}회)',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: isM3 ? cs.onSurfaceVariant.withValues(alpha: 0.6) : Colors.white24,
-                    ),
+                    '환승${stop.routeFromPrevious!.transferCount}',
+                    style: TextStyle(fontSize: 11, color: isDark ? Colors.white24 : cs.onSurfaceVariant.withValues(alpha: 0.6)),
                   ),
                 ],
               ],
@@ -315,8 +411,8 @@ class _DayPlanViewState extends State<DayPlanView> {
             Column(
               children: [
                 Container(
-                  width: 40,
-                  height: 40,
+                  width: 36,
+                  height: 36,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: dotColor.withValues(alpha: 0.15),
@@ -325,30 +421,22 @@ class _DayPlanViewState extends State<DayPlanView> {
                   child: Center(
                     child: Text(
                       '${index + 1}',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: dotColor,
-                      ),
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: dotColor),
                     ),
                   ),
                 ),
                 if (!isLast)
-                  Container(
-                    width: 2,
-                    height: 20,
-                    color: isM3 ? cs.outlineVariant : Colors.white12,
-                  ),
+                  Container(width: 2, height: 16, color: isDark ? Colors.white12 : cs.outlineVariant),
               ],
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 10),
             // 카드
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.only(bottom: 6),
                 child: AdaptiveSurfaceCard(
-                  borderRadius: 14,
-                  padding: const EdgeInsets.all(14),
+                  borderRadius: 12,
+                  padding: const EdgeInsets.all(12),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -358,40 +446,23 @@ class _DayPlanViewState extends State<DayPlanView> {
                             child: Text(
                               place.name,
                               style: TextStyle(
-                                fontSize: 15,
+                                fontSize: 14,
                                 fontWeight: FontWeight.w600,
-                                color: isM3 ? cs.onSurface : Colors.white,
+                                color: isDark ? Colors.white : cs.onSurface,
                               ),
                             ),
                           ),
                           Text(
                             '${stop.arrivalTime}–${stop.departureTime}',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                              color: isM3 ? cs.primary : AppColors.accent,
-                            ),
+                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: cs.primary),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 3),
                       Text(
                         place.activity,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: isM3 ? cs.onSurfaceVariant : Colors.white70,
-                        ),
+                        style: TextStyle(fontSize: 12, color: isDark ? Colors.white70 : cs.onSurfaceVariant),
                       ),
-                      if (place.mood.isNotEmpty) ...[
-                        const SizedBox(height: 2),
-                        Text(
-                          place.mood,
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: isM3 ? cs.onSurfaceVariant.withValues(alpha: 0.7) : Colors.white38,
-                          ),
-                        ),
-                      ],
                     ],
                   ),
                 ),
