@@ -51,6 +51,7 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
   bool _showTextInput = false;
   bool _textModeActive = false;
   final TextEditingController _textController = TextEditingController();
+  final TextEditingController _courseRequestController = TextEditingController();
   final FocusNode _textFocusNode = FocusNode();
 
   // ── 장소 분석 결과 패널 ──
@@ -374,6 +375,7 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
     _liveService.endSession();
     _audioService.dispose();
     _textController.dispose();
+    _courseRequestController.dispose();
     _textFocusNode.dispose();
     super.dispose();
   }
@@ -562,6 +564,43 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
     } catch (e) {
       if (mounted) setState(() => _loadingMorePlaces = false);
       debugPrint('[AiView] Request more places error: $e');
+    }
+  }
+
+  Future<void> _submitCourseRequest() async {
+    final request = _courseRequestController.text.trim();
+    if (request.isEmpty || _loadingMorePlaces) return;
+    _courseRequestController.clear();
+    FocusManager.instance.primaryFocus?.unfocus();
+
+    setState(() => _loadingMorePlaces = true);
+    widget.onStatusChanged?.call('$request 처리 중...');
+
+    try {
+      final existing = _extractedPlaces.map((p) => p.name).join(', ');
+      final content = SnsContent(
+        imagePaths: [],
+        text: '현재 코스: $existing\n사용자 요청: $request\n이 요청에 맞게 서울 내 장소를 3~5개 추천해줘.',
+        url: '',
+      );
+      final result = await GeminiService.instance.analyzeContent(content);
+      if (!mounted) return;
+
+      if (result.places.isNotEmpty) {
+        final geoPlaces = await GeminiService.instance.geocodeAll(result.places);
+        if (!mounted) return;
+        setState(() {
+          _extractedPlaces.addAll(geoPlaces);
+          _loadingMorePlaces = false;
+        });
+        widget.onStatusChanged?.call('${geoPlaces.length}개 장소를 추가했어요!');
+      } else {
+        setState(() => _loadingMorePlaces = false);
+        widget.onStatusChanged?.call('요청에 맞는 장소를 찾지 못했어요.');
+      }
+    } catch (e) {
+      if (mounted) setState(() => _loadingMorePlaces = false);
+      debugPrint('[AiView] Course request error: $e');
     }
   }
 
@@ -1153,6 +1192,53 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
                     padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
                     itemCount: _extractedPlaces.length,
                     itemBuilder: (context, index) => _buildPlaceCard(index),
+                  ),
+                ),
+                // AI 코스 조절 입력
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                  child: Container(
+                    padding: const EdgeInsets.fromLTRB(14, 2, 4, 2),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          const Color(0xFFBC82F3).withValues(alpha: 0.15),
+                          const Color(0xFF8D9FFF).withValues(alpha: 0.1),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: const Color(0xFFBC82F3).withValues(alpha: 0.3)),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.auto_awesome, size: 16, color: const Color(0xFFBC82F3).withValues(alpha: 0.7)),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: TextField(
+                            controller: _courseRequestController,
+                            style: const TextStyle(color: Colors.white, fontSize: 13),
+                            decoration: InputDecoration(
+                              hintText: 'AI에게 코스 요청 (예: 카페 추가해줘)',
+                              hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 13),
+                              border: InputBorder.none,
+                              contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                            ),
+                            onSubmitted: (_) => _submitCourseRequest(),
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: _submitCourseRequest,
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFBC82F3).withValues(alpha: 0.3),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.send_rounded, color: Colors.white, size: 16),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
                 // 코스 추가 + 일정 만들기 버튼
