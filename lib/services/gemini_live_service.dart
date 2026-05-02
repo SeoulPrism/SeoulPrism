@@ -250,6 +250,9 @@ class GeminiLiveService {
               },
             },
           },
+          'thinkingConfig': {
+            'thinkingBudget': 0,
+          },
         },
         'systemInstruction': {
           'parts': [

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
@@ -45,6 +46,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   bool _settingsOpen = false;
   bool _aiOpen = false;
   bool _aiClosing = false;
+  String _aiStatus = '';
   List<DayPlan>? _dayPlans;
 
   final CameraInfo _cameraInfo = CameraInfo(
@@ -312,7 +314,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Scaffold(
       extendBody: true,
       resizeToAvoidBottomInset: false,
-      bottomNavigationBar: _buildBottomTabBar(),
+      bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // AI 상태 텍스트 (탭바 바로 위)
+          if (_aiOpen && _aiStatus.isNotEmpty)
+            _buildAiStatusBar(),
+          _buildBottomTabBar(),
+        ],
+      ),
       body: AnimatedScale(
         scale: _aiOpen && !_aiClosing ? 0.995 : 1.0,
         duration: const Duration(milliseconds: 600),
@@ -417,8 +427,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 onClose: () => setState(() {
                   _aiOpen = false;
                   _aiClosing = false;
+                  _aiStatus = '';
                 }),
                 onAction: _handleAiAction,
+                onStatusChanged: (status) {
+                  if (mounted) setState(() => _aiStatus = status);
+                },
               ),
             ),
 
@@ -480,6 +494,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildAiStatusBar() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.6),
+        border: Border(top: BorderSide(color: const Color(0xFFBC82F3).withValues(alpha: 0.3))),
+      ),
+      child: _AiStatusText(text: _aiStatus),
     );
   }
 
@@ -1434,6 +1460,64 @@ class _SettingsPanelState extends State<SettingsPanel> {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// AI 상태 텍스트 (타이핑 효과)
+class _AiStatusText extends StatefulWidget {
+  final String text;
+  const _AiStatusText({required this.text});
+
+  @override
+  State<_AiStatusText> createState() => _AiStatusTextState();
+}
+
+class _AiStatusTextState extends State<_AiStatusText> {
+  String _displayed = '';
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _animate(widget.text);
+  }
+
+  @override
+  void didUpdateWidget(_AiStatusText old) {
+    super.didUpdateWidget(old);
+    if (old.text != widget.text) {
+      _animate(widget.text);
+    }
+  }
+
+  void _animate(String target) {
+    _timer?.cancel();
+    _displayed = '';
+    int i = 0;
+    _timer = Timer.periodic(const Duration(milliseconds: 40), (t) {
+      if (!mounted || i >= target.length) { t.cancel(); return; }
+      i++;
+      setState(() => _displayed = target.substring(0, i));
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      _displayed,
+      style: TextStyle(
+        color: Colors.white.withValues(alpha: 0.8),
+        fontSize: 12,
+        fontWeight: FontWeight.w500,
+      ),
+      textAlign: TextAlign.center,
     );
   }
 }

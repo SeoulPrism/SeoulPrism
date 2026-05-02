@@ -10,9 +10,10 @@ import 'package:just_audio/just_audio.dart';
 /// 마이크 입력 및 오디오 재생 관리
 class AudioService {
   final AudioRecorder _recorder = AudioRecorder();
-  AudioPlayer? _player;
+  late final AudioPlayer _player;
   StreamSubscription? _recordSubscription;
   bool _isRecording = false;
+  bool _playerReady = false;
 
   final _audioInController = StreamController<Uint8List>.broadcast();
   Stream<Uint8List> get audioInStream => _audioInController.stream;
@@ -22,8 +23,13 @@ class AudioService {
 
   bool get isRecording => _isRecording;
 
-  // base64 문자열만 저장 (메인 스레드에서 디코딩 안 함)
+  // base64 문자열만 저장 (메인 스레드 부하 제로)
   final _base64Chunks = <String>[];
+
+  AudioService() {
+    _player = AudioPlayer();
+    _playerReady = true;
+  }
 
   Future<bool> requestMicPermission() async {
     final status = await Permission.microphone.request();
@@ -58,7 +64,6 @@ class AudioService {
       });
 
       _isRecording = true;
-      debugPrint('[AudioService] Recording started');
       return true;
     } catch (e) {
       debugPrint('[AudioService] Failed to start recording: $e');
@@ -74,37 +79,38 @@ class AudioService {
     _isRecording = false;
   }
 
-  /// base64 오디오 청크 저장 (메인 스레드 부하 제로)
+  /// base64 문자열 저장 (O(1), 메인 스레드 부하 없음)
   void bufferBase64(String base64Data) {
     _base64Chunks.add(base64Data);
   }
 
-  /// 모든 청크를 background isolate에서 디코딩 + WAV 생성 → 재생
+  /// generationComplete 시 호출 — 디코딩 + WAV 생성 + 재생
   Future<void> flushAndPlay() async {
-    if (_base64Chunks.isEmpty) return;
+    if (_base64Chunks.isEmpty || !_playerReady) return;
 
     final chunks = List<String>.from(_base64Chunks);
     _base64Chunks.clear();
 
-    // 무거운 작업은 모두 isolate에서 (메인 스레드 블로킹 제로)
-    final filePath = await compute(_decodeAndCreateWav, chunks);
+    // WAV 파일 생성 (isolate 없이 — 리스트 저장만 했으므로 빠름)
+    final pcmBuffer = BytesBuilder();
+    for (final chunk in chunks) {
+      pcmBuffer.add(base64Decode(chunk));
+    }
+    final pcmData = pcmBuffer.toBytes();
+    if (pcmData.length < 100) return;
 
-    if (filePath == null) return;
+    final wavData = _buildWav(pcmData, 24000);
+    final filePath = '${Directory.systemTemp.path}/sp_${DateTime.now().millisecondsSinceEpoch}.wav';
+    await File(filePath).writeAsBytes(wavData);
 
     try {
-      // 새 플레이어 생성 (이전 플레이어의 상태 문제 방지)
-      _player?.dispose();
-      _player = AudioPlayer();
-
-      await _player!.setFilePath(filePath);
-      await _player!.play();
-
-      debugPrint('[AudioService] Playing ${chunks.length} chunks');
+      await _player.setFilePath(filePath);
+      await _player.play();
 
       // 재생 완료 대기
-      await _player!.playerStateStream.firstWhere(
+      await _player.playerStateStream.firstWhere(
         (s) => s.processingState == ProcessingState.completed,
-      ).timeout(const Duration(seconds: 30), onTimeout: () => _player!.playerState);
+      ).timeout(const Duration(seconds: 30), onTimeout: () => _player.playerState);
 
       try { await File(filePath).delete(); } catch (_) {}
     } catch (e) {
@@ -112,30 +118,15 @@ class AudioService {
     }
   }
 
-  /// [Isolate] base64 디코딩 + WAV 파일 생성 (메인 스레드 밖에서 실행)
-  static String? _decodeAndCreateWav(List<String> base64Chunks) {
-    try {
-      final pcmBuffer = BytesBuilder();
-      for (final chunk in base64Chunks) {
-        pcmBuffer.add(base64Decode(chunk));
-      }
-      final pcmData = pcmBuffer.toBytes();
-      if (pcmData.length < 100) return null;
-
-      final wavData = _buildWav(pcmData, 24000);
-      final filePath = '${Directory.systemTemp.path}/sp_${DateTime.now().millisecondsSinceEpoch}.wav';
-      File(filePath).writeAsBytesSync(wavData);
-      return filePath;
-    } catch (e) {
-      return null;
-    }
+  void stopPlayback() {
+    _player.stop();
+    _base64Chunks.clear();
   }
 
-  /// WAV 헤더 + PCM 데이터 결합
   static Uint8List _buildWav(Uint8List pcmData, int sampleRate) {
     final dataSize = pcmData.length;
     final fileSize = 36 + dataSize;
-    final byteRate = sampleRate * 2; // 16-bit mono
+    final byteRate = sampleRate * 2;
 
     final header = ByteData(44);
     header.setUint8(0, 0x52); header.setUint8(1, 0x49);
@@ -162,11 +153,6 @@ class AudioService {
     return wav.toBytes();
   }
 
-  void stopPlayback() {
-    _player?.stop();
-    _base64Chunks.clear();
-  }
-
   double _calculateRmsLevel(Uint8List pcmData) {
     if (pcmData.length < 2) return 0.0;
     final byteData = ByteData.sublistView(pcmData);
@@ -185,7 +171,8 @@ class AudioService {
     stopRecording();
     stopPlayback();
     _recorder.dispose();
-    _player?.dispose();
+    _player.dispose();
+    _playerReady = false;
     _audioInController.close();
     _levelController.close();
   }

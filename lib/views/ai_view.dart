@@ -13,10 +13,12 @@ class AiView extends StatefulWidget {
   final VoidCallback? onClose;
   final bool closing;
   final void Function(AiActionEvent action)? onAction;
+  final void Function(String status)? onStatusChanged;
 
   const AiView({
     super.key,
     this.onClose,
+    this.onStatusChanged,
     this.closing = false,
     this.onAction,
   });
@@ -119,6 +121,16 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
         _sessionState = state;
         _updateGlowForState(state);
       });
+      // 상태 텍스트 외부 전달
+      final statusText = switch (state) {
+        LiveSessionState.connecting => '연결 중...',
+        LiveSessionState.listening => '듣고 있어요',
+        LiveSessionState.processing => '생각 중...',
+        LiveSessionState.speaking => '말하는 중',
+        LiveSessionState.idlePrompt => '',
+        _ => '',
+      };
+      widget.onStatusChanged?.call(statusText);
     });
 
     _transcriptSub = _liveService.transcriptStream.listen((text) {
