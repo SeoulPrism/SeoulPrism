@@ -580,17 +580,10 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
           child: _buildStateIndicator(),
         ),
 
-        // 3. AI 응�� 자막 — 타이핑 애니메이션 (중앙)
-        if (_displayedTranscript.isNotEmpty)
-          Positioned(
-            left: 32,
-            right: 32,
-            top: MediaQuery.of(context).size.height * 0.35,
-            child: _buildTranscript(),
-          ),
+        // 3. (자막은 탭바 위에만 표시)
 
-        // 4. 무음 시 텍스트 전환 프롬프트
-        if (_sessionState == LiveSessionState.idlePrompt && !_textModeActive)
+        // 4. 무음 시 텍스트 입력 전환 (5초 후 자동)
+        if (_sessionState == LiveSessionState.idlePrompt && !_showTextInput)
           _buildIdlePrompt(),
 
         // 5. 분석 중 로딩 인디케이터
@@ -709,62 +702,68 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
   /// 무음 시 텍스트 전환 프롬프트
   Widget _buildIdlePrompt() {
     return Positioned(
-      bottom: MediaQuery.of(context).padding.bottom + 160,
-      left: 40,
-      right: 40,
+      bottom: MediaQuery.of(context).padding.bottom + 100,
+      left: 24,
+      right: 24,
       child: TweenAnimationBuilder<double>(
         tween: Tween(begin: 0.0, end: 1.0),
-        duration: const Duration(milliseconds: 500),
+        duration: const Duration(milliseconds: 400),
         curve: Curves.easeOutCubic,
         builder: (context, value, child) {
           return Transform.translate(
-            offset: Offset(0, 20 * (1 - value)),
-            child: Opacity(
-              opacity: value,
-              child: child,
-            ),
+            offset: Offset(0, 30 * (1 - value)),
+            child: Opacity(opacity: value, child: child),
           );
         },
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.6),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                '현재 말을 못하는 상황인가요?',
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.8),
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '말을 할 수 없나요?',
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.6),
+                fontSize: 13,
               ),
-              const SizedBox(height: 12),
-              GestureDetector(
-                onTap: _showTextInputField,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
-                  ),
-                  child: const Text(
-                    '텍스트로 대화하기',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
+            ),
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.6),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _textController,
+                      focusNode: _textFocusNode,
+                      style: const TextStyle(color: Colors.white, fontSize: 14),
+                      decoration: InputDecoration(
+                        hintText: '텍스트로 입력하세요...',
+                        hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.35)),
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
+                      ),
+                      onSubmitted: (_) => _submitText(),
                     ),
                   ),
-                ),
+                  GestureDetector(
+                    onTap: _submitText,
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFBC82F3).withValues(alpha: 0.3),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.send_rounded, color: Colors.white, size: 18),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

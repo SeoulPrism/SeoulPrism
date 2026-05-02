@@ -517,10 +517,10 @@ class GeminiLiveService {
     _startSilenceTimer();
   }
 
-  /// 무음 타이머 (30초 무음 → idle prompt)
+  /// 무음 타이머 (5초 무음 → idle prompt)
   void _startSilenceTimer() {
     _silenceTimer?.cancel();
-    _silenceTimer = Timer(const Duration(seconds: 30), () {
+    _silenceTimer = Timer(const Duration(seconds: 5), () {
       if (_state == LiveSessionState.listening) {
         _setState(LiveSessionState.idlePrompt);
       }
