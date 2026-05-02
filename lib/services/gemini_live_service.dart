@@ -1,8 +1,7 @@
 import 'dart:async';
-import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
-import 'package:web_socket_channel/web_socket_channel.dart';
-import '../core/api_keys.dart';
+import 'package:firebase_ai/firebase_ai.dart';
 
 /// Gemini Live API 세션 상태
 enum LiveSessionState {
@@ -37,7 +36,7 @@ class AiActionEvent {
   const AiActionEvent(this.action, this.params, {this.callId = ''});
 }
 
-/// Gemini Live API WebSocket 서비스
+/// Gemini Live API 서비스 (firebase_ai 공식 SDK)
 class GeminiLiveService {
   static GeminiLiveService? _instance;
   static GeminiLiveService get instance {
@@ -46,229 +45,52 @@ class GeminiLiveService {
   }
   GeminiLiveService._();
 
-  WebSocketChannel? _channel;
-  StreamSubscription? _subscription;
+  LiveSession? _session;
+  LiveGenerativeModel? _liveModel;
 
   final _stateController = StreamController<LiveSessionState>.broadcast();
   final _transcriptController = StreamController<String>.broadcast();
-  final _audioBase64Controller = StreamController<String>.broadcast();
+  final _audioOutController = StreamController<Uint8List>.broadcast();
   final _actionController = StreamController<AiActionEvent>.broadcast();
-  final _turnCompleteController = StreamController<void>.broadcast();
 
   LiveSessionState _state = LiveSessionState.idle;
   Timer? _silenceTimer;
   bool _disposed = false;
+  StreamController<bool>? _stopController;
 
-  /// 현재 세션 상태 스트림
   Stream<LiveSessionState> get stateStream => _stateController.stream;
   LiveSessionState get state => _state;
-
-  /// AI 응답 텍스트 (자막) 스트림
   Stream<String> get transcriptStream => _transcriptController.stream;
-
-  /// AI 응답 오디오 스트림 (base64 문자열 — 메인 스레드에서 디코딩하지 않음)
-  Stream<String> get audioBase64Stream => _audioBase64Controller.stream;
-
-  /// Function Calling 액션 스트림
+  Stream<Uint8List> get audioOutStream => _audioOutController.stream;
   Stream<AiActionEvent> get actionStream => _actionController.stream;
 
-  /// 턴 완료 스트림 (오디오 flush 트리거)
-  Stream<void> get turnCompleteStream => _turnCompleteController.stream;
-
-  static const _wsUrl =
-      'wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent';
-
-  /// Function declarations for tool use
-  static final _toolDeclarations = {
-    'functionDeclarations': [
-      {
-        'name': 'navigate_to_station',
-        'description': '지도를 특정 지하철역으로 이동하고 해당 역을 선택합니다. 사용자가 역 위치를 물어보거나 특정 역으로 이동하고 싶을 때 사용합니다.',
-        'parameters': {
-          'type': 'object',
-          'properties': {
-            'stationName': {
-              'type': 'string',
-              'description': '지하철역명 (역 글자 제외, 예: "서울", "강남", "홍대입구")',
-            },
-          },
-          'required': ['stationName'],
-        },
-      },
-      {
-        'name': 'show_station_info',
-        'description': '특정 지하철역의 실시간 도착 정보를 표시합니다.',
-        'parameters': {
-          'type': 'object',
-          'properties': {
-            'stationName': {
-              'type': 'string',
-              'description': '지하철역명 (역 글자 제외)',
-            },
-          },
-          'required': ['stationName'],
-        },
-      },
-      {
-        'name': 'analyze_url',
-        'description': 'SNS URL(유튜브, 인스타그램, 틱톡 등)을 분석하여 서울 내 장소를 추출합니다. 사용자가 URL을 제공했을 때 사용합니다.',
-        'parameters': {
-          'type': 'object',
-          'properties': {
-            'url': {
-              'type': 'string',
-              'description': '분석할 URL',
-            },
-          },
-          'required': ['url'],
-        },
-      },
-      {
-        'name': 'analyze_image',
-        'description': '사용자가 제공한 이미지를 분석하여 장소를 파악합니다. 사용자가 사진을 보내겠다고 하거나 이미지를 통해 장소를 알고 싶어할 때 사용합니다.',
-        'parameters': {
-          'type': 'object',
-          'properties': {
-            'prompt': {
-              'type': 'string',
-              'description': '이미지 분석 시 추가 컨텍스트',
-            },
-          },
-        },
-      },
-      {
-        'name': 'create_plan',
-        'description': '추출된 장소들로 하루 여행 일정을 생성합니다. 사용자가 일정/플랜/계획을 만들어달라고 할 때 사용합니다.',
-        'parameters': {
-          'type': 'object',
-          'properties': {
-            'style': {
-              'type': 'string',
-              'enum': ['efficient', 'leisurely', 'foodFocused'],
-              'description': '일정 스타일: efficient(효율적), leisurely(여유로운), foodFocused(맛집 중심)',
-            },
-            'places': {
-              'type': 'string',
-              'description': '장소 목록 JSON 문자열 (이전 분석 결과)',
-            },
-          },
-          'required': ['style'],
-        },
-      },
-      {
-        'name': 'search_place',
-        'description': '서울 내 특정 장소나 카테고리를 검색합니다. 사용자가 맛집, 카페, 관광지 등을 물어볼 때 사용합니다.',
-        'parameters': {
-          'type': 'object',
-          'properties': {
-            'query': {
-              'type': 'string',
-              'description': '검색 쿼리 (예: "강남 맛집", "홍대 카페")',
-            },
-            'category': {
-              'type': 'string',
-              'enum': ['맛집', '카페', '관광', '쇼핑', '문화', '자연'],
-              'description': '장소 카테고리',
-            },
-          },
-          'required': ['query'],
-        },
-      },
-      {
-        'name': 'request_photo',
-        'description': '사용자에게 사진을 보내달라고 요청합니다. 카메라로 촬영하거나 갤러리에서 선택할 수 있는 UI를 표시합니다. 사용자가 사진을 보내고 싶다고 하거나, 사진 기반 장소 추천을 원할 때 호출합니다.',
-        'parameters': {
-          'type': 'object',
-          'properties': {
-            'source': {
-              'type': 'string',
-              'enum': ['camera', 'gallery', 'both'],
-              'description': '사진 소스: camera(촬영), gallery(갤러리), both(선택)',
-            },
-          },
-        },
-      },
-      {
-        'name': 'add_places',
-        'description': '현재 여행 코스에 새로운 장소를 추가합니다. 사용자가 "카페 추가해줘", "맛집도 넣어줘", "자연 관련 장소 추가" 등 코스에 장소를 추가하고 싶어할 때 호출합니다.',
-        'parameters': {
-          'type': 'object',
-          'properties': {
-            'query': {
-              'type': 'string',
-              'description': '추가할 장소 검색 쿼리 (예: "홍대 카페", "서울 맛집")',
-            },
-            'category': {
-              'type': 'string',
-              'enum': ['맛집', '카페', '관광', '쇼핑', '문화', '자연'],
-              'description': '추가할 장소 카테고리',
-            },
-          },
-          'required': ['query'],
-        },
-      },
-      {
-        'name': 'remove_place',
-        'description': '현재 여행 코스에서 특정 장소를 삭제합니다. 사용자가 "경복궁 빼줘", "그 카페 삭제해줘" 등 특정 장소를 제거하고 싶어할 때 호출합니다.',
-        'parameters': {
-          'type': 'object',
-          'properties': {
-            'placeName': {
-              'type': 'string',
-              'description': '삭제할 장소 이름',
-            },
-          },
-          'required': ['placeName'],
-        },
-      },
-      {
-        'name': 'confirm_plan',
-        'description': '현재 코스를 확정하고 일정을 생성합니다. 사용자가 "좋아", "확정해", "이걸로 일정 만들어줘", "오케이" 등 코스를 확정하고 싶어할 때 호출합니다.',
-        'parameters': {
-          'type': 'object',
-          'properties': {
-            'style': {
-              'type': 'string',
-              'enum': ['efficient', 'leisurely', 'foodFocused'],
-              'description': '일정 스타일',
-            },
-          },
-        },
-      },
-    ],
-  };
-
-  /// System instruction for the live session
   static const _systemInstruction = '''
 너는 서울 여행 비서야. 이름은 "프리즘"이야. 사용자와 음성으로 자연스럽게 대화해.
 
 성격:
 - 20대 친구처럼 친근하고 밝게 대화해. 반말 사용.
 - 짧고 자연스럽게 말해. 한 번에 1-2문장만.
-- "음", "아", "그래" 같은 자연스러운 추임새도 써.
 
 할 수 있는 것:
-- 서울 지하철역 위치 안내: navigate_to_station 호출하면 지도가 그 역으로 이동해.
+- 서울 ���하철역 위치 안내: navigate_to_station 호출하면 지도가 그 역으로 이동해.
 - 역 실시간 정보: show_station_info로 도착 정보 표시.
-- 여행 일정 생성: create_plan으로 하루 코스 만들기.
+- 여행 일정 생성: create_plan으�� 하루 코스 만들기.
 - 장소 추천: search_place로 맛집, 카페, 관광지 추천.
-- URL 분석: analyze_url로 유튜브/인스타 링크에서 장소 추출.
-- 사진 요청: 사용자가 사진을 보내고 싶다고 하면 request_photo("both") 호출. 카메라/갤러리 선택 UI가 뜸.
+- URL 분석: analyze_url로 유튜브/인스타 링크에서 장소 ��출.
+- 사진 요청: request_photo로 카메라/갤러리 UI 표시.
+- 코스 추가: add_places로 현�� 코스에 장소 추가.
+- 코스 삭제: remove_place로 특정 장소 제거.
+- 코스 확정: confirm_plan으로 일정 생성.
 
-코스 조절 (핵심 기능):
-- 장소를 찾으면 사용자에게 "이 코스 어때? 수정하고 싶은 거 있어?" 라고 물어봐.
-- 사용자가 "카페 추가해줘" → add_places 호출
-- 사용자가 "경복궁 빼줘" → remove_place 호출
-- 사용자가 "좋아", "확정", "이걸로 해줘" → confirm_plan 호출
-- 코스 수정할 때마다 현재 코스 상태를 말해줘.
+코스 조절:
+- 장소를 찾으면 "이 코스 어때? 수정하고 싶은 거 있어?" 물어봐.
+- "카페 추가해줘" → add_places, "경복궁 빼줘" → remove_place, "확정해" → confirm_plan
 
 규칙:
 - 역 위치를 물어보면 바로 navigate_to_station 호출해.
-- function 호출 후에는 결과를 자연스럽게 음성으로 안내해.
-- 사용자가 "사진 보여줄게" 같은 말을 하면 request_photo 호출해.
-- 이미지가 대화에 직접 포함되어 오면 analyze_image 호출하지 말고 직접 분석해.
+- function 호��� 후에는 결과를 자연스럽게 음성으로 안내해.
+- 사진 관련 말을 하면 request_photo 호출해.
 - 한 번에 function 하나만 호출해.
-- 내부 사고과정은 절대 말하지 마. 바로 답변해.
 ''';
 
   /// 세션 시작
@@ -277,321 +99,205 @@ class GeminiLiveService {
     _setState(LiveSessionState.connecting);
 
     try {
-      final uri = Uri.parse('$_wsUrl?key=${ApiKeys.geminiApiKey}');
-      debugPrint('[GeminiLive] Connecting to: $uri');
-      _channel = WebSocketChannel.connect(uri);
-      await _channel!.ready;
-      debugPrint('[GeminiLive] WebSocket connected');
-
-      // 서버 메시지 수신
-      _subscription = _channel!.stream.listen(
-        _onMessage,
-        onError: _onError,
-        onDone: _onDone,
+      // LiveGenerativeModel 생성
+      _liveModel = FirebaseAI.googleAI().liveGenerativeModel(
+        model: 'gemini-2.5-flash-preview-native-audio-dialog',
+        systemInstruction: Content.text(_systemInstruction),
+        liveGenerationConfig: LiveGenerationConfig(
+          speechConfig: SpeechConfig(voiceName: 'Kore'),
+          responseModalities: [ResponseModalities.audio],
+        ),
+        tools: [Tool.functionDeclarations(_functionDeclarations)],
       );
 
-      // Setup 메시지 전송
-      _sendSetup();
-      // listening 전환은 setupComplete 수신 시 처리
+      // 세션 연결
+      _session = await _liveModel!.connect();
+      debugPrint('[GeminiLive] Session connected');
+
+      // 메시지 수신 루프 시작
+      _stopController = StreamController<bool>();
+      unawaited(_processMessages());
+
+      _setState(LiveSessionState.listening);
+      _startSilenceTimer();
     } catch (e) {
       debugPrint('[GeminiLive] Connection failed: $e');
       _setState(LiveSessionState.idle);
     }
   }
 
-  /// Setup 메시지 (세션 초기화)
-  void _sendSetup() {
-    final setup = {
-      'setup': {
-        'model': 'models/gemini-3.1-flash-live-preview',
-        'generationConfig': {
-          'responseModalities': ['AUDIO'],
-          'speechConfig': {
-            'voiceConfig': {
-              'prebuiltVoiceConfig': {
-                'voiceName': 'Kore',
-              },
-            },
-          },
-        },
-        'systemInstruction': {
-          'parts': [
-            {'text': _systemInstruction},
-          ],
-        },
-        'tools': [_toolDeclarations],
-        'outputAudioTranscription': {},
-      },
-    };
+  /// 오디오 스트림 전송 (마이크 → Gemini)
+  Future<void> sendAudioStream(Stream<Uint8List> audioStream) async {
+    if (_session == null) return;
+    _resetSilenceTimer();
 
-    final jsonStr = jsonEncode(setup);
-    debugPrint('[GeminiLive] Setup sending: ${jsonStr.length} bytes');
-    _channel?.sink.add(jsonStr);
-  }
+    final inlineDataStream = audioStream.map((data) {
+      return InlineDataPart('audio/pcm', data);
+    });
 
-  /// 오디오 데이터 전송 (마이크 → Gemini)
-  void sendAudio(Uint8List pcmData, {bool hasVoice = false}) {
-    if (_channel == null || _state == LiveSessionState.idle) return;
-
-    // 실제 음성이 감지될 때만 타이머 리셋
-    if (hasVoice) {
-      _resetSilenceTimer();
+    try {
+      await _session!.sendMediaStream(inlineDataStream);
+    } catch (e) {
+      debugPrint('[GeminiLive] sendMediaStream error: $e');
     }
-
-    final msg = {
-      'realtimeInput': {
-        'audio': {
-          'mimeType': 'audio/pcm;rate=16000',
-          'data': base64Encode(pcmData),
-        },
-      },
-    };
-
-    _channel?.sink.add(jsonEncode(msg));
   }
 
-  /// 텍스트 메시지 전송 (3.1: realtimeInput.text 사용)
-  void sendText(String text) {
-    if (_channel == null || _state == LiveSessionState.idle) return;
-
+  /// 텍스트 전송
+  Future<void> sendText(String text) async {
+    if (_session == null) return;
     _setState(LiveSessionState.processing);
     _resetSilenceTimer();
 
-    final msg = {
-      'realtimeInput': {
-        'text': text,
-      },
-    };
-
-    _channel?.sink.add(jsonEncode(msg));
-  }
-
-  /// 이미지 전송 (base64) — clientContent 유지 (이미지는 realtimeInput 미지원)
-  void sendImage(Uint8List imageBytes, {String mimeType = 'image/jpeg'}) {
-    if (_channel == null || _state == LiveSessionState.idle) return;
-
-    _setState(LiveSessionState.processing);
-
-    final msg = {
-      'clientContent': {
-        'turns': [
-          {
-            'role': 'user',
-            'parts': [
-              {
-                'inlineData': {
-                  'mimeType': mimeType,
-                  'data': base64Encode(imageBytes),
-                },
-              },
-              {
-                'text': '이 이미지를 분석해서 서울의 관련 장소를 찾아줘.',
-              },
-            ],
-          },
-        ],
-        'turnComplete': true,
-      },
-    };
-
-    _channel?.sink.add(jsonEncode(msg));
-  }
-
-  /// Function call 응답 전송
-  void sendFunctionResponse(String functionCallId, String functionName, Map<String, dynamic> result) {
-    final msg = {
-      'toolResponse': {
-        'functionResponses': [
-          {
-            'id': functionCallId,
-            'name': functionName,
-            'response': result,
-          },
-        ],
-      },
-    };
-
-    debugPrint('[GeminiLive] Sending function response: $functionName (id: $functionCallId)');
-    _channel?.sink.add(jsonEncode(msg));
-  }
-
-  /// 서버 메시지 처리
-  void _onMessage(dynamic data) {
     try {
-      String dataStr;
-      if (data is String) {
-        dataStr = data;
-      } else if (data is Uint8List) {
-        dataStr = utf8.decode(data);
-      } else {
-        debugPrint('[GeminiLive] Unknown data type: ${data.runtimeType}');
-        return;
-      }
-
-      // 짧은 메시지는 전체 출력, 긴 메시지는 앞부분만
-      if (dataStr.length < 500) {
-        debugPrint('[GeminiLive] Received: $dataStr');
-      } else {
-        debugPrint('[GeminiLive] Received: ${dataStr.substring(0, 200)}... (${dataStr.length} bytes)');
-      }
-
-      final json = jsonDecode(dataStr) as Map<String, dynamic>;
-
-      // Setup complete → listening 전환
-      if (json.containsKey('setupComplete')) {
-        debugPrint('[GeminiLive] ✓ Setup complete — ready to listen');
-        _setState(LiveSessionState.listening);
-        _startSilenceTimer();
-        return;
-      }
-
-      // 에러 메시지 처리
-      if (json.containsKey('error')) {
-        debugPrint('[GeminiLive] ✗ Server error: ${json['error']}');
-        return;
-      }
-
-      final serverContent = json['serverContent'] as Map<String, dynamic>?;
-      if (serverContent != null) {
-        _handleServerContent(serverContent);
-        return;
-      }
-
-      final toolCall = json['toolCall'] as Map<String, dynamic>?;
-      if (toolCall != null) {
-        _handleToolCall(toolCall);
-        return;
-      }
-
-      // sessionResumptionUpdate는 무시 (3.1 세션 관리용)
-      if (json.containsKey('sessionResumptionUpdate')) return;
-
-      // 알 수 없는 메시지 타입
-      debugPrint('[GeminiLive] Unknown message keys: ${json.keys.toList()}');
+      await _session!.send(input: Content.text(text), turnComplete: true);
     } catch (e) {
-      debugPrint('[GeminiLive] Message parse error: $e');
+      debugPrint('[GeminiLive] sendText error: $e');
     }
   }
 
-  /// 서버 콘텐츠 처리 (텍스트/오디오)
-  void _handleServerContent(Map<String, dynamic> content) {
-    final modelTurn = content['modelTurn'] as Map<String, dynamic>?;
-    if (modelTurn != null) {
-      final parts = modelTurn['parts'] as List<dynamic>?;
-      if (parts != null) {
-        for (final part in parts) {
-          final partMap = part as Map<String, dynamic>;
-          debugPrint('[GeminiLive] Part keys: ${partMap.keys.toList()}');
+  /// Function call 응답 전송
+  Future<void> sendFunctionResponse(String callId, String functionName, Map<String, dynamic> result) async {
+    if (_session == null) return;
+    try {
+      await _session!.send(
+        input: Content.functionResponse(functionName, result),
+      );
+    } catch (e) {
+      debugPrint('[GeminiLive] sendFunctionResponse error: $e');
+    }
+  }
 
-          // 텍스트 응답
-          if (partMap.containsKey('text')) {
-            final isThought = partMap['thought'] == true;
-            final text = partMap['text'] as String;
-            if (isThought) {
-              // DEBUG: thought를 자막에 표시
-              _transcriptController.add('[thinking] $text');
-            } else {
-              _transcriptController.add(text);
+  /// 메시지 수신 루프 (공식 예제 패턴)
+  Future<void> _processMessages() async {
+    bool shouldContinue = true;
+    _stopController?.stream.listen((stop) {
+      if (stop) shouldContinue = false;
+    });
+
+    while (shouldContinue) {
+      try {
+        await for (final response in _session!.receive()) {
+          _handleResponse(response);
+        }
+      } catch (e) {
+        debugPrint('[GeminiLive] Receive error: $e');
+        break;
+      }
+      await Future.delayed(const Duration(milliseconds: 100));
+    }
+  }
+
+  /// 응답 처리
+  void _handleResponse(LiveServerResponse response) {
+    final message = response.message;
+
+    if (message is LiveServerContent) {
+      _handleContent(message);
+    } else if (message is LiveServerToolCall && message.functionCalls != null) {
+      _handleToolCall(message);
+    }
+  }
+
+  /// 콘텐츠 처리 (텍스트 + 오디오)
+  void _handleContent(LiveServerContent content) {
+    // interrupted
+    if (content.interrupted == true) {
+      debugPrint('[GeminiLive] Interrupted');
+      return;
+    }
+
+    // modelTurn (오디오/텍스트)
+    final parts = content.modelTurn?.parts;
+    if (parts != null) {
+      for (final part in parts) {
+        if (part is TextPart) {
+          _transcriptController.add(part.text);
+          if (_state != LiveSessionState.speaking) {
+            _setState(LiveSessionState.speaking);
+          }
+        } else if (part is InlineDataPart) {
+          if (part.mimeType.startsWith('audio')) {
+            _audioOutController.add(part.bytes);
+            if (_state != LiveSessionState.speaking) {
               _setState(LiveSessionState.speaking);
             }
-          }
-
-          // 오디오 응답 — base64 문자열만 전달 (디코딩은 isolate에서)
-          if (partMap.containsKey('inlineData')) {
-            final inlineData = partMap['inlineData'] as Map<String, dynamic>;
-            final audioBase64 = inlineData['data'] as String?;
-            if (audioBase64 != null) {
-              _audioBase64Controller.add(audioBase64);
-              if (_state != LiveSessionState.speaking) {
-                _setState(LiveSessionState.speaking);
-              }
-              _silenceTimer?.cancel();
-            }
+            _silenceTimer?.cancel();
           }
         }
       }
     }
 
-    // 오디오 트랜스크립션 (outputAudioTranscription으로 활성화)
-    final outputTranscription = content['outputTranscription'] as Map<String, dynamic>?;
-    if (outputTranscription != null) {
-      final text = outputTranscription['text'] as String?;
-      if (text != null && text.isNotEmpty) {
-        _transcriptController.add(text);
-      }
+    // turnComplete
+    if (content.turnComplete == true) {
+      _setState(LiveSessionState.listening);
+      _startSilenceTimer();
     }
-
-    // 생성 완료 (모든 오디오 청크 도착) — turnComplete보다 먼저 옴
-    final genComplete = content['generationComplete'] as bool?;
-    if (genComplete == true) {
-      _turnCompleteController.add(null);
-    }
-
-    // 턴 완료 (usageMetadata 포함) — generationComplete 이후에 옴
-    // generationComplete에서 이미 재생 트리거했으므로 여기서는 무시
-    // final turnComplete = content['turnComplete'] as bool?;
   }
 
-  /// Tool Call (Function Calling) 처리
-  void _handleToolCall(Map<String, dynamic> toolCall) {
-    final functionCalls = toolCall['functionCalls'] as List<dynamic>?;
-    if (functionCalls == null || functionCalls.isEmpty) return;
-
+  /// Function Call 처리
+  void _handleToolCall(LiveServerToolCall toolCall) {
+    final functionCalls = toolCall.functionCalls!.toList();
     for (final call in functionCalls) {
-      final callMap = call as Map<String, dynamic>;
-      final name = callMap['name'] as String;
-      final args = callMap['args'] as Map<String, dynamic>? ?? {};
-      final callId = callMap['id'] as String? ?? '';
-
-      debugPrint('[GeminiLive] Function call: $name($args) id=$callId');
+      debugPrint('[GeminiLive] Function call: ${call.name}(${call.args})');
 
       AiAction? action;
-      switch (name) {
-        case 'navigate_to_station':
-          action = AiAction.navigateToStation;
-          break;
-        case 'show_station_info':
-          action = AiAction.showStationInfo;
-          break;
-        case 'analyze_url':
-          action = AiAction.analyzeUrl;
-          break;
-        case 'analyze_image':
-          action = AiAction.analyzeImage;
-          break;
-        case 'create_plan':
-          action = AiAction.createPlan;
-          break;
-        case 'search_place':
-          action = AiAction.searchPlace;
-          break;
-        case 'request_photo':
-          action = AiAction.requestPhoto;
-          break;
-        case 'add_places':
-          action = AiAction.addPlaces;
-          break;
-        case 'remove_place':
-          action = AiAction.removePlace;
-          break;
-        case 'confirm_plan':
-          action = AiAction.confirmPlan;
-          break;
+      switch (call.name) {
+        case 'navigate_to_station': action = AiAction.navigateToStation; break;
+        case 'show_station_info': action = AiAction.showStationInfo; break;
+        case 'analyze_url': action = AiAction.analyzeUrl; break;
+        case 'analyze_image': action = AiAction.analyzeImage; break;
+        case 'create_plan': action = AiAction.createPlan; break;
+        case 'search_place': action = AiAction.searchPlace; break;
+        case 'request_photo': action = AiAction.requestPhoto; break;
+        case 'add_places': action = AiAction.addPlaces; break;
+        case 'remove_place': action = AiAction.removePlace; break;
+        case 'confirm_plan': action = AiAction.confirmPlan; break;
       }
 
       if (action != null) {
-        _actionController.add(AiActionEvent(action, args, callId: callId));
+        _actionController.add(AiActionEvent(
+          action,
+          Map<String, dynamic>.from(call.args),
+          callId: call.name,
+        ));
       }
     }
   }
 
-  /// 오디오 재생 완료 후 호출 — listening으로 전환
-  void onPlaybackDone() {
-    _setState(LiveSessionState.listening);
-    _startSilenceTimer();
-  }
+  /// Function declarations
+  static final _functionDeclarations = [
+    FunctionDeclaration('navigate_to_station', '지도를 특정 지하철역으로 이동',
+      parameters: {'stationName': Schema.string(description: '지하철역명')}),
+    FunctionDeclaration('show_station_info', '역의 실시간 도착 정보 표시',
+      parameters: {'stationName': Schema.string(description: '지하철역명')}),
+    FunctionDeclaration('analyze_url', 'SNS URL 분석하여 장소 추출',
+      parameters: {'url': Schema.string(description: '분석할 URL')}),
+    FunctionDeclaration('analyze_image', '이미지 분석하여 장소 파악',
+      parameters: {'prompt': Schema.string(description: '��석 컨텍스트', nullable: true)}),
+    FunctionDeclaration('create_plan', '여행 일정 생성',
+      parameters: {
+        'style': Schema.enumString(enumValues: ['efficient', 'leisurely', 'foodFocused'], description: '일정 스타일'),
+        'places': Schema.string(description: '장소 목록', nullable: true),
+      }),
+    FunctionDeclaration('search_place', '서울 ��� 장소 검색',
+      parameters: {
+        'query': Schema.string(description: '검색 쿼리'),
+        'category': Schema.enumString(enumValues: ['맛집', '카페', '관광', '쇼핑', '문화', '자연'], description: '카테고리', nullable: true),
+      }),
+    FunctionDeclaration('request_photo', '사용자에게 사진 요청',
+      parameters: {'source': Schema.enumString(enumValues: ['camera', 'gallery', 'both'], description: '소스', nullable: true)}),
+    FunctionDeclaration('add_places', '현재 코스에 장소 추가',
+      parameters: {
+        'query': Schema.string(description: '추가할 장소 검색 쿼리'),
+        'category': Schema.enumString(enumValues: ['맛집', '카페', '관광', '쇼핑', '문화', '자연'], description: '카테고리', nullable: true),
+      }),
+    FunctionDeclaration('remove_place', '코스에서 장소 삭제',
+      parameters: {'placeName': Schema.string(description: '삭제할 장소 이름')}),
+    FunctionDeclaration('confirm_plan', '코스 확정하고 일정 생성',
+      parameters: {'style': Schema.enumString(enumValues: ['efficient', 'leisurely', 'foodFocused'], description: '일정 스타일', nullable: true)}),
+  ];
 
-  /// 무음 타이머 (5초 무음 → idle prompt)
+  /// 무음 타이머
   void _startSilenceTimer() {
     _silenceTimer?.cancel();
     _silenceTimer = Timer(const Duration(seconds: 15), () {
@@ -614,10 +320,10 @@ class GeminiLiveService {
     if (_state == LiveSessionState.idle) return;
     _setState(LiveSessionState.closing);
     _silenceTimer?.cancel();
-    _subscription?.cancel();
-    _subscription = null;
-    await _channel?.sink.close();
-    _channel = null;
+    _stopController?.add(true);
+    await _stopController?.close();
+    await _session?.close();
+    _session = null;
     _setState(LiveSessionState.idle);
   }
 
@@ -627,30 +333,12 @@ class GeminiLiveService {
     _stateController.add(newState);
   }
 
-  void _onError(dynamic error) {
-    debugPrint('[GeminiLive] ✗ WebSocket error: $error');
-    debugPrint('[GeminiLive] Error type: ${error.runtimeType}');
-    endSession();
-  }
-
-  void _onDone() {
-    final closeCode = _channel?.closeCode;
-    final closeReason = _channel?.closeReason;
-    debugPrint('[GeminiLive] WebSocket closed — code: $closeCode, reason: $closeReason');
-    if (_state != LiveSessionState.idle) {
-      _setState(LiveSessionState.idle);
-    }
-  }
-
   void dispose() {
     _disposed = true;
-    _silenceTimer?.cancel();
-    _subscription?.cancel();
-    _channel?.sink.close();
+    endSession();
     _stateController.close();
     _transcriptController.close();
-    _audioBase64Controller.close();
+    _audioOutController.close();
     _actionController.close();
-    _turnCompleteController.close();
   }
 }

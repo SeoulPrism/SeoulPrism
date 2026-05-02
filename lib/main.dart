@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'firebase_options.dart';
 import 'core/api_keys.dart';
 import 'services/device_profile_service.dart';
 import 'services/settings_service.dart';
@@ -30,6 +32,9 @@ Future<void> main() async {
 
   // 기기 프로필 감지 (Android: 기기별 최적화)
   await DeviceProfileService.init();
+
+  // Firebase 초기화
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   // Supabase 초기화
   await Supabase.initialize(

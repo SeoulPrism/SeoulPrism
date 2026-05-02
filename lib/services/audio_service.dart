@@ -1,145 +1,124 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_sound/flutter_sound.dart';
+import 'package:record/record.dart';
+import 'package:flutter_soloud/flutter_soloud.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:logger/logger.dart' show Level;
 
-/// 마이크 입력 및 오디오 재생 관리
-/// flutter_sound로 녹음 + 재생 모두 처리 (패키지 충돌 없음)
-///
-/// 참고: https://github.com/alfredobs97/gemini_talk
-/// - Player: startPlayerFromStream 1번 → feedUint8FromStream으로 실시간 재생
-/// - Recorder: FlutterSoundRecorder로 PCM 스트리밍 녹음
+/// 공식 firebase_ai 예제 패턴:
+/// - 녹음: record 패키지 (AudioRecorder)
+/// - 재생: flutter_soloud (SoLoud 엔진 — AudioFocus 안 씀, 마이크 방해 안 함)
 class AudioService {
-  final FlutterSoundPlayer _player = FlutterSoundPlayer();
-  final FlutterSoundRecorder _recorder = FlutterSoundRecorder();
-  bool _playerOpen = false;
-  bool _playerStreaming = false;
+  final AudioRecorder _recorder = AudioRecorder();
   bool _isRecording = false;
-  bool _recorderListening = false;
 
-  // 녹음 데이터 스트림
-  final _recordingDataController = StreamController<Uint8List>.broadcast();
-  final _audioInController = StreamController<Uint8List>.broadcast();
-  Stream<Uint8List> get audioInStream => _audioInController.stream;
+  // SoLoud 재생
+  AudioSource? _stream;
+  SoundHandle? _handle;
+  bool _soloudReady = false;
 
+  // 녹음 데이터 → Gemini
+  Stream<Uint8List>? audioInputStream;
+
+  // 오디오 레벨 (Glow 반응)
   final _levelController = StreamController<double>.broadcast();
   Stream<double> get levelStream => _levelController.stream;
 
   bool get isRecording => _isRecording;
 
-  // base64 청크 저장
-  final _base64Chunks = <String>[];
-
-  AudioService() {
-    _init();
+  /// SoLoud 초기화 (24kHz mono)
+  Future<void> init() async {
+    try {
+      await SoLoud.instance.init(sampleRate: 24000, channels: Channels.mono);
+      await _setupNewStream();
+      _soloudReady = true;
+      debugPrint('[AudioService] SoLoud ready (24kHz mono)');
+    } catch (e) {
+      debugPrint('[AudioService] SoLoud init failed: $e');
+    }
   }
 
-  Future<void> _init() async {
-    // 플레이어 열기
-    await _player.openPlayer();
-    _player.setLogLevel(Level.warning);
-    _playerOpen = true;
-
-    // 플레이어를 스트리밍 모드로 시작 (1번만, 이후 feed로 데이터 전달)
-    await _player.startPlayerFromStream(
-      codec: Codec.pcm16,
-      interleaved: true,
-      sampleRate: 24000,
-      numChannels: 1,
-      bufferSize: 8192,
+  Future<void> _setupNewStream() async {
+    if (!SoLoud.instance.isInitialized) return;
+    await _stopStream();
+    _stream = SoLoud.instance.setBufferStream(
+      maxBufferSizeBytes: 1024 * 1024 * 10,
+      bufferingType: BufferingType.released,
+      bufferingTimeNeeds: 0,
+      onBuffering: (isBuffering, handle, time) {},
     );
-    _playerStreaming = true;
-    debugPrint('[AudioService] Player streaming mode ready');
+    _handle = null;
   }
 
-  Future<bool> requestMicPermission() async {
+  Future<void> _stopStream() async {
+    if (_stream != null && _handle != null &&
+        SoLoud.instance.getIsValidVoiceHandle(_handle!)) {
+      SoLoud.instance.setDataIsEnded(_stream!);
+      await SoLoud.instance.stop(_handle!);
+    }
+  }
+
+  /// 재생 스트림 시작 (오디오 청크 feed 전에 호출)
+  Future<void> startPlayStream() async {
+    if (!_soloudReady || _stream == null) return;
+    _handle = await SoLoud.instance.play(_stream!);
+  }
+
+  /// AI 오디오 청크 즉시 재생 (마이크에 영향 없음)
+  void feedAudioChunk(Uint8List audioBytes) {
+    if (!_soloudReady || _stream == null) return;
+    SoLoud.instance.addAudioDataStream(_stream!, audioBytes);
+  }
+
+  /// 재생 종료 + 새 스트림 준비
+  Future<void> stopPlayStream() async {
+    await _setupNewStream();
+  }
+
+  /// 마이크 권한 확인
+  Future<bool> checkPermission() async {
     final status = await Permission.microphone.request();
     return status.isGranted;
   }
 
-  /// 녹음 시작 (FlutterSoundRecorder — flutter_sound 통합)
-  Future<bool> startRecording() async {
-    if (_isRecording) return true;
+  /// 녹음 시작 → Stream<Uint8List> 반환 (공식 예제 패턴)
+  Future<Stream<Uint8List>?> startRecording() async {
+    if (_isRecording) return audioInputStream;
 
-    final status = await Permission.microphone.request();
-    if (status != PermissionStatus.granted) return false;
-
-    try {
-      if (_recorder.isStopped) {
-        await _recorder.openRecorder();
-        _recorder.setLogLevel(Level.warning);
-      }
-
-      // PCM 16kHz mono 스트리밍 녹음
-      await _recorder.startRecorder(
-        codec: Codec.pcm16,
-        sampleRate: 16000,
-        numChannels: 1,
-        toStream: _recordingDataController.sink,
-      );
-
-      // 녹음 데이터를 외부 스트림으로 전달 (구독은 1번만)
-      if (!_recorderListening) {
-        _recorderListening = true;
-        _recordingDataController.stream.listen((data) {
-          _audioInController.add(data);
-          final level = _calculateRmsLevel(data);
-          _levelController.add(level);
-        });
-      }
-
-      _isRecording = true;
-      debugPrint('[AudioService] Recording started (FlutterSoundRecorder)');
-      return true;
-    } catch (e) {
-      debugPrint('[AudioService] Failed to start recording: $e');
-      return false;
+    final hasPermission = await _recorder.hasPermission();
+    if (!hasPermission) {
+      final granted = await checkPermission();
+      if (!granted) return null;
     }
+
+    final recordConfig = RecordConfig(
+      encoder: AudioEncoder.pcm16bits,
+      sampleRate: 16000,
+      numChannels: 1,
+      echoCancel: true,
+      noiseSuppress: true,
+      androidConfig: const AndroidRecordConfig(
+        audioSource: AndroidAudioSource.voiceCommunication,
+      ),
+    );
+
+    audioInputStream = await _recorder.startStream(recordConfig);
+    _isRecording = true;
+    debugPrint('[AudioService] Recording started (16kHz mono)');
+
+    // 레벨 계산용 리스너
+    audioInputStream!.listen((data) {
+      _levelController.add(_calculateRmsLevel(data));
+    });
+
+    return audioInputStream;
   }
 
   Future<void> stopRecording() async {
     if (!_isRecording) return;
-    await _recorder.stopRecorder();
+    await _recorder.stop();
     _isRecording = false;
     debugPrint('[AudioService] Recording stopped');
-  }
-
-  /// base64 오디오 청크 저장
-  void bufferBase64(String base64Data) {
-    _base64Chunks.add(base64Data);
-  }
-
-  /// 전체 버퍼를 디코딩 → feedUint8FromStream으로 즉시 재생
-  /// (stopPlayer/startPlayer 없이, 스트리밍 모드 유지)
-  Future<void> flushAndPlay() async {
-    if (_base64Chunks.isEmpty || !_playerStreaming) return;
-
-    final chunks = List<String>.from(_base64Chunks);
-    _base64Chunks.clear();
-
-    // base64 → PCM 디코딩
-    final pcmBuffer = BytesBuilder();
-    for (final chunk in chunks) {
-      pcmBuffer.add(base64Decode(chunk));
-    }
-    final pcmData = pcmBuffer.toBytes();
-    if (pcmData.length < 100) return;
-
-    final durationSec = pcmData.length / 48000.0;
-    debugPrint('[AudioService] Feeding ${durationSec.toStringAsFixed(1)}s to player stream');
-
-    // feedUint8FromStream: 이미 열린 스트림에 데이터만 넣으면 바로 재생
-    await _player.feedUint8FromStream(pcmData);
-
-    // 재생 시간만큼 대기
-    await Future.delayed(Duration(milliseconds: (durationSec * 1000 + 300).round()));
-  }
-
-  void stopPlayback() {
-    _base64Chunks.clear();
   }
 
   double _calculateRmsLevel(Uint8List pcmData) {
@@ -158,21 +137,11 @@ class AudioService {
 
   void dispose() {
     stopRecording();
-    stopPlayback();
-    if (_playerStreaming) {
-      _player.stopPlayer();
-      _playerStreaming = false;
+    _stopStream();
+    if (_soloudReady) {
+      SoLoud.instance.deinit();
     }
-    if (_playerOpen) {
-      _player.closePlayer();
-      _playerOpen = false;
-    }
-    if (!_recorder.isStopped) {
-      _recorder.stopRecorder();
-    }
-    try { _recorder.closeRecorder(); } catch (_) {}
-    _recordingDataController.close();
-    _audioInController.close();
+    _recorder.dispose();
     _levelController.close();
   }
 }

@@ -44,7 +44,7 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
   final GeminiLiveService _liveService = GeminiLiveService.instance;
   final AudioService _audioService = AudioService();
   LiveSessionState _sessionState = LiveSessionState.idle;
-  String _accumulatedTranscript = '';  // 턴 동안 누적된 전체 텍스트
+  String _accumulatedTranscript = '';
   double _audioLevel = 0.0;
 
   // ── UI 상태 ──
@@ -65,7 +65,6 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
   StreamSubscription? _actionSub;
   StreamSubscription? _audioInSub;
   StreamSubscription? _levelSub;
-  StreamSubscription? _turnCompleteSub;
 
   // ── Glow 상태 반응 파라미터 ──
   double _glowSpeedMultiplier = 1.0;
@@ -119,11 +118,9 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
         _sessionState = state;
         _updateGlowForState(state);
       });
-      // speaking 시작 시 누적 리셋
       if (state == LiveSessionState.speaking) {
         _accumulatedTranscript = '';
       }
-      // listening 전환 시 15초 후 자막 클리어
       if (state == LiveSessionState.listening) {
         Future.delayed(const Duration(seconds: 15), () {
           if (mounted && _sessionState == LiveSessionState.listening) {
@@ -133,18 +130,23 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
       }
     });
 
+    // 자막 누적
     _transcriptSub = _liveService.transcriptStream.listen((text) {
       if (!mounted) return;
-      // 텍스트 누적 (조각조각 오므로)
       _accumulatedTranscript += text;
       widget.onStatusChanged?.call(_accumulatedTranscript);
     });
 
-    _audioOutSub = _liveService.audioBase64Stream.listen((base64) {
-      // 마이크 상시 ON — audio_session이 동시 재생+녹음 허용
-      _audioService.bufferBase64(base64);
+    // AI 오디오 → SoLoud로 즉시 재생 (마이크에 영향 없음!)
+    _audioOutSub = _liveService.audioOutStream.listen((audioBytes) {
+      // 첫 청크에서 재생 스트림 시작
+      if (_sessionState == LiveSessionState.speaking) {
+        _audioService.startPlayStream();
+      }
+      _audioService.feedAudioChunk(audioBytes);
     });
 
+    // Function Call 처리
     _actionSub = _liveService.actionStream.listen((action) async {
       if (action.action == AiAction.requestPhoto) {
         _handlePhotoRequest(action.params['source'] as String? ?? 'both');
@@ -161,7 +163,6 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
       } else {
         widget.onAction?.call(action);
       }
-      // Function response 전송 (callId 포함)
       final response = _buildFunctionResponse(action);
       _liveService.sendFunctionResponse(
         action.callId,
@@ -170,36 +171,31 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
       );
     });
 
-    // generationComplete 시: 오디오 feed → 재생 (마이크는 계속 ON)
-    _turnCompleteSub = _liveService.turnCompleteStream.listen((_) async {
-      await _audioService.flushAndPlay();
-      _liveService.onPlaybackDone();
-    });
-
-    // 오디오 레벨 구독 (Glow 반응용)
+    // 오디오 레벨 (Glow 반응)
     _levelSub = _audioService.levelStream.listen((level) {
       if (!mounted) return;
       setState(() => _audioLevel = level);
     });
 
-    // 세션이 이미 연결됐으면 스킵
+    // SoLoud 초기화
+    await _audioService.init();
+
+    // 세션 시작
     if (_liveService.state == LiveSessionState.idle) {
       await _liveService.startSession();
     }
 
-    // 마이크 시작
-    final micStarted = await _audioService.startRecording();
-    if (micStarted) {
-      _audioInSub = _audioService.audioInStream.listen((pcmData) {
-        _liveService.sendAudio(pcmData, hasVoice: _audioLevel > 0.02);
-      });
-      debugPrint('[AiView] Mic stream connected to Gemini');
+    // 마이크 시작 → Gemini에 오디오 스트림 직접 전달 (공식 패턴)
+    final audioStream = await _audioService.startRecording();
+    if (audioStream != null) {
+      unawaited(_liveService.sendAudioStream(audioStream));
+      debugPrint('[AiView] Mic audio stream → Gemini connected');
     }
 
     // AI 인사 트리거
-    Future.delayed(const Duration(milliseconds: 300), () {
+    Future.delayed(const Duration(milliseconds: 500), () {
       if (mounted) {
-        _liveService.sendText('[system] User opened AI mode. Greet briefly in Korean.');
+        _liveService.sendText('User just opened the AI assistant. Greet them briefly in Korean.');
       }
     });
   }
@@ -396,7 +392,6 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
     _actionSub?.cancel();
     _audioInSub?.cancel();
     _levelSub?.cancel();
-    _turnCompleteSub?.cancel();
     _liveService.endSession();
     _audioService.dispose();
     _textController.dispose();
