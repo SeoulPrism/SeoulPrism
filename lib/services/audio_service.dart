@@ -16,6 +16,9 @@ class AudioService {
   AudioSource? _stream;
   SoundHandle? _handle;
   bool _soloudReady = false;
+  bool _isPlaying = false;
+  bool _playReady = false; // play() 완료 여부
+  final List<Uint8List> _pendingChunks = []; // play() 완료 전 도착한 청크
 
   // 녹음 데이터 → Gemini
   Stream<Uint8List>? audioInputStream;
@@ -26,28 +29,28 @@ class AudioService {
 
   bool get isRecording => _isRecording;
 
-  /// SoLoud 초기화 (24kHz mono)
+  /// SoLoud 초기화 (24kHz mono) — 네이티브 라이브러리 로딩 지연 대비 재시도
   Future<void> init() async {
-    try {
-      await SoLoud.instance.init(sampleRate: 24000, channels: Channels.mono);
-      await _setupNewStream();
-      _soloudReady = true;
-      debugPrint('[AudioService] SoLoud ready (24kHz mono)');
-    } catch (e) {
-      debugPrint('[AudioService] SoLoud init failed: $e');
+    const maxRetries = 3;
+    for (int attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        if (SoLoud.instance.isInitialized) {
+          _soloudReady = true;
+          debugPrint('[AudioService] SoLoud already initialized');
+          return;
+        }
+        await SoLoud.instance.init(sampleRate: 24000, channels: Channels.mono);
+        _soloudReady = true;
+        debugPrint('[AudioService] SoLoud ready (24kHz mono)');
+        return;
+      } catch (e) {
+        debugPrint('[AudioService] SoLoud init attempt $attempt/$maxRetries failed: $e');
+        if (attempt < maxRetries) {
+          await Future.delayed(Duration(milliseconds: 500 * attempt));
+        }
+      }
     }
-  }
-
-  Future<void> _setupNewStream() async {
-    if (!SoLoud.instance.isInitialized) return;
-    await _stopStream();
-    _stream = SoLoud.instance.setBufferStream(
-      maxBufferSizeBytes: 1024 * 1024 * 10,
-      bufferingType: BufferingType.released,
-      bufferingTimeNeeds: 0,
-      onBuffering: (isBuffering, handle, time) {},
-    );
-    _handle = null;
+    debugPrint('[AudioService] SoLoud init failed after $maxRetries attempts');
   }
 
   Future<void> _stopStream() async {
@@ -58,21 +61,47 @@ class AudioService {
     }
   }
 
-  /// 재생 스트림 시작 (오디오 청크 feed 전에 호출)
+  /// 재생 스트림 시작 (새 발화마다 한 번만 호출됨)
   Future<void> startPlayStream() async {
-    if (!_soloudReady || _stream == null) return;
+    if (!_soloudReady || _isPlaying) return;
+    _isPlaying = true;
+    _playReady = false;
+    _pendingChunks.clear();
+    _stream = SoLoud.instance.setBufferStream(
+      maxBufferSizeBytes: 1024 * 1024 * 10,
+      bufferingType: BufferingType.released,
+      bufferingTimeNeeds: 0,
+      onBuffering: (isBuffering, handle, time) {},
+    );
     _handle = await SoLoud.instance.play(_stream!);
+    // play() 완료 → 대기 중이던 청크 flush
+    _playReady = true;
+    for (final chunk in _pendingChunks) {
+      SoLoud.instance.addAudioDataStream(_stream!, chunk);
+    }
+    _pendingChunks.clear();
   }
 
   /// AI 오디오 청크 즉시 재생 (마이크에 영향 없음)
   void feedAudioChunk(Uint8List audioBytes) {
-    if (!_soloudReady || _stream == null) return;
+    if (!_soloudReady) return;
+    if (!_isPlaying) {
+      // 첫 청크 도착 시 자동으로 스트림 시작
+      startPlayStream();
+    }
+    if (!_playReady) {
+      _pendingChunks.add(audioBytes);
+      return;
+    }
+    if (_stream == null) return;
     SoLoud.instance.addAudioDataStream(_stream!, audioBytes);
   }
 
-  /// 재생 종료 + 새 스트림 준비
-  Future<void> stopPlayStream() async {
-    await _setupNewStream();
+  /// 현재 발화 종료 표시 (버퍼 오디오는 계속 재생, 다음 startPlayStream에서 정리)
+  void markPlayStreamEnded() {
+    _isPlaying = false;
+    _playReady = false;
+    _pendingChunks.clear();
   }
 
   /// 마이크 권한 확인

@@ -89,7 +89,7 @@ class GeminiLiveService {
 규칙:
 - 역 위치를 물어보면 바로 navigate_to_station 호출해.
 - function 호��� 후에는 결과를 자연스럽게 음성으로 안내해.
-- 사진 관련 말을 하면 request_photo 호출해.
+- 사용자가 "사진 보여줄게", "사진 찍어줘", "사진 분석해줘"처럼 명확히 사진을 보내거나 찍겠다고 할 때만 request_photo 호출해. 단순 인사나 대화에는 절대 호출하지 마.
 - 한 번에 function 하나만 호출해.
 ''';
 

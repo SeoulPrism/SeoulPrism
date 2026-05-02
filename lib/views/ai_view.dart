@@ -57,6 +57,7 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
   bool _showPlacesPanel = false;
   List<ExtractedPlace> _extractedPlaces = [];
   bool _analyzingImage = false;
+  bool _searchingPlaces = false;
 
   // ── 스트림 구독 ──
   StreamSubscription? _stateSub;
@@ -120,6 +121,9 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
       });
       if (state == LiveSessionState.speaking) {
         _accumulatedTranscript = '';
+      } else {
+        // speaking → 다른 상태: 플래그만 리셋 (버퍼 오디오는 계속 재생)
+        _audioService.markPlayStreamEnded();
       }
       if (state == LiveSessionState.listening) {
         Future.delayed(const Duration(seconds: 15), () {
@@ -139,10 +143,6 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
 
     // AI 오디오 → SoLoud로 즉시 재생 (마이크에 영향 없음!)
     _audioOutSub = _liveService.audioOutStream.listen((audioBytes) {
-      // 첫 청크에서 재생 스트림 시작
-      if (_sessionState == LiveSessionState.speaking) {
-        _audioService.startPlayStream();
-      }
       _audioService.feedAudioChunk(audioBytes);
     });
 
@@ -440,7 +440,8 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
     final query = action.params['query'] as String? ?? '';
     if (query.isEmpty) return;
 
-    widget.onStatusChanged?.call('$query 추가 중...');
+    setState(() => _searchingPlaces = true);
+    widget.onStatusChanged?.call('정보 찾는 중...');
 
     try {
       final existing = _extractedPlaces.map((p) => p.name).join(', ');
@@ -458,10 +459,17 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
         setState(() {
           _extractedPlaces.addAll(geoPlaces);
           if (!_showPlacesPanel) _showPlacesPanel = true;
+          _searchingPlaces = false;
         });
+        widget.onStatusChanged?.call('');
+      } else {
+        setState(() => _searchingPlaces = false);
+        widget.onStatusChanged?.call('');
       }
     } catch (e) {
       debugPrint('[AiView] Add places error: $e');
+      setState(() => _searchingPlaces = false);
+      widget.onStatusChanged?.call('');
     }
   }
 
@@ -481,7 +489,8 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
     final query = action.params['query'] as String? ?? '';
     if (query.isEmpty) return;
 
-    widget.onStatusChanged?.call('$query 검색 중...');
+    setState(() => _searchingPlaces = true);
+    widget.onStatusChanged?.call('정보 찾는 중...');
 
     try {
       final content = SnsContent(imagePaths: [], text: query, url: '');
@@ -494,10 +503,17 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
         setState(() {
           _extractedPlaces = geoPlaces;
           _showPlacesPanel = true;
+          _searchingPlaces = false;
         });
+        widget.onStatusChanged?.call('');
+      } else {
+        setState(() => _searchingPlaces = false);
+        widget.onStatusChanged?.call('');
       }
     } catch (e) {
       debugPrint('[AiView] Search place error: $e');
+      setState(() => _searchingPlaces = false);
+      widget.onStatusChanged?.call('');
     }
   }
 
@@ -691,14 +707,27 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
         if (!_showPlacesPanel && !_showPhotoOptions)
           _buildIdlePrompt(),
 
-        // 5. 분석 중 로딩 인디케이터
-        if (_analyzingImage)
+        // 5. 분석/검색 중 로딩 인디케이터
+        if (_analyzingImage || _searchingPlaces)
           Positioned(
             bottom: MediaQuery.of(context).size.height * 0.45,
             left: 0,
             right: 0,
-            child: const Center(
-              child: CircularProgressIndicator(color: Colors.white70),
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const CircularProgressIndicator(color: Colors.white70),
+                  const SizedBox(height: 12),
+                  Text(
+                    _analyzingImage ? '이미지 분석 중...' : '정보 찾는 중...',
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
 
