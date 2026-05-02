@@ -51,8 +51,25 @@ else
   echo "warning: GOOGLE_SERVICE_INFO_BASE64 not set, Firebase may not work"
 fi
 
-# 5. Flutter 환경 확인 및 의존성 설치
-flutter precache --ios
+# 5. Flutter 환경 확인 및 의존성 설치 (DNS 간헐 실패 대비 재시도)
+MAX_RETRIES=5
+RETRY_DELAY=10
+
+for i in $(seq 1 $MAX_RETRIES); do
+  echo "Flutter precache attempt $i/$MAX_RETRIES..."
+  if flutter precache --ios; then
+    echo "Flutter precache succeeded on attempt $i"
+    break
+  fi
+  if [ $i -eq $MAX_RETRIES ]; then
+    echo "Flutter precache failed after $MAX_RETRIES attempts"
+    exit 1
+  fi
+  echo "Retrying in ${RETRY_DELAY}s..."
+  sleep $RETRY_DELAY
+  RETRY_DELAY=$((RETRY_DELAY * 2))
+done
+
 flutter pub get
 
 # 6. Generated.xcconfig에 올바른 FLUTTER_ROOT 설정
