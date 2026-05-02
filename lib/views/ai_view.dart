@@ -170,21 +170,9 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
       );
     });
 
-    // generationComplete 시: 전체 오디오 재생 → 마이크 확인
+    // generationComplete 시: 오디오 feed → 재생 (마이크는 계속 ON)
     _turnCompleteSub = _liveService.turnCompleteStream.listen((_) async {
       await _audioService.flushAndPlay();
-
-      // 재생 후 마이크가 죽었으면 재시작 (안전장치)
-      if (!_audioService.isRecording) {
-        debugPrint('[AiView] Mic died after playback, restarting...');
-        final ok = await _audioService.startRecording();
-        if (ok) {
-          _audioInSub?.cancel();
-          _audioInSub = _audioService.audioInStream.listen((pcmData) {
-            _liveService.sendAudio(pcmData, hasVoice: _audioLevel > 0.02);
-          });
-        }
-      }
       _liveService.onPlaybackDone();
     });
 
