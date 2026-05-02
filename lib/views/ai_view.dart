@@ -147,9 +147,10 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
       );
     });
 
-    // 턴 완료 시 전체 오디오 재생
-    _turnCompleteSub = _liveService.turnCompleteStream.listen((_) {
-      _audioService.flushAndPlay();
+    // 턴 완료 시 전체 오디오 재생 → 끝나면 listening 전환
+    _turnCompleteSub = _liveService.turnCompleteStream.listen((_) async {
+      await _audioService.flushAndPlay();
+      _liveService.onPlaybackDone();
     });
 
     // 오디오 레벨 구독 (Glow 반응용)
@@ -168,6 +169,13 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
         _liveService.sendAudio(pcmData);
       });
     }
+
+    // AI 인사 트리거 (세션 시작 후)
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (mounted && _liveService.state == LiveSessionState.listening) {
+        _liveService.sendText('[시스템] 사용자가 AI 모드를 열었습니다. 짧고 친근하게 인사해주세요. 예: "안���! 나는 프리즘이야. 서울 여행 도와줄게!"');
+      }
+    });
   }
 
   String _actionToFunctionName(AiAction action) {

@@ -451,9 +451,8 @@ class GeminiLiveService {
     // 턴 완료
     final turnComplete = content['turnComplete'] as bool?;
     if (turnComplete == true) {
+      // listening 전환은 하지 않음 — 오디오 재생 완료 후 외부에서 전환
       _turnCompleteController.add(null);
-      _setState(LiveSessionState.listening);
-      _startSilenceTimer();
     }
   }
 
@@ -498,6 +497,12 @@ class GeminiLiveService {
         _actionController.add(AiActionEvent(action, args));
       }
     }
+  }
+
+  /// 오디오 재생 완료 후 호출 — listening으로 전환
+  void onPlaybackDone() {
+    _setState(LiveSessionState.listening);
+    _startSilenceTimer();
   }
 
   /// 무음 타이머 (30초 무음 → idle prompt)
