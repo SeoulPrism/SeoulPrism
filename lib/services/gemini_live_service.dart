@@ -240,7 +240,7 @@ class GeminiLiveService {
   void _sendSetup() {
     final setup = {
       'setup': {
-        'model': 'models/gemini-2.5-flash-native-audio-latest',
+        'model': 'models/gemini-3.1-flash-live-preview',
         'generationConfig': {
           'responseModalities': ['AUDIO'],
           'speechConfig': {
@@ -251,7 +251,7 @@ class GeminiLiveService {
             },
           },
           'thinkingConfig': {
-            'thinkingBudget': 0,
+            'thinkingLevel': 'minimal',
           },
         },
         'systemInstruction': {
