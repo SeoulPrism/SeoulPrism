@@ -23,6 +23,7 @@ enum AiAction {
   analyzeUrl,
   analyzeImage,
   searchPlace,
+  requestPhoto,
 }
 
 /// AI가 실행할 액션 데이터
@@ -162,6 +163,20 @@ class GeminiLiveService {
           'required': ['query'],
         },
       },
+      {
+        'name': 'request_photo',
+        'description': '사용자에게 사진을 보내달라고 요청합니다. 카메라로 촬영하거나 갤러리에서 선택할 수 있는 UI를 표시합니다. 사용자가 사진을 보내고 싶다고 하거나, 사진 기반 장소 추천을 원할 때 호출합니다.',
+        'parameters': {
+          'type': 'object',
+          'properties': {
+            'source': {
+              'type': 'string',
+              'enum': ['camera', 'gallery', 'both'],
+              'description': '사진 소스: camera(촬영), gallery(갤러리), both(선택)',
+            },
+          },
+        },
+      },
     ],
   };
 
@@ -180,11 +195,13 @@ class GeminiLiveService {
 - 여행 일정 생성: create_plan으로 하루 코스 만들기.
 - 장소 추천: search_place로 맛집, 카페, 관광지 추천.
 - URL 분석: analyze_url로 유튜브/인스타 링크에서 장소 추출.
+- 사진 요청: 사용자가 사진을 보내고 싶다고 하면 request_photo("both") 호출. 카메라/갤러리 선택 UI가 뜸.
 
 규칙:
-- 역 위치를 물어보면 바로 navigate_to_station 호출해. "서울역 어디야?" → navigate_to_station("서울")
-- function 호출 후에는 결과를 자연스럽게 음성으로 안내해. "서울역으로 이동했어! 1호선이랑 4호선 환승역이야."
-- 이미지가 오면 직접 분석해서 답변해. analyze_image 호출하지 마.
+- 역 위치를 물어보면 바로 navigate_to_station 호출해.
+- function 호출 후에는 결과를 자연스럽게 음성으로 안내해.
+- 사용자가 "사진 보여줄게", "사진으로 추천해줘", "카메라로 찍을게", "사진 있어" 같은 말을 하면 request_photo 호출해.
+- 이미지가 대화에 직접 포함되어 오면 analyze_image 호출하지 말고 직접 분석해.
 - 한 번에 function 하나만 호출해.
 - 내부 사고과정은 절대 말하지 마. 바로 답변해.
 ''';
@@ -471,6 +488,9 @@ class GeminiLiveService {
           break;
         case 'search_place':
           action = AiAction.searchPlace;
+          break;
+        case 'request_photo':
+          action = AiAction.requestPhoto;
           break;
       }
 

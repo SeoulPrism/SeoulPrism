@@ -42,7 +42,9 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
   final GeminiLiveService _liveService = GeminiLiveService();
   final AudioService _audioService = AudioService();
   LiveSessionState _sessionState = LiveSessionState.idle;
-  String _transcript = '';
+  String _fullTranscript = '';  // 전체 텍스트
+  String _displayedTranscript = '';  // 타이핑 중 표시 텍스트
+  Timer? _typingTimer;
   double _audioLevel = 0.0;
 
   // ── UI 상태 ──
@@ -121,7 +123,7 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
 
     _transcriptSub = _liveService.transcriptStream.listen((text) {
       if (!mounted) return;
-      setState(() => _transcript = text);
+      _startTypingAnimation(text);
     });
 
     _audioOutSub = _liveService.audioOutStream.listen((audio) {
@@ -131,8 +133,13 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
     });
 
     _actionSub = _liveService.actionStream.listen((action) {
-      widget.onAction?.call(action);
-      // Function call별 의미있는 응답 전송
+      // requestPhoto는 AiView 내부에서 처리
+      if (action.action == AiAction.requestPhoto) {
+        _handlePhotoRequest(action.params['source'] as String? ?? 'both');
+      } else {
+        widget.onAction?.call(action);
+      }
+      // Function response 전송
       final response = _buildFunctionResponse(action);
       _liveService.sendFunctionResponse(
         _actionToFunctionName(action.action),
@@ -140,13 +147,9 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
       );
     });
 
-    // 턴 완료 시 남은 오디오 flush + 다음 턴 준비
+    // 턴 완료 시 전체 오디오 재생
     _turnCompleteSub = _liveService.turnCompleteStream.listen((_) {
       _audioService.flushAndPlay();
-      // 재생 완료 후 리셋 (3초 뒤 — 재생 시간 여유)
-      Future.delayed(const Duration(seconds: 5), () {
-        _audioService.resetPlayback();
-      });
     });
 
     // 오디오 레벨 구독 (Glow 반응용)
@@ -181,6 +184,8 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
         return 'create_plan';
       case AiAction.searchPlace:
         return 'search_place';
+      case AiAction.requestPhoto:
+        return 'request_photo';
     }
   }
 
@@ -219,6 +224,11 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
         return {
           'status': 'success',
           'message': '"$query" 검색 결과를 사용자에게 직접 추천해주세요. 가장 가까운 지하철역 정보도 포함해주세요.',
+        };
+      case AiAction.requestPhoto:
+        return {
+          'status': 'success',
+          'message': '사진 선택 UI를 표시했습니다. 사용자가 사진을 선택하면 분석 결과를 알려드릴게요. 사용자에게 사진을 선택해달라고 안내해주세요.',
         };
     }
   }
@@ -322,11 +332,79 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
     _audioInSub?.cancel();
     _levelSub?.cancel();
     _turnCompleteSub?.cancel();
+    _typingTimer?.cancel();
     _liveService.dispose();
     _audioService.dispose();
     _textController.dispose();
     _textFocusNode.dispose();
     super.dispose();
+  }
+
+  // ── 타이핑 애니메이션 ──
+  void _startTypingAnimation(String text) {
+    _typingTimer?.cancel();
+    _fullTranscript = text;
+    _displayedTranscript = '';
+    int charIndex = 0;
+
+    _typingTimer = Timer.periodic(const Duration(milliseconds: 30), (timer) {
+      if (!mounted || charIndex >= _fullTranscript.length) {
+        timer.cancel();
+        return;
+      }
+      charIndex++;
+      setState(() {
+        _displayedTranscript = _fullTranscript.substring(0, charIndex);
+      });
+    });
+  }
+
+  // ── 사진 요청 (AI가 request_photo 호출 시) ──
+  void _handlePhotoRequest(String source) {
+    if (source == 'camera') {
+      _pickImage(ImageSource.camera);
+    } else if (source == 'gallery') {
+      _pickImage(ImageSource.gallery);
+    } else {
+      // both — 선택 다이얼로그
+      _showPhotoSourceDialog();
+    }
+  }
+
+  void _showPhotoSourceDialog() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        margin: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.9),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt, color: Colors.white),
+              title: const Text('카메라로 촬영', style: TextStyle(color: Colors.white)),
+              onTap: () {
+                Navigator.pop(ctx);
+                _pickImage(ImageSource.camera);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library, color: Colors.white),
+              title: const Text('갤러리에서 선택', style: TextStyle(color: Colors.white)),
+              onTap: () {
+                Navigator.pop(ctx);
+                _pickImage(ImageSource.gallery);
+              },
+            ),
+            SizedBox(height: MediaQuery.of(context).padding.bottom + 8),
+          ],
+        ),
+      ),
+    );
   }
 
   // ── 텍스트 입력 ──
@@ -363,10 +441,8 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
     final picked = await picker.pickImage(source: source, maxWidth: 2048);
     if (picked == null) return;
 
-    setState(() {
-      _analyzingImage = true;
-      _transcript = '이미지 분석 중...';
-    });
+    setState(() => _analyzingImage = true);
+    _startTypingAnimation('이미지 분석 중...');
 
     try {
       // 기존 GeminiService로 장소 분석
@@ -384,7 +460,6 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
           _extractedPlaces = geoPlaces;
           _showPlacesPanel = true;
           _analyzingImage = false;
-          _transcript = '${geoPlaces.length}개 장소를 찾았어요! 아래에서 확인해보세요.';
         });
 
         // Live AI에게도 알려주기
@@ -396,14 +471,14 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
       } else {
         setState(() {
           _analyzingImage = false;
-          _transcript = '장소를 찾지 못했어요. 다른 사진을 시도해보세요.';
+          _startTypingAnimation('장소를 찾지 못했어요. 다른 사진을 시도해보세요.');
         });
       }
     } catch (e) {
       if (!mounted) return;
       setState(() {
         _analyzingImage = false;
-        _transcript = '분석 중 오류가 발생했어요.';
+        _startTypingAnimation('분석 중 오류가 발생했어요.');
       });
     }
   }
@@ -473,8 +548,8 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
           child: _buildStateIndicator(),
         ),
 
-        // 3. AI 응답 자막 (중앙)
-        if (_transcript.isNotEmpty)
+        // 3. AI 응�� 자막 — 타이핑 애니메이션 (중앙)
+        if (_displayedTranscript.isNotEmpty)
           Positioned(
             left: 32,
             right: 32,
@@ -503,14 +578,7 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
         // 7. 텍스트 입력 필드 (슬라이드 업)
         _buildTextInputOverlay(),
 
-        // 8. 하단 액션 버튼
-        if (!_showTextInput && !_showPlacesPanel)
-          Positioned(
-            bottom: MediaQuery.of(context).padding.bottom + 80,
-            left: 0,
-            right: 0,
-            child: _buildActionButtons(),
-          ),
+        // 8. (액션 버튼 제거 — 대화로 처리)
       ],
     );
   }
@@ -584,27 +652,23 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
     );
   }
 
-  /// AI 응답 자막
+  /// AI 응답 자막 (타이핑 효과)
   Widget _buildTranscript() {
-    return AnimatedOpacity(
-      duration: const Duration(milliseconds: 300),
-      opacity: _transcript.isNotEmpty ? 1.0 : 0.0,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.5),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
-        ),
-        child: Text(
-          _transcript,
-          textAlign: TextAlign.center,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-            height: 1.5,
-          ),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+      ),
+      child: Text(
+        _displayedTranscript,
+        textAlign: TextAlign.center,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 16,
+          fontWeight: FontWeight.w500,
+          height: 1.5,
         ),
       ),
     );

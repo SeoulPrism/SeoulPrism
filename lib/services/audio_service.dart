@@ -13,35 +13,22 @@ class AudioService {
   StreamSubscription? _recordSubscription;
   bool _isRecording = false;
 
-  /// 마이크 오디오 스트림 (PCM 16kHz 16-bit mono)
   final _audioInController = StreamController<Uint8List>.broadcast();
   Stream<Uint8List> get audioInStream => _audioInController.stream;
 
-  /// 현재 오디오 레벨 (0.0 ~ 1.0, Glow 반응용)
   final _levelController = StreamController<double>.broadcast();
   Stream<double> get levelStream => _levelController.stream;
 
   bool get isRecording => _isRecording;
 
-  // ── 오디오 재생 (gapless 스트리밍) ──
+  // 전체 턴 오디오를 모아서 한번에 재생 (끊김 제로)
   final _pcmBuffer = BytesBuilder();
-  ConcatenatingAudioSource? _playlist;
-  bool _playerStarted = false;
-  Timer? _flushTimer;
-  int _segmentCounter = 0;
-  final _tempFiles = <String>[];
 
-  // 24kHz 16-bit mono: 48000 bytes/sec
-  // 0.8초 분량씩 끊어서 playlist에 추가 → gapless 재생
-  static const _flushThreshold = 38400;
-
-  /// 마이크 권한 요청
   Future<bool> requestMicPermission() async {
     final status = await Permission.microphone.request();
     return status.isGranted;
   }
 
-  /// 마이크 녹음 시작 (PCM 스트리밍)
   Future<bool> startRecording() async {
     if (_isRecording) return true;
 
@@ -70,7 +57,7 @@ class AudioService {
       });
 
       _isRecording = true;
-      debugPrint('[AudioService] Recording started (PCM 16kHz mono)');
+      debugPrint('[AudioService] Recording started');
       return true;
     } catch (e) {
       debugPrint('[AudioService] Failed to start recording: $e');
@@ -78,36 +65,21 @@ class AudioService {
     }
   }
 
-  /// 마이크 녹음 중지
   Future<void> stopRecording() async {
     if (!_isRecording) return;
     _recordSubscription?.cancel();
     _recordSubscription = null;
     await _recorder.stop();
     _isRecording = false;
-    debugPrint('[AudioService] Recording stopped');
   }
 
-  /// PCM 오디오 청크를 버퍼에 추가 + 자동 flush
+  /// PCM 청크를 버퍼에 추가
   void bufferAudio(Uint8List pcmData) {
     _pcmBuffer.add(pcmData);
-
-    if (_pcmBuffer.length >= _flushThreshold) {
-      _flushToPlaylist();
-    } else {
-      _flushTimer?.cancel();
-      _flushTimer = Timer(const Duration(milliseconds: 300), _flushToPlaylist);
-    }
   }
 
-  /// 턴 완료 시 남은 버퍼 강제 flush
-  void flushAndPlay() {
-    _flushTimer?.cancel();
-    _flushToPlaylist();
-  }
-
-  /// 버퍼 → WAV 파일 → playlist에 추가
-  Future<void> _flushToPlaylist() async {
+  /// 턴 완료 시 전체 버퍼를 하나의 WAV로 재생 (끊김 없음)
+  Future<void> flushAndPlay() async {
     if (_pcmBuffer.isEmpty) return;
 
     final pcmData = _pcmBuffer.toBytes();
@@ -117,46 +89,29 @@ class AudioService {
 
     try {
       final wavData = _pcmToWav(pcmData, sampleRate: 24000);
-      final filePath = '${Directory.systemTemp.path}/sp_seg_${_segmentCounter++}.wav';
-      final file = File(filePath);
-      await file.writeAsBytes(wavData);
-      _tempFiles.add(filePath);
+      final filePath = '${Directory.systemTemp.path}/sp_response_${DateTime.now().millisecondsSinceEpoch}.wav';
+      await File(filePath).writeAsBytes(wavData);
 
-      // 첫 번째 세그먼트: playlist 생성 + 재생 시작
-      if (!_playerStarted) {
-        _playlist = ConcatenatingAudioSource(children: [
-          AudioSource.file(filePath),
-        ]);
-        await _player.setAudioSource(_playlist!);
-        _player.play();
-        _playerStarted = true;
-        debugPrint('[AudioService] Playback started (gapless mode)');
-      } else {
-        // 이후 세그먼트: playlist에 동적 추가 (gapless)
-        _playlist?.add(AudioSource.file(filePath));
-      }
+      await _player.setFilePath(filePath);
+      await _player.play();
+      debugPrint('[AudioService] Playing ${(pcmData.length / 48000.0).toStringAsFixed(1)}s of audio');
+
+      // 재생 완료 대기 후 정리
+      await _player.playerStateStream.firstWhere(
+        (s) => s.processingState == ProcessingState.completed,
+      );
+      try { await File(filePath).delete(); } catch (_) {}
     } catch (e) {
-      debugPrint('[AudioService] Flush error: $e');
+      debugPrint('[AudioService] Playback error: $e');
     }
   }
 
-  /// 재생 세션 초기화 (새 턴 시작 시)
-  void resetPlayback() {
+  /// 재생 중지
+  void stopPlayback() {
     _player.stop();
-    _playerStarted = false;
-    _playlist = null;
     _pcmBuffer.clear();
-    _flushTimer?.cancel();
-
-    // 임시 파일 정리
-    for (final path in _tempFiles) {
-      try { File(path).deleteSync(); } catch (_) {}
-    }
-    _tempFiles.clear();
-    _segmentCounter = 0;
   }
 
-  /// PCM raw data → WAV file bytes
   Uint8List _pcmToWav(Uint8List pcmData, {int sampleRate = 24000, int channels = 1, int bitsPerSample = 16}) {
     final byteRate = sampleRate * channels * bitsPerSample ~/ 8;
     final blockAlign = channels * bitsPerSample ~/ 8;
@@ -188,28 +143,23 @@ class AudioService {
     return wav.toBytes();
   }
 
-  /// RMS 레벨 계산 (0.0 ~ 1.0)
   double _calculateRmsLevel(Uint8List pcmData) {
     if (pcmData.length < 2) return 0.0;
-
     final byteData = ByteData.sublistView(pcmData);
     double sumSquares = 0;
     final sampleCount = pcmData.length ~/ 2;
-
     for (int i = 0; i < sampleCount; i++) {
       final sample = byteData.getInt16(i * 2, Endian.little);
       final normalized = sample / 32768.0;
       sumSquares += normalized * normalized;
     }
-
     final rms = sampleCount > 0 ? (sumSquares / sampleCount) : 0.0;
     return (rms * 10).clamp(0.0, 1.0);
   }
 
   void dispose() {
-    _flushTimer?.cancel();
     stopRecording();
-    resetPlayback();
+    stopPlayback();
     _recorder.dispose();
     _player.dispose();
     _audioInController.close();
