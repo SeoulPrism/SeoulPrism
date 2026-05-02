@@ -98,7 +98,8 @@ class AudioService {
 
     try {
       // PCM → WAV 변환
-      final wavData = _pcmToWav(pcmData, sampleRate: 24000, channels: 1, bitsPerSample: 16);
+      // Gemini Live API 출력: PCM 16kHz 16-bit mono
+      final wavData = _pcmToWav(pcmData, sampleRate: 16000, channels: 1, bitsPerSample: 16);
 
       // 임시 파일 저장
       final dir = Directory.systemTemp;

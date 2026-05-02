@@ -403,6 +403,7 @@ class GeminiLiveService {
       if (parts != null) {
         for (final part in parts) {
           final partMap = part as Map<String, dynamic>;
+          debugPrint('[GeminiLive] Part keys: ${partMap.keys.toList()}');
 
           // 텍스트 응답
           if (partMap.containsKey('text')) {
@@ -414,7 +415,9 @@ class GeminiLiveService {
           // 오디오 응답
           if (partMap.containsKey('inlineData')) {
             final inlineData = partMap['inlineData'] as Map<String, dynamic>;
+            final mimeType = inlineData['mimeType'] as String?;
             final audioBase64 = inlineData['data'] as String?;
+            debugPrint('[GeminiLive] 🔊 Audio received: mime=$mimeType, size=${audioBase64?.length ?? 0} chars');
             if (audioBase64 != null) {
               final audioBytes = base64Decode(audioBase64);
               _audioOutController.add(Uint8List.fromList(audioBytes));
