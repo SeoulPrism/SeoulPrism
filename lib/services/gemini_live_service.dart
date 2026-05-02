@@ -276,12 +276,10 @@ class GeminiLiveService {
 
     final msg = {
       'realtimeInput': {
-        'mediaChunks': [
-          {
-            'mimeType': 'audio/pcm;rate=16000',
-            'data': base64Encode(pcmData),
-          },
-        ],
+        'audio': {
+          'mimeType': 'audio/pcm;rate=16000',
+          'data': base64Encode(pcmData),
+        },
       },
     };
 
