@@ -510,18 +510,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         color: Colors.black.withValues(alpha: 0.7),
         border: Border(top: BorderSide(color: const Color(0xFFBC82F3).withValues(alpha: 0.3))),
       ),
-      child: Text(
-        _aiStatus,
-        style: TextStyle(
-          color: Colors.white.withValues(alpha: 0.9),
-          fontSize: 13,
-          fontWeight: FontWeight.w500,
-          height: 1.4,
-        ),
-        maxLines: 3,
-        overflow: TextOverflow.ellipsis,
-        textAlign: TextAlign.center,
-      ),
+      child: _AiStatusText(text: _aiStatus),
     );
   }
 
@@ -1490,31 +1479,50 @@ class _AiStatusText extends StatefulWidget {
 }
 
 class _AiStatusTextState extends State<_AiStatusText> {
+  String _fullText = '';
   String _displayed = '';
   Timer? _timer;
+  int _charIndex = 0;
 
   @override
   void initState() {
     super.initState();
-    _animate(widget.text);
+    _startTyping(widget.text);
   }
 
   @override
   void didUpdateWidget(_AiStatusText old) {
     super.didUpdateWidget(old);
     if (old.text != widget.text) {
-      _animate(widget.text);
+      if (widget.text.isEmpty) {
+        // 클리어
+        _timer?.cancel();
+        setState(() { _fullText = ''; _displayed = ''; _charIndex = 0; });
+      } else if (widget.text.length > _fullText.length && widget.text.startsWith(_fullText)) {
+        // 이어붙이기 (같은 턴에서 텍스트가 추가됨)
+        _fullText = widget.text;
+        _continueTyping();
+      } else {
+        // 새 텍스트
+        _startTyping(widget.text);
+      }
     }
   }
 
-  void _animate(String target) {
+  void _startTyping(String target) {
     _timer?.cancel();
+    _fullText = target;
     _displayed = '';
-    int i = 0;
-    _timer = Timer.periodic(const Duration(milliseconds: 40), (t) {
-      if (!mounted || i >= target.length) { t.cancel(); return; }
-      i++;
-      setState(() => _displayed = target.substring(0, i));
+    _charIndex = 0;
+    _continueTyping();
+  }
+
+  void _continueTyping() {
+    _timer?.cancel();
+    _timer = Timer.periodic(const Duration(milliseconds: 30), (t) {
+      if (!mounted || _charIndex >= _fullText.length) { t.cancel(); return; }
+      _charIndex++;
+      setState(() => _displayed = _fullText.substring(0, _charIndex));
     });
   }
 
@@ -1526,14 +1534,22 @@ class _AiStatusTextState extends State<_AiStatusText> {
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      _displayed,
-      style: TextStyle(
-        color: Colors.white.withValues(alpha: 0.8),
-        fontSize: 12,
-        fontWeight: FontWeight.w500,
+    if (_displayed.isEmpty) return const SizedBox.shrink();
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxHeight: 60),
+      child: SingleChildScrollView(
+        reverse: true,
+        child: Text(
+          _displayed,
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.9),
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+            height: 1.4,
+          ),
+          textAlign: TextAlign.center,
+        ),
       ),
-      textAlign: TextAlign.center,
     );
   }
 }
