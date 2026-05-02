@@ -247,7 +247,7 @@ class GeminiLiveService {
       'setup': {
         'model': 'models/gemini-3.1-flash-live-preview',
         'generationConfig': {
-          'responseModalities': ['AUDIO', 'TEXT'],
+          'responseModalities': ['AUDIO'],
           'speechConfig': {
             'voiceConfig': {
               'prebuiltVoiceConfig': {
@@ -262,6 +262,7 @@ class GeminiLiveService {
           ],
         },
         'tools': [_toolDeclarations],
+        'outputAudioTranscription': {},
       },
     };
 
