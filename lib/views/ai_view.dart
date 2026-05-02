@@ -156,9 +156,10 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
       } else {
         widget.onAction?.call(action);
       }
-      // Function response 전송
+      // Function response 전송 (callId 포함)
       final response = _buildFunctionResponse(action);
       _liveService.sendFunctionResponse(
+        action.callId,
         _actionToFunctionName(action.action),
         response,
       );
@@ -565,7 +566,33 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
           child: _buildStateIndicator(),
         ),
 
-        // 3. (자막은 탭바 위에만 표시)
+        // 3. DEBUG: AI thinking 텍스트 (중앙)
+        if (_accumulatedTranscript.contains('[thinking]'))
+          Positioned(
+            left: 24,
+            right: 24,
+            top: MediaQuery.of(context).padding.top + 70,
+            bottom: MediaQuery.of(context).size.height * 0.45,
+            child: SingleChildScrollView(
+              reverse: true,
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  _accumulatedTranscript,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.7),
+                    fontSize: 11,
+                    fontFamily: 'monospace',
+                    height: 1.4,
+                  ),
+                ),
+              ),
+            ),
+          ),
 
         // 4. 무음 시 텍스트 입력 전환 (5초 후 자동)
         if (_sessionState == LiveSessionState.idlePrompt && !_showTextInput)

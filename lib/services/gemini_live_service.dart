@@ -30,7 +30,8 @@ enum AiAction {
 class AiActionEvent {
   final AiAction action;
   final Map<String, dynamic> params;
-  const AiActionEvent(this.action, this.params);
+  final String callId;
+  const AiActionEvent(this.action, this.params, {this.callId = ''});
 }
 
 /// Gemini Live API WebSocket 서비스
@@ -340,11 +341,12 @@ class GeminiLiveService {
   }
 
   /// Function call 응답 전송
-  void sendFunctionResponse(String functionName, Map<String, dynamic> result) {
+  void sendFunctionResponse(String functionCallId, String functionName, Map<String, dynamic> result) {
     final msg = {
       'toolResponse': {
         'functionResponses': [
           {
+            'id': functionCallId,
             'name': functionName,
             'response': result,
           },
@@ -352,6 +354,7 @@ class GeminiLiveService {
       },
     };
 
+    debugPrint('[GeminiLive] Sending function response: $functionName (id: $functionCallId)');
     _channel?.sink.add(jsonEncode(msg));
   }
 
@@ -481,8 +484,9 @@ class GeminiLiveService {
       final callMap = call as Map<String, dynamic>;
       final name = callMap['name'] as String;
       final args = callMap['args'] as Map<String, dynamic>? ?? {};
+      final callId = callMap['id'] as String? ?? '';
 
-      debugPrint('[GeminiLive] Function call: $name($args)');
+      debugPrint('[GeminiLive] Function call: $name($args) id=$callId');
 
       AiAction? action;
       switch (name) {
@@ -510,7 +514,7 @@ class GeminiLiveService {
       }
 
       if (action != null) {
-        _actionController.add(AiActionEvent(action, args));
+        _actionController.add(AiActionEvent(action, args, callId: callId));
       }
     }
   }
