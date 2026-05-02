@@ -44,9 +44,7 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
   final GeminiLiveService _liveService = GeminiLiveService.instance;
   final AudioService _audioService = AudioService();
   LiveSessionState _sessionState = LiveSessionState.idle;
-  String _fullTranscript = '';  // 전체 텍스트
-  String _displayedTranscript = '';  // 타이핑 중 표시 텍스트
-  Timer? _typingTimer;
+  String _accumulatedTranscript = '';  // 턴 동안 누적된 전체 텍스트
   double _audioLevel = 0.0;
 
   // ── UI 상태 ──
@@ -121,6 +119,10 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
         _sessionState = state;
         _updateGlowForState(state);
       });
+      // speaking 시작 시 누적 리셋
+      if (state == LiveSessionState.speaking) {
+        _accumulatedTranscript = '';
+      }
       // listening 전환 시 15초 후 자막 클리어
       if (state == LiveSessionState.listening) {
         Future.delayed(const Duration(seconds: 15), () {
@@ -133,8 +135,9 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
 
     _transcriptSub = _liveService.transcriptStream.listen((text) {
       if (!mounted) return;
-      _startTypingAnimation(text);
-      widget.onStatusChanged?.call(text);
+      // 텍스트 누적 (조각조각 오므로)
+      _accumulatedTranscript += text;
+      widget.onStatusChanged?.call(_accumulatedTranscript);
     });
 
     _audioOutSub = _liveService.audioBase64Stream.listen((base64) {
@@ -364,7 +367,6 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
     _audioInSub?.cancel();
     _levelSub?.cancel();
     _turnCompleteSub?.cancel();
-    _typingTimer?.cancel();
     _liveService.endSession();
     _audioService.dispose();
     _textController.dispose();
@@ -372,24 +374,7 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
     super.dispose();
   }
 
-  // ── 타이핑 애니메이션 ──
-  void _startTypingAnimation(String text) {
-    _typingTimer?.cancel();
-    _fullTranscript = text;
-    _displayedTranscript = '';
-    int charIndex = 0;
 
-    _typingTimer = Timer.periodic(const Duration(milliseconds: 30), (timer) {
-      if (!mounted || charIndex >= _fullTranscript.length) {
-        timer.cancel();
-        return;
-      }
-      charIndex++;
-      setState(() {
-        _displayedTranscript = _fullTranscript.substring(0, charIndex);
-      });
-    });
-  }
 
   // ── 사진 요청 (AI가 request_photo 호출 시) ──
   void _handlePhotoRequest(String source) {
@@ -474,7 +459,7 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
     if (picked == null) return;
 
     setState(() => _analyzingImage = true);
-    _startTypingAnimation('이미지 분석 중...');
+    widget.onStatusChanged?.call('이미지 분석 중...');
 
     try {
       // 기존 GeminiService로 장소 분석
@@ -503,14 +488,14 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
       } else {
         setState(() {
           _analyzingImage = false;
-          _startTypingAnimation('장소를 찾지 못했어요. 다른 사진을 시도해보세요.');
+          widget.onStatusChanged?.call('장소를 찾지 못했어요. 다른 사진을 시도해보세요.');
         });
       }
     } catch (e) {
       if (!mounted) return;
       setState(() {
         _analyzingImage = false;
-        _startTypingAnimation('분석 중 오류가 발생했어요.');
+        widget.onStatusChanged?.call('분석 중 오류가 발생했어요.');
       });
     }
   }
@@ -677,34 +662,18 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
     );
   }
 
-  /// AI 응답 자막 (타이핑 효과)
-  Widget _buildTranscript() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
-      ),
-      child: Text(
-        _displayedTranscript,
-        textAlign: TextAlign.center,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 16,
-          fontWeight: FontWeight.w500,
-          height: 1.5,
-        ),
-      ),
-    );
-  }
 
   /// 무음 시 텍스트 전환 프롬프트
   Widget _buildIdlePrompt() {
+    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
+    final bottomOffset = keyboardHeight > 0
+        ? keyboardHeight + 12
+        : MediaQuery.of(context).padding.bottom + 100;
+
     return Positioned(
-      bottom: MediaQuery.of(context).padding.bottom + 100,
-      left: 24,
-      right: 24,
+      bottom: bottomOffset,
+      left: 20,
+      right: 20,
       child: TweenAnimationBuilder<double>(
         tween: Tween(begin: 0.0, end: 1.0),
         duration: const Duration(milliseconds: 400),
@@ -718,20 +687,33 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              '말을 할 수 없나요?',
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.6),
-                fontSize: 13,
+            if (keyboardHeight == 0)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Text(
+                  '말을 할 수 없나요?',
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.5),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
               ),
-            ),
-            const SizedBox(height: 10),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              padding: const EdgeInsets.fromLTRB(20, 4, 8, 4),
               decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.6),
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+                color: Colors.white.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(28),
+                border: Border.all(
+                  color: const Color(0xFFBC82F3).withValues(alpha: 0.25),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.3),
+                    blurRadius: 20,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
               child: Row(
                 children: [
@@ -739,25 +721,28 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
                     child: TextField(
                       controller: _textController,
                       focusNode: _textFocusNode,
-                      style: const TextStyle(color: Colors.white, fontSize: 14),
+                      style: const TextStyle(color: Colors.white, fontSize: 15),
                       decoration: InputDecoration(
-                        hintText: '텍스트로 입력하세요...',
-                        hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.35)),
+                        hintText: '메시지 입력...',
+                        hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
                         border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
+                        contentPadding: const EdgeInsets.symmetric(vertical: 12),
                       ),
                       onSubmitted: (_) => _submitText(),
                     ),
                   ),
+                  const SizedBox(width: 8),
                   GestureDetector(
                     onTap: _submitText,
                     child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFBC82F3).withValues(alpha: 0.3),
+                      padding: const EdgeInsets.all(10),
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Color(0xFFBC82F3), Color(0xFF8D9FFF)],
+                        ),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.send_rounded, color: Colors.white, size: 18),
+                      child: const Icon(Icons.arrow_upward_rounded, color: Colors.white, size: 20),
                     ),
                   ),
                 ],
