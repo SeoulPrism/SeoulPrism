@@ -423,15 +423,16 @@ class GeminiLiveService {
           final partMap = part as Map<String, dynamic>;
           debugPrint('[GeminiLive] Part keys: ${partMap.keys.toList()}');
 
-          // 텍스트 응답 (thought=true인 내부 사고는 무시)
+          // 텍스트 응답
           if (partMap.containsKey('text')) {
             final isThought = partMap['thought'] == true;
-            if (!isThought) {
-              final text = partMap['text'] as String;
+            final text = partMap['text'] as String;
+            if (isThought) {
+              // DEBUG: thought를 자막에 표시
+              _transcriptController.add('[thinking] $text');
+            } else {
               _transcriptController.add(text);
               _setState(LiveSessionState.speaking);
-            } else {
-              debugPrint('[GeminiLive] (thought filtered)');
             }
           }
 
