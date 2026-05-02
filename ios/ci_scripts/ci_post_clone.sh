@@ -43,16 +43,24 @@ class ApiKeys {
 }
 DART
 
-# 4. Flutter 환경 확인 및 의존성 설치
+# 4. GoogleService-Info.plist 생성 (환경변수에서 디코딩)
+if [ -n "$GOOGLE_SERVICE_INFO_BASE64" ]; then
+  echo "$GOOGLE_SERVICE_INFO_BASE64" | base64 --decode > ios/Runner/GoogleService-Info.plist
+  echo "GoogleService-Info.plist generated from env"
+else
+  echo "warning: GOOGLE_SERVICE_INFO_BASE64 not set, Firebase may not work"
+fi
+
+# 5. Flutter 환경 확인 및 의존성 설치
 flutter precache --ios
 flutter pub get
 
-# 5. Generated.xcconfig에 올바른 FLUTTER_ROOT 설정
+# 6. Generated.xcconfig에 올바른 FLUTTER_ROOT 설정
 FLUTTER_ROOT="$(which flutter | xargs dirname | xargs dirname)"
 echo "FLUTTER_ROOT=$FLUTTER_ROOT" > ios/Flutter/Generated.xcconfig
 flutter build ios --config-only --release --no-tree-shake-icons
 
-# 6. CocoaPods 설치
+# 7. CocoaPods 설치
 HOMEBREW_NO_AUTO_UPDATE=1 brew install cocoapods 2>/dev/null || true
 cd ios
 pod install
