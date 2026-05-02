@@ -448,6 +448,15 @@ class GeminiLiveService {
       }
     }
 
+    // 오디오 트랜스크립션 (outputAudioTranscription으로 활성화)
+    final outputTranscription = content['outputTranscription'] as Map<String, dynamic>?;
+    if (outputTranscription != null) {
+      final text = outputTranscription['text'] as String?;
+      if (text != null && text.isNotEmpty) {
+        _transcriptController.add(text);
+      }
+    }
+
     // 생성 완료 (모든 오디오 청크 도착) — turnComplete보다 먼저 옴
     final genComplete = content['generationComplete'] as bool?;
     if (genComplete == true) {
