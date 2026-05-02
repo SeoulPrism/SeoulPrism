@@ -235,16 +235,17 @@ class GeminiLiveService {
   }
 
   /// Setup 메시지 (세션 초기화)
-  /// 3.1 모델: "config" 키 사용, responseModalities는 config 최상위
   void _sendSetup() {
     final setup = {
-      'config': {
+      'setup': {
         'model': 'models/gemini-3.1-flash-live-preview',
-        'responseModalities': ['AUDIO'],
-        'speechConfig': {
-          'voiceConfig': {
-            'prebuiltVoiceConfig': {
-              'voiceName': 'Kore',
+        'generationConfig': {
+          'responseModalities': ['AUDIO'],
+          'speechConfig': {
+            'voiceConfig': {
+              'prebuiltVoiceConfig': {
+                'voiceName': 'Kore',
+              },
             },
           },
         },
