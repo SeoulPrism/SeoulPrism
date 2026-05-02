@@ -125,6 +125,8 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
     });
 
     _audioOutSub = _liveService.audioOutStream.listen((audio) {
+      // 첫 오디오 청크가 오면 이전 재생 세션 리셋
+      if (!_audioService.isRecording) return;
       _audioService.bufferAudio(audio);
     });
 
@@ -138,9 +140,13 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
       );
     });
 
-    // 턴 완료 시 버퍼된 오디오 재생
+    // 턴 완료 시 남은 오디오 flush + 다음 턴 준비
     _turnCompleteSub = _liveService.turnCompleteStream.listen((_) {
       _audioService.flushAndPlay();
+      // 재생 완료 후 리셋 (3초 뒤 — 재생 시간 여유)
+      Future.delayed(const Duration(seconds: 5), () {
+        _audioService.resetPlayback();
+      });
     });
 
     // 오디오 레벨 구독 (Glow 반응용)

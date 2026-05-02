@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:collection';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
@@ -24,14 +23,17 @@ class AudioService {
 
   bool get isRecording => _isRecording;
 
-  // ── 오디오 재생 (스트리밍 방식) ──
+  // ── 오디오 재생 (gapless 스트리밍) ──
   final _pcmBuffer = BytesBuilder();
-  final _playQueue = Queue<Uint8List>();
-  bool _isPlaying = false;
+  ConcatenatingAudioSource? _playlist;
+  bool _playerStarted = false;
   Timer? _flushTimer;
+  int _segmentCounter = 0;
+  final _tempFiles = <String>[];
 
-  // 24kHz 16-bit mono: 48000 bytes/sec → 48000 bytes = 1초
-  static const _flushThreshold = 48000;
+  // 24kHz 16-bit mono: 48000 bytes/sec
+  // 0.8초 분량씩 끊어서 playlist에 추가 → gapless 재생
+  static const _flushThreshold = 38400;
 
   /// 마이크 권한 요청
   Future<bool> requestMicPermission() async {
@@ -90,23 +92,22 @@ class AudioService {
   void bufferAudio(Uint8List pcmData) {
     _pcmBuffer.add(pcmData);
 
-    // 일정량 쌓이면 즉시 flush
     if (_pcmBuffer.length >= _flushThreshold) {
-      _flushBuffer();
+      _flushToPlaylist();
     } else {
-      // 작은 청크도 500ms 후 자동 flush (마지막 조각 처리)
       _flushTimer?.cancel();
-      _flushTimer = Timer(const Duration(milliseconds: 500), _flushBuffer);
+      _flushTimer = Timer(const Duration(milliseconds: 300), _flushToPlaylist);
     }
   }
 
   /// 턴 완료 시 남은 버퍼 강제 flush
   void flushAndPlay() {
     _flushTimer?.cancel();
-    _flushBuffer();
+    _flushToPlaylist();
   }
 
-  void _flushBuffer() {
+  /// 버퍼 → WAV 파일 → playlist에 추가
+  Future<void> _flushToPlaylist() async {
     if (_pcmBuffer.isEmpty) return;
 
     final pcmData = _pcmBuffer.toBytes();
@@ -114,38 +115,45 @@ class AudioService {
 
     if (pcmData.length < 100) return;
 
-    _playQueue.add(pcmData);
-    _playNext();
+    try {
+      final wavData = _pcmToWav(pcmData, sampleRate: 24000);
+      final filePath = '${Directory.systemTemp.path}/sp_seg_${_segmentCounter++}.wav';
+      final file = File(filePath);
+      await file.writeAsBytes(wavData);
+      _tempFiles.add(filePath);
+
+      // 첫 번째 세그먼트: playlist 생성 + 재생 시작
+      if (!_playerStarted) {
+        _playlist = ConcatenatingAudioSource(children: [
+          AudioSource.file(filePath),
+        ]);
+        await _player.setAudioSource(_playlist!);
+        _player.play();
+        _playerStarted = true;
+        debugPrint('[AudioService] Playback started (gapless mode)');
+      } else {
+        // 이후 세그먼트: playlist에 동적 추가 (gapless)
+        _playlist?.add(AudioSource.file(filePath));
+      }
+    } catch (e) {
+      debugPrint('[AudioService] Flush error: $e');
+    }
   }
 
-  Future<void> _playNext() async {
-    if (_isPlaying || _playQueue.isEmpty) return;
-    _isPlaying = true;
+  /// 재생 세션 초기화 (새 턴 시작 시)
+  void resetPlayback() {
+    _player.stop();
+    _playerStarted = false;
+    _playlist = null;
+    _pcmBuffer.clear();
+    _flushTimer?.cancel();
 
-    while (_playQueue.isNotEmpty) {
-      final pcmData = _playQueue.removeFirst();
-
-      try {
-        // PCM 24kHz → WAV
-        final wavData = _pcmToWav(pcmData, sampleRate: 24000);
-        final file = File('${Directory.systemTemp.path}/sp_audio_${DateTime.now().millisecondsSinceEpoch}.wav');
-        await file.writeAsBytes(wavData);
-
-        await _player.setFilePath(file.path);
-        await _player.play();
-
-        // 재생 완료 대기
-        await _player.playerStateStream.firstWhere(
-          (state) => state.processingState == ProcessingState.completed,
-        );
-
-        try { await file.delete(); } catch (_) {}
-      } catch (e) {
-        debugPrint('[AudioService] Playback error: $e');
-      }
+    // 임시 파일 정리
+    for (final path in _tempFiles) {
+      try { File(path).deleteSync(); } catch (_) {}
     }
-
-    _isPlaying = false;
+    _tempFiles.clear();
+    _segmentCounter = 0;
   }
 
   /// PCM raw data → WAV file bytes
@@ -201,10 +209,9 @@ class AudioService {
   void dispose() {
     _flushTimer?.cancel();
     stopRecording();
+    resetPlayback();
     _recorder.dispose();
     _player.dispose();
-    _pcmBuffer.clear();
-    _playQueue.clear();
     _audioInController.close();
     _levelController.close();
   }
