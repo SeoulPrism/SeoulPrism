@@ -121,21 +121,16 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
         _sessionState = state;
         _updateGlowForState(state);
       });
-      // 상태 텍스트 외부 전달
-      final statusText = switch (state) {
-        LiveSessionState.connecting => '연결 중...',
-        LiveSessionState.listening => '듣고 있어요',
-        LiveSessionState.processing => '생각 중...',
-        LiveSessionState.speaking => '말하는 중',
-        LiveSessionState.idlePrompt => '',
-        _ => '',
-      };
-      widget.onStatusChanged?.call(statusText);
+      // listening 전환 시 자막 클리어
+      if (state == LiveSessionState.listening) {
+        widget.onStatusChanged?.call('');
+      }
     });
 
     _transcriptSub = _liveService.transcriptStream.listen((text) {
       if (!mounted) return;
       _startTypingAnimation(text);
+      widget.onStatusChanged?.call(text);
     });
 
     _audioOutSub = _liveService.audioBase64Stream.listen((base64) {
