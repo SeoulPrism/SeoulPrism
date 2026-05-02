@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:record/record.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:audio_session/audio_session.dart';
 
 /// 마이크 입력 및 오디오 재생 관리
 class AudioService {
@@ -29,6 +30,23 @@ class AudioService {
   AudioService() {
     _player = AudioPlayer();
     _playerReady = true;
+    _configureAudioSession();
+  }
+
+  /// 오디오 세션 설정: 재생과 녹음 동시 허용
+  Future<void> _configureAudioSession() async {
+    final session = await AudioSession.instance;
+    await session.configure(const AudioSessionConfiguration(
+      avAudioSessionCategory: AVAudioSessionCategory.playAndRecord,
+      avAudioSessionCategoryOptions: AVAudioSessionCategoryOptions.defaultToSpeaker,
+      avAudioSessionMode: AVAudioSessionMode.voiceChat,
+      androidAudioAttributes: AndroidAudioAttributes(
+        contentType: AndroidAudioContentType.speech,
+        usage: AndroidAudioUsage.voiceCommunication,
+      ),
+      androidAudioFocusGainType: AndroidAudioFocusGainType.gainTransientMayDuck,
+    ));
+    debugPrint('[AudioService] Audio session configured: playAndRecord + voiceCommunication');
   }
 
   Future<bool> requestMicPermission() async {

@@ -141,11 +141,7 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
     });
 
     _audioOutSub = _liveService.audioBase64Stream.listen((base64) {
-      // 첫 오디오 청크에서만 마이크 중지
-      if (_audioService.isRecording) {
-        _audioService.stopRecording();
-        _audioInSub?.cancel();
-      }
+      // 마이크 상시 ON — audio_session이 동시 재생+녹음 허용
       _audioService.bufferBase64(base64);
     });
 
@@ -174,17 +170,9 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
       );
     });
 
-    // generationComplete 시: 전체 오디오 재생 → 마이크 재시작
+    // generationComplete 시: 전체 오디오 재생 (마이크는 항상 ON)
     _turnCompleteSub = _liveService.turnCompleteStream.listen((_) async {
       await _audioService.flushAndPlay();
-
-      // 재생 완료 후 마이크 재시작
-      final micRestarted = await _audioService.startRecording();
-      if (micRestarted) {
-        _audioInSub = _audioService.audioInStream.listen((pcmData) {
-          _liveService.sendAudio(pcmData, hasVoice: _audioLevel > 0.02);
-        });
-      }
       _liveService.onPlaybackDone();
     });
 
@@ -1198,40 +1186,15 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
                     itemBuilder: (context, index) => _buildPlaceCard(index),
                   ),
                 ),
-                // 음성 안내 + 일정 만들기 버튼
+                // 음성 안내
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+                  padding: EdgeInsets.fromLTRB(16, 4, 16, bottomPad + 12),
                   child: Text(
-                    '음성으로 "카페 추가해줘", "경복궁 빼줘", "확정해" 등 말해보세요',
+                    '"카페 추가해줘", "경복궁 빼줘", "이걸로 확정해" 등 말해보세요',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.4),
                       fontSize: 11,
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: EdgeInsets.fromLTRB(16, 4, 16, bottomPad + 12),
-                  child: GestureDetector(
-                    onTap: _generatePlanFromPlaces,
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(14),
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFFBC82F3), Color(0xFF8D9FFF)],
-                        ),
-                      ),
-                      child: Text(
-                        '일정 만들기 (${_extractedPlaces.length}곳)',
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
                     ),
                   ),
                 ),
