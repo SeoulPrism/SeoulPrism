@@ -45,7 +45,7 @@ DART
 
 # 4. GoogleService-Info.plist 생성 (환경변수에서 디코딩)
 if [ -n "$GOOGLE_SERVICE_INFO_BASE64" ]; then
-  echo "$GOOGLE_SERVICE_INFO_BASE64" | base64 --decode > ios/Runner/GoogleService-Info.plist
+  echo "$GOOGLE_SERVICE_INFO_BASE64" | base64 -D > ios/Runner/GoogleService-Info.plist
   echo "GoogleService-Info.plist generated from env"
 else
   echo "warning: GOOGLE_SERVICE_INFO_BASE64 not set, Firebase may not work"
