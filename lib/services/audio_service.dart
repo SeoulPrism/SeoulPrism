@@ -18,6 +18,7 @@ class AudioService {
   bool _playerOpen = false;
   bool _playerStreaming = false;
   bool _isRecording = false;
+  bool _recorderListening = false;
 
   // 녹음 데이터 스트림
   final _recordingDataController = StreamController<Uint8List>.broadcast();
@@ -80,12 +81,15 @@ class AudioService {
         toStream: _recordingDataController.sink,
       );
 
-      // 녹음 데이터를 외부 스트림으로 전달
-      _recordingDataController.stream.listen((data) {
-        _audioInController.add(data);
-        final level = _calculateRmsLevel(data);
-        _levelController.add(level);
-      });
+      // 녹음 데이터를 외부 스트림으로 전달 (구독은 1번만)
+      if (!_recorderListening) {
+        _recorderListening = true;
+        _recordingDataController.stream.listen((data) {
+          _audioInController.add(data);
+          final level = _calculateRmsLevel(data);
+          _levelController.add(level);
+        });
+      }
 
       _isRecording = true;
       debugPrint('[AudioService] Recording started (FlutterSoundRecorder)');

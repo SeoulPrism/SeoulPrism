@@ -191,8 +191,9 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
     final micStarted = await _audioService.startRecording();
     if (micStarted) {
       _audioInSub = _audioService.audioInStream.listen((pcmData) {
-        _liveService.sendAudio(pcmData);
+        _liveService.sendAudio(pcmData, hasVoice: _audioLevel > 0.02);
       });
+      debugPrint('[AiView] Mic stream connected to Gemini');
     }
 
     // AI 인사 트리거
