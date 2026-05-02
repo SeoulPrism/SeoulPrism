@@ -63,6 +63,7 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
   StreamSubscription? _actionSub;
   StreamSubscription? _audioInSub;
   StreamSubscription? _levelSub;
+  StreamSubscription? _turnCompleteSub;
 
   // ── Glow 상태 반응 파라미터 ──
   double _glowSpeedMultiplier = 1.0;
@@ -124,7 +125,7 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
     });
 
     _audioOutSub = _liveService.audioOutStream.listen((audio) {
-      _audioService.playPcmAudio(audio);
+      _audioService.bufferAudio(audio);
     });
 
     _actionSub = _liveService.actionStream.listen((action) {
@@ -135,6 +136,11 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
         _actionToFunctionName(action.action),
         response,
       );
+    });
+
+    // 턴 완료 시 버퍼된 오디오 재생
+    _turnCompleteSub = _liveService.turnCompleteStream.listen((_) {
+      _audioService.flushAndPlay();
     });
 
     // 오디오 레벨 구독 (Glow 반응용)
@@ -309,6 +315,7 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
     _actionSub?.cancel();
     _audioInSub?.cancel();
     _levelSub?.cancel();
+    _turnCompleteSub?.cancel();
     _liveService.dispose();
     _audioService.dispose();
     _textController.dispose();

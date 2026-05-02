@@ -41,6 +41,7 @@ class GeminiLiveService {
   final _transcriptController = StreamController<String>.broadcast();
   final _audioOutController = StreamController<Uint8List>.broadcast();
   final _actionController = StreamController<AiActionEvent>.broadcast();
+  final _turnCompleteController = StreamController<void>.broadcast();
 
   LiveSessionState _state = LiveSessionState.idle;
   Timer? _silenceTimer;
@@ -58,6 +59,9 @@ class GeminiLiveService {
 
   /// Function Calling 액션 스트림
   Stream<AiActionEvent> get actionStream => _actionController.stream;
+
+  /// 턴 완료 스트림 (오디오 flush 트리거)
+  Stream<void> get turnCompleteStream => _turnCompleteController.stream;
 
   static const _wsUrl =
       'wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent';
@@ -424,6 +428,7 @@ class GeminiLiveService {
     // 턴 완료
     final turnComplete = content['turnComplete'] as bool?;
     if (turnComplete == true) {
+      _turnCompleteController.add(null);
       _setState(LiveSessionState.listening);
       _startSilenceTimer();
     }
@@ -529,5 +534,6 @@ class GeminiLiveService {
     _transcriptController.close();
     _audioOutController.close();
     _actionController.close();
+    _turnCompleteController.close();
   }
 }
