@@ -448,12 +448,15 @@ class GeminiLiveService {
       }
     }
 
-    // 턴 완료
-    final turnComplete = content['turnComplete'] as bool?;
-    if (turnComplete == true) {
-      // listening 전환은 하지 않음 — 오디오 재생 완료 후 외부에서 전환
+    // 생성 완료 (모든 오디오 청크 도착) — turnComplete보다 먼저 옴
+    final genComplete = content['generationComplete'] as bool?;
+    if (genComplete == true) {
       _turnCompleteController.add(null);
     }
+
+    // 턴 완료 (usageMetadata 포함) — generationComplete 이후에 옴
+    // generationComplete에서 이미 재생 트리거했으므로 여기서는 무시
+    // final turnComplete = content['turnComplete'] as bool?;
   }
 
   /// Tool Call (Function Calling) 처리

@@ -127,10 +127,11 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
     });
 
     _audioOutSub = _liveService.audioOutStream.listen((audio) {
-      // 첫 오디오 청크: 마이크 중지 (AudioFocus 충돌 방지)
+      // 첫 오디오 청크에서 마이크 중지 (AudioFocus 충돌 방지)
       if (_audioService.isRecording) {
         _audioService.stopRecording();
         _audioInSub?.cancel();
+        debugPrint('[AiView] Mic paused for playback');
       }
       _audioService.bufferAudio(audio);
     });
@@ -150,9 +151,9 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
       );
     });
 
-    // 턴 완료 시: 잔여 오디오 flush → 재생 완료 대기 → 마이크 재시작
+    // generationComplete 시: 전체 오디오 재생 → 마이크 재시작
     _turnCompleteSub = _liveService.turnCompleteStream.listen((_) async {
-      await _audioService.flushAndWaitDone();
+      await _audioService.flushAndPlay();
 
       // 재생 완료 후 마이크 재시작
       final micRestarted = await _audioService.startRecording();
