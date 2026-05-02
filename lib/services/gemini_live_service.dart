@@ -100,7 +100,7 @@ class GeminiLiveService {
 
     try {
       // LiveGenerativeModel 생성
-      _liveModel = FirebaseAI.googleAI().liveGenerativeModel(
+      _liveModel = FirebaseAI.vertexAI().liveGenerativeModel(
         model: 'gemini-2.5-flash-preview-native-audio-dialog',
         systemInstruction: Content.text(_systemInstruction),
         liveGenerationConfig: LiveGenerationConfig(
