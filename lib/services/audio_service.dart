@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
@@ -23,9 +24,14 @@ class AudioService {
 
   bool get isRecording => _isRecording;
 
-  // PCM 오디오 버퍼 (턴 단위로 누적)
+  // ── 오디오 재생 (스트리밍 방식) ──
   final _pcmBuffer = BytesBuilder();
+  final _playQueue = Queue<Uint8List>();
   bool _isPlaying = false;
+  Timer? _flushTimer;
+
+  // 24kHz 16-bit mono: 48000 bytes/sec → ~12000 bytes = 0.25초
+  static const _flushThreshold = 12000;
 
   /// 마이크 권한 요청
   Future<bool> requestMicPermission() async {
@@ -57,8 +63,6 @@ class AudioService {
 
       _recordSubscription = stream.listen((data) {
         _audioInController.add(Uint8List.fromList(data));
-
-        // RMS 기반 볼륨 레벨 계산
         final level = _calculateRmsLevel(Uint8List.fromList(data));
         _levelController.add(level);
       });
@@ -82,49 +86,66 @@ class AudioService {
     debugPrint('[AudioService] Recording stopped');
   }
 
-  /// PCM 오디오 청크를 버퍼에 추가
+  /// PCM 오디오 청크를 버퍼에 추가 + 자동 flush
   void bufferAudio(Uint8List pcmData) {
     _pcmBuffer.add(pcmData);
+
+    // 일정량 쌓이면 즉시 flush
+    if (_pcmBuffer.length >= _flushThreshold) {
+      _flushBuffer();
+    } else {
+      // 작은 청크도 200ms 후 자동 flush (마지막 조각 처리)
+      _flushTimer?.cancel();
+      _flushTimer = Timer(const Duration(milliseconds: 200), _flushBuffer);
+    }
   }
 
-  /// 버퍼에 쌓인 오디오를 WAV로 변환 후 재생
-  Future<void> flushAndPlay() async {
+  /// 턴 완료 시 남은 버퍼 강제 flush
+  void flushAndPlay() {
+    _flushTimer?.cancel();
+    _flushBuffer();
+  }
+
+  void _flushBuffer() {
     if (_pcmBuffer.isEmpty) return;
 
     final pcmData = _pcmBuffer.toBytes();
     _pcmBuffer.clear();
 
-    if (pcmData.length < 100) return; // 너무 짧은 오디오 무시
+    if (pcmData.length < 100) return;
 
-    try {
-      // PCM → WAV 변환
-      // Gemini Live API 출력: PCM 16kHz 16-bit mono
-      final wavData = _pcmToWav(pcmData, sampleRate: 16000, channels: 1, bitsPerSample: 16);
+    _playQueue.add(pcmData);
+    _playNext();
+  }
 
-      // 임시 파일 저장
-      final dir = Directory.systemTemp;
-      final file = File('${dir.path}/gemini_response_${DateTime.now().millisecondsSinceEpoch}.wav');
-      await file.writeAsBytes(wavData);
+  Future<void> _playNext() async {
+    if (_isPlaying || _playQueue.isEmpty) return;
+    _isPlaying = true;
 
-      // 재생
-      _isPlaying = true;
-      await _player.setFilePath(file.path);
-      await _player.play();
+    while (_playQueue.isNotEmpty) {
+      final pcmData = _playQueue.removeFirst();
 
-      // 재생 완료 대기
-      await _player.playerStateStream.firstWhere(
-        (state) => state.processingState == ProcessingState.completed,
-      );
-      _isPlaying = false;
+      try {
+        // PCM 24kHz → WAV
+        final wavData = _pcmToWav(pcmData, sampleRate: 24000);
+        final file = File('${Directory.systemTemp.path}/sp_audio_${DateTime.now().millisecondsSinceEpoch}.wav');
+        await file.writeAsBytes(wavData);
 
-      // 임시 파일 삭제
-      try { await file.delete(); } catch (_) {}
+        await _player.setFilePath(file.path);
+        await _player.play();
 
-      debugPrint('[AudioService] Played ${pcmData.length} bytes of audio');
-    } catch (e) {
-      _isPlaying = false;
-      debugPrint('[AudioService] Playback error: $e');
+        // 재생 완료 대기
+        await _player.playerStateStream.firstWhere(
+          (state) => state.processingState == ProcessingState.completed,
+        );
+
+        try { await file.delete(); } catch (_) {}
+      } catch (e) {
+        debugPrint('[AudioService] Playback error: $e');
+      }
     }
+
+    _isPlaying = false;
   }
 
   /// PCM raw data → WAV file bytes
@@ -135,33 +156,22 @@ class AudioService {
     final fileSize = 36 + dataSize;
 
     final header = ByteData(44);
-    // RIFF header
-    header.setUint8(0, 0x52); // R
-    header.setUint8(1, 0x49); // I
-    header.setUint8(2, 0x46); // F
-    header.setUint8(3, 0x46); // F
+    header.setUint8(0, 0x52); header.setUint8(1, 0x49);
+    header.setUint8(2, 0x46); header.setUint8(3, 0x46);
     header.setUint32(4, fileSize, Endian.little);
-    header.setUint8(8, 0x57);  // W
-    header.setUint8(9, 0x41);  // A
-    header.setUint8(10, 0x56); // V
-    header.setUint8(11, 0x45); // E
-    // fmt chunk
-    header.setUint8(12, 0x66); // f
-    header.setUint8(13, 0x6D); // m
-    header.setUint8(14, 0x74); // t
-    header.setUint8(15, 0x20); // (space)
-    header.setUint32(16, 16, Endian.little); // chunk size
-    header.setUint16(20, 1, Endian.little);  // PCM format
+    header.setUint8(8, 0x57); header.setUint8(9, 0x41);
+    header.setUint8(10, 0x56); header.setUint8(11, 0x45);
+    header.setUint8(12, 0x66); header.setUint8(13, 0x6D);
+    header.setUint8(14, 0x74); header.setUint8(15, 0x20);
+    header.setUint32(16, 16, Endian.little);
+    header.setUint16(20, 1, Endian.little);
     header.setUint16(22, channels, Endian.little);
     header.setUint32(24, sampleRate, Endian.little);
     header.setUint32(28, byteRate, Endian.little);
     header.setUint16(32, blockAlign, Endian.little);
     header.setUint16(34, bitsPerSample, Endian.little);
-    // data chunk
-    header.setUint8(36, 0x64); // d
-    header.setUint8(37, 0x61); // a
-    header.setUint8(38, 0x74); // t
-    header.setUint8(39, 0x61); // a
+    header.setUint8(36, 0x64); header.setUint8(37, 0x61);
+    header.setUint8(38, 0x74); header.setUint8(39, 0x61);
     header.setUint32(40, dataSize, Endian.little);
 
     final wav = BytesBuilder();
@@ -189,10 +199,12 @@ class AudioService {
   }
 
   void dispose() {
+    _flushTimer?.cancel();
     stopRecording();
     _recorder.dispose();
     _player.dispose();
     _pcmBuffer.clear();
+    _playQueue.clear();
     _audioInController.close();
     _levelController.close();
   }
