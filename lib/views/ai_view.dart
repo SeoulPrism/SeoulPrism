@@ -530,6 +530,41 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
     });
   }
 
+  bool _loadingMorePlaces = false;
+
+  Future<void> _requestMorePlaces() async {
+    if (_loadingMorePlaces) return;
+    setState(() => _loadingMorePlaces = true);
+    widget.onStatusChanged?.call('추가 장소 검색 중...');
+
+    try {
+      final existing = _extractedPlaces.map((p) => p.name).join(', ');
+      final content = SnsContent(
+        imagePaths: [],
+        text: '서울 여행 추천 장소를 더 알려줘. 기존: $existing. 이것들과 다른 새로운 장소 3~5개를 추천해줘.',
+        url: '',
+      );
+      final result = await GeminiService.instance.analyzeContent(content);
+      if (!mounted) return;
+
+      if (result.places.isNotEmpty) {
+        final geoPlaces = await GeminiService.instance.geocodeAll(result.places);
+        if (!mounted) return;
+        setState(() {
+          _extractedPlaces.addAll(geoPlaces);
+          _loadingMorePlaces = false;
+        });
+        widget.onStatusChanged?.call('${geoPlaces.length}개 장소를 추가했어요!');
+      } else {
+        setState(() => _loadingMorePlaces = false);
+        widget.onStatusChanged?.call('추가 장소를 찾지 못했어요.');
+      }
+    } catch (e) {
+      if (mounted) setState(() => _loadingMorePlaces = false);
+      debugPrint('[AiView] Request more places error: $e');
+    }
+  }
+
   void _generatePlanFromPlaces() {
     if (_extractedPlaces.isEmpty) return;
     // onAction으로 플랜 생성 요청
@@ -1120,30 +1155,85 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
                     itemBuilder: (context, index) => _buildPlaceCard(index),
                   ),
                 ),
-                // 일정 만들기 버튼
+                // 코스 추가 + 일정 만들기 버튼
                 Padding(
                   padding: EdgeInsets.fromLTRB(16, 4, 16, bottomPad + 12),
-                  child: GestureDetector(
-                    onTap: _generatePlanFromPlaces,
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(14),
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFFBC82F3), Color(0xFF8D9FFF)],
+                  child: Row(
+                    children: [
+                      // 코스 추가 버튼
+                      Expanded(
+                        flex: 2,
+                        child: GestureDetector(
+                          onTap: _loadingMorePlaces ? null : _requestMorePlaces,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(14),
+                              gradient: LinearGradient(
+                                colors: [
+                                  const Color(0xFFF5B9EA).withValues(alpha: 0.3),
+                                  const Color(0xFFFF6778).withValues(alpha: 0.25),
+                                ],
+                              ),
+                              border: Border.all(
+                                color: const Color(0xFFF5B9EA).withValues(alpha: 0.5),
+                              ),
+                            ),
+                            child: _loadingMorePlaces
+                              ? const Center(
+                                  child: SizedBox(
+                                    width: 18, height: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                )
+                              : const Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.add_rounded, color: Colors.white, size: 18),
+                                    SizedBox(width: 4),
+                                    Text(
+                                      '코스 추가',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                          ),
                         ),
                       ),
-                      child: Text(
-                        '일정 만들기 (${_extractedPlaces.length}곳)',
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
+                      const SizedBox(width: 10),
+                      // 일정 만들기 버튼
+                      Expanded(
+                        flex: 3,
+                        child: GestureDetector(
+                          onTap: _generatePlanFromPlaces,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(14),
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFFBC82F3), Color(0xFF8D9FFF)],
+                              ),
+                            ),
+                            child: Text(
+                              '일정 만들기 (${_extractedPlaces.length}곳)',
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                   ),
                 ),
               ],
