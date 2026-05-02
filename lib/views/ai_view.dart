@@ -51,7 +51,6 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
   bool _showTextInput = false;
   bool _textModeActive = false;
   final TextEditingController _textController = TextEditingController();
-  final TextEditingController _courseRequestController = TextEditingController();
   final FocusNode _textFocusNode = FocusNode();
 
   // ── 장소 분석 결과 패널 ──
@@ -412,7 +411,6 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
     _liveService.endSession();
     _audioService.dispose();
     _textController.dispose();
-    _courseRequestController.dispose();
     _textFocusNode.dispose();
     super.dispose();
   }
@@ -608,78 +606,6 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
       _extractedPlaces.removeAt(index);
       if (_extractedPlaces.isEmpty) _showPlacesPanel = false;
     });
-  }
-
-  bool _loadingMorePlaces = false;
-
-  Future<void> _requestMorePlaces() async {
-    if (_loadingMorePlaces) return;
-    setState(() => _loadingMorePlaces = true);
-    widget.onStatusChanged?.call('추가 장소 검색 중...');
-
-    try {
-      final existing = _extractedPlaces.map((p) => p.name).join(', ');
-      final content = SnsContent(
-        imagePaths: [],
-        text: '서울 여행 추천 장소를 더 알려줘. 기존: $existing. 이것들과 다른 새로운 장소 3~5개를 추천해줘.',
-        url: '',
-      );
-      final result = await GeminiService.instance.analyzeContent(content);
-      if (!mounted) return;
-
-      if (result.places.isNotEmpty) {
-        final geoPlaces = await GeminiService.instance.geocodeAll(result.places);
-        if (!mounted) return;
-        setState(() {
-          _extractedPlaces.addAll(geoPlaces);
-          _loadingMorePlaces = false;
-        });
-        widget.onStatusChanged?.call('${geoPlaces.length}개 장소를 추가했어요!');
-      } else {
-        setState(() => _loadingMorePlaces = false);
-        widget.onStatusChanged?.call('추가 장소를 찾지 못했어요.');
-      }
-    } catch (e) {
-      if (mounted) setState(() => _loadingMorePlaces = false);
-      debugPrint('[AiView] Request more places error: $e');
-    }
-  }
-
-  Future<void> _submitCourseRequest() async {
-    final request = _courseRequestController.text.trim();
-    if (request.isEmpty || _loadingMorePlaces) return;
-    _courseRequestController.clear();
-    FocusManager.instance.primaryFocus?.unfocus();
-
-    setState(() => _loadingMorePlaces = true);
-    widget.onStatusChanged?.call('$request 처리 중...');
-
-    try {
-      final existing = _extractedPlaces.map((p) => p.name).join(', ');
-      final content = SnsContent(
-        imagePaths: [],
-        text: '현재 코스: $existing\n사용자 요청: $request\n이 요청에 맞게 서울 내 장소를 3~5개 추천해줘.',
-        url: '',
-      );
-      final result = await GeminiService.instance.analyzeContent(content);
-      if (!mounted) return;
-
-      if (result.places.isNotEmpty) {
-        final geoPlaces = await GeminiService.instance.geocodeAll(result.places);
-        if (!mounted) return;
-        setState(() {
-          _extractedPlaces.addAll(geoPlaces);
-          _loadingMorePlaces = false;
-        });
-        widget.onStatusChanged?.call('${geoPlaces.length}개 장소를 추가했어요!');
-      } else {
-        setState(() => _loadingMorePlaces = false);
-        widget.onStatusChanged?.call('요청에 맞는 장소를 찾지 못했어요.');
-      }
-    } catch (e) {
-      if (mounted) setState(() => _loadingMorePlaces = false);
-      debugPrint('[AiView] Course request error: $e');
-    }
   }
 
   void _generatePlanFromPlaces() {
@@ -1272,132 +1198,41 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
                     itemBuilder: (context, index) => _buildPlaceCard(index),
                   ),
                 ),
-                // AI 코스 조절 입력
+                // 음성 안내 + 일정 만들기 버튼
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                  child: Container(
-                    padding: const EdgeInsets.fromLTRB(14, 2, 4, 2),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          const Color(0xFFBC82F3).withValues(alpha: 0.15),
-                          const Color(0xFF8D9FFF).withValues(alpha: 0.1),
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: const Color(0xFFBC82F3).withValues(alpha: 0.3)),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.auto_awesome, size: 16, color: const Color(0xFFBC82F3).withValues(alpha: 0.7)),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: TextField(
-                            controller: _courseRequestController,
-                            style: const TextStyle(color: Colors.white, fontSize: 13),
-                            decoration: InputDecoration(
-                              hintText: 'AI에게 코스 요청 (예: 카페 추가해줘)',
-                              hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 13),
-                              border: InputBorder.none,
-                              contentPadding: const EdgeInsets.symmetric(vertical: 10),
-                            ),
-                            onSubmitted: (_) => _submitCourseRequest(),
-                          ),
-                        ),
-                        GestureDetector(
-                          onTap: _submitCourseRequest,
-                          child: Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFBC82F3).withValues(alpha: 0.3),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(Icons.send_rounded, color: Colors.white, size: 16),
-                          ),
-                        ),
-                      ],
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+                  child: Text(
+                    '음성으로 "카페 추가해줘", "경복궁 빼줘", "확정해" 등 말해보세요',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.4),
+                      fontSize: 11,
                     ),
                   ),
                 ),
-                // 코스 추가 + 일정 만들기 버튼
                 Padding(
                   padding: EdgeInsets.fromLTRB(16, 4, 16, bottomPad + 12),
-                  child: Row(
-                    children: [
-                      // 코스 추가 버튼
-                      Expanded(
-                        flex: 2,
-                        child: GestureDetector(
-                          onTap: _loadingMorePlaces ? null : _requestMorePlaces,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(14),
-                              gradient: LinearGradient(
-                                colors: [
-                                  const Color(0xFFF5B9EA).withValues(alpha: 0.3),
-                                  const Color(0xFFFF6778).withValues(alpha: 0.25),
-                                ],
-                              ),
-                              border: Border.all(
-                                color: const Color(0xFFF5B9EA).withValues(alpha: 0.5),
-                              ),
-                            ),
-                            child: _loadingMorePlaces
-                              ? const Center(
-                                  child: SizedBox(
-                                    width: 18, height: 18,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                )
-                              : const Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(Icons.add_rounded, color: Colors.white, size: 18),
-                                    SizedBox(width: 4),
-                                    Text(
-                                      '코스 추가',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                          ),
+                  child: GestureDetector(
+                    onTap: _generatePlanFromPlaces,
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(14),
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFFBC82F3), Color(0xFF8D9FFF)],
                         ),
                       ),
-                      const SizedBox(width: 10),
-                      // 일정 만들기 버튼
-                      Expanded(
-                        flex: 3,
-                        child: GestureDetector(
-                          onTap: _generatePlanFromPlaces,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(14),
-                              gradient: const LinearGradient(
-                                colors: [Color(0xFFBC82F3), Color(0xFF8D9FFF)],
-                              ),
-                            ),
-                            child: Text(
-                              '일정 만들기 (${_extractedPlaces.length}곳)',
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 15,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
+                      child: Text(
+                        '일정 만들기 (${_extractedPlaces.length}곳)',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ],
