@@ -802,7 +802,7 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
     final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
     final bottomOffset = keyboardHeight > 0
         ? keyboardHeight + 12
-        : MediaQuery.of(context).padding.bottom + 100;
+        : MediaQuery.of(context).padding.bottom + 75;
 
     return Positioned(
       bottom: bottomOffset,
