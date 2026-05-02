@@ -235,23 +235,17 @@ class GeminiLiveService {
   }
 
   /// Setup 메시지 (세션 초기화)
-  /// 공식 문서: https://ai.google.dev/api/live
-  /// 최상위 키 "setup" 안에 model, generationConfig, systemInstruction, tools
+  /// 3.1 모델: "config" 키 사용, responseModalities는 config 최상위
   void _sendSetup() {
     final setup = {
-      'setup': {
+      'config': {
         'model': 'models/gemini-3.1-flash-live-preview',
-        'generationConfig': {
-          'responseModalities': ['AUDIO'],
-          'speechConfig': {
-            'voiceConfig': {
-              'prebuiltVoiceConfig': {
-                'voiceName': 'Kore',
-              },
+        'responseModalities': ['AUDIO'],
+        'speechConfig': {
+          'voiceConfig': {
+            'prebuiltVoiceConfig': {
+              'voiceName': 'Kore',
             },
-          },
-          'thinkingConfig': {
-            'thinkingLevel': 'minimal',
           },
         },
         'systemInstruction': {
@@ -286,7 +280,7 @@ class GeminiLiveService {
     _channel?.sink.add(jsonEncode(msg));
   }
 
-  /// 텍스트 메시지 전송
+  /// 텍스트 메시지 전송 (3.1: realtimeInput.text 사용)
   void sendText(String text) {
     if (_channel == null || _state == LiveSessionState.idle) return;
 
@@ -294,23 +288,15 @@ class GeminiLiveService {
     _resetSilenceTimer();
 
     final msg = {
-      'clientContent': {
-        'turns': [
-          {
-            'role': 'user',
-            'parts': [
-              {'text': text},
-            ],
-          },
-        ],
-        'turnComplete': true,
+      'realtimeInput': {
+        'text': text,
       },
     };
 
     _channel?.sink.add(jsonEncode(msg));
   }
 
-  /// 이미지 전송 (base64)
+  /// 이미지 전송 (base64) — clientContent 유지 (이미지는 realtimeInput 미지원)
   void sendImage(Uint8List imageBytes, {String mimeType = 'image/jpeg'}) {
     if (_channel == null || _state == LiveSessionState.idle) return;
 
@@ -404,6 +390,9 @@ class GeminiLiveService {
         _handleToolCall(toolCall);
         return;
       }
+
+      // sessionResumptionUpdate는 무시 (3.1 세션 관리용)
+      if (json.containsKey('sessionResumptionUpdate')) return;
 
       // 알 수 없는 메시지 타입
       debugPrint('[GeminiLive] Unknown message keys: ${json.keys.toList()}');
