@@ -154,6 +154,8 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
         _handlePhotoRequest(action.params['source'] as String? ?? 'both');
       } else if (action.action == AiAction.searchPlace) {
         _handleSearchPlace(action);
+      } else if (action.action == AiAction.createPlan) {
+        _handleCreatePlan(action);
       } else {
         widget.onAction?.call(action);
       }
@@ -378,6 +380,39 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
 
 
 
+
+  // -- Create plan → 장소가 이미 있으면 바로 플랜 생성, 없으면 검색 후 패널 --
+  Future<void> _handleCreatePlan(AiActionEvent action) async {
+    if (_extractedPlaces.isNotEmpty) {
+      // 이미 장소가 있으면 바로 플랜 생성
+      _generatePlanFromPlaces();
+      return;
+    }
+
+    // 장소가 없으면 AI가 보낸 places 문자열이나 style로 검색
+    final placesStr = action.params['places'] as String?;
+    final query = placesStr ?? '서울 여행 추천 코스';
+
+    widget.onStatusChanged?.call('코스 검�� 중...');
+
+    try {
+      final content = SnsContent(imagePaths: [], text: query, url: '');
+      final result = await GeminiService.instance.analyzeContent(content);
+      if (!mounted) return;
+
+      if (result.places.isNotEmpty) {
+        final geoPlaces = await GeminiService.instance.geocodeAll(result.places);
+        if (!mounted) return;
+        setState(() {
+          _extractedPlaces = geoPlaces;
+          _showPlacesPanel = true;
+        });
+        widget.onStatusChanged?.call('${geoPlaces.length}개 장소를 찾았어요! 아래에서 확인하세요.');
+      }
+    } catch (e) {
+      debugPrint('[AiView] Create plan error: $e');
+    }
+  }
 
   // -- Search place → GeminiService 분석 → 장소 패널 표시 --
   Future<void> _handleSearchPlace(AiActionEvent action) async {
