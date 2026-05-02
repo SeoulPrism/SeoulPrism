@@ -150,9 +150,10 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
     });
 
     _actionSub = _liveService.actionStream.listen((action) {
-      // requestPhoto는 AiView 내부에서 처리
       if (action.action == AiAction.requestPhoto) {
         _handlePhotoRequest(action.params['source'] as String? ?? 'both');
+      } else if (action.action == AiAction.searchPlace) {
+        _handleSearchPlace(action);
       } else {
         widget.onAction?.call(action);
       }
@@ -377,52 +378,85 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
 
 
 
-  // ── 사진 요청 (AI가 request_photo 호출 시) ──
+
+  // -- Search place → GeminiService 분석 → 장소 패널 표시 --
+  Future<void> _handleSearchPlace(AiActionEvent action) async {
+    final query = action.params['query'] as String? ?? '';
+    if (query.isEmpty) return;
+
+    widget.onStatusChanged?.call('$query 검색 중...');
+
+    try {
+      final content = SnsContent(imagePaths: [], text: query, url: '');
+      final result = await GeminiService.instance.analyzeContent(content);
+      if (!mounted) return;
+
+      if (result.places.isNotEmpty) {
+        final geoPlaces = await GeminiService.instance.geocodeAll(result.places);
+        if (!mounted) return;
+        setState(() {
+          _extractedPlaces = geoPlaces;
+          _showPlacesPanel = true;
+        });
+      }
+    } catch (e) {
+      debugPrint('[AiView] Search place error: $e');
+    }
+  }
+
+  // -- Photo request handling --
+  bool _showPhotoOptions = false;
+
   void _handlePhotoRequest(String source) {
     if (source == 'camera') {
       _pickImage(ImageSource.camera);
     } else if (source == 'gallery') {
       _pickImage(ImageSource.gallery);
     } else {
-      // both — 선택 다이얼로그
-      _showPhotoSourceDialog();
+      setState(() => _showPhotoOptions = true);
     }
   }
 
-  void _showPhotoSourceDialog() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => Container(
-        margin: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.9),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.camera_alt, color: Colors.white),
-              title: const Text('카메라로 촬영', style: TextStyle(color: Colors.white)),
-              onTap: () {
-                Navigator.pop(ctx);
-                _pickImage(ImageSource.camera);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.photo_library, color: Colors.white),
-              title: const Text('갤러리에서 선택', style: TextStyle(color: Colors.white)),
-              onTap: () {
-                Navigator.pop(ctx);
-                _pickImage(ImageSource.gallery);
-              },
-            ),
-            SizedBox(height: MediaQuery.of(context).padding.bottom + 8),
-          ],
-        ),
-      ),
-    );
+  Future<void> _pickImage(ImageSource source) async {
+    setState(() => _showPhotoOptions = false);
+
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(source: source, maxWidth: 2048);
+    if (picked == null) return;
+
+    setState(() => _analyzingImage = true);
+    widget.onStatusChanged?.call('이미지 분석 중...');
+
+    try {
+      final content = SnsContent(imagePaths: [picked.path], text: '', url: '');
+      final result = await GeminiService.instance.analyzeContent(content);
+
+      if (!mounted) return;
+
+      if (result.places.isNotEmpty) {
+        final geoPlaces = await GeminiService.instance.geocodeAll(result.places);
+        if (!mounted) return;
+        setState(() {
+          _extractedPlaces = geoPlaces;
+          _showPlacesPanel = true;
+          _analyzingImage = false;
+        });
+
+        _liveService.sendText(
+          'Image analysis found ${geoPlaces.length} places: '
+          '${geoPlaces.map((p) => "${p.name}(${p.category})").join(", ")}. '
+          'Tell the user about these places briefly in Korean.',
+        );
+      } else {
+        setState(() => _analyzingImage = false);
+        widget.onStatusChanged?.call('장소를 찾지 못했어요.');
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _analyzingImage = false);
+      widget.onStatusChanged?.call('분석 오류: $e');
+      debugPrint('[AiView] Image analysis error: $e');
+    }
   }
 
   // ── 텍스트 입력 ──
@@ -453,53 +487,6 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
     _hideTextInputField();
   }
 
-  // ── 이미지 첨부 + 분석 ──
-  Future<void> _pickImage(ImageSource source) async {
-    final picker = ImagePicker();
-    final picked = await picker.pickImage(source: source, maxWidth: 2048);
-    if (picked == null) return;
-
-    setState(() => _analyzingImage = true);
-    widget.onStatusChanged?.call('이미지 분석 중...');
-
-    try {
-      // 기존 GeminiService로 장소 분석
-      final content = SnsContent(imagePaths: [picked.path], text: '', url: '');
-      final result = await GeminiService.instance.analyzeContent(content);
-
-      if (!mounted) return;
-
-      if (result.places.isNotEmpty) {
-        // 좌표 확보
-        final geoPlaces = await GeminiService.instance.geocodeAll(result.places);
-
-        if (!mounted) return;
-        setState(() {
-          _extractedPlaces = geoPlaces;
-          _showPlacesPanel = true;
-          _analyzingImage = false;
-        });
-
-        // Live AI에게도 알려주기
-        _liveService.sendText(
-          '사용자가 보낸 이미지에서 ${geoPlaces.length}개 장소를 찾았습니다: '
-          '${geoPlaces.map((p) => "${p.name}(${p.category})").join(", ")}. '
-          '사용자에게 간단히 어떤 장소들인지 설명해주세요.',
-        );
-      } else {
-        setState(() {
-          _analyzingImage = false;
-          widget.onStatusChanged?.call('장소를 찾지 못했어요. 다른 사진을 시도해보세요.');
-        });
-      }
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _analyzingImage = false;
-        widget.onStatusChanged?.call('분석 중 오류가 발생했어요.');
-      });
-    }
-  }
 
   void _removePlace(int index) {
     setState(() {
@@ -609,13 +596,98 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
             ),
           ),
 
-        // 6. 장소 분석 결과 패널 (슬라이드 업)
+        // 6. 사진 선택 인라인 위젯
+        if (_showPhotoOptions)
+          Positioned(
+            left: 40,
+            right: 40,
+            top: MediaQuery.of(context).size.height * 0.38,
+            child: TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0.0, end: 1.0),
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOutCubic,
+              builder: (context, v, child) => Transform.scale(
+                scale: 0.8 + 0.2 * v,
+                child: Opacity(opacity: v, child: child),
+              ),
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.7),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: const Color(0xFFBC82F3).withValues(alpha: 0.3)),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '사진을 선택해주세요',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.8),
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () => _pickImage(ImageSource.camera),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [Color(0xFFBC82F3), Color(0xFF8D9FFF)],
+                                ),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.camera_alt_rounded, color: Colors.white, size: 20),
+                                  SizedBox(width: 8),
+                                  Text('촬영', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () => _pickImage(ImageSource.gallery),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+                              ),
+                              child: const Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.photo_library_rounded, color: Colors.white, size: 20),
+                                  SizedBox(width: 8),
+                                  Text('갤러리', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+        // 7. 장소 분석 결과 패널 (슬라이드 업)
         _buildPlacesPanel(),
 
-        // 7. 텍스트 입력 필드 (슬라이드 업)
+        // 8. 텍스트 입력 필드 (슬라이드 업)
         _buildTextInputOverlay(),
-
-        // 8. (액션 버튼 제거 — 대화로 처리)
       ],
     );
   }
