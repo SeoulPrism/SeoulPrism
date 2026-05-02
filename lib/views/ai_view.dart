@@ -147,9 +147,21 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
       );
     });
 
-    // 턴 완료 시 전체 오디오 재생 → 끝나면 listening 전환
+    // 턴 완료 시: 마이크 중지 → 오디오 재생 → 마이크 재시작 → listening
     _turnCompleteSub = _liveService.turnCompleteStream.listen((_) async {
+      // 재생 중 마이크 오디오 포커스 충돌 방지
+      await _audioService.stopRecording();
+      _audioInSub?.cancel();
+
       await _audioService.flushAndPlay();
+
+      // 재생 완료 후 마이크 재시작
+      final micRestarted = await _audioService.startRecording();
+      if (micRestarted) {
+        _audioInSub = _audioService.audioInStream.listen((pcmData) {
+          _liveService.sendAudio(pcmData);
+        });
+      }
       _liveService.onPlaybackDone();
     });
 
