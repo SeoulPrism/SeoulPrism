@@ -126,14 +126,13 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
       _startTypingAnimation(text);
     });
 
-    _audioOutSub = _liveService.audioOutStream.listen((audio) {
-      // 첫 오디오 청크에서 마이크 중지 (AudioFocus 충돌 방지)
+    _audioOutSub = _liveService.audioBase64Stream.listen((base64) {
+      // 첫 오디오 청크에서만 마이크 중지
       if (_audioService.isRecording) {
         _audioService.stopRecording();
         _audioInSub?.cancel();
-        debugPrint('[AiView] Mic paused for playback');
       }
-      _audioService.bufferAudio(audio);
+      _audioService.bufferBase64(base64);
     });
 
     _actionSub = _liveService.actionStream.listen((action) {

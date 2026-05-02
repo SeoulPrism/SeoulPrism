@@ -40,7 +40,7 @@ class GeminiLiveService {
 
   final _stateController = StreamController<LiveSessionState>.broadcast();
   final _transcriptController = StreamController<String>.broadcast();
-  final _audioOutController = StreamController<Uint8List>.broadcast();
+  final _audioBase64Controller = StreamController<String>.broadcast();
   final _actionController = StreamController<AiActionEvent>.broadcast();
   final _turnCompleteController = StreamController<void>.broadcast();
 
@@ -55,8 +55,8 @@ class GeminiLiveService {
   /// AI 응답 텍스트 (자막) 스트림
   Stream<String> get transcriptStream => _transcriptController.stream;
 
-  /// AI 응답 오디오 스트림 (PCM 24kHz 16-bit mono)
-  Stream<Uint8List> get audioOutStream => _audioOutController.stream;
+  /// AI 응답 오디오 스트림 (base64 문자열 — 메인 스레드에서 디코딩하지 않음)
+  Stream<String> get audioBase64Stream => _audioBase64Controller.stream;
 
   /// Function Calling 액션 스트림
   Stream<AiActionEvent> get actionStream => _actionController.stream;
@@ -433,15 +433,16 @@ class GeminiLiveService {
             }
           }
 
-          // 오디오 응답
+          // 오디오 응답 — base64 문자열만 전달 (디코딩은 isolate에서)
           if (partMap.containsKey('inlineData')) {
             final inlineData = partMap['inlineData'] as Map<String, dynamic>;
             final audioBase64 = inlineData['data'] as String?;
             if (audioBase64 != null) {
-              final audioBytes = base64Decode(audioBase64);
-              _audioOutController.add(Uint8List.fromList(audioBytes));
-              _setState(LiveSessionState.speaking);
-              _silenceTimer?.cancel(); // AI 말하는 중에는 타이머 중지
+              _audioBase64Controller.add(audioBase64);
+              if (_state != LiveSessionState.speaking) {
+                _setState(LiveSessionState.speaking);
+              }
+              _silenceTimer?.cancel();
             }
           }
         }
@@ -566,7 +567,7 @@ class GeminiLiveService {
     _channel?.sink.close();
     _stateController.close();
     _transcriptController.close();
-    _audioOutController.close();
+    _audioBase64Controller.close();
     _actionController.close();
     _turnCompleteController.close();
   }
