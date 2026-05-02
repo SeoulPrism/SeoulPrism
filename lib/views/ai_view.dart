@@ -838,9 +838,9 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    const Color(0xFFBC82F3).withValues(alpha: 0.15),
-                    const Color(0xFF8D9FFF).withValues(alpha: 0.15),
-                    const Color(0xFFF5B9EA).withValues(alpha: 0.10),
+                    const Color(0xFFBC82F3).withValues(alpha: 0.45),
+                    const Color(0xFF8D9FFF).withValues(alpha: 0.40),
+                    const Color(0xFFF5B9EA).withValues(alpha: 0.35),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(28),
