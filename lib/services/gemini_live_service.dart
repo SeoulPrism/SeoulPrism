@@ -272,10 +272,13 @@ class GeminiLiveService {
   }
 
   /// 오디오 데이터 전송 (마이크 → Gemini)
-  void sendAudio(Uint8List pcmData) {
+  void sendAudio(Uint8List pcmData, {bool hasVoice = false}) {
     if (_channel == null || _state == LiveSessionState.idle) return;
 
-    _resetSilenceTimer();
+    // 실제 음성이 감지될 때만 타이머 리셋
+    if (hasVoice) {
+      _resetSilenceTimer();
+    }
 
     final msg = {
       'realtimeInput': {

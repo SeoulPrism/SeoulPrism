@@ -121,9 +121,9 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
         _sessionState = state;
         _updateGlowForState(state);
       });
-      // listening 전환 시 5초 후 자막 클리어
+      // listening 전환 시 15초 후 자막 클리어
       if (state == LiveSessionState.listening) {
-        Future.delayed(const Duration(seconds: 5), () {
+        Future.delayed(const Duration(seconds: 15), () {
           if (mounted && _sessionState == LiveSessionState.listening) {
             widget.onStatusChanged?.call('');
           }
@@ -169,7 +169,7 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
       final micRestarted = await _audioService.startRecording();
       if (micRestarted) {
         _audioInSub = _audioService.audioInStream.listen((pcmData) {
-          _liveService.sendAudio(pcmData);
+          _liveService.sendAudio(pcmData, hasVoice: _audioLevel > 0.02);
         });
       }
       _liveService.onPlaybackDone();
