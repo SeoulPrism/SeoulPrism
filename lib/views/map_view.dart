@@ -507,8 +507,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.7),
-        border: Border(top: BorderSide(color: const Color(0xFFBC82F3).withValues(alpha: 0.3))),
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFFBC82F3).withValues(alpha: 0.2),
+            const Color(0xFF8D9FFF).withValues(alpha: 0.15),
+            const Color(0xFFF5B9EA).withValues(alpha: 0.1),
+          ],
+        ),
+        border: Border(top: BorderSide(color: const Color(0xFFBC82F3).withValues(alpha: 0.4))),
       ),
       child: _AiStatusText(text: _aiStatus),
     );

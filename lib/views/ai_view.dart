@@ -565,13 +565,21 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
               child: Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.5),
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      const Color(0xFFBC82F3).withValues(alpha: 0.12),
+                      const Color(0xFF8D9FFF).withValues(alpha: 0.08),
+                    ],
+                  ),
                   borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFC686FF).withValues(alpha: 0.2)),
                 ),
                 child: Text(
                   _accumulatedTranscript,
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.7),
+                    color: const Color(0xFFF5B9EA).withValues(alpha: 0.9),
                     fontSize: 11,
                     fontFamily: 'monospace',
                     height: 1.4,
@@ -582,7 +590,8 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
           ),
 
         // 4. 무음 시 텍스트 입력 전환 (5초 후 자동)
-        if (_sessionState == LiveSessionState.idlePrompt && !_showTextInput)
+        // 항상 표시 (테스트용) — 나중에 idlePrompt 조건 복원
+        if (!_showPlacesPanel && !_showPhotoOptions)
           _buildIdlePrompt(),
 
         // 5. 분석 중 로딩 인디케이터
@@ -613,9 +622,23 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
               child: Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.7),
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      const Color(0xFFBC82F3).withValues(alpha: 0.2),
+                      const Color(0xFF8D9FFF).withValues(alpha: 0.15),
+                      const Color(0xFFF5B9EA).withValues(alpha: 0.1),
+                    ],
+                  ),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: const Color(0xFFBC82F3).withValues(alpha: 0.3)),
+                  border: Border.all(color: const Color(0xFFBC82F3).withValues(alpha: 0.4)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFBC82F3).withValues(alpha: 0.15),
+                      blurRadius: 24,
+                    ),
+                  ],
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -660,9 +683,14 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
                             child: Container(
                               padding: const EdgeInsets.symmetric(vertical: 14),
                               decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.1),
+                                gradient: LinearGradient(
+                                  colors: [
+                                    const Color(0xFFF5B9EA).withValues(alpha: 0.25),
+                                    const Color(0xFFFF6778).withValues(alpha: 0.2),
+                                  ],
+                                ),
                                 borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+                                border: Border.all(color: const Color(0xFFF5B9EA).withValues(alpha: 0.4)),
                               ),
                               child: const Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
@@ -737,9 +765,16 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
           key: ValueKey(label),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.4),
+            gradient: LinearGradient(
+              colors: [
+                const Color(0xFFBC82F3).withValues(alpha: 0.25),
+                const Color(0xFF8D9FFF).withValues(alpha: 0.25),
+              ],
+            ),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: color.withValues(alpha: 0.3)),
+            border: Border.all(
+              color: const Color(0xFFBC82F3).withValues(alpha: 0.4),
+            ),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -801,14 +836,20 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
             Container(
               padding: const EdgeInsets.fromLTRB(20, 4, 8, 4),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.1),
+                gradient: LinearGradient(
+                  colors: [
+                    const Color(0xFFBC82F3).withValues(alpha: 0.15),
+                    const Color(0xFF8D9FFF).withValues(alpha: 0.15),
+                    const Color(0xFFF5B9EA).withValues(alpha: 0.10),
+                  ],
+                ),
                 borderRadius: BorderRadius.circular(28),
                 border: Border.all(
-                  color: const Color(0xFFBC82F3).withValues(alpha: 0.25),
+                  color: const Color(0xFFBC82F3).withValues(alpha: 0.4),
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.3),
+                    color: const Color(0xFFBC82F3).withValues(alpha: 0.15),
                     blurRadius: 20,
                     offset: const Offset(0, 4),
                   ),
