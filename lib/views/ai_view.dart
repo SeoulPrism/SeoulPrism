@@ -121,9 +121,13 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
         _sessionState = state;
         _updateGlowForState(state);
       });
-      // listening 전환 시 자막 클리어
+      // listening 전환 시 5초 후 자막 클리어
       if (state == LiveSessionState.listening) {
-        widget.onStatusChanged?.call('');
+        Future.delayed(const Duration(seconds: 5), () {
+          if (mounted && _sessionState == LiveSessionState.listening) {
+            widget.onStatusChanged?.call('');
+          }
+        });
       }
     });
 

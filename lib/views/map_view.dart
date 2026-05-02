@@ -500,12 +500,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _buildAiStatusBar() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.6),
+        color: Colors.black.withValues(alpha: 0.7),
         border: Border(top: BorderSide(color: const Color(0xFFBC82F3).withValues(alpha: 0.3))),
       ),
-      child: _AiStatusText(text: _aiStatus),
+      child: Text(
+        _aiStatus,
+        style: TextStyle(
+          color: Colors.white.withValues(alpha: 0.9),
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
+          height: 1.4,
+        ),
+        maxLines: 3,
+        overflow: TextOverflow.ellipsis,
+        textAlign: TextAlign.center,
+      ),
     );
   }
 
