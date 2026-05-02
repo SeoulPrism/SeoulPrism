@@ -41,7 +41,7 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
   static const _layerDurations = [500, 600, 800, 1000];
 
   // ── Gemini Live ──
-  final GeminiLiveService _liveService = GeminiLiveService();
+  final GeminiLiveService _liveService = GeminiLiveService.instance;
   final AudioService _audioService = AudioService();
   LiveSessionState _sessionState = LiveSessionState.idle;
   String _fullTranscript = '';  // 전체 텍스트
@@ -181,8 +181,10 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
       setState(() => _audioLevel = level);
     });
 
-    // 세션 시작
-    await _liveService.startSession();
+    // 세션이 이미 연결됐으면 스킵
+    if (_liveService.state == LiveSessionState.idle) {
+      await _liveService.startSession();
+    }
 
     // 마이크 시작
     final micStarted = await _audioService.startRecording();
@@ -192,10 +194,10 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
       });
     }
 
-    // AI 인사 트리거 (세션 시작 후)
-    Future.delayed(const Duration(milliseconds: 500), () {
-      if (mounted && _liveService.state == LiveSessionState.listening) {
-        _liveService.sendText('[시스템] 사용자가 AI 모드를 열었습니다. 짧고 친근하게 인사해주세요. 예: "안���! 나는 프리즘이야. 서울 여행 도와줄게!"');
+    // AI 인사 트리거
+    Future.delayed(const Duration(milliseconds: 300), () {
+      if (mounted) {
+        _liveService.sendText('[system] User opened AI mode. Greet briefly in Korean.');
       }
     });
   }
@@ -363,7 +365,7 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
     _levelSub?.cancel();
     _turnCompleteSub?.cancel();
     _typingTimer?.cancel();
-    _liveService.dispose();
+    _liveService.endSession();
     _audioService.dispose();
     _textController.dispose();
     _textFocusNode.dispose();

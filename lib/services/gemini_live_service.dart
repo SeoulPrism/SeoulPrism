@@ -35,6 +35,13 @@ class AiActionEvent {
 
 /// Gemini Live API WebSocket 서비스
 class GeminiLiveService {
+  static GeminiLiveService? _instance;
+  static GeminiLiveService get instance {
+    _instance ??= GeminiLiveService._();
+    return _instance!;
+  }
+  GeminiLiveService._();
+
   WebSocketChannel? _channel;
   StreamSubscription? _subscription;
 

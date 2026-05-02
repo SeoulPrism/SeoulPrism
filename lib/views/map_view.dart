@@ -107,6 +107,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
         });
       }
     };
+
+    // AI WebSocket 미리 연결 (탭 전환 시 렉 방지)
+    Future.delayed(const Duration(seconds: 2), () {
+      GeminiLiveService.instance.startSession();
+    });
   }
 
   @override
