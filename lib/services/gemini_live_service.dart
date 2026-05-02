@@ -101,7 +101,7 @@ class GeminiLiveService {
     try {
       // LiveGenerativeModel 생성
       _liveModel = FirebaseAI.vertexAI().liveGenerativeModel(
-        model: 'gemini-2.5-flash-preview-native-audio-dialog',
+        model: 'gemini-2.0-flash-live-001',
         systemInstruction: Content.text(_systemInstruction),
         liveGenerationConfig: LiveGenerationConfig(
           speechConfig: SpeechConfig(voiceName: 'Kore'),
