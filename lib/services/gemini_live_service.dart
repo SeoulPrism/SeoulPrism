@@ -24,6 +24,9 @@ enum AiAction {
   analyzeImage,
   searchPlace,
   requestPhoto,
+  addPlaces,
+  removePlace,
+  confirmPlan,
 }
 
 /// AI가 실행할 액션 데이터
@@ -185,6 +188,53 @@ class GeminiLiveService {
           },
         },
       },
+      {
+        'name': 'add_places',
+        'description': '현재 여행 코스에 새로운 장소를 추가합니다. 사용자가 "카페 추가해줘", "맛집도 넣어줘", "자연 관련 장소 추가" 등 코스에 장소를 추가하고 싶어할 때 호출합니다.',
+        'parameters': {
+          'type': 'object',
+          'properties': {
+            'query': {
+              'type': 'string',
+              'description': '추가할 장소 검색 쿼리 (예: "홍대 카페", "서울 맛집")',
+            },
+            'category': {
+              'type': 'string',
+              'enum': ['맛집', '카페', '관광', '쇼핑', '문화', '자연'],
+              'description': '추가할 장소 카테고리',
+            },
+          },
+          'required': ['query'],
+        },
+      },
+      {
+        'name': 'remove_place',
+        'description': '현재 여행 코스에서 특정 장소를 삭제합니다. 사용자가 "경복궁 빼줘", "그 카페 삭제해줘" 등 특정 장소를 제거하고 싶어할 때 호출합니다.',
+        'parameters': {
+          'type': 'object',
+          'properties': {
+            'placeName': {
+              'type': 'string',
+              'description': '삭제할 장소 이름',
+            },
+          },
+          'required': ['placeName'],
+        },
+      },
+      {
+        'name': 'confirm_plan',
+        'description': '현재 코스를 확정하고 일정을 생성합니다. 사용자가 "좋아", "확정해", "이걸로 일정 만들어줘", "오케이" 등 코스를 확정하고 싶어할 때 호출합니다.',
+        'parameters': {
+          'type': 'object',
+          'properties': {
+            'style': {
+              'type': 'string',
+              'enum': ['efficient', 'leisurely', 'foodFocused'],
+              'description': '일정 스타일',
+            },
+          },
+        },
+      },
     ],
   };
 
@@ -205,10 +255,17 @@ class GeminiLiveService {
 - URL 분석: analyze_url로 유튜브/인스타 링크에서 장소 추출.
 - 사진 요청: 사용자가 사진을 보내고 싶다고 하면 request_photo("both") 호출. 카메라/갤러리 선택 UI가 뜸.
 
+코스 조절 (핵심 기능):
+- 장소를 찾으면 사용자에게 "이 코스 어때? 수정하고 싶은 거 있어?" 라고 물어봐.
+- 사용자가 "카페 추가해줘" → add_places 호출
+- 사용자가 "경복궁 빼줘" → remove_place 호출
+- 사용자가 "좋아", "확정", "이걸로 해줘" → confirm_plan 호출
+- 코스 수정할 때마다 현재 코스 상태를 말해줘.
+
 규칙:
 - 역 위치를 물어보면 바로 navigate_to_station 호출해.
 - function 호출 후에는 결과를 자연스럽게 음성으로 안내해.
-- 사용자가 "사진 보여줄게", "사진으로 추천해줘", "카메라로 찍을게", "사진 있어" 같은 말을 하면 request_photo 호출해.
+- 사용자가 "사진 보여줄게" 같은 말을 하면 request_photo 호출해.
 - 이미지가 대화에 직접 포함되어 오면 analyze_image 호출하지 말고 직접 분석해.
 - 한 번에 function 하나만 호출해.
 - 내부 사고과정은 절대 말하지 마. 바로 답변해.
@@ -510,6 +567,15 @@ class GeminiLiveService {
           break;
         case 'request_photo':
           action = AiAction.requestPhoto;
+          break;
+        case 'add_places':
+          action = AiAction.addPlaces;
+          break;
+        case 'remove_place':
+          action = AiAction.removePlace;
+          break;
+        case 'confirm_plan':
+          action = AiAction.confirmPlan;
           break;
       }
 

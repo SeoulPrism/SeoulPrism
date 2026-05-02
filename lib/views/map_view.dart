@@ -602,6 +602,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
         // 검색은 AI가 음성으로 결과를 안내
         break;
       case AiAction.requestPhoto:
+      case AiAction.addPlaces:
+      case AiAction.removePlace:
+      case AiAction.confirmPlan:
         // AiView 내부에서 처리
         break;
     }

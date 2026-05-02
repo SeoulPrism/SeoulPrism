@@ -150,13 +150,19 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
       _audioService.bufferBase64(base64);
     });
 
-    _actionSub = _liveService.actionStream.listen((action) {
+    _actionSub = _liveService.actionStream.listen((action) async {
       if (action.action == AiAction.requestPhoto) {
         _handlePhotoRequest(action.params['source'] as String? ?? 'both');
       } else if (action.action == AiAction.searchPlace) {
         _handleSearchPlace(action);
       } else if (action.action == AiAction.createPlan) {
         _handleCreatePlan(action);
+      } else if (action.action == AiAction.addPlaces) {
+        await _handleAddPlaces(action);
+      } else if (action.action == AiAction.removePlace) {
+        _handleRemovePlace(action);
+      } else if (action.action == AiAction.confirmPlan) {
+        _generatePlanFromPlaces();
       } else {
         widget.onAction?.call(action);
       }
@@ -226,6 +232,12 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
         return 'search_place';
       case AiAction.requestPhoto:
         return 'request_photo';
+      case AiAction.addPlaces:
+        return 'add_places';
+      case AiAction.removePlace:
+        return 'remove_place';
+      case AiAction.confirmPlan:
+        return 'confirm_plan';
     }
   }
 
@@ -268,7 +280,32 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
       case AiAction.requestPhoto:
         return {
           'status': 'success',
-          'message': '사진 선택 UI를 표시했습니다. 사용자가 사진을 선택하면 분석 결과를 알려드릴게요. 사용자에게 사진을 선택해달라고 안내해주세요.',
+          'message': '사진 선택 UI를 표시했습니다.',
+        };
+      case AiAction.addPlaces:
+        final currentNames = _extractedPlaces.map((p) => p.name).join(', ');
+        return {
+          'status': 'success',
+          'currentPlaces': currentNames,
+          'count': _extractedPlaces.length,
+          'message': '장소를 추가했습니다. 현재 코스: $currentNames. 사용자에게 현재 코스를 안내하고 더 수정할지 물어봐.',
+        };
+      case AiAction.removePlace:
+        final name = action.params['placeName'] as String? ?? '';
+        final found = _extractedPlaces.any((p) => p.name.contains(name));
+        final currentNames = _extractedPlaces.map((p) => p.name).join(', ');
+        return {
+          'status': found ? 'success' : 'not_found',
+          'currentPlaces': currentNames,
+          'count': _extractedPlaces.length,
+          'message': found
+              ? '$name을 삭제했습니다. 현재 코스: $currentNames. 더 수정할지 물어봐.'
+              : '$name을 찾지 못했습니다. 현재 코스: $currentNames',
+        };
+      case AiAction.confirmPlan:
+        return {
+          'status': 'success',
+          'message': '일정을 생성했습니다. 사용자에게 일정이 만들어졌다고 안내해.',
         };
     }
   }
@@ -414,6 +451,47 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
     } catch (e) {
       debugPrint('[AiView] Create plan error: $e');
     }
+  }
+
+  // -- AI 음성으로 코스 조절 --
+  Future<void> _handleAddPlaces(AiActionEvent action) async {
+    final query = action.params['query'] as String? ?? '';
+    if (query.isEmpty) return;
+
+    widget.onStatusChanged?.call('$query 추가 중...');
+
+    try {
+      final existing = _extractedPlaces.map((p) => p.name).join(', ');
+      final content = SnsContent(
+        imagePaths: [],
+        text: '기존 코스: $existing\n추가 요청: $query\n기존과 다른 새로운 장소 2~3개만 추천해줘.',
+        url: '',
+      );
+      final result = await GeminiService.instance.analyzeContent(content);
+      if (!mounted) return;
+
+      if (result.places.isNotEmpty) {
+        final geoPlaces = await GeminiService.instance.geocodeAll(result.places);
+        if (!mounted) return;
+        setState(() {
+          _extractedPlaces.addAll(geoPlaces);
+          if (!_showPlacesPanel) _showPlacesPanel = true;
+        });
+      }
+    } catch (e) {
+      debugPrint('[AiView] Add places error: $e');
+    }
+  }
+
+  void _handleRemovePlace(AiActionEvent action) {
+    final name = action.params['placeName'] as String? ?? '';
+    if (name.isEmpty) return;
+
+    setState(() {
+      _extractedPlaces.removeWhere((p) =>
+        p.name.contains(name) || name.contains(p.name));
+      if (_extractedPlaces.isEmpty) _showPlacesPanel = false;
+    });
   }
 
   // -- Search place → GeminiService 분석 → 장소 패널 표시 --
