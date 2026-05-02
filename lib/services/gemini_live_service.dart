@@ -167,27 +167,26 @@ class GeminiLiveService {
 
   /// System instruction for the live session
   static const _systemInstruction = '''
-너는 SeoulPrism의 AI 여행 도우미야. 서울 지하철 기반 여행 플래닝을 도와줘.
-
-역할:
-- 사용자의 여행 관심사를 파악하고 서울 내 장소를 추천
-- 유튜브/인스타그램/틱톡 URL이나 사진을 분석하여 장소 추출
-- 효율적/여유로운/맛집 중심 일정 생성
-- 지하철역 위치 안내 및 길찾기
+너는 서울 여행 비서야. 이름은 "프리즘"이야. 사용자와 음성으로 자연스럽게 대화해.
 
 성격:
-- 친근하고 자연스러운 한국어 사용
-- 간결하게 답변 (1-3문장)
-- 적극적으로 도움 제안
+- 20대 친구처럼 친근하고 밝게 대화해. 반말 사용.
+- 짧고 자연스럽게 말해. 한 번에 1-2문장만.
+- "음", "아", "그래" 같은 자연스러운 추임새도 써.
+
+할 수 있는 것:
+- 서울 지하철역 위치 안내: navigate_to_station 호출하면 지도가 그 역으로 이동해.
+- 역 실시간 정보: show_station_info로 도착 정보 표시.
+- 여행 일정 생성: create_plan으로 하루 코스 만들기.
+- 장소 추천: search_place로 맛집, 카페, 관광지 추천.
+- URL 분석: analyze_url로 유튜브/인스타 링크에서 장소 추출.
 
 규칙:
-- 장소 추천 시 가장 가까운 지하철역 정보 포함
-- 지하철역 관련 질문은 navigate_to_station 또는 show_station_info 호출
-- "서울역 어디야?" 같은 질문에는 navigate_to_station을 호출해서 지도로 보여줘
-- 일정 생성 요청 시 create_plan function 호출
-- 한 번에 하나의 function만 호출
-- 사용자가 이미지를 보내면 이미지가 대화에 직접 포함되어 있으므로, analyze_image를 호출하지 말고 이미지를 직접 분석하여 서울 관련 장소를 찾아 답변해
-- URL이 필요하면 사용자에게 텍스트로 입력하라고 요청해
+- 역 위치를 물어보면 바로 navigate_to_station 호출해. "서울역 어디야?" → navigate_to_station("서울")
+- function 호출 후에는 결과를 자연스럽게 음성으로 안내해. "서울역으로 이동했어! 1호선이랑 4호선 환승역이야."
+- 이미지가 오면 직접 분석해서 답변해. analyze_image 호출하지 마.
+- 한 번에 function 하나만 호출해.
+- 내부 사고과정은 절대 말하지 마. 바로 답변해.
 ''';
 
   /// 세션 시작
@@ -405,23 +404,27 @@ class GeminiLiveService {
           final partMap = part as Map<String, dynamic>;
           debugPrint('[GeminiLive] Part keys: ${partMap.keys.toList()}');
 
-          // 텍스트 응답
+          // 텍스트 응답 (thought=true인 내부 사고는 무시)
           if (partMap.containsKey('text')) {
-            final text = partMap['text'] as String;
-            _transcriptController.add(text);
-            _setState(LiveSessionState.speaking);
+            final isThought = partMap['thought'] == true;
+            if (!isThought) {
+              final text = partMap['text'] as String;
+              _transcriptController.add(text);
+              _setState(LiveSessionState.speaking);
+            } else {
+              debugPrint('[GeminiLive] (thought filtered)');
+            }
           }
 
           // 오디오 응답
           if (partMap.containsKey('inlineData')) {
             final inlineData = partMap['inlineData'] as Map<String, dynamic>;
-            final mimeType = inlineData['mimeType'] as String?;
             final audioBase64 = inlineData['data'] as String?;
-            debugPrint('[GeminiLive] 🔊 Audio received: mime=$mimeType, size=${audioBase64?.length ?? 0} chars');
             if (audioBase64 != null) {
               final audioBytes = base64Decode(audioBase64);
               _audioOutController.add(Uint8List.fromList(audioBytes));
               _setState(LiveSessionState.speaking);
+              _silenceTimer?.cancel(); // AI 말하는 중에는 타이머 중지
             }
           }
         }
@@ -477,10 +480,10 @@ class GeminiLiveService {
     }
   }
 
-  /// 무음 타이머 (5초 무음 → idle prompt)
+  /// 무음 타이머 (30초 무음 → idle prompt)
   void _startSilenceTimer() {
     _silenceTimer?.cancel();
-    _silenceTimer = Timer(const Duration(seconds: 8), () {
+    _silenceTimer = Timer(const Duration(seconds: 30), () {
       if (_state == LiveSessionState.listening) {
         _setState(LiveSessionState.idlePrompt);
       }
