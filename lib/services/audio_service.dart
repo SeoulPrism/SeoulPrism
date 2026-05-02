@@ -30,8 +30,8 @@ class AudioService {
   bool _isPlaying = false;
   Timer? _flushTimer;
 
-  // 24kHz 16-bit mono: 48000 bytes/sec → ~12000 bytes = 0.25초
-  static const _flushThreshold = 12000;
+  // 24kHz 16-bit mono: 48000 bytes/sec → 48000 bytes = 1초
+  static const _flushThreshold = 48000;
 
   /// 마이크 권한 요청
   Future<bool> requestMicPermission() async {
@@ -94,9 +94,9 @@ class AudioService {
     if (_pcmBuffer.length >= _flushThreshold) {
       _flushBuffer();
     } else {
-      // 작은 청크도 200ms 후 자동 flush (마지막 조각 처리)
+      // 작은 청크도 500ms 후 자동 flush (마지막 조각 처리)
       _flushTimer?.cancel();
-      _flushTimer = Timer(const Duration(milliseconds: 200), _flushBuffer);
+      _flushTimer = Timer(const Duration(milliseconds: 500), _flushBuffer);
     }
   }
 
