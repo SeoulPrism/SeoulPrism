@@ -1016,7 +1016,7 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
 
   // ── 장소 분석 결과 패널 (슬라이드 업) ──
   Widget _buildPlacesPanel() {
-    final panelHeight = MediaQuery.of(context).size.height * 0.45;
+    final panelHeight = MediaQuery.of(context).size.height * 0.50;
     final bottomPad = MediaQuery.of(context).padding.bottom;
 
     return AnimatedPositioned(
