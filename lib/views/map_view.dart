@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
@@ -15,6 +16,12 @@ import '../data/seoul_subway_data.dart';
 import '../services/device_profile_service.dart';
 import '../services/settings_service.dart';
 import 'sns_upload_view.dart';
+import 'day_plan_view.dart';
+import 'ai_view.dart';
+import '../models/sns_content_models.dart';
+import '../services/gemini_live_service.dart';
+import '../services/gemini_service.dart';
+import '../services/day_plan_service.dart';
 import '../services/path_finding_service.dart';
 import '../data/subway_geojson_loader.dart';
 import '../theme/app_theme.dart';
@@ -37,7 +44,10 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   IMapController? _mapController;
   bool _settingsOpen = false;
-  bool _aiPlanOpen = false;
+  bool _aiOpen = false;
+  bool _aiClosing = false;
+  String _aiStatus = '';
+  List<DayPlan>? _dayPlans;
 
   final CameraInfo _cameraInfo = CameraInfo(
     lat: 37.5665, lng: 126.9780, zoom: 13.0, pitch: 45.0, bearing: 0.0,
@@ -97,6 +107,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
         });
       }
     };
+
+    // AI WebSocket 미리 연결 (탭 전환 시 렉 방지)
+    Future.delayed(const Duration(seconds: 2), () {
+      GeminiLiveService.instance.startSession();
+    });
   }
 
   @override
@@ -304,8 +319,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Scaffold(
       extendBody: true,
       resizeToAvoidBottomInset: false,
-      bottomNavigationBar: _buildBottomTabBar(),
-      body: Stack(
+      bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // AI 상태 텍스트 (탭바 바로 위)
+          if (_aiOpen && _aiStatus.isNotEmpty)
+            _buildAiStatusBar(),
+          _buildBottomTabBar(),
+        ],
+      ),
+      body: AnimatedScale(
+        scale: _aiOpen && !_aiClosing ? 0.995 : 1.0,
+        duration: const Duration(milliseconds: 600),
+        curve: Curves.elasticOut,
+        child: Stack(
         children: [
           // 지도 엔진 (항상 렌더링)
           Positioned.fill(child: MapboxEngine(initialCamera: _cameraInfo, onMapCreated: _onMapCreated)),
@@ -391,15 +418,33 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ),
 
-          // AI 플랜 오버레이 (바텀시트 스타일)
-          _buildAiPlanOverlay(context, screenHeight, bottomInset),
-
           // 설정 패널 오버레이 (바텀시트 스타일)
           _buildSettingsOverlay(context, screenHeight, bottomInset),
+
+          // 하루 플랜 오버레이 (지도 위 바텀 패널)
+          _buildDayPlanOverlay(context, bottomInset),
+
+          // 통합 AI 오버레이 (풀스크린 Glow + Gemini Live)
+          if (_aiOpen)
+            Positioned.fill(
+              child: AiView(
+                closing: _aiClosing,
+                onClose: () => setState(() {
+                  _aiOpen = false;
+                  _aiClosing = false;
+                  _aiStatus = '';
+                }),
+                onAction: _handleAiAction,
+                onStatusChanged: (status) {
+                  if (mounted) setState(() => _aiStatus = status);
+                },
+              ),
+            ),
 
           // 기기 프로필 토스트 (페이드인/아웃)
           _buildProfileToast(),
         ],
+      ),
       ),
     );
   }
@@ -423,23 +468,33 @@ class _DashboardScreenState extends State<DashboardScreen> {
           curve: Curves.easeInOut,
           opacity: _showProfileToast ? 1.0 : 0.0,
           child: Center(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.7),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                '${dp.rawModel} · $tierLabel\n'
-                '${dp.profile.animFps}fps · 폴링 ${dp.profile.naverPollMs}ms 최적화 적용',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  height: 1.4,
-                ),
-              ),
+            child: Builder(
+              builder: (context) {
+                final isDark = Theme.of(context).brightness == Brightness.dark;
+                return Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? Colors.black.withValues(alpha: 0.7)
+                        : Colors.white.withValues(alpha: 0.85),
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: isDark
+                        ? null
+                        : [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 8)],
+                  ),
+                  child: Text(
+                    '${dp.rawModel} · $tierLabel\n'
+                    '${dp.profile.animFps}fps · 폴링 ${dp.profile.naverPollMs}ms 최적화 적용',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: isDark ? Colors.white : Colors.black87,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      height: 1.4,
+                    ),
+                  ),
+                );
+              },
             ),
           ),
         ),
@@ -447,62 +502,187 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  Widget _buildAiStatusBar() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFFBC82F3).withValues(alpha: 0.2),
+            const Color(0xFF8D9FFF).withValues(alpha: 0.15),
+            const Color(0xFFF5B9EA).withValues(alpha: 0.1),
+          ],
+        ),
+        border: Border(top: BorderSide(color: const Color(0xFFBC82F3).withValues(alpha: 0.4))),
+      ),
+      child: _AiStatusText(text: _aiStatus),
+    );
+  }
+
+  void _dismissAi() {
+    if (_aiOpen && !_aiClosing) {
+      setState(() => _aiClosing = true);
+    }
+  }
+
+  /// AI가 보낸 역명으로 StationInfo 찾기
+  /// "서울" → "서울역", "강남" → "강남" 등 유연하게 매칭
+  StationInfo? _resolveStation(String name) {
+    // 1) 정확히 매칭
+    var station = SeoulSubwayData.findStation(name);
+    if (station != null) return station;
+
+    // 2) "역" 붙여서 매칭 (AI가 "서울"로 보내면 "서울역"으로)
+    station = SeoulSubwayData.findStation('$name역');
+    if (station != null) return station;
+
+    // 3) "역" 떼고 매칭 ("서울역" → "서울")
+    if (name.endsWith('역')) {
+      station = SeoulSubwayData.findStation(name.substring(0, name.length - 1));
+      if (station != null) return station;
+    }
+
+    return null;
+  }
+
+  /// AI Function Calling 액션 처리
+  void _handleAiAction(AiActionEvent event) {
+    switch (event.action) {
+      case AiAction.navigateToStation:
+        final stationName = event.params['stationName'] as String?;
+        if (stationName != null) {
+          final station = _resolveStation(stationName);
+          if (station != null) {
+            // AI 닫고 → 카메라 줌 이동 → 역 선택
+            _dismissAi();
+            Future.delayed(const Duration(milliseconds: 600), () {
+              _mapController?.moveTo(station.lat, station.lng, zoom: 16, pitch: 50);
+              // 카메라 이동 후 역 선택
+              Future.delayed(const Duration(milliseconds: 800), () {
+                _subwayController.selectStation(station.name);
+              });
+            });
+          }
+        }
+        break;
+      case AiAction.showStationInfo:
+        final stationName = event.params['stationName'] as String?;
+        if (stationName != null) {
+          final station = _resolveStation(stationName);
+          _dismissAi();
+          Future.delayed(const Duration(milliseconds: 600), () {
+            if (station != null) {
+              _mapController?.moveTo(station.lat, station.lng, zoom: 15, pitch: 45);
+            }
+            _subwayController.selectStation(station?.name ?? stationName);
+          });
+        }
+        break;
+      case AiAction.analyzeUrl:
+        // URL 분석 → 기존 GeminiService 활용
+        final url = event.params['url'] as String?;
+        if (url != null) {
+          _analyzeUrlAndCreatePlan(url);
+        }
+        break;
+      case AiAction.analyzeImage:
+        // 이미지 분석은 AI View 내부에서 처리
+        break;
+      case AiAction.createPlan:
+        final style = event.params['style'] as String? ?? 'efficient';
+        final places = event.params['extractedPlaces'] as List<ExtractedPlace>?;
+        if (places != null && places.isNotEmpty) {
+          _createPlanFromPlaces(places);
+        } else {
+          _createPlanFromAi(style, event.params['places'] as String?);
+        }
+        break;
+      case AiAction.searchPlace:
+        // 검색은 AI가 음성으로 결과를 안내
+        break;
+      case AiAction.requestPhoto:
+      case AiAction.addPlaces:
+      case AiAction.removePlace:
+      case AiAction.confirmPlan:
+        // AiView 내부에서 처리
+        break;
+    }
+  }
+
+  /// URL 분석 후 플랜 생성
+  Future<void> _analyzeUrlAndCreatePlan(String url) async {
+    try {
+      final result = await GeminiService.instance.analyzeContent(
+        SnsContent(imagePaths: [], text: '', url: url),
+      );
+      if (result.places.isNotEmpty) {
+        final geoPlaces = await GeminiService.instance.geocodeAll(result.places);
+        final dayPlanService = DayPlanService.instance;
+        final plans = await dayPlanService.generatePlans(geoPlaces);
+        if (plans.isNotEmpty && mounted) {
+          _dismissAi();
+          Future.delayed(const Duration(milliseconds: 600), () {
+            setState(() => _dayPlans = plans);
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('[AI Action] URL 분석 실패: $e');
+    }
+  }
+
+  /// 추출된 장소로 플랜 생성
+  Future<void> _createPlanFromPlaces(List<ExtractedPlace> places) async {
+    try {
+      final plans = await DayPlanService.instance.generatePlans(places);
+      if (plans.isNotEmpty && mounted) {
+        _dismissAi();
+        Future.delayed(const Duration(milliseconds: 600), () {
+          if (mounted) setState(() => _dayPlans = plans);
+        });
+      }
+    } catch (e) {
+      debugPrint('[AI Action] 플랜 생성 실패: $e');
+    }
+  }
+
+  /// AI 요청으로 플랜 생성 (텍스트 기반)
+  Future<void> _createPlanFromAi(String style, String? placesJson) async {
+    debugPrint('[AI Action] Create plan: style=$style');
+  }
+
   // ── 하단 탭바 (리퀴드 글라스) ──
   Widget _buildBottomTabBar() {
-    // 순서: 설정(0) | 지도(1, 가운데) | AI 플랜(2)
-    final currentIndex = _settingsOpen ? 0 : (_aiPlanOpen ? 2 : 1);
+    // 순서: 설정(0) | 지도(1, 가운데) | AI(2)
+    final currentIndex = _settingsOpen ? 0 : (_aiOpen ? 2 : 1);
 
     return AdaptiveTabBar(
       currentIndex: currentIndex,
       onTap: (index) {
         setState(() {
           if (index == 0) {
-            _aiPlanOpen = false;
+            _dismissAi();
             _settingsOpen = !_settingsOpen;
           } else if (index == 1) {
             _settingsOpen = false;
-            _aiPlanOpen = false;
+            _dismissAi();
           } else if (index == 2) {
             _settingsOpen = false;
-            _aiPlanOpen = !_aiPlanOpen;
+            if (_aiOpen) {
+              _dismissAi();
+            } else {
+              _aiOpen = true;
+              _aiClosing = false;
+            }
           }
         });
       },
       items: const [
         AdaptiveTabItem(label: '설정', icon: Icons.settings),
         AdaptiveTabItem(label: '지도', icon: Icons.map),
-        AdaptiveTabItem(label: 'AI 플랜', icon: Icons.auto_awesome),
+        AdaptiveTabItem(label: 'AI', icon: Icons.auto_awesome),
       ],
-    );
-  }
-
-  // ── AI 플랜 오버레이 패널 ──
-  Widget _buildAiPlanOverlay(BuildContext context, double screenHeight, double bottomInset) {
-    final panelHeight = screenHeight * 0.65;
-
-    return AnimatedPositioned(
-      duration: const Duration(milliseconds: 400),
-      curve: _aiPlanOpen ? Curves.easeOutCubic : Curves.easeInCubic,
-      bottom: _aiPlanOpen ? 0 : -panelHeight - 50,
-      left: 0,
-      right: 0,
-      height: panelHeight,
-      child: AnimatedOpacity(
-        duration: const Duration(milliseconds: 350),
-        opacity: _aiPlanOpen ? 1.0 : 0.0,
-        child: GestureDetector(
-          onVerticalDragEnd: (details) {
-            if (details.velocity.pixelsPerSecond.dy > 200) {
-              setState(() => _aiPlanOpen = false);
-            }
-          },
-          child: SnsUploadView(
-            onClose: () => setState(() => _aiPlanOpen = false),
-            mapController: _mapController,
-            subwayController: _subwayController,
-          ),
-        ),
-      ),
     );
   }
 
@@ -530,6 +710,53 @@ class _DashboardScreenState extends State<DashboardScreen> {
             subwayController: _subwayController,
             mapController: _mapController,
             onClose: () => setState(() => _settingsOpen = false),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── 하루 플랜 오버레이 ──
+  Widget _buildDayPlanOverlay(BuildContext context, double bottomInset) {
+    final show = _dayPlans != null && _dayPlans!.isNotEmpty;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return AnimatedPositioned(
+      duration: const Duration(milliseconds: 400),
+      curve: show ? Curves.easeOutCubic : Curves.easeInCubic,
+      bottom: show ? 0 : -600,
+      left: 0,
+      right: 0,
+      child: AnimatedOpacity(
+        duration: const Duration(milliseconds: 350),
+        opacity: show ? 1.0 : 0.0,
+        child: GestureDetector(
+          onVerticalDragEnd: (details) {
+            if (details.velocity.pixelsPerSecond.dy > 200) {
+              setState(() => _dayPlans = null);
+            }
+          },
+          child: Container(
+            decoration: BoxDecoration(
+              color: isDark
+                  ? Colors.black.withValues(alpha: 0.85)
+                  : Colors.white.withValues(alpha: 0.92),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.2),
+                  blurRadius: 20,
+                  offset: const Offset(0, -4),
+                ),
+              ],
+            ),
+            child: show
+                ? DayPlanView(
+                    plans: _dayPlans!,
+                    mapController: _mapController,
+                    onClose: () => setState(() => _dayPlans = null),
+                  )
+                : const SizedBox.shrink(),
           ),
         ),
       ),
@@ -1247,6 +1474,91 @@ class _SettingsPanelState extends State<SettingsPanel> {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// AI 상태 텍스트 (타이핑 효과)
+class _AiStatusText extends StatefulWidget {
+  final String text;
+  const _AiStatusText({required this.text});
+
+  @override
+  State<_AiStatusText> createState() => _AiStatusTextState();
+}
+
+class _AiStatusTextState extends State<_AiStatusText> {
+  String _fullText = '';
+  String _displayed = '';
+  Timer? _timer;
+  int _charIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _startTyping(widget.text);
+  }
+
+  @override
+  void didUpdateWidget(_AiStatusText old) {
+    super.didUpdateWidget(old);
+    if (old.text != widget.text) {
+      if (widget.text.isEmpty) {
+        // 클리어
+        _timer?.cancel();
+        setState(() { _fullText = ''; _displayed = ''; _charIndex = 0; });
+      } else if (widget.text.length > _fullText.length && widget.text.startsWith(_fullText)) {
+        // 이어붙이기 (같은 턴에서 텍스트가 추가됨)
+        _fullText = widget.text;
+        _continueTyping();
+      } else {
+        // 새 텍스트
+        _startTyping(widget.text);
+      }
+    }
+  }
+
+  void _startTyping(String target) {
+    _timer?.cancel();
+    _fullText = target;
+    _displayed = '';
+    _charIndex = 0;
+    _continueTyping();
+  }
+
+  void _continueTyping() {
+    _timer?.cancel();
+    _timer = Timer.periodic(const Duration(milliseconds: 30), (t) {
+      if (!mounted || _charIndex >= _fullText.length) { t.cancel(); return; }
+      _charIndex++;
+      setState(() => _displayed = _fullText.substring(0, _charIndex));
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_displayed.isEmpty) return const SizedBox.shrink();
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxHeight: 60),
+      child: SingleChildScrollView(
+        reverse: true,
+        child: Text(
+          _displayed,
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.9),
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+            height: 1.4,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ),
     );
   }
 }

@@ -18,12 +18,14 @@ class SnsUploadView extends StatefulWidget {
   final VoidCallback onClose;
   final IMapController? mapController;
   final SubwayOverlayController? subwayController;
+  final void Function(List<DayPlan> plans)? onPlansGenerated;
 
   const SnsUploadView({
     super.key,
     required this.onClose,
     this.mapController,
     this.subwayController,
+    this.onPlansGenerated,
   });
 
   @override
@@ -117,6 +119,7 @@ class _SnsUploadViewState extends State<SnsUploadView> {
               SnsAnalysisView(
             result: analysisResult,
             mapController: widget.mapController,
+            onPlansGenerated: widget.onPlansGenerated,
           ),
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             return FadeTransition(opacity: animation, child: child);

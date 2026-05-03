@@ -13,7 +13,6 @@ import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../main.dart';
-import 'home_view.dart';
 
 enum AuthMode { login, signUp }
 
@@ -88,10 +87,8 @@ class _AuthViewState extends State<AuthView> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          if (!keyboardOpen) ...[
-                            const _SeoulPrismLogo(),
-                            const SizedBox(height: 24),
-                          ],
+                          const _SeoulPrismLogo(),
+                          const SizedBox(height: 24),
                           _buildAuthPanel(),
                         ],
                       ),
@@ -133,7 +130,7 @@ class _AuthViewState extends State<AuthView> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    if (!keyboardOpen && !isLandscape) ...[
+                    if (!isLandscape) ...[
                       const _SeoulPrismLogo(size: 200),
                       const SizedBox(height: 24),
                     ],
@@ -433,8 +430,6 @@ class _AuthViewState extends State<AuthView> {
         provider: OAuthProvider.google,
         idToken: idToken,
       );
-
-      if (mounted) _goHome();
     } on AuthException catch (e) {
       if (mounted) _showError(_translateAuthError(e.message));
     } catch (e) {
@@ -485,8 +480,6 @@ class _AuthViewState extends State<AuthView> {
         idToken: idToken,
         nonce: rawNonce,
       );
-
-      if (mounted) _goHome();
     } on SignInWithAppleAuthorizationException catch (e) {
       if (e.code == AuthorizationErrorCode.canceled) return;
       if (mounted) _showError('Apple 로그인이 취소되었습니다');
@@ -544,7 +537,7 @@ class _AuthViewState extends State<AuthView> {
           email: email,
           password: password,
         );
-        if (mounted) _goHome();
+        // 네비게이션은 main.dart의 onAuthStateChange 리스너가 처리
       } else {
         final username = _idController.text.trim();
         final response = await supabase.auth.signUp(
@@ -554,7 +547,7 @@ class _AuthViewState extends State<AuthView> {
         );
         if (mounted) {
           if (response.session != null) {
-            _goHome();
+            // 네비게이션은 main.dart의 onAuthStateChange 리스너가 처리
           } else {
             _showConfirmEmailDialog(email);
             setState(() => _mode = AuthMode.login);
@@ -586,19 +579,6 @@ class _AuthViewState extends State<AuthView> {
     return message;
   }
 
-  void _goHome() {
-    Navigator.of(context).pushReplacement(
-      PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) =>
-            const HomeView(),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return FadeTransition(opacity: animation, child: child);
-        },
-        transitionDuration: const Duration(milliseconds: 500),
-      ),
-    );
-  }
-
   void _showConfirmEmailDialog(String email) {
     showDialog(
       context: context,
@@ -621,22 +601,12 @@ class _AuthViewState extends State<AuthView> {
   }
 
   void _showError(String message) {
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
         behavior: SnackBarBehavior.floating,
         backgroundColor: const Color(0xFFFF453A),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-    );
-  }
-
-  void _showMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: const Color(0xFF2C2C2E),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
@@ -771,6 +741,7 @@ class _FindAccountPageState extends State<_FindAccountPage> {
   }
 
   void _showSnack(String message, {bool isError = false}) {
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),

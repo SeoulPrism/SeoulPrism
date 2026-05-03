@@ -17,7 +17,7 @@ class GeminiService {
     return _instance!;
   }
 
-  static const _baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+  static const _baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
 
   static const _systemPrompt = '''
 당신은 서울 여행 플래너 AI입니다. SNS 콘텐츠를 분석하여 서울의 장소, 활동, 분위기를 추출합니다.
@@ -94,7 +94,8 @@ class GeminiService {
       ],
       'generationConfig': {
         'temperature': 0.7,
-        'maxOutputTokens': 2048,
+        'maxOutputTokens': 4096,
+        'responseMimeType': 'application/json',
       },
     });
 

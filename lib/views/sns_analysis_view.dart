@@ -13,11 +13,13 @@ import 'day_plan_view.dart';
 class SnsAnalysisView extends StatefulWidget {
   final SnsAnalysisResult result;
   final IMapController? mapController;
+  final void Function(List<DayPlan> plans)? onPlansGenerated;
 
   const SnsAnalysisView({
     super.key,
     required this.result,
     this.mapController,
+    this.onPlansGenerated,
   });
 
   @override
@@ -66,19 +68,9 @@ class _SnsAnalysisViewState extends State<SnsAnalysisView> {
       final plans = await DayPlanService.instance.generatePlans(_places);
       if (!mounted) return;
 
-      Navigator.of(context).push(
-        PageRouteBuilder(
-          pageBuilder: (context, animation, secondaryAnimation) =>
-              DayPlanView(
-            plans: plans,
-            mapController: widget.mapController,
-          ),
-          transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            return FadeTransition(opacity: animation, child: child);
-          },
-          transitionDuration: const Duration(milliseconds: 300),
-        ),
-      );
+      // 지도 위 오버레이로 표시
+      Navigator.of(context).pop(); // 분석 뷰 닫기
+      widget.onPlansGenerated?.call(plans);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
