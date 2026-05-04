@@ -298,6 +298,9 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
   Future<void> init3DLayers() async {
     if (_mapboxMap == null || _layersInitialized3D) return;
 
+    // 이전 세션에서 남은 소스/레이어가 있으면 정리
+    cleanup3DLayers();
+
     final style = _mapboxMap!.style;
     const emptyGeoJson = '{"type":"FeatureCollection","features":[]}';
 
@@ -366,7 +369,7 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
         circleEmissiveStrength: 1.0,
       ));
 
-      // 1-c) 선택된 역 하이라이트 — 발광 링 (CircleLayer)
+      // 1-c) 선택된 역 하이라이트 — 발광 링 (CircleLayer, 노선별 동심원)
       await style.addSource(GeoJsonSource(id: _selectedStationSourceId, data: emptyGeoJson));
       await style.addLayer(CircleLayer(
         id: _selectedStationLayerId,
@@ -374,10 +377,10 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
         circleColorExpression: ['to-color', ['get', 'color']],
         circleRadiusExpression: [
           'interpolate', ['linear'], ['zoom'],
-          10, 10.0,
-          13, 22.0,
-          15, 38.0,
-          17, 55.0,
+          10, ['*', ['number', ['get', 'scale'], 1.0], 10.0],
+          13, ['*', ['number', ['get', 'scale'], 1.0], 22.0],
+          15, ['*', ['number', ['get', 'scale'], 1.0], 38.0],
+          17, ['*', ['number', ['get', 'scale'], 1.0], 55.0],
         ],
         circleBlur: 0.5,
         circleOpacityExpression: ['get', 'opacity'],
@@ -657,7 +660,7 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
 
   @override
   void cleanup3DLayers() {
-    if (_mapboxMap == null || !_layersInitialized3D) return;
+    if (_mapboxMap == null) return;
     final style = _mapboxMap!.style;
 
     for (final layerId in [
@@ -951,19 +954,39 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
         hlLng = station?.lng;
       }
       if (hlLat != null && hlLng != null) {
-        Color stationColor = Colors.blueAccent;
+        // 역이 속한 모든 노선 색상 수집
+        final lineColorList = <Color>[];
         for (final entry in SeoulSubwayData.lineIdToApiName.entries) {
           final stations = SeoulSubwayData.getLineStations(entry.key);
           if (stations.any((s) => s.name == _selectedStationName)) {
-            stationColor = SubwayColors.getColor(entry.key);
-            break;
+            lineColorList.add(SubwayColors.getColor(entry.key));
           }
         }
-        final colorStr = _colorToRgba(stationColor);
-        _cachedStationHighlightJson =
-          '{"type":"FeatureCollection","features":[{"type":"Feature",'
-          '"geometry":{"type":"Point","coordinates":[$hlLng,$hlLat]},'
-          '"properties":{"color":"$colorStr","opacity":0.45}}]}';
+        if (lineColorList.isEmpty) lineColorList.add(Colors.blueAccent);
+
+        // 모든 노선 색을 원형 배치 + blur로 그라데이션 글로우
+        final buf = StringBuffer('{"type":"FeatureCollection","features":[');
+        final n = lineColorList.length;
+        if (n == 1) {
+          final colorStr = _colorToRgba(lineColorList[0]);
+          buf.write('{"type":"Feature",'
+              '"geometry":{"type":"Point","coordinates":[$hlLng,$hlLat]},'
+              '"properties":{"color":"$colorStr","opacity":0.5,"scale":1.0}}');
+        } else {
+          const offset = 0.00008; // ~9m
+          for (int i = 0; i < n; i++) {
+            if (i > 0) buf.write(',');
+            final angle = 2 * pi * i / n;
+            final oLng = hlLng! + offset * cos(angle);
+            final oLat = hlLat! + offset * sin(angle);
+            final colorStr = _colorToRgba(lineColorList[i]);
+            buf.write('{"type":"Feature",'
+                '"geometry":{"type":"Point","coordinates":[$oLng,$oLat]},'
+                '"properties":{"color":"$colorStr","opacity":0.5,"scale":1.0}}');
+          }
+        }
+        buf.write(']}');
+        _cachedStationHighlightJson = buf.toString();
         await _updateSourceData(_selectedStationSourceId, _cachedStationHighlightJson!);
       }
     } else if (_selectedStationName == null &&
@@ -1340,11 +1363,26 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
       );
 
       if (stationFeatures.isNotEmpty) {
-        final feature = stationFeatures.first?.queriedFeature.feature;
-        if (feature != null) {
-          final props = feature['properties'];
-          // feature에서 좌표 추출 (지도 위 점과 동일 위치)
-          final geometry = feature['geometry'];
+        // 같은 역 이름의 feature가 여러 개면(환승역) 가운데 것 선택
+        final validFeatures = stationFeatures
+            .where((f) => f?.queriedFeature.feature != null)
+            .map((f) => f!.queriedFeature.feature)
+            .toList();
+
+        // 역 이름별로 그룹핑 → 가운데 feature 선택
+        String? tappedName;
+        Map<Object?, Object?>? chosenFeature;
+        if (validFeatures.isNotEmpty) {
+          final firstName = (validFeatures.first['properties'] as Map?)?['name'];
+          final sameNameFeatures = validFeatures
+              .where((f) => (f['properties'] as Map?)?['name'] == firstName)
+              .toList();
+          chosenFeature = sameNameFeatures[sameNameFeatures.length ~/ 2];
+          tappedName = firstName?.toString();
+        }
+
+        if (chosenFeature != null && tappedName != null) {
+          final geometry = chosenFeature['geometry'];
           if (geometry is Map && geometry['coordinates'] is List) {
             final coords = geometry['coordinates'] as List;
             if (coords.length >= 2) {
@@ -1352,12 +1390,9 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
               _selectedStationLat = (coords[1] as num).toDouble();
             }
           }
-          if (props is Map) {
-            final name = props['name'];
-            if (name != null && _onStationTapped != null) {
-              _onStationTapped!(name.toString());
-              return;
-            }
+          if (_onStationTapped != null) {
+            _onStationTapped!(tappedName);
+            return;
           }
         }
       }

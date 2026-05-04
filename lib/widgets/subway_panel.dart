@@ -920,14 +920,14 @@ class StationDetailPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     // 역이 속한 노선 색상들
     final lineColors = _getStationLineColors();
-    final primaryColor = lineColors.isNotEmpty ? lineColors.first : Colors.blueAccent;
     final lat = stationInfo?.lat ?? 37.5665;
     final lng = stationInfo?.lng ?? 126.9780;
+    final isMultiLine = lineColors.length >= 2;
 
-    // 노선 그라데이션 (환승역은 여러 색 그라데이션)
-    final gradientColors = lineColors.length >= 2
+    // 노선 그라데이션 — 모든 노선 색상을 균등 배분
+    final gradientColors = isMultiLine
         ? lineColors.map((c) => c.withValues(alpha: 0.2)).toList()
-        : [primaryColor.withValues(alpha: 0.2), primaryColor.withValues(alpha: 0.05)];
+        : [lineColors.first.withValues(alpha: 0.2), lineColors.first.withValues(alpha: 0.05)];
 
     final panelHeight = MediaQuery.of(context).size.height * 0.30;
 
@@ -940,13 +940,18 @@ class StationDetailPanel extends StatelessWidget {
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surfaceContainer,
             borderRadius: BorderRadius.circular(AppSpacing.xl),
-            border: Border.all(color: primaryColor.withValues(alpha: 0.3), width: 1),
+            border: Border.all(
+              color: isMultiLine
+                  ? Colors.white24
+                  : lineColors.first.withValues(alpha: 0.3),
+              width: 1,
+            ),
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(AppSpacing.xl),
             child: Column(
               children: [
-              // ── 헤더: 노선 그라데이션 + 역명 (열차 패널 스타일) ──
+              // ── 헤더: 노선 그라데이션 + 역명 ──
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
@@ -956,56 +961,39 @@ class StationDetailPanel extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    // 노선 아이콘(들)
-                    if (lineColors.length == 1)
-                      Container(
-                        width: 36, height: 36,
-                        decoration: BoxDecoration(color: primaryColor, shape: BoxShape.circle),
+                    // 노선 뱃지 — 모두 동일 크기로 나란히
+                    Wrap(
+                      spacing: 6,
+                      children: lineColors.map((color) => Container(
+                        width: isMultiLine ? 28 : 36,
+                        height: isMultiLine ? 28 : 36,
+                        decoration: BoxDecoration(
+                          color: color,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white24, width: 1.5),
+                        ),
                         child: Center(
                           child: Text(
-                            _lineShortName(primaryColor),
-                            style: AppTypography.bodySm.copyWith(fontWeight: FontWeight.w900, color: Theme.of(context).colorScheme.onSurface),
+                            _lineShortName(color),
+                            style: (isMultiLine ? AppTypography.caption : AppTypography.bodySm)
+                                .copyWith(fontWeight: FontWeight.w900, color: Theme.of(context).colorScheme.onSurface),
                           ),
                         ),
-                      )
-                    else
-                      // 환승역: 최대 4개까지, 겹쳐서 표시
-                      SizedBox(
-                        width: 24.0 + (lineColors.take(4).length - 1) * 10.0,
-                        height: 28,
-                        child: Stack(
-                          clipBehavior: Clip.none,
-                          children: [
-                            for (int i = 0; i < lineColors.take(4).length; i++)
-                              Positioned(
-                                left: i * 10.0,
-                                child: Container(
-                                  width: 24, height: 24,
-                                  decoration: BoxDecoration(
-                                    color: lineColors[i],
-                                    shape: BoxShape.circle,
-                                    border: Border.all(color: Colors.white24, width: 1.5),
-                                  ),
-                                  child: Center(
-                                    child: Text(
-                                      _lineShortName(lineColors[i]),
-                                      style: AppTypography.caption.copyWith(fontWeight: FontWeight.w900, color: Theme.of(context).colorScheme.onSurface),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
+                      )).toList(),
+                    ),
                     const SizedBox(width: AppSpacing.md),
-                    // 역명 + 노선 칩
+                    // 역명 + 노선명 목록
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             stationName,
-                            style: AppTypography.titleMd.copyWith(color: primaryColor),
+                            style: AppTypography.titleMd.copyWith(
+                              color: isMultiLine
+                                  ? Theme.of(context).colorScheme.onSurface
+                                  : lineColors.first,
+                            ),
                           ),
                           const SizedBox(height: 2),
                           Wrap(
@@ -1029,7 +1017,7 @@ class StationDetailPanel extends StatelessWidget {
               ),
 
               // ── 혼잡도 정보 ──
-              _buildCongestionRow(primaryColor),
+              _buildCongestionRow(lineColors.first),
 
               // ── 시설 폐쇄 안내 ──
               _buildClosureSection(),
@@ -1039,7 +1027,7 @@ class StationDetailPanel extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.xs),
                 child: Row(
                   children: [
-                    Icon(Icons.departure_board, size: 14, color: primaryColor),
+                    Icon(Icons.departure_board, size: 14, color: lineColors.first),
                     const SizedBox(width: AppSpacing.sm),
                     Text('실시간 출발 정보', style: AppTypography.bodySm.copyWith(fontWeight: FontWeight.w600)),
                     const Spacer(),
