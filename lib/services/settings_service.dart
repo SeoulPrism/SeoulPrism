@@ -18,6 +18,12 @@ class SettingsService {
 
   static SettingsService get instance => _instance!;
 
+  // 범용 getter/setter
+  bool getBool(String key, {bool defaultValue = false}) => _prefs.getBool(key) ?? defaultValue;
+  Future<void> setBool(String key, bool value) => _prefs.setBool(key, value);
+  String getString(String key, {String defaultValue = ''}) => _prefs.getString(key) ?? defaultValue;
+  Future<void> setString(String key, String value) => _prefs.setString(key, value);
+
   // ── Keys ──
   static const _kShowRoutes = 'show_routes';
   static const _kShowTrains = 'show_trains';

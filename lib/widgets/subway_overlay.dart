@@ -33,7 +33,7 @@ class SubwayOverlayController {
   final TrainInterpolator _interpolator = TrainInterpolator();
   final TrainSimulator _simulator = TrainSimulator();
   final RouteGeometry _routeGeometry = RouteGeometry();
-  final EnvironmentService _envService = EnvironmentService();
+  final EnvironmentService _envService = EnvironmentService.instance;
 
   IMapController? _mapController;
   Timer? _refreshTimer;

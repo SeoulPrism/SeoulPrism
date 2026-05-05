@@ -906,6 +906,8 @@ class StationDetailPanel extends StatelessWidget {
   final List<ArrivalInfo> arrivals;
   final bool isLoading;
   final VoidCallback? onClose;
+  final void Function(String stationName)? onSetDeparture;
+  final void Function(String stationName)? onSetArrival;
 
   const StationDetailPanel({
     super.key,
@@ -914,6 +916,8 @@ class StationDetailPanel extends StatelessWidget {
     required this.arrivals,
     required this.isLoading,
     this.onClose,
+    this.onSetDeparture,
+    this.onSetArrival,
   });
 
   @override
@@ -1015,6 +1019,26 @@ class StationDetailPanel extends StatelessWidget {
                   ],
                 ),
               ),
+
+              // ── 출발/도착 버튼 ──
+              if (onSetDeparture != null || onSetArrival != null)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.sm, AppSpacing.lg, 0),
+                  child: Row(
+                    children: [
+                      if (onSetDeparture != null)
+                        Expanded(
+                          child: _navButton('출발', Icons.trip_origin, lineColors.first, () => onSetDeparture!(stationName)),
+                        ),
+                      if (onSetDeparture != null && onSetArrival != null)
+                        const SizedBox(width: 8),
+                      if (onSetArrival != null)
+                        Expanded(
+                          child: _navButton('도착', Icons.place, Colors.redAccent, () => onSetArrival!(stationName)),
+                        ),
+                    ],
+                  ),
+                ),
 
               // ── 혼잡도 정보 ──
               _buildCongestionRow(lineColors.first),
@@ -1192,6 +1216,28 @@ class StationDetailPanel extends StatelessWidget {
   }
 
   /// 혼잡도 정보 행
+  Widget _navButton(String label, IconData icon, Color color, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: color.withValues(alpha: 0.3), width: 0.8),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 14, color: color),
+            const SizedBox(width: 4),
+            Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: color)),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildCongestionRow(Color primaryColor) {
     final service = CongestionService.instance;
     if (!service.isLoaded) return const SizedBox.shrink();

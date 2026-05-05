@@ -8,6 +8,9 @@ import 'firebase_options.dart';
 import 'core/api_keys.dart';
 import 'services/device_profile_service.dart';
 import 'services/settings_service.dart';
+import 'services/favorites_service.dart';
+import 'services/recent_search_service.dart';
+import 'services/visit_history_service.dart';
 import 'theme/app_theme.dart';
 import 'views/auth_view.dart';
 import 'views/home_view.dart';
@@ -41,6 +44,11 @@ Future<void> main() async {
     url: ApiKeys.supabaseUrl,
     anonKey: ApiKeys.supabaseAnonKey,
   );
+  // 즐겨찾기 + 최근 검색 로드
+  await FavoritesService.instance.load();
+  await RecentSearchService.instance.load();
+  await VisitHistoryService.instance.load();
+
   runApp(const SeoulPrismApp());
 }
 

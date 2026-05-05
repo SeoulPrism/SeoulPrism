@@ -3,8 +3,12 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../main.dart';
 import '../services/settings_service.dart';
+import '../services/favorites_service.dart';
+import '../services/recent_search_service.dart';
+import '../services/visit_history_service.dart';
 import '../widgets/adaptive/adaptive.dart';
 import 'auth_view.dart';
 
@@ -62,21 +66,53 @@ class _SettingsViewState extends State<SettingsView> {
             // Section 1: 지도 관련
             AdaptiveSectionCard(
               children: [
-                _ChevronItem(label: '지도', onTap: () {}),
+                _SwitchItem(
+                  label: '3D 건물 표시',
+                  value: SettingsService.instance.getBool('show3DBuildings', defaultValue: true),
+                  onChanged: (v) {
+                    SettingsService.instance.setBool('show3DBuildings', v);
+                    setState(() {});
+                  },
+                ),
                 const _ItemDivider(),
-                _ChevronItem(label: '대중교통 길안내', onTap: () {}),
+                _SwitchItem(
+                  label: '실시간 지하철 표시',
+                  value: SettingsService.instance.getBool('showSubway', defaultValue: true),
+                  onChanged: (v) {
+                    SettingsService.instance.setBool('showSubway', v);
+                    setState(() {});
+                  },
+                ),
                 const _ItemDivider(),
-                _ChevronItem(label: '내비게이션', onTap: () {}),
+                _SwitchItem(
+                  label: 'POI 아이콘 표시',
+                  value: SettingsService.instance.getBool('showPOI', defaultValue: true),
+                  onChanged: (v) {
+                    SettingsService.instance.setBool('showPOI', v);
+                    setState(() {});
+                  },
+                ),
+                const _ItemDivider(),
+                _SwitchItem(
+                  label: '날씨 효과 (안개/비)',
+                  value: SettingsService.instance.getBool('weatherEffect', defaultValue: true),
+                  onChanged: (v) {
+                    SettingsService.instance.setBool('weatherEffect', v);
+                    setState(() {});
+                  },
+                ),
               ],
             ),
             const SizedBox(height: 16),
 
-            // Section 2: 서비스
+            // Section 2: 데이터 관리
             AdaptiveSectionCard(
               children: [
-                _ChevronItem(label: '네이버 예약', onTap: () {}),
+                _InfoItem(label: '즐겨찾기', value: '${FavoritesService.instance.favorites.length}개'),
                 const _ItemDivider(),
-                _ChevronItem(label: 'MY플레이스', onTap: () {}),
+                _InfoItem(label: '방문 기록', value: '${VisitHistoryService.instance.recentVisits.length}개'),
+                const _ItemDivider(),
+                _InfoItem(label: '최근 검색', value: '${RecentSearchService.instance.items.length}개'),
               ],
             ),
             const SizedBox(height: 16),
@@ -168,7 +204,7 @@ class _SettingsViewState extends State<SettingsView> {
                   onTap: () => _confirmDeleteHistory(),
                 ),
                 const _ItemDivider(),
-                _ChevronItem(label: '이동 이력 관리', onTap: () {}),
+                _ChevronItem(label: '최근 검색 기록 삭제', onTap: () => _confirmClearSearch()),
               ],
             ),
             const SizedBox(height: 16),
@@ -176,6 +212,16 @@ class _SettingsViewState extends State<SettingsView> {
             // Section 5: 계정
             AdaptiveSectionCard(
               children: [
+                _ChevronItem(
+                  label: '이름 변경',
+                  onTap: () => _editUsername(),
+                ),
+                const _ItemDivider(),
+                _ChevronItem(
+                  label: '비밀번호 변경',
+                  onTap: () => _changePassword(),
+                ),
+                const _ItemDivider(),
                 _ChevronItem(
                   label: '로그아웃',
                   onTap: () => _confirmLogout(),
@@ -229,17 +275,110 @@ class _SettingsViewState extends State<SettingsView> {
       content: '모든 사용 기록이 삭제됩니다.\n이 작업은 되돌릴 수 없습니다.',
       confirmText: '삭제',
       isDestructive: true,
-      onConfirm: () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('사용 기록이 삭제되었습니다'),
-            behavior: SnackBarBehavior.floating,
-            backgroundColor: const Color(0xFF2C2C2E),
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12)),
-          ),
-        );
+      onConfirm: () async {
+        // 즐겨찾기, 방문 기록, ���근 검색 모두 삭제
+        for (final f in List.from(FavoritesService.instance.favorites)) {
+          await FavoritesService.instance.remove(f.name);
+        }
+        await RecentSearchService.instance.clear();
+        // 방��� 기록도 초기화
+        await VisitHistoryService.instance.clear();
+        if (mounted) {
+          setState(() {});
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('모든 사용 기록이 삭제되었습니다'),
+              behavior: SnackBarBehavior.floating,
+              backgroundColor: const Color(0xFF2C2C2E),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+            ),
+          );
+        }
       },
+    );
+  }
+
+  void _confirmClearSearch() {
+    showAdaptiveConfirmDialog(
+      context: context,
+      title: '검색 기록 삭제',
+      content: '최근 검색 기록이 모두 삭제됩니다.',
+      confirmText: '삭제',
+      isDestructive: true,
+      onConfirm: () async {
+        await RecentSearchService.instance.clear();
+        if (mounted) {
+          setState(() {});
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: const Text('검색 기록이 삭제되었습니다'), behavior: SnackBarBehavior.floating,
+              backgroundColor: const Color(0xFF2C2C2E), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+          );
+        }
+      },
+    );
+  }
+
+  void _editUsername() {
+    final controller = TextEditingController(
+      text: supabase.auth.currentUser?.userMetadata?['username'] ?? '',
+    );
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('이름 변경'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: InputDecoration(hintText: '새 이름', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('취소')),
+          FilledButton(
+            onPressed: () async {
+              final name = controller.text.trim();
+              if (name.isEmpty) return;
+              await supabase.auth.updateUser(UserAttributes(data: {'username': name}));
+              if (mounted) { Navigator.pop(ctx); setState(() {}); }
+            },
+            child: const Text('저장'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _changePassword() {
+    final controller = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('비밀번호 변경'),
+        content: TextField(
+          controller: controller,
+          obscureText: true,
+          autofocus: true,
+          decoration: InputDecoration(hintText: '새 비밀번호 (6자 이상)', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('취소')),
+          FilledButton(
+            onPressed: () async {
+              final pw = controller.text.trim();
+              if (pw.length < 6) return;
+              await supabase.auth.updateUser(UserAttributes(password: pw));
+              if (mounted) {
+                Navigator.pop(ctx);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: const Text('비밀번호가 변경되었습니다'), behavior: SnackBarBehavior.floating,
+                    backgroundColor: const Color(0xFF2C2C2E), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                );
+              }
+            },
+            child: const Text('변경'),
+          ),
+        ],
+      ),
     );
   }
 

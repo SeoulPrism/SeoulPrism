@@ -62,6 +62,10 @@ class EnvironmentData {
 /// - 서울 일출/일몰 자동 계산 (SunCalc 알고리즘)
 /// - Open-Meteo API로 실시간 날씨 (무료, API 키 불필요)
 class EnvironmentService {
+  static final EnvironmentService _inst = EnvironmentService._();
+  static EnvironmentService get instance => _inst;
+  EnvironmentService._();
+
   Timer? _timer;
   EnvironmentData? _current;
   VoidCallback? onUpdated;
@@ -283,4 +287,60 @@ class EnvironmentService {
     }
     return {'condition': WeatherCondition.clear, 'description': '맑음', 'icon': Icons.wb_sunny};
   }
+
+  /// 7일 예보 데이터
+  Future<List<DailyForecast>> fetchWeeklyForecast() async {
+    try {
+      final url = Uri.parse(
+        'https://api.open-meteo.com/v1/forecast'
+        '?latitude=$_seoulLat&longitude=$_seoulLng'
+        '&daily=weather_code,temperature_2m_max,temperature_2m_min'
+        '&timezone=Asia/Seoul',
+      );
+      final response = await http.get(url).timeout(const Duration(seconds: 10));
+      if (response.statusCode != 200) return [];
+
+      final json = jsonDecode(response.body);
+      final daily = json['daily'];
+      if (daily == null) return [];
+
+      final dates = (daily['time'] as List).cast<String>();
+      final codes = (daily['weather_code'] as List).cast<int>();
+      final maxTemps = (daily['temperature_2m_max'] as List);
+      final minTemps = (daily['temperature_2m_min'] as List);
+
+      final result = <DailyForecast>[];
+      for (int i = 0; i < dates.length && i < 7; i++) {
+        final w = _parseWeatherCode(codes[i]);
+        result.add(DailyForecast(
+          date: DateTime.parse(dates[i]),
+          weatherIcon: w['icon'] as IconData,
+          description: w['description'] as String,
+          maxTemp: (maxTemps[i] as num).toDouble(),
+          minTemp: (minTemps[i] as num).toDouble(),
+        ));
+      }
+      return result;
+    } catch (e) {
+      debugPrint('[Environment] 주간예보 실패: $e');
+      return [];
+    }
+  }
+}
+
+/// 일별 예보 데이터
+class DailyForecast {
+  final DateTime date;
+  final IconData weatherIcon;
+  final String description;
+  final double maxTemp;
+  final double minTemp;
+
+  const DailyForecast({
+    required this.date,
+    required this.weatherIcon,
+    required this.description,
+    required this.maxTemp,
+    required this.minTemp,
+  });
 }

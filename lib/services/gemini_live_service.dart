@@ -180,7 +180,10 @@ class GeminiLiveService {
           _handleResponse(response);
         }
       } catch (e) {
-        debugPrint('[GeminiLive] Receive error: $e');
+        // WebSocket 정상 종료 시 무시 (idle timeout)
+        if (!e.toString().contains('1006')) {
+          debugPrint('[GeminiLive] Receive error: $e');
+        }
         break;
       }
       await Future.delayed(const Duration(milliseconds: 100));

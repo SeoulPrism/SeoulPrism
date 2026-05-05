@@ -1,15 +1,22 @@
 import 'dart:io';
 import 'dart:ui';
+import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import '../services/recent_search_service.dart';
+import 'package:cupertino_native_better/cupertino_native_better.dart';
 import 'adaptive/adaptive.dart';
 import '../data/seoul_subway_data.dart';
 import '../models/subway_models.dart';
+import '../models/bus_models.dart';
 import '../services/path_finding_service.dart';
+import '../services/place_search_service.dart';
+import '../services/seoul_bus_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
 import '../theme/app_spacing.dart';
 import 'app_badge.dart';
+import 'bus_overlay.dart';
 
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -91,34 +98,70 @@ const double _kProfileSize = 48.0;      // 프로필 버튼 크기
 const double _kBarRadius = 14.0;        // 모서리 반경
 const double _kHPadding = 14.0;         // 좌우 패딩
 
-class StationSearchBar extends StatefulWidget {
+class UnifiedSearchBar extends StatefulWidget {
   final void Function(String stationName) onStationSelected;
+  final void Function(PlaceSearchResult place)? onPlaceSelected;
+  final void Function(BusRouteInfo route)? onBusSelected;
   final void Function(PathResult route)? onRouteFound;
+  final void Function(PathResult route)? onRouteDetailRequested;
   final void Function(bool isNavMode)? onNavModeChanged;
   final void Function(bool isFocused)? onFocusChanged;
   final VoidCallback? onProfileTap;
 
-  const StationSearchBar({
+  const UnifiedSearchBar({
     super.key,
     required this.onStationSelected,
+    this.onPlaceSelected,
+    this.onBusSelected,
     this.onRouteFound,
+    this.onRouteDetailRequested,
     this.onNavModeChanged,
     this.onFocusChanged,
     this.onProfileTap,
   });
 
   @override
-  State<StationSearchBar> createState() => _StationSearchBarState();
+  UnifiedSearchBarState createState() => UnifiedSearchBarState();
 }
 
-class _StationSearchBarState extends State<StationSearchBar>
+class UnifiedSearchBarState extends State<UnifiedSearchBar>
     with TickerProviderStateMixin {
+
+  /// 외부에서 길찾기 모드 진입 + 출발지 설정
+  void enterNavWithDeparture(String name) {
+    _enterNav();
+    setState(() {
+      _depStation = name;
+      _depCtrl.text = name;
+    });
+    Future.delayed(const Duration(milliseconds: 350), () {
+      if (mounted) _arrFocus.requestFocus();
+    });
+  }
+
+  /// 외부에서 길찾기 모드 진입 + 도착지 설정
+  void enterNavWithArrival(String name) {
+    _enterNav();
+    setState(() {
+      _arrStation = name;
+      _arrCtrl.text = name;
+    });
+    Future.delayed(const Duration(milliseconds: 350), () {
+      if (mounted) _depFocus.requestFocus();
+    });
+  }
+
   // 검색
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocus = FocusNode();
   List<StationSearchResult> _searchResults = [];
+  List<PlaceSearchResult> _placeResults = [];
+  List<BusRouteInfo> _busResults = [];
   bool _isSearching = false;
   bool _isFocused = false;
+  Timer? _placeSearchDebounce;
+  final PlaceSearchService _placeService = PlaceSearchService.instance;
+  final SeoulBusService _busService = SeoulBusService.instance;
 
   // 길찾기
   bool _isNavMode = false;
@@ -132,9 +175,10 @@ class _StationSearchBarState extends State<StationSearchBar>
   bool _isNavSearching = false;
   _NavField _activeField = _NavField.departure;
 
-  // 경로
+  // 경로 — 3개 타입 동시 조회
   PathSearchType _searchType = PathSearchType.duration;
   PathResult? _pathResult;
+  Map<PathSearchType, PathResult> _allRoutes = {};
   bool _isPathLoading = false;
   final PathFindingService _pathService = PathFindingService();
 
@@ -200,32 +244,87 @@ class _StationSearchBarState extends State<StationSearchBar>
 
   // ── 일반 검색 ──
   void _onSearchChanged(String q) {
+    // 지하철역 로컬 검색 (즉시)
     final r = _search(q);
     setState(() { _searchResults = r; _isSearching = q.isNotEmpty; });
-    // 텍스트가 있으면 드롭다운 유지 (결과 0개여도 닫지 않음 — 한글 IME 조합 중간 상태 대응)
-    if (q.isNotEmpty && r.isNotEmpty) {
-      _dropCtrl.forward(from: _dropCtrl.value > 0 ? _dropCtrl.value : 0);
-    } else if (q.isEmpty) {
+
+    if (q.isEmpty) {
       _dropCtrl.reverse();
+      setState(() => _placeResults = []);
+      return;
+    }
+
+    // 결과 있으면 드롭다운 열기
+    if (r.isNotEmpty) {
+      _dropCtrl.forward(from: _dropCtrl.value > 0 ? _dropCtrl.value : 0);
+    }
+
+    // 장소 + 버스 검색 (타이핑마다 즉시 호출)
+    _placeSearchDebounce?.cancel();
+    if (q.trim().length >= 2) {
+      _searchPlacesAndBus(q);
+    } else {
+      setState(() { _placeResults = []; _busResults = []; });
+    }
+  }
+
+  Future<void> _searchPlacesAndBus(String q) async {
+    final futures = await Future.wait([
+      _placeService.search(q),
+      _busService.searchRoutes(q.trim()),
+    ]);
+    if (mounted && _searchController.text == q) {
+      setState(() {
+        _placeResults = futures[0] as List<PlaceSearchResult>;
+        _busResults = futures[1] as List<BusRouteInfo>;
+      });
+      if (_placeResults.isNotEmpty || _busResults.isNotEmpty) {
+        _dropCtrl.forward(from: _dropCtrl.value > 0 ? _dropCtrl.value : 0);
+      }
     }
   }
 
   void _selectSearch(StationSearchResult r) {
+    RecentSearchService.instance.add(r.station.name);
     _searchController.clear(); _searchFocus.unfocus(); _dropCtrl.reverse();
-    setState(() { _isSearching = false; _searchResults = []; });
+    setState(() { _isSearching = false; _searchResults = []; _placeResults = []; _busResults = []; });
     widget.onStationSelected(r.station.name);
+  }
+
+  void _selectPlace(PlaceSearchResult place) {
+    RecentSearchService.instance.add(place.name);
+    _searchController.clear(); _searchFocus.unfocus(); _dropCtrl.reverse();
+    setState(() { _isSearching = false; _searchResults = []; _placeResults = []; _busResults = []; });
+    widget.onPlaceSelected?.call(place);
+  }
+
+  void _selectBus(BusRouteInfo route) {
+    RecentSearchService.instance.add(route.busRouteNm);
+    _searchController.clear(); _searchFocus.unfocus(); _dropCtrl.reverse();
+    setState(() { _isSearching = false; _searchResults = []; _placeResults = []; _busResults = []; });
+    widget.onBusSelected?.call(route);
   }
 
   void _cancelSearch() {
     _searchController.clear(); _searchFocus.unfocus(); _dropCtrl.reverse();
-    setState(() { _isSearching = false; _searchResults = []; });
+    setState(() { _isSearching = false; _searchResults = []; _placeResults = []; _busResults = []; });
   }
 
   // ── 길찾기 ──
   void _enterNav() {
-    setState(() { _isNavMode = true; _cancelSearch(); });
+    setState(() {
+      _isNavMode = true;
+      _cancelSearch();
+      // 출발지를 내 위치로 기본 설정
+      _depStation = '내 위치';
+      _depCtrl.text = '내 위치';
+    });
     _navCtrl.forward();
     widget.onNavModeChanged?.call(true);
+    // 도착지 포커스
+    Future.delayed(const Duration(milliseconds: 350), () {
+      if (mounted) _arrFocus.requestFocus();
+    });
   }
 
   void _exitNav() {
@@ -240,9 +339,20 @@ class _StationSearchBarState extends State<StationSearchBar>
     });
   }
 
+  List<PlaceSearchResult> _navPlaceResults = [];
+
   void _onNavSearch(String q) {
     final r = _search(q);
-    setState(() { _navResults = r; _isNavSearching = q.isNotEmpty; });
+    setState(() { _navResults = r; _isNavSearching = q.isNotEmpty; _navPlaceResults = []; });
+
+    // 장소도 검색
+    if (q.trim().length >= 2) {
+      _placeService.search(q).then((places) {
+        if (mounted && ((_activeField == _NavField.departure ? _depCtrl.text : _arrCtrl.text) == q)) {
+          setState(() => _navPlaceResults = places);
+        }
+      });
+    }
   }
 
   void _selectNav(StationSearchResult r) {
@@ -268,16 +378,50 @@ class _StationSearchBarState extends State<StationSearchBar>
 
   Future<void> _findPath() async {
     if (_depStation == null || _arrStation == null) return;
-    setState(() { _isPathLoading = true; _pathResult = null; });
-    final r = await _pathService.findPath(departure: _depStation!, arrival: _arrStation!, searchType: _searchType);
-    if (mounted) {
-      setState(() { _pathResult = r; _isPathLoading = false; });
-      if (r != null) widget.onRouteFound?.call(r);
+    setState(() { _isPathLoading = true; _pathResult = null; _allRoutes = {}; });
+
+    // 3개 타입 동시 조회
+    final results = await Future.wait([
+      _pathService.findPath(departure: _depStation!, arrival: _arrStation!, searchType: PathSearchType.duration),
+      _pathService.findPath(departure: _depStation!, arrival: _arrStation!, searchType: PathSearchType.distance),
+      _pathService.findPath(departure: _depStation!, arrival: _arrStation!, searchType: PathSearchType.transfer),
+    ]);
+
+    if (!mounted) return;
+
+    final routes = <PathSearchType, PathResult>{};
+    if (results[0] != null) routes[PathSearchType.duration] = results[0]!;
+    if (results[1] != null) routes[PathSearchType.distance] = results[1]!;
+    if (results[2] != null) routes[PathSearchType.transfer] = results[2]!;
+
+    // 중복 제거 (시간이 같으면 하나만)
+    final seen = <int>{};
+    final deduped = <PathSearchType, PathResult>{};
+    for (final entry in routes.entries) {
+      if (seen.add(entry.value.totalTimeSec)) {
+        deduped[entry.key] = entry.value;
+      }
     }
+
+    final selected = deduped[_searchType] ?? deduped.values.firstOrNull;
+    setState(() {
+      _allRoutes = deduped;
+      _pathResult = selected;
+      _isPathLoading = false;
+    });
+    if (selected != null) widget.onRouteFound?.call(selected);
+  }
+
+  void _selectRoute(PathSearchType type) {
+    final route = _allRoutes[type];
+    if (route == null) return;
+    setState(() { _searchType = type; _pathResult = route; });
+    widget.onRouteFound?.call(route);
   }
 
   @override
   void dispose() {
+    _placeSearchDebounce?.cancel();
     _searchController.dispose(); _searchFocus.dispose();
     _depCtrl.dispose(); _arrCtrl.dispose(); _depFocus.dispose(); _arrFocus.dispose();
     _expandCtrl.dispose(); _navCtrl.dispose(); _dropCtrl.dispose();
@@ -317,7 +461,7 @@ class _StationSearchBarState extends State<StationSearchBar>
               ],
             ),
           ),
-          if (_isSearching && _searchResults.isNotEmpty)
+          if (_isSearching && (_searchResults.isNotEmpty || _placeResults.isNotEmpty || _busResults.isNotEmpty))
             Positioned(
               top: top + AppSpacing.sm + _kBarHeight + AppSpacing.sm,
               left: _kHPadding,
@@ -328,8 +472,15 @@ class _StationSearchBarState extends State<StationSearchBar>
                   offset: Offset(0, -6 * (1 - _dropAnim.value)),
                   child: Opacity(opacity: _dropAnim.value, child: child),
                 ),
-                child: _buildDropdown(_searchResults, _selectSearch),
+                child: _buildCombinedDropdown(),
               ),
+            )
+          else if (_isFocused && !_isSearching && RecentSearchService.instance.items.isNotEmpty)
+            Positioned(
+              top: top + AppSpacing.sm + _kBarHeight + AppSpacing.sm,
+              left: _kHPadding,
+              right: _kHPadding,
+              child: _buildRecentSearchDropdown(),
             ),
         ],
 
@@ -340,14 +491,15 @@ class _StationSearchBarState extends State<StationSearchBar>
             left: 0, right: 0,
             child: Column(
               children: [
-                _buildNavHeader(),
-                if (_isNavSearching && _navResults.isNotEmpty)
+                // 경로 결과 있으면 컴팩트 헤더, 없으면 편집 헤더
+                _pathResult != null && !_depFocus.hasFocus && !_arrFocus.hasFocus
+                    ? _buildCompactNavHeader()
+                    : _buildNavHeader(),
+                if (_isNavSearching && (_navResults.isNotEmpty || _navPlaceResults.isNotEmpty))
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: _kHPadding),
-                    child: _buildDropdown(_navResults, _selectNav),
+                    child: _buildNavCombinedDropdown(),
                   ),
-                if (!_isNavSearching && _depStation != null && _arrStation != null)
-                  _buildRouteResult(),
               ],
             ),
           ),
@@ -404,6 +556,111 @@ class _StationSearchBarState extends State<StationSearchBar>
   // 길찾기 모드
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+  /// 경로 결과 있을 때 — [←] [최적|25분] [최단|30분] ... 가로 슬라이드
+  Widget _buildCompactNavHeader() {
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+    final primary = Theme.of(context).colorScheme.primary;
+
+    // 경로 옵션 칩 데이터
+    final chipData = <({PathSearchType type, String label, String time})>[];
+    for (final entry in _allRoutes.entries) {
+      final label = switch (entry.key) {
+        PathSearchType.duration => '최적',
+        PathSearchType.distance => '최단',
+        PathSearchType.transfer => '최소환승',
+      };
+      chipData.add((type: entry.key, label: label, time: entry.value.totalTimeFormatted));
+    }
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(_kHPadding, 8, 0, 0),
+      child: SizedBox(
+        height: 44,
+        child: Row(
+          children: [
+            // 뒤로가기 — 글라스 버튼 (눌림 효과)
+            AdaptiveGlassIconButton(
+              icon: CupertinoIcons.back,
+              iconSize: 18,
+              size: 40,
+              onPressed: () {
+                setState(() { _pathResult = null; _allRoutes = {}; });
+                _depFocus.requestFocus();
+              },
+            ),
+            const SizedBox(width: 8),
+            // 경로 옵션 칩 — 가로 스크롤
+            Expanded(
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.only(right: _kHPadding),
+                itemCount: chipData.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 8),
+                itemBuilder: (_, i) {
+                  final chip = chipData[i];
+                  final selected = chip.type == _searchType;
+                  return _buildRouteChip(
+                    label: chip.label,
+                    time: chip.time,
+                    selected: selected,
+                    onTap: () => _selectRoute(chip.type),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRouteChip({
+    required String label,
+    required String time,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : Colors.black;
+
+    if (Platform.isIOS) {
+      return CNButton(
+        label: '$label  |  $time',
+        onPressed: onTap,
+        tint: textColor,
+        config: CNButtonConfig(
+          style: selected ? CNButtonStyle.prominentGlass : CNButtonStyle.glass,
+          minHeight: 40,
+        ),
+      );
+    }
+
+    // Android
+    return SizedBox(
+      height: 40,
+      child: selected
+          ? FilledButton.tonal(
+              onPressed: onTap,
+              style: FilledButton.styleFrom(
+                foregroundColor: textColor,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                textStyle: AppTypography.bodySm.copyWith(fontWeight: FontWeight.bold),
+              ),
+              child: Text('$label  |  $time'),
+            )
+          : OutlinedButton(
+              onPressed: onTap,
+              style: OutlinedButton.styleFrom(
+                foregroundColor: textColor,
+                side: BorderSide(color: textColor.withValues(alpha: 0.2)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                textStyle: AppTypography.bodySm,
+              ),
+              child: Text('$label  |  $time'),
+            ),
+    );
+  }
+
   Widget _buildNavHeader() {
     return Container(
       margin: const EdgeInsets.fromLTRB(_kHPadding, 8, _kHPadding, 0),
@@ -434,16 +691,16 @@ class _StationSearchBarState extends State<StationSearchBar>
                   Expanded(
                     child: Column(
                       children: [
-                        _buildNavField(_depCtrl, _depFocus, '출발역'),
+                        _buildNavField(_depCtrl, _depFocus, '출발지'),
                         const SizedBox(height: AppSpacing.sm),
-                        _buildNavField(_arrCtrl, _arrFocus, '도착역'),
+                        _buildNavField(_arrCtrl, _arrFocus, '도착지'),
                       ],
                     ),
                   ),
                   const SizedBox(width: AppSpacing.sm),
                   Column(
                     children: [
-                      _circleButton(CupertinoIcons.arrow_up_arrow_down, _swapStations, '출발역·도착역 교환'),
+                      _circleButton(CupertinoIcons.arrow_up_arrow_down, _swapStations, '출발지·도착지 교환'),
                       const SizedBox(height: AppSpacing.sm),
                       _circleButton(CupertinoIcons.xmark, _exitNav, '길찾기 닫기'),
                     ],
@@ -580,7 +837,9 @@ class _StationSearchBarState extends State<StationSearchBar>
         offset: Offset(0, 10 * (1 - v)),
         child: Opacity(opacity: v, child: child),
       ),
-      child: Padding(
+      child: GestureDetector(
+        onTap: () => widget.onRouteDetailRequested?.call(r),
+        child: Padding(
         padding: const EdgeInsets.fromLTRB(_kHPadding, 6, _kHPadding, 0),
         child: _overlayCard(
           constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.42),
@@ -620,6 +879,7 @@ class _StationSearchBarState extends State<StationSearchBar>
             ],
           ),
         ),
+      ),
       ),
     );
   }
@@ -811,6 +1071,369 @@ class _StationSearchBarState extends State<StationSearchBar>
     if (n.endsWith('호선')) return n.replaceAll('호선', '');
     return n.length > 2 ? n.substring(0, 2) : n;
   }
+
+  void _selectNavPlace(PlaceSearchResult place) {
+    setState(() {
+      if (_activeField == _NavField.departure) {
+        _depStation = place.name; _depCtrl.text = place.name; _depFocus.unfocus();
+        if (_arrStation == null) Future.delayed(const Duration(milliseconds: 100), () { if (mounted) _arrFocus.requestFocus(); });
+      } else {
+        _arrStation = place.name; _arrCtrl.text = place.name; _arrFocus.unfocus();
+      }
+      _navResults = []; _isNavSearching = false; _navPlaceResults = [];
+    });
+    if (_depStation != null && _arrStation != null) _findPath();
+  }
+
+  Widget _buildNavCombinedDropdown() {
+    final isM3 = Platform.isAndroid;
+    final totalCount = _navResults.length + _navPlaceResults.length;
+
+    Widget buildList() {
+      return ListView.separated(
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+        shrinkWrap: true,
+        itemCount: totalCount,
+        separatorBuilder: (_, i) {
+          if (i == _navResults.length - 1 && _navPlaceResults.isNotEmpty) {
+            return Divider(height: 16, thickness: 0.5, indent: 16, endIndent: 16,
+              color: isM3 ? Theme.of(context).colorScheme.outlineVariant : AppColors.divider);
+          }
+          return Divider(height: 1, indent: 48,
+            color: isM3 ? Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5) : AppColors.divider);
+        },
+        itemBuilder: (_, i) {
+          if (i < _navResults.length) {
+            return _buildTile(_navResults[i], _selectNav);
+          }
+          final place = _navPlaceResults[i - _navResults.length];
+          return _buildPlaceTileWith(place, () => _selectNavPlace(place));
+        },
+      );
+    }
+
+    if (isM3) {
+      final cs = Theme.of(context).colorScheme;
+      return Material(
+        elevation: 3,
+        shadowColor: cs.shadow.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(_kBarRadius),
+        color: cs.surfaceContainer,
+        surfaceTintColor: cs.surfaceTint,
+        clipBehavior: Clip.antiAlias,
+        child: ConstrainedBox(constraints: const BoxConstraints(maxHeight: 280), child: buildList()),
+      );
+    }
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(_kBarRadius),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+        child: Container(
+          constraints: const BoxConstraints(maxHeight: 280),
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: AppColors.glassDropOpacity),
+            borderRadius: BorderRadius.circular(_kBarRadius),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.15), width: 0.5),
+          ),
+          child: buildList(),
+        ),
+      ),
+    );
+  }
+
+  // ── 최근 검색 드롭다운 ──
+  Widget _buildRecentSearchDropdown() {
+    final isM3 = Platform.isAndroid;
+    final recent = RecentSearchService.instance.items;
+
+    Widget buildList() {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 10, 8, 6),
+            child: Row(
+              children: [
+                Text('최근 검색', style: AppTypography.bodySm.copyWith(fontWeight: FontWeight.w600)),
+                const Spacer(),
+                GestureDetector(
+                  onTap: () async {
+                    await RecentSearchService.instance.clear();
+                    setState(() {});
+                  },
+                  child: Text('전체 삭제', style: AppTypography.caption.copyWith(color: AppColors.textDisabled)),
+                ),
+                const SizedBox(width: 8),
+              ],
+            ),
+          ),
+          ...recent.take(8).map((q) => GestureDetector(
+            onTap: () {
+              _searchController.text = q;
+              _onSearchChanged(q);
+            },
+            behavior: HitTestBehavior.opaque,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              child: Row(
+                children: [
+                  Icon(Icons.history, size: 16, color: AppColors.textDisabled),
+                  const SizedBox(width: 10),
+                  Expanded(child: Text(q, style: AppTypography.bodyMd)),
+                  GestureDetector(
+                    onTap: () async {
+                      await RecentSearchService.instance.remove(q);
+                      setState(() {});
+                    },
+                    child: Icon(Icons.close, size: 14, color: AppColors.textDisabled),
+                  ),
+                ],
+              ),
+            ),
+          )),
+          const SizedBox(height: 6),
+        ],
+      );
+    }
+
+    if (isM3) {
+      final cs = Theme.of(context).colorScheme;
+      return Material(
+        elevation: 3,
+        shadowColor: cs.shadow.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(_kBarRadius),
+        color: cs.surfaceContainer,
+        surfaceTintColor: cs.surfaceTint,
+        clipBehavior: Clip.antiAlias,
+        child: buildList(),
+      );
+    }
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(_kBarRadius),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: AppColors.glassDropOpacity),
+            borderRadius: BorderRadius.circular(_kBarRadius),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.15), width: 0.5),
+          ),
+          child: buildList(),
+        ),
+      ),
+    );
+  }
+
+  // ── 통합 검색 드롭다운 (지하철 + 버스 + 장소) ──
+  Widget _buildCombinedDropdown() {
+    final isM3 = Platform.isAndroid;
+    final busCount = _busResults.take(5).length; // 버스는 최대 5개
+    final totalCount = _searchResults.length + busCount + _placeResults.length;
+
+    Widget buildList() {
+      return ListView.separated(
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+        shrinkWrap: true,
+        itemCount: totalCount,
+        separatorBuilder: (_, i) {
+          // 섹션 경계에 두꺼운 구분선
+          final stationEnd = _searchResults.length - 1;
+          final busEnd = _searchResults.length + busCount - 1;
+          if ((i == stationEnd && (busCount > 0 || _placeResults.isNotEmpty)) ||
+              (i == busEnd && _placeResults.isNotEmpty)) {
+            return Divider(
+              height: 16,
+              thickness: 0.5,
+              indent: 16,
+              endIndent: 16,
+              color: isM3
+                  ? Theme.of(context).colorScheme.outlineVariant
+                  : AppColors.divider,
+            );
+          }
+          return Divider(
+            height: 1,
+            indent: 48,
+            color: isM3
+                ? Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5)
+                : AppColors.divider,
+          );
+        },
+        itemBuilder: (_, i) {
+          if (i < _searchResults.length) {
+            return _buildTile(_searchResults[i], _selectSearch);
+          }
+          final busIdx = i - _searchResults.length;
+          if (busIdx < busCount) {
+            return _buildBusTile(_busResults[busIdx]);
+          }
+          return _buildPlaceTile(_placeResults[i - _searchResults.length - busCount]);
+        },
+      );
+    }
+
+    if (isM3) {
+      final cs = Theme.of(context).colorScheme;
+      return Material(
+        elevation: 3,
+        shadowColor: cs.shadow.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(_kBarRadius),
+        color: cs.surfaceContainer,
+        surfaceTintColor: cs.surfaceTint,
+        clipBehavior: Clip.antiAlias,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxHeight: 350),
+          child: buildList(),
+        ),
+      );
+    }
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(_kBarRadius),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+        child: Container(
+          constraints: const BoxConstraints(maxHeight: 350),
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: AppColors.glassDropOpacity),
+            borderRadius: BorderRadius.circular(_kBarRadius),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.15), width: 0.5),
+          ),
+          child: buildList(),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBusTile(BusRouteInfo route) {
+    final color = BusColors.fromRouteType(route.routeType);
+    final typeName = _busTypeName(route.routeType);
+
+    return GestureDetector(
+      onTap: () => _selectBus(route),
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
+        child: Row(children: [
+          Container(
+            width: 28, height: 28,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Center(child: Icon(Icons.directions_bus, size: 15, color: color)),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(route.busRouteNm, style: AppTypography.bodyMd.copyWith(fontWeight: FontWeight.w600)),
+              if (route.stStationNm.isNotEmpty || route.edStationNm.isNotEmpty)
+                Text(
+                  '${route.stStationNm} → ${route.edStationNm}',
+                  style: AppTypography.caption.copyWith(color: AppColors.textDisabled),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+            ]),
+          ),
+          Text(typeName, style: AppTypography.caption.copyWith(color: color)),
+        ]),
+      ),
+    );
+  }
+
+  String _busTypeName(int type) {
+    switch (type) {
+      case 3: return '간선';
+      case 4: return '지선';
+      case 5: return '순환';
+      case 6: return '광역';
+      case 7: return '인천';
+      case 8: return '경기';
+      default: return '버스';
+    }
+  }
+
+  Widget _buildPlaceTile(PlaceSearchResult place) {
+    return _buildPlaceTileWith(place, () => _selectPlace(place));
+  }
+
+  Widget _buildPlaceTileWith(PlaceSearchResult place, VoidCallback onTap) {
+    final icon = _placeIcon(place.category);
+    final color = _placeColor(place.category);
+
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
+        child: Row(children: [
+          Container(
+            width: 28, height: 28,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.2),
+              shape: BoxShape.circle,
+            ),
+            child: Center(child: Icon(icon, size: 15, color: color)),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(place.name, style: AppTypography.bodyMd.copyWith(fontWeight: FontWeight.w600)),
+              if (place.address.isNotEmpty)
+                Text(
+                  place.address,
+                  style: AppTypography.caption.copyWith(color: AppColors.textDisabled),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+            ]),
+          ),
+          Text(place.category, style: AppTypography.caption.copyWith(color: color)),
+        ]),
+      ),
+    );
+  }
+
+  IconData _placeIcon(String category) {
+    switch (category) {
+      case '음식점': return Icons.restaurant;
+      case '카페': return Icons.local_cafe;
+      case '공원': return Icons.park;
+      case '쇼핑': return Icons.shopping_bag;
+      case '의료': return Icons.local_hospital;
+      case '교육': return Icons.school;
+      case '숙박': return Icons.hotel;
+      case '금융': return Icons.account_balance;
+      case '교통': return Icons.directions_transit;
+      case '주소': return Icons.pin_drop;
+      case '도시': return Icons.location_city;
+      case '동네': return Icons.holiday_village;
+      case '도로': return Icons.edit_road;
+      default: return Icons.place;
+    }
+  }
+
+  Color _placeColor(String category) {
+    switch (category) {
+      case '음식점': return Colors.orange;
+      case '카페': return const Color(0xFF795548);
+      case '공원': return Colors.green;
+      case '쇼핑': return Colors.pink;
+      case '의료': return Colors.red;
+      case '교육': return Colors.indigo;
+      case '숙박': return Colors.purple;
+      case '금융': return Colors.teal;
+      case '교통': return Colors.blue;
+      case '주소': return Colors.blueGrey;
+      case '도시': return Colors.deepPurple;
+      case '동네': return Colors.amber;
+      case '도로': return Colors.grey;
+      default: return Colors.blueAccent;
+    }
+  }
 }
 
 enum _NavField { departure, arrival }
@@ -873,7 +1496,7 @@ class _GlassSearchFieldState extends State<_GlassSearchField>
   Widget build(BuildContext context) {
     // 리퀴드 글라스 위 텍스트: 밝은/어두운 배경 모두에서 보이는 중간 회색
     const textColor = Color(0xFFB0B0B0);
-    const placeholderColor = Color(0xFF8E8E93);    // iOS systemGrey
+    const placeholderColor = Color(0xFF8E8E93);
 
     final glassBar = SizedBox(
       height: _kBarHeight,
@@ -882,14 +1505,14 @@ class _GlassSearchFieldState extends State<_GlassSearchField>
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
           child: Row(
             children: [
-              const Icon(CupertinoIcons.search, size: 20, color: placeholderColor),
+              Icon(CupertinoIcons.search, size: 20, color: placeholderColor),
               const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: AdaptiveSearchField(
                   controller: widget.controller,
                   focusNode: widget.focusNode,
-                  placeholder: '지하철역 검색',
-                  placeholderStyle: const TextStyle(color: placeholderColor, fontSize: 14, fontWeight: FontWeight.w400),
+                  placeholder: '장소, 버스, 지하철 검색',
+                  placeholderStyle: TextStyle(color: placeholderColor, fontSize: 14, fontWeight: FontWeight.w400),
                   style: AppTypography.bodyMd.copyWith(color: textColor),
                   onChanged: widget.onChanged,
                   onSubmitted: widget.onSubmitted,
@@ -904,8 +1527,8 @@ class _GlassSearchFieldState extends State<_GlassSearchField>
                     button: true,
                     child: GestureDetector(
                       onTap: widget.onClear,
-                      child: const Padding(
-                        padding: EdgeInsets.only(left: AppSpacing.sm),
+                      child: Padding(
+                        padding: const EdgeInsets.only(left: AppSpacing.sm),
                         child: Icon(CupertinoIcons.xmark_circle_fill, size: 20, color: placeholderColor),
                       ),
                     ),
