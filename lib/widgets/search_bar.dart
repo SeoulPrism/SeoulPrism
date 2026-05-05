@@ -1285,6 +1285,15 @@ class UnifiedSearchBarState extends State<UnifiedSearchBar>
 
   Widget _buildTile(StationSearchResult r, void Function(StationSearchResult) onSelect) {
     final hasTrf = r.station.transferLines.isNotEmpty;
+    // 환승역: 모든 노선 색상 수집
+    final allColors = <Color>[r.lineColor];
+    if (hasTrf) {
+      for (final lineId in r.station.transferLines) {
+        final c = SubwayColors.lineColors[lineId];
+        if (c != null && !allColors.contains(c)) allColors.add(c);
+      }
+    }
+
     return GestureDetector(
       onTap: () => onSelect(r),
       behavior: HitTestBehavior.opaque,
@@ -1293,17 +1302,31 @@ class UnifiedSearchBarState extends State<UnifiedSearchBar>
         child: Row(children: [
           Container(
             width: 28, height: 28,
-            decoration: BoxDecoration(color: r.lineColor, shape: BoxShape.circle),
-            child: Center(child: Text(_shortLine(r.lineName), style: AppTypography.bodySm.copyWith(fontWeight: FontWeight.bold, color: AppColors.textPrimary))),
+            decoration: BoxDecoration(
+              gradient: allColors.length > 1
+                  ? LinearGradient(colors: allColors, begin: Alignment.topLeft, end: Alignment.bottomRight)
+                  : null,
+              color: allColors.length == 1 ? r.lineColor : null,
+              shape: BoxShape.circle,
+            ),
+            child: Center(child: Text(
+              hasTrf ? '역' : _shortLine(r.lineName),
+              style: AppTypography.bodySm.copyWith(fontWeight: FontWeight.bold, color: Colors.white),
+            )),
           ),
           const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(r.station.name, style: AppTypography.bodyMd.copyWith(fontWeight: FontWeight.w600)),
-              if (hasTrf) Text('환승: ${r.station.transferLines.map((id) => SubwayColors.lineNames[id] ?? id).join(', ')}', style: AppTypography.caption.copyWith(color: AppColors.textDisabled)),
+              if (hasTrf)
+                Text(
+                  [r.lineName, ...r.station.transferLines.map((id) => SubwayColors.lineNames[id] ?? id)].join(' · '),
+                  style: AppTypography.caption.copyWith(color: AppColors.textDisabled),
+                ),
             ]),
           ),
-          Text(r.lineName, style: AppTypography.bodySm.copyWith(color: r.lineColor)),
+          if (!hasTrf)
+            Text(r.lineName, style: AppTypography.bodySm.copyWith(color: r.lineColor)),
         ]),
       ),
     );
