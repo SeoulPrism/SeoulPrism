@@ -329,10 +329,11 @@ class UnifiedSearchBarState extends State<UnifiedSearchBar>
             .replaceAll(RegExp(r'\s*역\s*$'), '')
             .replaceAll(' ', '')
             .trim();
-        // 로컬 매핑에 이름이 정확히 일치하면 제거
+        // 로컬 매핑에 이름이 일치하면 제거
         final isExactMatch = _allStations.any((s) {
           final localName = s.station.name.replaceAll(' ', '');
-          return localName == cleanName;
+          final localClean = localName.replaceAll(RegExp(r'역$'), '');
+          return localName == cleanName || localClean == cleanName || localName == '${cleanName}역';
         });
         if (isSubwayCategory && isExactMatch) return false;
         // "XX역" 형태이고 정확히 매칭되면 제거 (카테고리 무관)
