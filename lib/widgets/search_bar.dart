@@ -329,16 +329,14 @@ class UnifiedSearchBarState extends State<UnifiedSearchBar>
             .replaceAll(RegExp(r'\s*역\s*$'), '')
             .replaceAll(' ', '')
             .trim();
-        // 로컬 매핑에 이름이 있으면 제거
-        final isLocalStation = _allStations.any((s) {
+        // 로컬 매핑에 이름이 정확히 일치하면 제거
+        final isExactMatch = _allStations.any((s) {
           final localName = s.station.name.replaceAll(' ', '');
-          return localName == cleanName ||
-              localName.contains(cleanName) ||
-              cleanName.contains(localName);
+          return localName == cleanName;
         });
-        if (isSubwayCategory && isLocalStation) return false;
-        // 이름이 "XX역"이고 로컬에 있으면 제거 (카테고리 무관)
-        if (p.name.contains('역') && isLocalStation) return false;
+        if (isSubwayCategory && isExactMatch) return false;
+        // "XX역" 형태이고 정확히 매칭되면 제거 (카테고리 무관)
+        if (RegExp(r'^.+역$').hasMatch(p.name.trim()) && isExactMatch) return false;
         // 한강버스 선착장 중복 제거
         if (p.name.contains('선착장') || p.name.contains('한강버스')) {
           return !RiverBusData.stops.any((s) => p.name.contains(s.name));
