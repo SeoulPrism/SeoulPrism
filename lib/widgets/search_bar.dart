@@ -1309,10 +1309,7 @@ class UnifiedSearchBarState extends State<UnifiedSearchBar>
               color: allColors.length == 1 ? r.lineColor : null,
               shape: BoxShape.circle,
             ),
-            child: Center(child: hasTrf
-                ? const Icon(Icons.subway, size: 15, color: Colors.white)
-                : Text(_shortLine(r.lineName), style: AppTypography.bodySm.copyWith(fontWeight: FontWeight.bold, color: Colors.white)),
-            ),
+            child: const Center(child: Icon(Icons.subway, size: 15, color: Colors.white)),
           ),
           const SizedBox(width: AppSpacing.md),
           Expanded(
