@@ -1309,10 +1309,10 @@ class UnifiedSearchBarState extends State<UnifiedSearchBar>
               color: allColors.length == 1 ? r.lineColor : null,
               shape: BoxShape.circle,
             ),
-            child: Center(child: Text(
-              hasTrf ? '역' : _shortLine(r.lineName),
-              style: AppTypography.bodySm.copyWith(fontWeight: FontWeight.bold, color: Colors.white),
-            )),
+            child: Center(child: hasTrf
+                ? const Icon(Icons.subway, size: 15, color: Colors.white)
+                : Text(_shortLine(r.lineName), style: AppTypography.bodySm.copyWith(fontWeight: FontWeight.bold, color: Colors.white)),
+            ),
           ),
           const SizedBox(width: AppSpacing.md),
           Expanded(
@@ -1325,7 +1325,12 @@ class UnifiedSearchBarState extends State<UnifiedSearchBar>
                 ),
             ]),
           ),
-          if (!hasTrf)
+          if (hasTrf)
+            ShaderMask(
+              shaderCallback: (bounds) => LinearGradient(colors: allColors).createShader(bounds),
+              child: const Text('역', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Colors.white)),
+            )
+          else
             Text(r.lineName, style: AppTypography.bodySm.copyWith(color: r.lineColor)),
         ]),
       ),
