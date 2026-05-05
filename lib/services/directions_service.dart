@@ -83,8 +83,15 @@ class DirectionsService {
         }),
       ).timeout(const Duration(seconds: 10));
 
-      if (response.statusCode != 200) return [];
+      if (response.statusCode != 200) {
+        debugPrint('[Directions] TMAP 대중교통 HTTP ${response.statusCode}: ${response.body.substring(0, 200.clamp(0, response.body.length))}');
+        return [];
+      }
       final data = jsonDecode(response.body);
+      if (data['error'] != null) {
+        debugPrint('[Directions] TMAP 에러: ${data['error']}');
+        return [];
+      }
       final itineraries = data['metaData']?['plan']?['itineraries'] as List? ?? [];
 
       return itineraries.map<DirectionsResult>((it) {
