@@ -323,10 +323,15 @@ class UnifiedSearchBarState extends State<UnifiedSearchBar>
             p.category.contains('전철') ||
             p.category.contains('교통') ||
             p.category == '지하철역';
-        // 이름에서 역 이름 추출 ("서울역" → "서울", "강남역 2호선" → "강남")
+        // 이름에서 역 이름 추출
+        // "서울역" → "서울", "강남역 2호선" → "강남"
+        // "서울역 GTX-A" → "서울", "서울역 공항철도" → "서울"
+        // "서울역 경의중앙선" → "서울", "신분당선 강남역" → "강남"
         final cleanName = p.name
+            .replaceAll(RegExp(r'(GTX-?\w+|공항철도|경의중앙선|신분당선|경춘선|경강선|수인분당선|서해선|인천[12]호선|의정부경전철|용인경전철|김포골드라인|신림선|우이신설선|동해선|수도권\d+호선)\s*', caseSensitive: false), '')
             .replaceAll(RegExp(r'\s*\d+호선.*'), '')
             .replaceAll(RegExp(r'\s*역\s*$'), '')
+            .replaceAll(RegExp(r'역\s*$'), '')
             .replaceAll(' ', '')
             .trim();
         // 로컬 매핑에 이름이 일치하면 제거
