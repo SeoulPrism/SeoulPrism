@@ -1325,7 +1325,7 @@ class UnifiedSearchBarState extends State<UnifiedSearchBar>
           if (hasTrf)
             ShaderMask(
               shaderCallback: (bounds) => LinearGradient(colors: allColors).createShader(bounds),
-              child: const Text('역', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Colors.white)),
+              child: const Text('지하철', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Colors.white)),
             )
           else
             Text(r.lineName, style: AppTypography.bodySm.copyWith(color: r.lineColor)),

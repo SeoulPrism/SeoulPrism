@@ -1646,16 +1646,22 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
 
   @override
   void showRiverBusHighlight(double lat, double lng) {
-    final json = '{"type":"FeatureCollection","features":['
-        '{"type":"Feature","geometry":{"type":"Point","coordinates":[$lng,$lat]},"properties":{}}'
-        ']}';
-    _ensureRiverBusHighlight().then((_) {
-      _updateSourceData(_riverBusHighlightSourceId, json);
-    });
+    if (!_riverBusHighlightInit) {
+      _ensureRiverBusHighlight().then((_) {
+        if (_riverBusHighlightInit) {
+          _updateSourceData(_riverBusHighlightSourceId,
+            '{"type":"FeatureCollection","features":[{"type":"Feature","geometry":{"type":"Point","coordinates":[$lng,$lat]},"properties":{}}]}');
+        }
+      });
+      return;
+    }
+    _updateSourceData(_riverBusHighlightSourceId,
+      '{"type":"FeatureCollection","features":[{"type":"Feature","geometry":{"type":"Point","coordinates":[$lng,$lat]},"properties":{}}]}');
   }
 
   @override
   void hideRiverBusHighlight() {
+    if (!_riverBusHighlightInit) return;
     _updateSourceData(_riverBusHighlightSourceId, '{"type":"FeatureCollection","features":[]}');
   }
 
