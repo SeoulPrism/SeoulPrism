@@ -318,11 +318,27 @@ class UnifiedSearchBarState extends State<UnifiedSearchBar>
     if (mounted && _searchController.text == q) {
       // 카카오 결과에서 로컬 매핑에 이미 있는 지하철역/한강버스 제거
       final kakaoPlaces = (futures[0] as List<PlaceSearchResult>).where((p) {
-        // 지하철역 중복 제거 (카테고리가 '지하철역'이거나 이름에 '역'이 있고 로컬 매핑에 있으면)
-        if (p.category == '지하철역' || p.category.contains('지하철')) {
-          final stationName = p.name.replaceAll('역', '').replaceAll(' ', '');
-          return !_allStations.any((s) => s.station.name.contains(stationName) || stationName.contains(s.station.name));
-        }
+        // 지하철역 중복 제거 — 카카오에서 다양한 카테고리로 올 수 있음
+        final isSubwayCategory = p.category.contains('지하철') ||
+            p.category.contains('전철') ||
+            p.category.contains('교통') ||
+            p.category == '지하철역';
+        // 이름에서 역 이름 추출 ("서울역" → "서울", "강남역 2호선" → "강남")
+        final cleanName = p.name
+            .replaceAll(RegExp(r'\s*\d+호선.*'), '')
+            .replaceAll(RegExp(r'\s*역\s*$'), '')
+            .replaceAll(' ', '')
+            .trim();
+        // 로컬 매핑에 이름이 있으면 제거
+        final isLocalStation = _allStations.any((s) {
+          final localName = s.station.name.replaceAll(' ', '');
+          return localName == cleanName ||
+              localName.contains(cleanName) ||
+              cleanName.contains(localName);
+        });
+        if (isSubwayCategory && isLocalStation) return false;
+        // 이름이 "XX역"이고 로컬에 있으면 제거 (카테고리 무관)
+        if (p.name.contains('역') && isLocalStation) return false;
         // 한강버스 선착장 중복 제거
         if (p.name.contains('선착장') || p.name.contains('한강버스')) {
           return !RiverBusData.stops.any((s) => p.name.contains(s.name));
