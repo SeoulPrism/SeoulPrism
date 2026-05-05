@@ -104,6 +104,10 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
   void Function(double lat, double lng)? _onMapCoordTapped;
   bool _poiTappedThisFrame = false;
   bool _coordTappedThisFrame = false;
+  bool _pendingPoiTriggered = false;
+  String? _pendingPoiName;
+  double? _pendingPoiLat;
+  double? _pendingPoiLng;
   VoidCallback? _onMapTappedEmpty;
   VoidCallback? _onAnyMapTap;
   bool _isFollowing = false;
@@ -2332,17 +2336,32 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
       _onAnyMapTap?.call();
       final name = feature.name;
       if (name == null || name.isEmpty || _onPoiTapped == null) return;
-      // ferry(한강버스) POI는 자체 마커로 처리 — 스킵
+      // ferry(한강버스) POI는 자체 마커로 처리
       final group = feature.group;
       if (group == 'transit' && (feature.category == 'ferry' || name.contains('한강버스'))) return;
-      _poiTappedThisFrame = true;
+      // 대중교통 POI(지하철역/버스정류장)는 기존 역 탭으로 처리
+      if (feature.category == 'rail_station' || feature.category == 'metro_rail'
+          || feature.category == 'station' || group == 'transit') return;
+
+      // POI를 먼저 저장 — _handleMapTap에서 역을 찾으면 덮어씀
+      _pendingPoiName = name;
+      _pendingPoiTriggered = true;
 
       try {
         final raw = feature.geometry['coordinates'];
         if (raw is List && raw.length >= 2) {
           final lng = (raw[0] as num).toDouble();
           final lat = (raw[1] as num).toDouble();
-          _onPoiTapped!(name, lat, lng);
+          _pendingPoiLat = lat;
+          _pendingPoiLng = lng;
+          // 50ms 후에 역 탭이 안 왔으면 POI 처리
+          Future.delayed(const Duration(milliseconds: 50), () {
+            if (_pendingPoiTriggered && _onPoiTapped != null) {
+              _poiTappedThisFrame = true;
+              _onPoiTapped!(_pendingPoiName!, _pendingPoiLat!, _pendingPoiLng!);
+            }
+            _pendingPoiTriggered = false;
+          });
         } else {
           final point = context.point;
           _onPoiTapped!(name, point.coordinates.lat.toDouble(), point.coordinates.lng.toDouble());
@@ -2518,6 +2537,7 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
             }
           }
           if (_onStationTapped != null) {
+            _pendingPoiTriggered = false; // 역 찾았으니 POI 취소
             _onStationTapped!(tappedName);
             return;
           }
