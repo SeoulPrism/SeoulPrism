@@ -241,17 +241,17 @@ class _ProfileViewState extends State<ProfileView> {
     List<Widget> items;
     if (_selectedCategoryIndex == 0) {
       final favs = FavoritesService.instance.favorites;
-      items = favs.map((f) => _buildPlaceCard(f.name, f.category, Icons.favorite, Colors.redAccent, cs)).toList();
+      items = favs.map((f) => _buildPlaceCard(f.name, f.category, Icons.favorite, Colors.redAccent, cs, lat: f.lat, lng: f.lng)).toList();
     } else if (_selectedCategoryIndex == 1) {
       final recent = VisitHistoryService.instance.recentVisits;
       items = recent.map((r) {
         final ago = DateTime.now().difference(r.visitedAt);
         final agoStr = ago.inDays > 0 ? '${ago.inDays}일 전' : ago.inHours > 0 ? '${ago.inHours}시간 전' : '방금';
-        return _buildPlaceCard(r.name, agoStr, Icons.history, cs.primary, cs);
+        return _buildPlaceCard(r.name, agoStr, Icons.history, cs.primary, cs, lat: r.lat, lng: r.lng);
       }).toList();
     } else {
       final freq = VisitHistoryService.instance.frequentVisits;
-      items = freq.map((r) => _buildPlaceCard(r.name, '${r.visitCount}회 방문', Icons.repeat, cs.tertiary, cs)).toList();
+      items = freq.map((r) => _buildPlaceCard(r.name, '${r.visitCount}회 방문', Icons.repeat, cs.tertiary, cs, lat: r.lat, lng: r.lng)).toList();
     }
 
     if (items.isEmpty) {
@@ -358,29 +358,34 @@ class _ProfileViewState extends State<ProfileView> {
     );
   }
 
-  Widget _buildPlaceCard(String name, String subtitle, IconData icon, Color iconColor, ColorScheme cs) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: AdaptiveSurfaceCard(
-        borderRadius: 16,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        child: Row(
-          children: [
-            Container(
-              width: 36, height: 36,
-              decoration: BoxDecoration(borderRadius: BorderRadius.circular(10), color: iconColor.withValues(alpha: 0.1)),
-              child: Icon(icon, size: 18, color: iconColor),
-            ),
-            const SizedBox(width: 12),
-            Expanded(child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(name, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: cs.onSurface)),
-                Text(subtitle, style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
-              ],
-            )),
-            Icon(Icons.chevron_right, size: 18, color: cs.onSurfaceVariant),
-          ],
+  Widget _buildPlaceCard(String name, String subtitle, IconData icon, Color iconColor, ColorScheme cs, {double? lat, double? lng}) {
+    return GestureDetector(
+      onTap: (lat != null && lng != null) ? () {
+        Navigator.pop(context, {'lat': lat, 'lng': lng, 'name': name});
+      } : null,
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: AdaptiveSurfaceCard(
+          borderRadius: 16,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          child: Row(
+            children: [
+              Container(
+                width: 36, height: 36,
+                decoration: BoxDecoration(borderRadius: BorderRadius.circular(10), color: iconColor.withValues(alpha: 0.1)),
+                child: Icon(icon, size: 18, color: iconColor),
+              ),
+              const SizedBox(width: 12),
+              Expanded(child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(name, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: cs.onSurface)),
+                  Text(subtitle, style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+                ],
+              )),
+              Icon(Icons.chevron_right, size: 18, color: cs.onSurfaceVariant),
+            ],
+          ),
         ),
       ),
     );

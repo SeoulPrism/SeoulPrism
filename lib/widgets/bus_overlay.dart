@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import '../core/map_interface.dart';
 import '../models/bus_models.dart';
+import '../services/settings_service.dart';
 import '../services/seoul_bus_service.dart';
 import '../data/river_bus_data.dart';
 
@@ -77,7 +78,7 @@ class BusOverlayController {
   BusPosition? _selectedBus;
   TrackedBusRoute? _selectedBusRoute;
 
-  // 리버버스 상태
+  // 한강버스 상태
   List<RiverBusVessel> _currentVessels = [];
   RiverBusVessel? _selectedVessel;
 
@@ -115,12 +116,19 @@ class BusOverlayController {
             (r) => r.routeId == routeId,
             orElse: () => TrackedBusRoute(routeId: routeId, routeName: '', routeType: 3, color: BusColors.trunk),
           );
-          // 카메라 이동
           _mapController?.moveTo(pos.lat, pos.lng, zoom: 16.0, pitch: 50.0);
           onBusSelected?.call(_selectedBus!, _selectedBusRoute!);
           onStateChanged?.call();
           return;
         }
+      }
+    }
+
+    // 한강버스 vessel에서 찾기
+    for (final v in _currentVessels) {
+      if (v.id == vehId) {
+        selectVessel(vehId);
+        return;
       }
     }
   }
@@ -184,8 +192,14 @@ class BusOverlayController {
       _fetchAllPositions();
     });
 
-    // 리버버스 시뮬레이션 (1초마다 — 초 단위 보간)
-    _riverBusTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+    // 한강버스 시뮬레이션 (1초마다 — 초 단위 보간)
+    // 한강버스 위치 갱신 (quality preset에 따라 프레임 조절)
+    final riverMs = switch (SettingsService.instance.qualityPreset) {
+      'low' => 100,
+      'medium' => 33,
+      _ => 16,
+    };
+    _riverBusTimer = Timer.periodic(Duration(milliseconds: riverMs), (_) {
       _render3D();
     });
 
@@ -310,18 +324,13 @@ class BusOverlayController {
 
     await mc.updateBusPositions3D(renderData);
 
-    // 리버버스 (전용 레이어 — 배 모양)
+    // 한강버스 (전용 레이어 — 배 모양)
     if (_showRiverBus) {
       _currentVessels = RiverBusData.getActiveVessels();
       if (_currentVessels.isNotEmpty && !_riverBusLocated) {
         _riverBusLocated = true;
         final v = _currentVessels.first;
-        debugPrint('[BusOverlay] 🚢 리버버스: lat=${v.lat.toStringAsFixed(6)} lng=${v.lng.toStringAsFixed(6)} bearing=${v.bearing.toStringAsFixed(1)}');
-        // 모든 선착장 좌표도 출력
-        for (final s in RiverBusData.stops) {
-          debugPrint('[BusOverlay] 📍 선착장 ${s.name}: lat=${s.lat}, lng=${s.lng}');
-        }
-        mc.moveTo(v.lat, v.lng, zoom: 15.0, pitch: 0.0); // 2D로 봐서 위치 확인
+        debugPrint('[BusOverlay] 🚢 한강버스 ${v.routeName}: ${v.lat.toStringAsFixed(4)}, ${v.lng.toStringAsFixed(4)}');
       }
       final vesselData = <BusRenderData>[];
       for (final v in _currentVessels) {
@@ -338,7 +347,7 @@ class BusOverlayController {
       await mc.updateRiverBusPositions3D([]);
     }
 
-    // 선택된 리버버스 카메라 추적 (60fps)
+    // 선택된 한강버스 카메라 + glow 추적 (60fps)
     if (_selectedVessel != null) {
       final tracked = _currentVessels.firstWhere(
         (v) => v.id == _selectedVessel!.id,
@@ -346,11 +355,12 @@ class BusOverlayController {
       );
       _selectedVessel = tracked;
       mc.followTrain(tracked.lat, tracked.lng, tracked.bearing);
+      mc.showRiverBusHighlight(tracked.lat, tracked.lng);
     }
   }
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // 리버버스 선착장 + 노선 경로 표시
+  // 한강버스 선착장 + 노선 경로 표시
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   bool _riverMarkersDrawn = false;
@@ -361,30 +371,23 @@ class BusOverlayController {
     _riverMarkersDrawn = true;
     final mc = _mapController!;
 
-    // 노선 경로 (한강 위 라인)
-    for (final route in RiverBusData.routes) {
-      if (!route.isActive) continue;
-      final coords = RiverBusData.getRouteCoords(route);
-      if (coords.length >= 2) {
-        mc.addPolyline(
-          'riverbus_route_${route.id}',
-          coords,
-          color: Color(route.color),
-          width: 3.0,
-          opacity: 0.6,
-        );
-      }
-    }
+    // 노선 경로는 Mapbox 기본 ferry 레이어 사용 (road class=ferry)
+    // 별도 polyline 불필요
 
-    // 선착장 마커 (작은 원)
+    // 선착장 마커 — 활성/비활성 구분
+    final activeStopIds = <String>{};
+    for (final route in RiverBusData.routes) {
+      if (route.isActive) activeStopIds.addAll(route.stopIds);
+    }
     for (final stop in RiverBusData.stops) {
+      final active = activeStopIds.contains(stop.id);
       mc.addCircleMarker(
         'riverbus_stop_${stop.id}',
         stop.lat, stop.lng,
-        color: const Color(0xFF00ACC1),
-        radius: 6.0,
+        color: active ? const Color(0xFF00ACC1) : const Color(0xFF9E9E9E),
+        radius: 7.0,
         strokeColor: const Color(0xFFFFFFFF),
-        strokeWidth: 2.0,
+        strokeWidth: 2.5,
       );
     }
   }
@@ -392,9 +395,6 @@ class BusOverlayController {
   void _clearRiverBusMarkers() {
     if (!_riverMarkersDrawn || _mapController == null) return;
     final mc = _mapController!;
-    for (final route in RiverBusData.routes) {
-      mc.removePolyline('riverbus_route_${route.id}');
-    }
     for (final stop in RiverBusData.stops) {
       mc.removeCircleMarker('riverbus_stop_${stop.id}');
     }
@@ -402,7 +402,7 @@ class BusOverlayController {
   }
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // 리버버스 선택/탭
+  // 한강버스 선택/탭
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   void selectVessel(String vesselId) {
@@ -418,6 +418,7 @@ class BusOverlayController {
 
   void deselectVessel() {
     _selectedVessel = null;
+    _mapController?.hideRiverBusHighlight();
     onStateChanged?.call();
   }
 }

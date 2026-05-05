@@ -101,7 +101,9 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
   void Function(String vehId)? _onBusTapped;
   void Function(String icao24)? _onFlightTapped;
   void Function(String name, double lat, double lng)? _onPoiTapped;
+  void Function(double lat, double lng)? _onMapCoordTapped;
   bool _poiTappedThisFrame = false;
+  bool _coordTappedThisFrame = false;
   VoidCallback? _onMapTappedEmpty;
   VoidCallback? _onAnyMapTap;
   bool _isFollowing = false;
@@ -1500,6 +1502,11 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
   }
 
   @override
+  void setOnMapCoordTapped(void Function(double lat, double lng)? callback) {
+    _onMapCoordTapped = callback;
+  }
+
+  @override
   void setOnCameraIdle(void Function(double lat, double lng, double zoom)? callback) {
     _onCameraIdle = callback;
   }
@@ -1602,10 +1609,49 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
   void setSelectedStation(String? stationName) {
     _selectedStationName = stationName;
     if (stationName == null) {
-      // 하이라이트 제거
       _updateSourceData(_selectedStationSourceId,
         '{"type":"FeatureCollection","features":[]}');
     }
+  }
+
+  static const _riverBusHighlightSourceId = 'riverbus-highlight-source';
+  static const _riverBusHighlightLayerId = 'riverbus-highlight-layer';
+  bool _riverBusHighlightInit = false;
+
+  Future<void> _ensureRiverBusHighlight() async {
+    if (_riverBusHighlightInit || _mapboxMap == null) return;
+    final style = _mapboxMap!.style;
+    try {
+      await style.addSource(GeoJsonSource(id: _riverBusHighlightSourceId, data: '{"type":"FeatureCollection","features":[]}'));
+      await style.addLayer(CircleLayer(
+        id: _riverBusHighlightLayerId,
+        sourceId: _riverBusHighlightSourceId,
+        circleColor: const Color(0xFF00ACC1).toARGB32(),
+        circleRadiusExpression: [
+          'interpolate', ['linear'], ['zoom'],
+          10, 10.0, 13, 22.0, 15, 38.0, 17, 55.0,
+        ],
+        circleBlur: 0.5,
+        circleOpacity: 0.5,
+        circlePitchAlignment: CirclePitchAlignment.MAP,
+        circleEmissiveStrength: 1.0,
+      ));
+      _riverBusHighlightInit = true;
+    } catch (_) {}
+  }
+
+  @override
+  void showRiverBusHighlight(double lat, double lng) {
+    _ensureRiverBusHighlight();
+    final json = '{"type":"FeatureCollection","features":['
+        '{"type":"Feature","geometry":{"type":"Point","coordinates":[$lng,$lat]},"properties":{}}'
+        ']}';
+    _updateSourceData(_riverBusHighlightSourceId, json);
+  }
+
+  @override
+  void hideRiverBusHighlight() {
+    _updateSourceData(_riverBusHighlightSourceId, '{"type":"FeatureCollection","features":[]}');
   }
 
   @override
@@ -2188,33 +2234,20 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
       final cosB = cos(rad);
       final sinB = sin(rad);
 
-      // ── 배 모양 (둥근 뱃머리 + 넓은 몸통 + 둥근 선미) ──
+      // ── 배 모양 (단순 육각형 — 앞이 좁은 박스) ──
       const len = 80.0;
-      const beam = 25.0;  // 최대 폭
+      const beam = 25.0;
       const hB = beam / 2;
-
-      // 둥근 뱃머리(반원) + 직선 몸통 + 둥근 선미(반원)
-      // 앞뒤 반원을 8분할로 부드럽게
-      final pts = <List<double>>[];
-
-      // 뱃머리 반원 (좌→중앙→우, 위쪽)
-      const bowY = len * 0.30; // 반원 시작 Y
-      const bowR = hB;         // 반원 반지름
-      for (int i = 8; i >= 0; i--) {
-        final a = pi * i / 8; // pi → 0 (좌→우)
-        pts.add([-bowR * cos(a), bowY + bowR * sin(a)]);
-      }
-      // 우현 직선 (위→아래)
-      pts.add([hB, -len * 0.30]);
-      // 선미 반원 (우→중앙→좌, 아래쪽)
-      const sternY = -len * 0.30;
-      const sternR = hB * 0.85;
-      for (int i = 0; i <= 8; i++) {
-        final a = pi * i / 8; // 0 → pi (우→좌)
-        pts.add([sternR * cos(a), sternY - sternR * sin(a)]);
-      }
-      // 좌현 직선 (아래→위)
-      pts.add([-hB, bowY]);
+      // 6각형: 뱃머리(뾰족) + 몸통(직사각) + 선미(평평)
+      final pts = <List<double>>[
+        [0, len * 0.5],          // 뱃머리 끝 (중앙)
+        [hB, len * 0.2],         // 우현 앞
+        [hB, -len * 0.4],        // 우현 뒤
+        [hB * 0.7, -len * 0.5],  // 선미 우
+        [-hB * 0.7, -len * 0.5], // 선미 좌
+        [-hB, -len * 0.4],       // 좌현 뒤
+        [-hB, len * 0.2],        // 좌현 앞
+      ];
 
       // 선체 (hull) — 시안색
       if (!first) sb.write(','); first = false;
@@ -2227,29 +2260,14 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
         hull.write('[${v.lng + rx / _mPerDegLng},${v.lat + ry / _mPerDegLat}]');
       }
       hull.write(']');
+      // 선체를 갑판 높이까지 채움 (구멍 없음)
       sb.write('{"type":"Feature","geometry":{"type":"Polygon","coordinates":[$hull]},'
-          '"properties":{"color":"${v.color}","base":0,"top":10,"vehId":"${v.vehId}"}}');
+          '"properties":{"color":"${v.color}","base":0,"top":14,"vehId":"${v.vehId}"}}');
 
-      // 갑판 (deck) — 흰색, 선체보다 약간 작은 둥근 사각형
+      // 갑판 (deck) — 흰색, 선체 위에 얇게
       sb.write(',');
-      const dHW = hB * 0.8; // 갑판 반폭
-      const dFY = len * 0.22; // 갑판 앞
-      const dRY = -len * 0.28; // 갑판 뒤
-      final dPts = <List<double>>[
-        [-dHW, dFY], [dHW, dFY], // 앞
-        [dHW, dRY], [-dHW, dRY], // 뒤
-      ];
-      final deck = StringBuffer('[');
-      for (int i = 0; i <= dPts.length; i++) {
-        final p = dPts[i % dPts.length];
-        final rx = p[0] * cosB + p[1] * sinB;
-        final ry = -p[0] * sinB + p[1] * cosB;
-        if (i > 0) deck.write(',');
-        deck.write('[${v.lng + rx / _mPerDegLng},${v.lat + ry / _mPerDegLat}]');
-      }
-      deck.write(']');
-      sb.write('{"type":"Feature","geometry":{"type":"Polygon","coordinates":[$deck]},'
-          '"properties":{"color":"rgba(240,248,255,1)","base":10,"top":14,"vehId":"${v.vehId}"}}');
+      sb.write('{"type":"Feature","geometry":{"type":"Polygon","coordinates":[$hull]},'
+          '"properties":{"color":"rgba(240,248,255,1)","base":12,"top":14,"vehId":"${v.vehId}"}}');
 
       // 조타실 (cabin) — 흰색, 배 뒤쪽에 높게
       sb.write(',');
@@ -2313,6 +2331,9 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
       _onAnyMapTap?.call();
       final name = feature.name;
       if (name == null || name.isEmpty || _onPoiTapped == null) return;
+      // ferry(한강버스) POI는 자체 마커로 처리 — 스킵
+      final group = feature.group;
+      if (group == 'transit' && (feature.category == 'ferry' || name.contains('한강버스'))) return;
       _poiTappedThisFrame = true;
 
       try {
@@ -2415,6 +2436,27 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
         }
       }
 
+      // 한강버스(리버버스) 레이어 검색
+      if (_riverBusLayersInitialized) {
+        final riverFeatures = await _mapboxMap!.queryRenderedFeatures(
+          RenderedQueryGeometry.fromScreenBox(screenBox),
+          RenderedQueryOptions(layerIds: [_riverBusLayerId]),
+        );
+        if (riverFeatures.isNotEmpty) {
+          final feature = riverFeatures.first?.queriedFeature.feature;
+          if (feature != null) {
+            final props = feature['properties'];
+            if (props is Map) {
+              final vehId = props['vehId'];
+              if (vehId != null && _onBusTapped != null) {
+                _onBusTapped!(vehId.toString());
+                return;
+              }
+            }
+          }
+        }
+      }
+
       // 비행기 레이어 검색
       if (_flightLayersInitialized) {
         final flightFeatures = await _mapboxMap!.queryRenderedFeatures(
@@ -2479,6 +2521,12 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
             return;
           }
         }
+      }
+
+      // 좌표 기반 탭 콜백 (선착장 등 체크용)
+      if (_onMapCoordTapped != null) {
+        final point = context.point;
+        _onMapCoordTapped!(point.coordinates.lat.toDouble(), point.coordinates.lng.toDouble());
       }
 
       // 빈 곳 탭 — 선택 해제

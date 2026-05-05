@@ -320,65 +320,54 @@ class _SettingsViewState extends State<SettingsView> {
   }
 
   void _editUsername() {
-    final controller = TextEditingController(
-      text: supabase.auth.currentUser?.userMetadata?['username'] ?? '',
-    );
-    showDialog(
+    showAdaptiveConfirmDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('이름 변경'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          decoration: InputDecoration(hintText: '새 이름', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('취소')),
-          FilledButton(
-            onPressed: () async {
-              final name = controller.text.trim();
-              if (name.isEmpty) return;
-              await supabase.auth.updateUser(UserAttributes(data: {'username': name}));
-              if (mounted) { Navigator.pop(ctx); setState(() {}); }
-            },
-            child: const Text('저장'),
+      title: '이름 변경',
+      content: '변경할 이름을 입력해주세요.',
+      confirmText: '변경',
+      onConfirm: () async {
+        // 다이얼로그 닫힌 후 입력 다이얼로그
+        if (!mounted) return;
+        final controller = TextEditingController(
+          text: supabase.auth.currentUser?.userMetadata?['username'] ?? '',
+        );
+        final name = await showDialog<String>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('새 이름'),
+            content: TextField(controller: controller, autofocus: true,
+              decoration: InputDecoration(border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)))),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('취소')),
+              FilledButton(onPressed: () => Navigator.pop(ctx, controller.text.trim()), child: const Text('확인')),
+            ],
           ),
-        ],
-      ),
+        );
+        if (name != null && name.isNotEmpty) {
+          await supabase.auth.updateUser(UserAttributes(data: {'username': name}));
+          if (mounted) setState(() {});
+        }
+      },
     );
   }
 
   void _changePassword() {
-    final controller = TextEditingController();
-    showDialog(
+    final email = supabase.auth.currentUser?.email;
+    if (email == null) return;
+    showAdaptiveConfirmDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('비밀번호 변경'),
-        content: TextField(
-          controller: controller,
-          obscureText: true,
-          autofocus: true,
-          decoration: InputDecoration(hintText: '새 비밀번호 (6자 이상)', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('취소')),
-          FilledButton(
-            onPressed: () async {
-              final pw = controller.text.trim();
-              if (pw.length < 6) return;
-              await supabase.auth.updateUser(UserAttributes(password: pw));
-              if (mounted) {
-                Navigator.pop(ctx);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: const Text('비밀번호가 변경되었습니다'), behavior: SnackBarBehavior.floating,
-                    backgroundColor: const Color(0xFF2C2C2E), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                );
-              }
-            },
-            child: const Text('변경'),
-          ),
-        ],
-      ),
+      title: '비밀번호 변경',
+      content: '$email 으로 비밀번호 재설정 링크를 보냅니다.',
+      confirmText: '발송',
+      onConfirm: () async {
+        await supabase.auth.resetPasswordForEmail(email);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: const Text('재설정 이메일이 발송되었습니다'), behavior: SnackBarBehavior.floating,
+              backgroundColor: const Color(0xFF2C2C2E), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+          );
+        }
+      },
     );
   }
 

@@ -21,6 +21,7 @@ import '../widgets/subway_panel.dart';
 import '../widgets/search_bar.dart';
 import '../services/place_search_service.dart';
 import '../services/favorites_service.dart';
+import '../services/directions_service.dart';
 import '../services/visit_history_service.dart';
 import '../data/seoul_subway_data.dart';
 import '../services/device_profile_service.dart';
@@ -29,6 +30,8 @@ import 'sns_upload_view.dart';
 import 'day_plan_view.dart';
 import 'ai_view.dart';
 import 'recommendation_view.dart';
+import 'profile_view.dart';
+import '../data/river_bus_data.dart';
 
 import '../models/sns_content_models.dart';
 import '../services/gemini_live_service.dart';
@@ -64,6 +67,45 @@ class _DashboardScreenState extends State<DashboardScreen> {
   String _aiStatus = '';
   final GlobalKey<UnifiedSearchBarState> _searchBarKey = GlobalKey<UnifiedSearchBarState>();
   PlaceSearchResult? _selectedPlace;
+  PlaceSearchResult? _lastSelectedPlace;
+  RiverBusStop? _selectedRiverStop;
+  RiverBusStop? _lastSelectedRiverStop;
+
+  void _setSelectedPlace(PlaceSearchResult? place, {bool animate = true}) {
+    if (place != null) {
+      // 한강버스 패널 닫기
+      _selectedRiverStop = null;
+      // 같은 장소의 상세정보 업데이트면 그냥 교체
+      if (_selectedPlace != null && _selectedPlace!.lat == place.lat && _selectedPlace!.lng == place.lng) {
+        _lastSelectedPlace = place;
+        _selectedPlace = place;
+        return;
+      }
+      // 다른 장소인데 패널이 열려있으면 내리고 새 정보로 올리기
+      if (_selectedPlace != null && animate) {
+        _lastSelectedPlace = place;
+        _selectedPlace = null;
+        setState(() {});
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (mounted) {
+            _selectedPlace = place;
+            setState(() {});
+          }
+        });
+        return;
+      }
+      _lastSelectedPlace = place;
+    }
+    _selectedPlace = place;
+  }
+
+  void _setSelectedRiverStop(RiverBusStop? stop) {
+    if (stop != null) _lastSelectedRiverStop = stop;
+    if (stop == null) {
+      _mapController?.hideRiverBusHighlight();
+    }
+    _selectedRiverStop = stop;
+  }
   bool _satelliteOn = false;
   List<DayPlan>? _dayPlans;
 
@@ -93,6 +135,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
   bool _isNavMode = false;
   bool _isSearchFocused = false;
   PathResult? _routeResult;         // 요약 바텀 패널용
+  int _transportMode = 0; // 0: 대중교통, 1: 자동차, 2: 도보
+  Map<int, DirectionsResult> _directionsCache = {};
+  List<DirectionsResult> _transitRoutes = [];
+  bool _directionsLoading = false;
 
   // 슬라이드아웃 애니메이션용
   String? _lastSelectedMapStation;
@@ -116,6 +162,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _subwayController.onStationSelected = (name, info, arrivals, loading) {
       if (mounted) {
         setState(() {
+          // 다른 패널 닫기
+          if (name != null) {
+            _setSelectedPlace(null);
+            _removePlaceMarker();
+            _setSelectedRiverStop(null);
+            _busController.deselectVessel();
+          }
           _selectedMapStation = name;
           _selectedMapStationInfo = info;
           _selectedMapStationArrivals = arrivals;
@@ -125,7 +178,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
             _lastSelectedMapStationInfo = info;
             _lastMapStationArrivals = arrivals;
           }
-          // 역 도착 데이터 갱신 시 last도 업데이트
           if (name != null && !loading) {
             _lastMapStationArrivals = arrivals;
           }
@@ -371,15 +423,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _busController.onBusSelected = (bus, route) {
       if (mounted) setState(() {});
     };
-    _busController.onVesselSelected = (_) {
-      if (mounted) setState(() {});
+    _busController.onVesselSelected = (vessel) {
+      if (mounted) {
+        _setSelectedPlace(null);
+        _removePlaceMarker();
+        _setSelectedRiverStop(null);
+        _subwayController.deselectTrain();
+        _subwayController.deselectStation();
+        _busController.deselectBus();
+        _flightController.deselectFlight();
+        _mapController?.moveTo(vessel.lat, vessel.lng, zoom: 16.0, pitch: 50.0);
+        _mapController?.showRiverBusHighlight(vessel.lat, vessel.lng);
+        setState(() {});
+      }
     };
     _flightController.attachMap(controller);
     _flightController.onStateChanged = () {
       if (mounted) setState(() {});
     };
     _flightController.onFlightSelected = (_) {
-      if (mounted) setState(() {});
+      if (mounted) {
+        _setSelectedPlace(null);
+        _removePlaceMarker();
+        _setSelectedRiverStop(null);
+        _busController.deselectVessel();
+        setState(() {});
+      }
     };
     // 맵 탭 시 키보드 내림 + 선택 해제
     controller.setOnAnyMapTap(() {
@@ -398,29 +467,38 @@ class _DashboardScreenState extends State<DashboardScreen> {
       }
       if (_selectedPlace != null) {
         _removePlaceMarker();
-        setState(() => _selectedPlace = null);
+        setState(() => _setSelectedPlace(null));
+      }
+      if (_selectedRiverStop != null && !_riverStopJustOpened) {
+        setState(() => _setSelectedRiverStop(null));
       }
     });
     // POI 탭 콜백 (지도 위 장소 아이콘 클릭 시 → 카카오에서 상세정보 가져오기)
     controller.setOnPoiTapped((name, lat, lng) {
-      // 일단 기본 정보로 패널 표시
+      // 한강버스 기본 POI만 무시 (선착장이 아닌 다른 곳의 "선착장"은 허용)
+      if (name == '한강버스') return;
+
+      // 모든 다른 패널 닫기
+      _subwayController.deselectTrain();
+      _subwayController.deselectStation();
+      _busController.deselectBus();
+      _busController.deselectVessel();
+      _flightController.deselectFlight();
+      _mapController?.hideRiverBusHighlight();
+      _setSelectedRiverStop(null);
+
       final basicPlace = PlaceSearchResult(
-        name: name,
-        address: '',
-        category: '장소',
-        lat: lat,
-        lng: lng,
+        name: name, address: '', category: '장소', lat: lat, lng: lng,
       );
       _showPlaceMarker(basicPlace);
-      setState(() => _selectedPlace = basicPlace);
+      setState(() => _setSelectedPlace(null));
 
       // 방문 기록 저장
       VisitHistoryService.instance.recordVisit(name, '장소', lat, lng);
 
-      // 카카오 API로 상세정보 가져오기
+      // 카카오 API 완료 후 패널 표시
       PlaceSearchService.instance.search(name).then((results) {
-        if (!mounted || _selectedPlace?.name != name) return;
-        // 가장 가까운 결과 선택
+        if (!mounted) return;
         PlaceSearchResult? best;
         double bestDist = double.infinity;
         for (final r in results) {
@@ -430,12 +508,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
             best = r;
           }
         }
-        if (best != null) {
-          setState(() => _selectedPlace = best);
-        }
+        setState(() => _setSelectedPlace(best ?? basicPlace));
       });
     });
 
+
+    // 한강버스 선착장 좌표 탭 감지
+    controller.setOnMapCoordTapped((lat, lng) {
+      for (final stop in RiverBusData.stops) {
+        final dLat = (stop.lat - lat).abs();
+        final dLng = (stop.lng - lng).abs();
+        if (dLat < 0.001 && dLng < 0.001) {
+          if (_selectedPlace != null) {
+            _removePlaceMarker();
+            _setSelectedPlace(null);
+          }
+          _showRiverBusStopPanel(stop);
+          // 빈 곳 처리 스킵하도록 — 플래그는 엔진에서
+          return;
+        }
+      }
+    });
 
     // 자동으로 데모 모드 시작
     if (!_subwayController.isActive) {
@@ -443,7 +536,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
     // 항공기 자동 시작
     _flightController.start();
-    // 한강 리버버스 자동 시작
+    // 한강 한강버스 자동 시작
     _busController.start();
     // 현재 위치 3D 아바타 활성화
     controller.enableLocationPuck();
@@ -497,16 +590,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
               // 장소 선택 시 지도 카메라 이동 + 마커 + 상세 패널
               _mapController?.moveTo(place.lat, place.lng, zoom: 16.0);
               _showPlaceMarker(place);
-              setState(() => _selectedPlace = place);
+              setState(() => _setSelectedPlace(place));
             },
             onBusSelected: (route) {
               // 버스 노선 선택 시 추적 시작
               _busController.addRoute(route);
               setState(() {});
             },
+            onRiverBusStopSelected: (stop) {
+              // 한강버스 선착장 선택 시 카메라 이동 + 상세 패널
+              _mapController?.moveTo(stop.lat, stop.lng, zoom: 16.0);
+              _showRiverBusStopPanel(stop);
+            },
             onRouteFound: (route) {
               _drawRouteOnMap(route);
-              setState(() => _routeResult = route);
+              setState(() {
+                _routeResult = route;
+                _transportMode = 0;
+                _directionsCache.clear();
+              });
+              // 다른 모드도 백그라운드로 로드
+              _preloadDirections();
             },
             onNavModeChanged: (isNav) {
               setState(() {
@@ -518,7 +622,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             onFocusChanged: (focused) {
               setState(() => _isSearchFocused = focused);
             },
-            onProfileTap: widget.onProfileTap,
+            onProfileTap: () => _openProfile(),
           ),
 
           // 날씨/시간 위젯 (검색바 아래 좌측, 패널/검색/길찾기 시 페이드아웃)
@@ -546,15 +650,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
               opacity: (_isNavMode || _isSearchFocused || _settingsOpen || _recommendOpen) ? 0.0 : 1.0,
               child: IgnorePointer(
                 ignoring: _isNavMode || _isSearchFocused || _settingsOpen || _recommendOpen,
-                child: AdaptiveGlassIconButton(
-                  icon: _satelliteOn ? Icons.map_outlined : Icons.satellite_alt,
-                  size: 44,
-                  iconSize: 20,
-                  tint: _satelliteOn ? Colors.greenAccent : Theme.of(context).colorScheme.onSurfaceVariant,
-                  onPressed: () {
-                    setState(() => _satelliteOn = !_satelliteOn);
-                    _mapController?.setSatelliteVisible(_satelliteOn);
-                  },
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 300),
+                  child: AdaptiveGlassIconButton(
+                    key: ValueKey(_satelliteOn),
+                    icon: _satelliteOn ? Icons.map_outlined : Icons.travel_explore,
+                    size: 44,
+                    iconSize: 20,
+                    tint: _satelliteOn ? Colors.greenAccent : Theme.of(context).colorScheme.onSurfaceVariant,
+                    onPressed: () {
+                      setState(() => _satelliteOn = !_satelliteOn);
+                      _mapController?.setSatelliteVisible(_satelliteOn);
+                    },
+                  ),
                 ),
               ),
             ),
@@ -625,16 +733,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
               child: _buildFlightDetailPanel(),
             ),
 
-          // 리버버스 상세 패널
-          if (_busController.selectedVessel != null)
-            AnimatedPositioned(
+          // 한강버스 상세 패널 (슬라이드 애니메이션)
+          AnimatedPositioned(
+            duration: const Duration(milliseconds: 400),
+            curve: _busController.selectedVessel != null ? Curves.easeOutCubic : Curves.easeInCubic,
+            bottom: _busController.selectedVessel != null ? bottomInset : -250,
+            left: 0,
+            right: 0,
+            child: AnimatedOpacity(
               duration: const Duration(milliseconds: 350),
-              curve: Curves.easeOutCubic,
-              bottom: bottomInset,
-              left: 0,
-              right: 0,
+              opacity: _busController.selectedVessel != null ? 1.0 : 0.0,
               child: _buildVesselDetailPanel(),
             ),
+          ),
 
           // 역 상세 패널 (바텀 슬라이드 — 화면 30% 제한)
           if (_lastSelectedMapStation != null)
@@ -672,16 +783,37 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ),
 
-          // 장소 상세 패널 (바텀 슬라이드)
-          if (_selectedPlace != null)
-            AnimatedPositioned(
+          // 장소 상세 패널 (바텀 슬라이드 애니메이션)
+          AnimatedPositioned(
+            duration: const Duration(milliseconds: 400),
+            curve: _selectedPlace != null ? Curves.easeOutCubic : Curves.easeInCubic,
+            bottom: _selectedPlace != null ? bottomInset : -250,
+            left: 0,
+            right: 0,
+            child: AnimatedOpacity(
               duration: const Duration(milliseconds: 350),
-              curve: Curves.easeOutCubic,
-              bottom: bottomInset,
-              left: 0,
-              right: 0,
-              child: _buildPlaceDetailPanel(_selectedPlace!),
+              opacity: _selectedPlace != null ? 1.0 : 0.0,
+              child: _lastSelectedPlace != null
+                  ? _buildPlaceDetailPanel((_selectedPlace ?? _lastSelectedPlace)!)
+                  : const SizedBox(height: 200),
             ),
+          ),
+
+          // 한강버스 선착장 패널 (바텀 슬라이드 애니메이션)
+          AnimatedPositioned(
+            duration: const Duration(milliseconds: 400),
+            curve: _selectedRiverStop != null ? Curves.easeOutCubic : Curves.easeInCubic,
+            bottom: _selectedRiverStop != null ? bottomInset : -250,
+            left: 0,
+            right: 0,
+            child: AnimatedOpacity(
+              duration: const Duration(milliseconds: 350),
+              opacity: _selectedRiverStop != null ? 1.0 : 0.0,
+              child: _lastSelectedRiverStop != null
+                  ? _buildRiverBusStopPanel((_selectedRiverStop ?? _lastSelectedRiverStop)!)
+                  : const SizedBox(height: 200),
+            ),
+          ),
 
           // 경로 결과 바텀 패널 (설정 패널 스타일)
           _buildRouteResultOverlay(context, screenHeight),
@@ -910,12 +1042,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  RiverBusVessel? _lastVessel;
+
   Widget _buildVesselDetailPanel() {
     final v = _busController.selectedVessel;
-    if (v == null) return const SizedBox.shrink();
+    if (v != null) _lastVessel = v;
+    final display = v ?? _lastVessel;
+    if (display == null) return const SizedBox(height: 150);
 
     const color = Color(0xFF00ACC1);
-    final dirText = v.direction == 0 ? '정방향' : '역방향';
+    final dirText = display.direction == 0 ? '정방향' : '역방향';
 
     return Container(
       width: double.infinity,
@@ -946,8 +1082,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('한강버스 ${v.routeName}', style: AppTypography.titleMd.copyWith(color: color)),
-                        Text('$dirText · ${v.phase}', style: AppTypography.bodySm.copyWith(color: AppColors.textSecondary)),
+                        Text('한강버스 ${display.routeName}', style: AppTypography.titleMd.copyWith(color: color)),
+                        Text('$dirText · ${display.phase}', style: AppTypography.bodySm.copyWith(color: AppColors.textSecondary)),
                       ],
                     ),
                   ),
@@ -963,12 +1099,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
               child: Row(
                 children: [
                   Expanded(child: _busInfoItem(
-                    v.phase == '정차' ? '정차 중' : '다음',
-                    v.currentStopName ?? v.nextStopName,
+                    display.phase == '정차' ? '정차 중' : '다음',
+                    display.currentStopName ?? display.nextStopName,
                     color,
                   )),
-                  Expanded(child: _busInfoItem('진행', '${(v.progress * 100).round()}%', AppColors.textSecondary)),
-                  Expanded(child: _busInfoItem('상태', v.phase, v.phase == '정차' ? AppColors.warning : color)),
+                  Expanded(child: _busInfoItem('진행', '${(display.progress * 100).round()}%', AppColors.textSecondary)),
+                  Expanded(child: _busInfoItem('상태', display.phase, display.phase == '정차' ? AppColors.warning : color)),
                 ],
               ),
             ),
@@ -1072,6 +1208,318 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _mapController?.removePlacePin();
   }
 
+  Future<void> _openProfile() async {
+    final result = await Navigator.push<Map<String, dynamic>>(
+      context,
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => const ProfileView(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return SlideTransition(
+            position: Tween<Offset>(begin: const Offset(1.0, 0.0), end: Offset.zero)
+                .animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+            child: child,
+          );
+        },
+        transitionDuration: const Duration(milliseconds: 350),
+      ),
+    );
+    if (result != null && mounted) {
+      final lat = result['lat'] as double?;
+      final lng = result['lng'] as double?;
+      final name = result['name'] as String? ?? '';
+      if (lat != null && lng != null) {
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (!mounted) return;
+          _mapController?.moveTo(lat, lng, zoom: 16.0);
+          // 장소 패널도 표시
+          final place = PlaceSearchResult(
+            name: name, address: '', category: '저장된 장소', lat: lat, lng: lng,
+          );
+          _showPlaceMarker(place);
+          setState(() => _setSelectedPlace(place));
+          // 카카오에서 상세정보 가져오기
+          PlaceSearchService.instance.search(name).then((results) {
+            if (!mounted || _selectedPlace?.name != name) return;
+            PlaceSearchResult? best;
+            double bestDist = double.infinity;
+            for (final r in results) {
+              final d = (r.lat - lat).abs() + (r.lng - lng).abs();
+              if (d < bestDist) { bestDist = d; best = r; }
+            }
+            if (best != null) setState(() => _setSelectedPlace(best));
+          });
+        });
+      }
+    }
+  }
+
+  bool _riverStopJustOpened = false;
+
+  void _showRiverBusStopPanel(RiverBusStop stop) {
+    _riverStopJustOpened = true;
+    Future.delayed(const Duration(milliseconds: 100), () => _riverStopJustOpened = false);
+    _mapController?.moveTo(stop.lat, stop.lng, zoom: 16.0, pitch: 50.0);
+    // 바닥 glow 효과 (한강버스 전용)
+    _mapController?.showRiverBusHighlight(stop.lat, stop.lng);
+    setState(() {
+      _setSelectedRiverStop(stop);
+      _setSelectedPlace(null);
+      _removePlaceMarker();
+    });
+  }
+
+  Widget _buildRiverBusStopPanel(RiverBusStop stop) {
+    final cs = Theme.of(context).colorScheme;
+    // 이 선착장을 지나는 노선 찾기
+    final routes = RiverBusData.routes.where((r) => r.stopIds.contains(stop.id)).toList();
+    // 다음 운항 시간 계산
+    final now = DateTime.now();
+    final currentMin = now.hour * 60 + now.minute;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
+        decoration: BoxDecoration(
+          color: cs.surfaceContainer,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: const Color(0xFF00ACC1).withValues(alpha: 0.3)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 헤더
+            Row(
+              children: [
+                Container(
+                  width: 32, height: 32,
+                  decoration: BoxDecoration(color: const Color(0xFF00ACC1).withValues(alpha: 0.15), borderRadius: BorderRadius.circular(8)),
+                  child: const Icon(Icons.directions_boat, size: 18, color: Color(0xFF00ACC1)),
+                ),
+                const SizedBox(width: 10),
+                Expanded(child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('${stop.name} 선착장', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: cs.onSurface)),
+                    Text(stop.address, style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+                  ],
+                )),
+                IconButton(
+                  icon: Icon(Icons.close, size: 20, color: cs.onSurfaceVariant),
+                  onPressed: () => setState(() => _setSelectedRiverStop(null)),
+                  visualDensity: VisualDensity.compact,
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            // 노선 정보
+            ...routes.map((r) {
+              final isActive = r.isActive;
+              String nextTime = '운항 종료';
+              if (isActive) {
+                for (int dep = r.firstDeparture; dep <= r.lastDeparture; dep += r.intervalMin) {
+                  if (dep > currentMin) {
+                    final h = dep ~/ 60;
+                    final m = dep % 60;
+                    nextTime = '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}';
+                    break;
+                  }
+                }
+              }
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: Color(r.color).withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(r.name, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(r.color))),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(child: Text(r.displayName, style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant))),
+                    Text(
+                      isActive ? '다음 $nextTime' : '정비 중',
+                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: isActive ? const Color(0xFF00ACC1) : cs.onSurfaceVariant),
+                    ),
+                  ],
+                ),
+              );
+            }),
+            const SizedBox(height: 10),
+            // 출발/도착 버튼
+            Row(
+              children: [
+                _placeActionButton(icon: Icons.trip_origin, label: '출발', color: cs.primary, onTap: () {
+                  setState(() => _setSelectedRiverStop(null));
+                  _startNavWithDeparture('${stop.name} 선착장');
+                }),
+                const SizedBox(width: 8),
+                _placeActionButton(icon: Icons.place, label: '도착', color: Colors.redAccent, onTap: () {
+                  setState(() => _setSelectedRiverStop(null));
+                  _startNavWithArrival('${stop.name} 선착장');
+                }),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTransportModeBar(Color onSurface) {
+    final modes = [
+      (Icons.directions_transit, '대중교통', 0),
+      (Icons.directions_car, '자동차', 1),
+      (Icons.directions_walk, '도보', 2),
+    ];
+
+    return Row(
+      children: modes.map((m) {
+        final selected = _transportMode == m.$3;
+        final hasResult = m.$3 == 0 || _directionsCache.containsKey(m.$3);
+        final timeStr = m.$3 == 0
+            ? null
+            : _directionsCache[m.$3] != null
+                ? _formatDurationShort(_directionsCache[m.$3]!.durationSec)
+                : null;
+
+        return Expanded(
+          child: GestureDetector(
+            onTap: () => _switchTransportMode(m.$3),
+            behavior: HitTestBehavior.opaque,
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              margin: const EdgeInsets.symmetric(horizontal: 2),
+              decoration: BoxDecoration(
+                color: selected ? onSurface.withValues(alpha: 0.1) : Colors.transparent,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(m.$1, size: 18, color: selected ? onSurface : onSurface.withValues(alpha: 0.4)),
+                  if (timeStr != null)
+                    Text(timeStr, style: TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: selected ? onSurface : onSurface.withValues(alpha: 0.4)))
+                  else if (m.$3 != 0 && !hasResult)
+                    SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 1, color: onSurface.withValues(alpha: 0.3)))
+                  else
+                    Text(m.$2, style: TextStyle(fontSize: 9, color: selected ? onSurface : onSurface.withValues(alpha: 0.4))),
+                ],
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  String _formatDuration(int sec) {
+    final min = sec ~/ 60;
+    final hr = min ~/ 60;
+    return hr > 0 ? '${hr}시간 ${min % 60}분' : '$min분';
+  }
+
+  String _formatDurationShort(int sec) {
+    final min = sec ~/ 60;
+    final hr = min ~/ 60;
+    return hr > 0 ? '${hr}h${min % 60}m' : '${min}분';
+  }
+
+  Future<void> _preloadDirections() async {
+    if (_routeResult == null) return;
+    final dep = _routeResult!.departure;
+    final arr = _routeResult!.arrival;
+    final fromCoord = _resolveStationCoord(dep);
+    final toCoord = _resolveStationCoord(arr);
+    if (fromCoord == null || toCoord == null) return;
+
+    final ds = DirectionsService.instance;
+    // 대중교통 (TMAP — 지하철+버스+도보 통합)
+    ds.getTransitRoutes(fromCoord[0], fromCoord[1], toCoord[0], toCoord[1]).then((routes) {
+      if (mounted && routes.isNotEmpty) {
+        setState(() {
+          _transitRoutes = routes;
+          _directionsCache[0] = routes.first;
+        });
+      }
+    });
+    // 자동차
+    ds.getDrivingRoute(fromCoord[0], fromCoord[1], toCoord[0], toCoord[1]).then((r) {
+      if (r != null && mounted) setState(() => _directionsCache[1] = r);
+    });
+    // 도보
+    ds.getWalkingRoute(fromCoord[0], fromCoord[1], toCoord[0], toCoord[1]).then((r) {
+      if (r != null && mounted) setState(() => _directionsCache[2] = r);
+    });
+  }
+
+  List<double>? _resolveStationCoord(String name) {
+    if (name == '내 위치') return null; // 비동기라 여기서 못 함
+    // 지하철역
+    for (final e in SubwayColors.lineColors.entries) {
+      for (final s in SeoulSubwayData.getLineStations(e.key)) {
+        if (s.name == name) return [s.lat, s.lng];
+      }
+    }
+    // 한강버스 선착장
+    for (final s in RiverBusData.stops) {
+      if (name.contains(s.name)) return [s.lat, s.lng];
+    }
+    return null;
+  }
+
+  void _switchTransportMode(int mode) {
+    setState(() => _transportMode = mode);
+    _clearRouteFromMap();
+    if (mode == 0) {
+      // 대중교통 — TMAP 결과가 있으면 사용, 없으면 기존 지하철
+      final transit = _directionsCache[0];
+      if (transit != null && transit.legs.isNotEmpty) {
+        _drawTransitOnMap(transit);
+      } else if (_routeResult != null) {
+        _drawRouteOnMap(_routeResult!);
+      }
+    } else {
+      final result = _directionsCache[mode];
+      if (result != null) _drawDirectionsOnMap(result);
+    }
+  }
+
+  void _drawTransitOnMap(DirectionsResult result) {
+    _clearRouteFromMap();
+    for (int i = 0; i < result.legs.length; i++) {
+      final leg = result.legs[i];
+      if (leg.coordinates.length < 2) continue;
+      final color = leg.mode == 'WALK'
+          ? Colors.grey
+          : leg.color != null
+              ? Color(leg.color!)
+              : Colors.blue;
+      _mapController?.addPolyline(
+        'transit_leg_$i', leg.coordinates,
+        color: color,
+        width: leg.mode == 'WALK' ? 3.0 : 5.0,
+        opacity: leg.mode == 'WALK' ? 0.5 : 0.8,
+      );
+    }
+  }
+
+  void _drawDirectionsOnMap(DirectionsResult result) {
+    _clearRouteFromMap();
+    final color = switch (result.mode) {
+      TravelMode.walking => Colors.green,
+      TravelMode.driving => Colors.blue,
+      TravelMode.transit => Colors.purple,
+    };
+    // coordinates는 이미 [lat, lng]
+    final coords = result.coordinates;
+    _mapController?.addPolyline('directions_route', coords, color: color, width: 5.0, opacity: 0.8);
+  }
+
   void _startNavWithDeparture(String name) {
     _searchBarKey.currentState?.enterNavWithDeparture(name);
   }
@@ -1145,7 +1593,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                   IconButton(
                     icon: Icon(Icons.close, size: 20, color: cs.onSurfaceVariant),
-                    onPressed: () => setState(() { _selectedPlace = null; _removePlaceMarker(); }),
+                    onPressed: () => setState(() { _setSelectedPlace(null); _removePlaceMarker(); }),
                     visualDensity: VisualDensity.compact,
                   ),
                 ],
@@ -1183,12 +1631,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
               Row(
                 children: [
                   _placeActionButton(icon: Icons.trip_origin, label: '출발', color: cs.primary, onTap: () {
-                    setState(() { _selectedPlace = null; _removePlaceMarker(); });
+                    setState(() { _setSelectedPlace(null); _removePlaceMarker(); });
                     _startNavWithDeparture(place.name);
                   }),
                   const SizedBox(width: 8),
                   _placeActionButton(icon: Icons.place, label: '도착', color: Colors.redAccent, onTap: () {
-                    setState(() { _selectedPlace = null; _removePlaceMarker(); });
+                    setState(() { _setSelectedPlace(null); _removePlaceMarker(); });
                     _startNavWithArrival(place.name);
                   }),
                   const SizedBox(width: 8),
@@ -1428,13 +1876,64 @@ class _DashboardScreenState extends State<DashboardScreen> {
         }
         break;
       case AiAction.searchPlace:
-        // 검색은 AI가 음성으로 결과를 안내
+        final query = event.params['query'] as String?;
+        if (query != null) {
+          _dismissAi();
+          Future.delayed(const Duration(milliseconds: 600), () {
+            _searchBarKey.currentState?.performSearch(query);
+          });
+        }
+        break;
+      case AiAction.findRoute:
+        final from = event.params['from'] as String?;
+        final to = event.params['to'] as String?;
+        _dismissAi();
+        Future.delayed(const Duration(milliseconds: 600), () {
+          if (to != null) _startNavWithArrival(to);
+        });
+        break;
+      case AiAction.toggleSatellite:
+        setState(() => _satelliteOn = !_satelliteOn);
+        _mapController?.setSatelliteVisible(_satelliteOn);
+        break;
+      case AiAction.addFavorite:
+        if (_selectedPlace != null) {
+          FavoritesService.instance.toggle(FavoritePlace(
+            name: _selectedPlace!.name,
+            address: _selectedPlace!.address,
+            category: _selectedPlace!.category,
+            lat: _selectedPlace!.lat,
+            lng: _selectedPlace!.lng,
+          ));
+          setState(() {});
+        }
+        break;
+      case AiAction.openRecommendation:
+        _dismissAi();
+        Future.delayed(const Duration(milliseconds: 600), () {
+          setState(() { _recommendOpen = true; _hideButtonForPanel = true; });
+        });
+        break;
+      case AiAction.openSaved:
+        _dismissAi();
+        Future.delayed(const Duration(milliseconds: 600), () {
+          setState(() { _savedOpen = true; _hideButtonForPanel = true; });
+        });
+        break;
+      case AiAction.moveToLocation:
+        final lat = (event.params['lat'] as num?)?.toDouble();
+        final lng = (event.params['lng'] as num?)?.toDouble();
+        if (lat != null && lng != null) {
+          _dismissAi();
+          Future.delayed(const Duration(milliseconds: 600), () {
+            _mapController?.moveTo(lat, lng, zoom: 15.0);
+          });
+        }
         break;
       case AiAction.requestPhoto:
       case AiAction.addPlaces:
       case AiAction.removePlace:
       case AiAction.confirmPlan:
-        // AiView 내부에서 처리
         break;
     }
   }
@@ -1627,13 +2126,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     width: 36, height: 4,
                     decoration: BoxDecoration(color: isDark ? Colors.white24 : Colors.black12, borderRadius: BorderRadius.circular(2)),
                   )),
+                  // 교통수단 탭
+                  _buildTransportModeBar(onSurface),
+                  const SizedBox(height: 10),
                   // 시간 + 뱃지
                   Row(children: [
-                    Text(r.totalTimeFormatted, style: AppTypography.displayLg.copyWith(color: onSurface)),
+                    Text(_transportMode == 0
+                        ? r.totalTimeFormatted
+                        : _directionsCache[_transportMode] != null
+                            ? _formatDuration(_directionsCache[_transportMode]!.durationSec)
+                            : '...',
+                      style: AppTypography.displayLg.copyWith(color: onSurface)),
                     const SizedBox(width: 12),
-                    if (r.transferCount > 0) AppBadge(text: '환승 ${r.transferCount}회', color: AppColors.warning, fontWeight: FontWeight.w600),
-                    const SizedBox(width: 6),
-                    AppBadge(text: '${r.totalDistanceKm.toStringAsFixed(1)}km', color: AppColors.textDisabled, fontWeight: FontWeight.w600),
+                    if (_transportMode == 0) ...[
+                      if (r.transferCount > 0) AppBadge(text: '환승 ${r.transferCount}회', color: AppColors.warning, fontWeight: FontWeight.w600),
+                      const SizedBox(width: 6),
+                      AppBadge(text: '${r.totalDistanceKm.toStringAsFixed(1)}km', color: AppColors.textDisabled, fontWeight: FontWeight.w600),
+                    ] else if (_directionsCache[_transportMode] != null) ...[
+                      AppBadge(text: '${_directionsCache[_transportMode]!.distanceKm.toStringAsFixed(1)}km', color: AppColors.textDisabled, fontWeight: FontWeight.w600),
+                      if (_directionsCache[_transportMode]!.fare != null) ...[
+                        const SizedBox(width: 6),
+                        AppBadge(text: '택시 ~${(_directionsCache[_transportMode]!.fare! / 10000).toStringAsFixed(1)}만원', color: AppColors.warning, fontWeight: FontWeight.w600),
+                      ],
+                    ],
                   ]),
                   const SizedBox(height: 6),
                   // 출발 → 도착
@@ -1759,7 +2274,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
             onClose: () => setState(() => _savedOpen = false),
             onPlaceTap: (lat, lng, name) {
               setState(() => _savedOpen = false);
-              _mapController?.moveTo(lat, lng, zoom: 16.0);
+              Future.delayed(const Duration(milliseconds: 400), () {
+                if (!mounted) return;
+                _mapController?.moveTo(lat, lng, zoom: 16.0);
+                final place = PlaceSearchResult(
+                  name: name, address: '', category: '저장된 장소', lat: lat, lng: lng,
+                );
+                _showPlaceMarker(place);
+                setState(() => _setSelectedPlace(place));
+                PlaceSearchService.instance.search(name).then((results) {
+                  if (!mounted || _selectedPlace?.name != name) return;
+                  PlaceSearchResult? best;
+                  double bestDist = double.infinity;
+                  for (final r in results) {
+                    final d = (r.lat - lat).abs() + (r.lng - lng).abs();
+                    if (d < bestDist) { bestDist = d; best = r; }
+                  }
+                  if (best != null) setState(() => _setSelectedPlace(best));
+                });
+              });
             },
           ),
         ),
@@ -2202,8 +2735,8 @@ class _SettingsPanelState extends State<SettingsPanel> {
               }),
               const Divider(height: 16, color: AppColors.divider),
             ],
-            // 한강 리버버스
-            _toggleRow('🚢 한강 리버버스', ctrl.showRiverBus, (v) {
+            // 한강 한강버스
+            _toggleRow('🚢 한강 한강버스', ctrl.showRiverBus, (v) {
               ctrl.toggleRiverBus(v);
               setState(() {});
             }),

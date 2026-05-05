@@ -1,22 +1,24 @@
 import 'dart:math';
 
-/// 한강 리버버스 노선 및 시간표 데이터
+/// 한강 한강버스 노선 및 시간표 데이터
 /// 출처: hgbus.co.kr (2025~2026 운항 정보)
 /// 현재 마곡↔여의도만 정상 운항, 나머지 정비 중
 class RiverBusData {
   /// 선착장 좌표 (OSM 한강 waterway 중심선 기반)
   static const List<RiverBusStop> stops = [
-    RiverBusStop(id: 'magok', name: '마곡', lat: 37.5891, lng: 126.8249,
+    RiverBusStop(id: 'magok', name: '마곡', lat: 37.57506, lng: 126.84401,
         address: '서울 강서구 마곡동'),
-    RiverBusStop(id: 'yeouido', name: '여의도', lat: 37.5347, lng: 126.9351,
+    RiverBusStop(id: 'mangwon', name: '망원', lat: 37.55459, lng: 126.89472,
+        address: '서울 마포구 망원동'),
+    RiverBusStop(id: 'yeouido', name: '여의도', lat: 37.52888, lng: 126.93440,
         address: '서울 영등포구 여의도동'),
-    RiverBusStop(id: 'oksu', name: '옥수', lat: 37.5207, lng: 127.0047,
+    RiverBusStop(id: 'oksu', name: '옥수', lat: 37.53888, lng: 127.01781,
         address: '서울 성동구 옥수동'),
-    RiverBusStop(id: 'apgujeong', name: '압구정', lat: 37.5268, lng: 127.0120,
+    RiverBusStop(id: 'apgujeong', name: '압구정', lat: 37.52669, lng: 127.01648,
         address: '서울 강남구 압구정동'),
-    RiverBusStop(id: 'ttukseom', name: '뚝섬', lat: 37.5249, lng: 127.0660,
+    RiverBusStop(id: 'ttukseom', name: '뚝섬', lat: 37.52881, lng: 127.06650,
         address: '서울 광진구 자양동'),
-    RiverBusStop(id: 'jamsil', name: '잠실', lat: 37.5231, lng: 127.0797,
+    RiverBusStop(id: 'jamsil', name: '잠실', lat: 37.51871, lng: 127.08479,
         address: '서울 송파구 잠실동'),
   ];
 
@@ -28,71 +30,105 @@ class RiverBusData {
   static const List<RiverBusRoute> routes = [
     RiverBusRoute(
       id: 'river_1',
-      name: '1호선',
-      displayName: '마곡 ↔ 여의도',
-      stopIds: ['magok', 'yeouido'],
+      name: '서쪽',
+      displayName: '마곡 ↔ 망원 ↔ 여의도',
+      stopIds: ['magok', 'mangwon', 'yeouido'],
       intervalMin: 30,
       firstDeparture: 7 * 60,       // 07:00
       lastDeparture: 21 * 60,       // 21:00
-      travelTimeMin: 25,
+      travelTimeMin: 30,
       dwellTimeSec: 180,            // 선착장 3분 정차
       isActive: true,
       color: 0xFF00ACC1,            // 시안
     ),
     RiverBusRoute(
       id: 'river_2',
-      name: '2호선',
+      name: '동쪽',
       displayName: '여의도 ↔ 잠실',
-      stopIds: ['yeouido', 'oksu', 'apgujeong', 'ttukseom', 'jamsil'],
+      stopIds: ['yeouido', 'jamsil'],
       intervalMin: 40,
       firstDeparture: 7 * 60 + 30,  // 07:30
       lastDeparture: 20 * 60 + 30,  // 20:30
-      travelTimeMin: 50,
-      dwellTimeSec: 120,            // 중간 정차 2분
-      isActive: false,              // 정비 중
+      travelTimeMin: 40,
+      dwellTimeSec: 120,
+      isActive: true,               // 2026.3월부터 재개
       color: 0xFF26A69A,            // 틸
     ),
   ];
 
-  /// 실제 한강 물길을 따르는 경로 좌표 (더 많은 중간점)
-  /// 경로 좌표 — OSM 한강 중심선 + 선착장 좌표 시작/끝 고정
+  /// 실제 한강 물길을 따르는 경로 좌표 (OSM 한강 중심선 기반)
   static Map<String, List<List<double>>> get routePaths => {
-    'magok_yeouido': [
+    // 서쪽 노선: 마곡 → 망원
+    'magok_mangwon': [
       [stops[0].lat, stops[0].lng],  // 마곡
-      [37.5734, 126.8531],
-      [37.5588, 126.8785],
-      [37.5551, 126.8853],
-      [37.5513, 126.8918],
-      [37.5406, 126.9091],
-      [37.5378, 126.9228],
-      [stops[1].lat, stops[1].lng],  // 여의도
+      [37.57337, 126.85309],
+      [37.55878, 126.87853],
+      [stops[1].lat, stops[1].lng],  // 망원
     ],
+    // 서쪽 노선: 망원 → 여의도
+    'mangwon_yeouido': [
+      [stops[1].lat, stops[1].lng],  // 망원
+      [37.55126, 126.89183],
+      [37.54061, 126.90906],
+      [37.53782, 126.92280],
+      [stops[2].lat, stops[2].lng],  // 여의도
+    ],
+    // 동쪽 노선: 여의도 → 잠실
+    'yeouido_jamsil': [
+      [stops[2].lat, stops[2].lng],  // 여의도
+      [37.52234, 126.94822],
+      [37.51836, 126.95348],
+      [37.51560, 126.96062],
+      [37.51323, 126.96730],
+      [37.51194, 126.97277],
+      [37.51143, 126.97775],
+      [37.51190, 126.98723],
+      [37.51707, 126.99903],
+      [37.52065, 127.00466],
+      [37.52679, 127.01202],
+      [37.53566, 127.02030],
+      [37.53801, 127.02516],
+      [37.53799, 127.02998],
+      [37.53124, 127.05396],
+      [37.52486, 127.06602],
+      [37.52314, 127.07969],
+      [stops[6].lat, stops[6].lng],  // 잠실
+    ],
+    // (운행중단) 여의도 → 옥수
     'yeouido_oksu': [
-      [stops[1].lat, stops[1].lng],  // 여의도
-      [37.5223, 126.9482],
-      [37.5184, 126.9535],
-      [37.5156, 126.9606],
-      [37.5132, 126.9673],
-      [37.5119, 126.9728],
-      [37.5113, 126.9819],
-      [37.5119, 126.9872],
-      [37.5171, 126.9990],
-      [stops[2].lat, stops[2].lng],  // 옥수
+      [stops[2].lat, stops[2].lng],  // 여의도
+      [37.52234, 126.94822],
+      [37.51836, 126.95348],
+      [37.51560, 126.96062],
+      [37.51323, 126.96730],
+      [37.51194, 126.97277],
+      [37.51143, 126.97775],
+      [37.51190, 126.98723],
+      [37.51707, 126.99903],
+      [37.52065, 127.00466],
+      [stops[3].lat, stops[3].lng],  // 옥수
     ],
+    // (운행중단) 옥수 → 압구정
     'oksu_apgujeong': [
-      [stops[2].lat, stops[2].lng],  // 옥수
-      [stops[3].lat, stops[3].lng],  // 압구정
+      [stops[3].lat, stops[3].lng],  // 옥수
+      [37.52679, 127.01202],
+      [stops[4].lat, stops[4].lng],  // 압구정
     ],
+    // (운행중단) 압구정 → 뚝섬
     'apgujeong_ttukseom': [
-      [stops[3].lat, stops[3].lng],  // 압구정
-      [37.5357, 127.0203],
-      [37.5382, 127.0277],
-      [37.5312, 127.0540],
-      [stops[4].lat, stops[4].lng],  // 뚝섬
+      [stops[4].lat, stops[4].lng],  // 압구정
+      [37.53566, 127.02030],
+      [37.53801, 127.02516],
+      [37.53799, 127.02998],
+      [37.53124, 127.05396],
+      [stops[5].lat, stops[5].lng],  // 뚝섬
     ],
+    // (운행중단) 뚝섬 → 잠실
     'ttukseom_jamsil': [
-      [stops[4].lat, stops[4].lng],  // 뚝섬
-      [stops[5].lat, stops[5].lng],  // 잠실
+      [stops[5].lat, stops[5].lng],  // 뚝섬
+      [37.52486, 127.06602],
+      [37.52314, 127.07969],
+      [stops[6].lat, stops[6].lng],  // 잠실
     ],
   };
 
@@ -100,7 +136,7 @@ class RiverBusData {
   /// 운항 시간 외에도 데모 선박 1대 표시
   static List<RiverBusVessel> getActiveVessels() {
     final now = DateTime.now();
-    final currentSec = now.hour * 3600 + now.minute * 60 + now.second;
+    final currentSec = now.hour * 3600 + now.minute * 60 + now.second + now.millisecond / 1000.0;
     final vessels = <RiverBusVessel>[];
 
     for (final route in routes) {

@@ -130,6 +130,9 @@ abstract class IMapController {
   /// POI 탭 콜백 설정 (지도 위 장소 아이콘 클릭 시)
   void setOnPoiTapped(void Function(String name, double lat, double lng)? callback) {}
 
+  /// 좌표 기반 탭 콜백 (빈 곳 탭 시 좌표 전달)
+  void setOnMapCoordTapped(void Function(double lat, double lng)? callback) {}
+
   /// 주변 POI 마커 표시 (카카오 데이터)
   Future<void> showNearbyPoi(List<Map<String, dynamic>> pois) async {}
 
@@ -144,6 +147,10 @@ abstract class IMapController {
 
   /// 선택된 역 이름 설정 (하이라이트 표시용)
   void setSelectedStation(String? stationName) {}
+
+  /// 한강버스 선착장/배 바닥 glow 표시
+  void showRiverBusHighlight(double lat, double lng) {}
+  void hideRiverBusHighlight() {}
 
   /// 날씨 시각 효과 적용 (안개, 비, 눈 등)
   void applyWeatherEffect({

@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import '../core/map_interface.dart';
 import '../services/flight_service.dart';
+import '../services/settings_service.dart';
 import '../data/airport_data.dart';
 
 /// 비행기 색상 (미니도쿄 스타일)
@@ -99,8 +100,13 @@ class FlightOverlayController {
     }
     // DEMO: API 호출 없이 시뮬레이션만 (_animationTick에서 처리)
 
-    // 60fps 애니메이션 (지하철과 동일 — 16ms)
-    _animTimer = Timer.periodic(const Duration(milliseconds: 16), (_) {
+    // quality preset에 따라 프레임 조절
+    final flightMs = switch (SettingsService.instance.qualityPreset) {
+      'low' => 100,
+      'medium' => 33,
+      _ => 16,
+    };
+    _animTimer = Timer.periodic(Duration(milliseconds: flightMs), (_) {
       _animationTick();
     });
 

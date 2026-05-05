@@ -4,6 +4,8 @@ import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../services/recent_search_service.dart';
+import '../services/directions_service.dart';
+import '../data/river_bus_data.dart';
 import 'package:cupertino_native_better/cupertino_native_better.dart';
 import 'adaptive/adaptive.dart';
 import '../data/seoul_subway_data.dart';
@@ -102,8 +104,10 @@ class UnifiedSearchBar extends StatefulWidget {
   final void Function(String stationName) onStationSelected;
   final void Function(PlaceSearchResult place)? onPlaceSelected;
   final void Function(BusRouteInfo route)? onBusSelected;
+  final void Function(RiverBusStop stop)? onRiverBusStopSelected;
   final void Function(PathResult route)? onRouteFound;
   final void Function(PathResult route)? onRouteDetailRequested;
+  final void Function(DirectionsResult result)? onDirectionsFound;
   final void Function(bool isNavMode)? onNavModeChanged;
   final void Function(bool isFocused)? onFocusChanged;
   final VoidCallback? onProfileTap;
@@ -113,8 +117,10 @@ class UnifiedSearchBar extends StatefulWidget {
     required this.onStationSelected,
     this.onPlaceSelected,
     this.onBusSelected,
+    this.onRiverBusStopSelected,
     this.onRouteFound,
     this.onRouteDetailRequested,
+    this.onDirectionsFound,
     this.onNavModeChanged,
     this.onFocusChanged,
     this.onProfileTap,
@@ -137,6 +143,13 @@ class UnifiedSearchBarState extends State<UnifiedSearchBar>
     Future.delayed(const Duration(milliseconds: 350), () {
       if (mounted) _arrFocus.requestFocus();
     });
+  }
+
+  /// 외부에서 검색 실행
+  void performSearch(String query) {
+    _searchController.text = query;
+    _onSearchChanged(query);
+    _searchFocus.requestFocus();
   }
 
   /// 외부에서 길찾기 모드 진입 + 도착지 설정
@@ -177,6 +190,11 @@ class UnifiedSearchBarState extends State<UnifiedSearchBar>
 
   // 경로 — 3개 타입 동시 조회
   PathSearchType _searchType = PathSearchType.duration;
+
+  // 교통수단 모드
+  int _transportMode = 0; // 0: 대중교통, 1: 도보, 2: 자전거, 3: 자동차
+  DirectionsResult? _directionsResult;
+  bool _directionsLoading = false;
   PathResult? _pathResult;
   Map<PathSearchType, PathResult> _allRoutes = {};
   bool _isPathLoading = false;
@@ -222,6 +240,23 @@ class UnifiedSearchBarState extends State<UnifiedSearchBar>
         }
       }
     }
+    // 한강버스 선착장 추가 (활성 노선의 선착장만)
+    final activeStopIds = <String>{};
+    for (final route in RiverBusData.routes) {
+      if (route.isActive) activeStopIds.addAll(route.stopIds);
+    }
+    for (final stop in RiverBusData.stops) {
+      if (!activeStopIds.contains(stop.id)) continue;
+      final name = '한강버스 ${stop.name} 선착장';
+      if (seen.add(name)) {
+        list.add(StationSearchResult(
+          station: StationInfo(id: stop.id, name: name, lat: stop.lat, lng: stop.lng, transferLines: [], isUnderground: false),
+          lineId: 'river',
+          lineName: '한강버스',
+          lineColor: const Color(0xFF00ACC1),
+        ));
+      }
+    }
     _allStations = list;
   }
 
@@ -239,7 +274,14 @@ class UnifiedSearchBarState extends State<UnifiedSearchBar>
 
   List<StationSearchResult> _search(String q) {
     if (q.trim().isEmpty) return [];
-    return _allStations.where((r) => _matchesQuery(r.station.name, q.trim())).take(15).toList();
+    final matched = _allStations.where((r) => _matchesQuery(r.station.name, q.trim())).toList();
+    // 한강버스 선착장을 상위에 표시 (정확 매칭 우선)
+    matched.sort((a, b) {
+      final aExact = a.station.name.startsWith(q.trim()) ? 0 : 1;
+      final bExact = b.station.name.startsWith(q.trim()) ? 0 : 1;
+      return aExact.compareTo(bExact);
+    });
+    return matched.take(15).toList();
   }
 
   // ── 일반 검색 ──
@@ -274,8 +316,22 @@ class UnifiedSearchBarState extends State<UnifiedSearchBar>
       _busService.searchRoutes(q.trim()),
     ]);
     if (mounted && _searchController.text == q) {
+      // 카카오 결과에서 로컬 매핑에 이미 있는 지하철역/한강버스 제거
+      final kakaoPlaces = (futures[0] as List<PlaceSearchResult>).where((p) {
+        // 지하철역 중복 제거 (카테고리가 '지하철역'이거나 이름에 '역'이 있고 로컬 매핑에 있으면)
+        if (p.category == '지하철역' || p.category.contains('지하철')) {
+          final stationName = p.name.replaceAll('역', '').replaceAll(' ', '');
+          return !_allStations.any((s) => s.station.name.contains(stationName) || stationName.contains(s.station.name));
+        }
+        // 한강버스 선착장 중복 제거
+        if (p.name.contains('선착장') || p.name.contains('한강버스')) {
+          return !RiverBusData.stops.any((s) => p.name.contains(s.name));
+        }
+        return true;
+      }).toList();
+
       setState(() {
-        _placeResults = futures[0] as List<PlaceSearchResult>;
+        _placeResults = kakaoPlaces;
         _busResults = futures[1] as List<BusRouteInfo>;
       });
       if (_placeResults.isNotEmpty || _busResults.isNotEmpty) {
@@ -288,6 +344,15 @@ class UnifiedSearchBarState extends State<UnifiedSearchBar>
     RecentSearchService.instance.add(r.station.name);
     _searchController.clear(); _searchFocus.unfocus(); _dropCtrl.reverse();
     setState(() { _isSearching = false; _searchResults = []; _placeResults = []; _busResults = []; });
+
+    // 한강버스 선착장이면 전용 콜백
+    if (r.lineId == 'river') {
+      final stop = RiverBusData.findStop(r.station.id);
+      if (stop != null) {
+        widget.onRiverBusStopSelected?.call(stop);
+        return;
+      }
+    }
     widget.onStationSelected(r.station.name);
   }
 
@@ -295,7 +360,17 @@ class UnifiedSearchBarState extends State<UnifiedSearchBar>
     RecentSearchService.instance.add(place.name);
     _searchController.clear(); _searchFocus.unfocus(); _dropCtrl.reverse();
     setState(() { _isSearching = false; _searchResults = []; _placeResults = []; _busResults = []; });
-    widget.onPlaceSelected?.call(place);
+
+    // 한강버스 선착장이면 전용 콜백
+    if (place.category == '한강버스') {
+      final stop = RiverBusData.stops.firstWhere(
+        (s) => place.name.contains(s.name),
+        orElse: () => RiverBusData.stops.first,
+      );
+      widget.onRiverBusStopSelected?.call(stop);
+    } else {
+      widget.onPlaceSelected?.call(place);
+    }
   }
 
   void _selectBus(BusRouteInfo route) {
@@ -417,6 +492,62 @@ class UnifiedSearchBarState extends State<UnifiedSearchBar>
     if (route == null) return;
     setState(() { _searchType = type; _pathResult = route; });
     widget.onRouteFound?.call(route);
+  }
+
+  void _setTransportMode(int mode) {
+    setState(() => _transportMode = mode);
+    if (mode == 0) {
+      // 대중교통 — 기존 지하철 길찾기
+      if (_depStation != null && _arrStation != null) _findPath();
+    } else {
+      // 도보/자전거/자동차 — Directions API
+      _findDirections(mode);
+    }
+  }
+
+  Future<void> _findDirections(int mode) async {
+    if (_depStation == null || _arrStation == null) return;
+    setState(() { _directionsLoading = true; _directionsResult = null; });
+
+    // 이름 → 좌표
+    final fromCoord = await _resolveCoord(_depStation!);
+    final toCoord = await _resolveCoord(_arrStation!);
+    if (fromCoord == null || toCoord == null) {
+      setState(() => _directionsLoading = false);
+      return;
+    }
+
+    DirectionsResult? result;
+    final ds = DirectionsService.instance;
+    if (mode == 1) {
+      result = await ds.getWalkingRoute(fromCoord[0], fromCoord[1], toCoord[0], toCoord[1]);
+    } else if (mode == 2) {
+      // 미사용
+    } else if (mode == 3) {
+      result = await ds.getDrivingRoute(fromCoord[0], fromCoord[1], toCoord[0], toCoord[1]);
+    }
+
+    if (mounted) {
+      setState(() { _directionsResult = result; _directionsLoading = false; });
+      if (result != null) widget.onDirectionsFound?.call(result);
+    }
+  }
+
+  Future<List<double>?> _resolveCoord(String name) async {
+    // "내 위치"
+    if (name == '내 위치') {
+      try {
+        final pos = await PlaceSearchService.instance.getCurrentPosition();
+        return [pos.latitude, pos.longitude];
+      } catch (_) { return null; }
+    }
+    // 지하철역
+    final station = _allStations.where((s) => s.station.name == name || s.station.name.contains(name)).firstOrNull;
+    if (station != null) return [station.station.lat, station.station.lng];
+    // 카카오 검색
+    final places = await PlaceSearchService.instance.search(name);
+    if (places.isNotEmpty) return [places.first.lat, places.first.lng];
+    return null;
   }
 
   @override
@@ -761,6 +892,86 @@ class UnifiedSearchBarState extends State<UnifiedSearchBar>
     );
   }
 
+  Widget _buildDirectionsResult(DirectionsResult r) {
+    final modeIcon = switch (r.mode) {
+      TravelMode.walking => Icons.directions_walk,
+      TravelMode.driving => Icons.directions_car,
+      TravelMode.transit => Icons.directions_transit,
+    };
+    final modeName = switch (r.mode) {
+      TravelMode.walking => '도보',
+      TravelMode.driving => '자동차',
+      TravelMode.transit => '대중교통',
+    };
+    final min = r.durationSec ~/ 60;
+    final hr = min ~/ 60;
+    final timeStr = hr > 0 ? '${hr}시간 ${min % 60}분' : '${min}분';
+
+    return _resultCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            Icon(modeIcon, size: 20, color: AppColors.accent),
+            const SizedBox(width: 8),
+            Text(timeStr, style: AppTypography.displayLg.copyWith(fontSize: 20)),
+            const Spacer(),
+            Text('${r.distanceKm.toStringAsFixed(1)}km', style: AppTypography.bodySm.copyWith(color: AppColors.textSecondary)),
+          ]),
+          const SizedBox(height: 4),
+          Text('$modeName 경로', style: AppTypography.bodySm.copyWith(color: AppColors.textSecondary)),
+          if (r.fare != null) ...[
+            const SizedBox(height: 4),
+            Text('예상 택시비 약 ${_formatWon(r.fare!)}', style: AppTypography.bodySm.copyWith(color: AppColors.warning)),
+          ],
+        ],
+      ),
+    );
+  }
+
+  String _formatWon(int won) {
+    if (won >= 10000) return '${(won / 10000).toStringAsFixed(1)}만원';
+    return '${won.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}원';
+  }
+
+  Widget _buildTransportModeTabs() {
+    const modes = [
+      (Icons.directions_transit, '대중교통'),
+      (Icons.directions_walk, '도보'),
+      (Icons.directions_bike, '자전거'),
+      (Icons.directions_car, '자동차'),
+    ];
+    final cs = Theme.of(context).colorScheme;
+    final isM3 = Platform.isAndroid;
+
+    return Row(
+      children: List.generate(modes.length, (i) {
+        final selected = _transportMode == i;
+        final color = selected ? cs.primary : (isM3 ? cs.onSurfaceVariant : AppColors.textSecondary);
+        return Expanded(
+          child: GestureDetector(
+            onTap: () => _setTransportMode(i),
+            behavior: HitTestBehavior.opaque,
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              decoration: selected ? BoxDecoration(
+                border: Border(bottom: BorderSide(color: cs.primary, width: 2)),
+              ) : null,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(modes[i].$1, size: 18, color: color),
+                  const SizedBox(height: 2),
+                  Text(modes[i].$2, style: TextStyle(fontSize: 9, fontWeight: selected ? FontWeight.w700 : FontWeight.w500, color: color)),
+                ],
+              ),
+            ),
+          ),
+        );
+      }),
+    );
+  }
+
   Widget _buildTypeTabs() {
     return Row(
       children: PathSearchType.values.map((type) {
@@ -810,7 +1021,8 @@ class UnifiedSearchBarState extends State<UnifiedSearchBar>
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   Widget _buildRouteResult() {
-    if (_isPathLoading) {
+    // 로딩
+    if (_isPathLoading || _directionsLoading) {
       return _resultCard(
         child: Column(children: [
           Platform.isAndroid
@@ -820,6 +1032,16 @@ class UnifiedSearchBarState extends State<UnifiedSearchBar>
           Text('경로 검색 중...', style: AppTypography.bodySm.copyWith(color: AppColors.textTertiary)),
         ]),
       );
+    }
+
+    // 도보/자전거/자동차 결과
+    if (_transportMode != 0) {
+      if (_directionsResult == null) {
+        return _resultCard(
+          child: Text('경로를 찾을 수 없습니다', style: AppTypography.bodySm.copyWith(color: AppColors.textDisabled), textAlign: TextAlign.center),
+        );
+      }
+      return _buildDirectionsResult(_directionsResult!);
     }
 
     if (_pathResult == null) {
