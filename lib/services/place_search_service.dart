@@ -39,8 +39,8 @@ class PlaceSearchService {
 
   Position? _lastPosition;
 
-  Future<Position> getCurrentPosition() async {
-    if (_lastPosition != null) return _lastPosition!;
+  Future<Position> getCurrentPosition({bool forceRefresh = false}) async {
+    if (!forceRefresh && _lastPosition != null) return _lastPosition!;
     try {
       final serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) return _defaultPosition();
@@ -52,7 +52,9 @@ class PlaceSearchService {
       }
 
       _lastPosition = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(accuracy: LocationAccuracy.medium),
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.medium,
+        ),
       );
       return _lastPosition!;
     } catch (_) {
@@ -62,10 +64,16 @@ class PlaceSearchService {
 
   Position _defaultPosition() {
     return Position(
-      latitude: 37.5665, longitude: 126.9780,
-      timestamp: DateTime.now(), accuracy: 0, altitude: 0,
-      altitudeAccuracy: 0, heading: 0, headingAccuracy: 0,
-      speed: 0, speedAccuracy: 0,
+      latitude: 37.5665,
+      longitude: 126.9780,
+      timestamp: DateTime.now(),
+      accuracy: 0,
+      altitude: 0,
+      altitudeAccuracy: 0,
+      heading: 0,
+      headingAccuracy: 0,
+      speed: 0,
+      speedAccuracy: 0,
     );
   }
 
@@ -85,10 +93,12 @@ class PlaceSearchService {
           '&size=10'
           '&sort=accuracy';
 
-      final response = await http.get(
-        Uri.parse(url),
-        headers: {'Authorization': 'KakaoAK ${ApiKeys.kakaoRestApiKey}'},
-      ).timeout(const Duration(seconds: 4));
+      final response = await http
+          .get(
+            Uri.parse(url),
+            headers: {'Authorization': 'KakaoAK ${ApiKeys.kakaoRestApiKey}'},
+          )
+          .timeout(const Duration(seconds: 4));
 
       if (response.statusCode != 200) {
         debugPrint('[PlaceSearch] 카카오 API 실패: ${response.statusCode}');
@@ -98,21 +108,24 @@ class PlaceSearchService {
       final data = jsonDecode(response.body);
       final documents = data['documents'] as List? ?? [];
 
-      return documents.map<PlaceSearchResult>((doc) {
-        final categoryName = doc['category_group_name'] ?? '';
-        return PlaceSearchResult(
-          name: doc['place_name'] ?? '',
-          address: doc['road_address_name'] ?? doc['address_name'] ?? '',
-          category: categoryName.isNotEmpty
-              ? categoryName
-              : _extractCategory(doc['category_name'] ?? ''),
-          lat: double.tryParse(doc['y'] ?? '') ?? 0,
-          lng: double.tryParse(doc['x'] ?? '') ?? 0,
-          phone: doc['phone'],
-          distance: doc['distance'],
-          placeUrl: doc['place_url'],
-        );
-      }).where((r) => r.name.isNotEmpty).toList();
+      return documents
+          .map<PlaceSearchResult>((doc) {
+            final categoryName = doc['category_group_name'] ?? '';
+            return PlaceSearchResult(
+              name: doc['place_name'] ?? '',
+              address: doc['road_address_name'] ?? doc['address_name'] ?? '',
+              category: categoryName.isNotEmpty
+                  ? categoryName
+                  : _extractCategory(doc['category_name'] ?? ''),
+              lat: double.tryParse(doc['y'] ?? '') ?? 0,
+              lng: double.tryParse(doc['x'] ?? '') ?? 0,
+              phone: doc['phone'],
+              distance: doc['distance'],
+              placeUrl: doc['place_url'],
+            );
+          })
+          .where((r) => r.name.isNotEmpty)
+          .toList();
     } catch (e) {
       debugPrint('[PlaceSearch] 검색 실패: $e');
       return [];
@@ -121,7 +134,11 @@ class PlaceSearchService {
 
   /// 주변 POI 가져오기 (카테고리 기반, 지도에 표시용)
   /// [categories]: CE7(카페), FD6(음식점), MT1(마트), CS2(편의점), BK9(은행), HP8(병원), AT4(관광)
-  Future<List<PlaceSearchResult>> fetchNearbyPoi(double lat, double lng, {int radius = 500}) async {
+  Future<List<PlaceSearchResult>> fetchNearbyPoi(
+    double lat,
+    double lng, {
+    int radius = 500,
+  }) async {
     try {
       final categories = ['CE7', 'FD6', 'CS2', 'AT4', 'CT1'];
       final allResults = <PlaceSearchResult>[];
@@ -136,28 +153,35 @@ class PlaceSearchService {
             '&size=5'
             '&sort=distance';
 
-        final response = await http.get(
-          Uri.parse(url),
-          headers: {'Authorization': 'KakaoAK ${ApiKeys.kakaoRestApiKey}'},
-        ).timeout(const Duration(seconds: 3));
+        final response = await http
+            .get(
+              Uri.parse(url),
+              headers: {'Authorization': 'KakaoAK ${ApiKeys.kakaoRestApiKey}'},
+            )
+            .timeout(const Duration(seconds: 3));
 
         if (response.statusCode != 200) continue;
 
         final data = jsonDecode(response.body);
         final documents = data['documents'] as List? ?? [];
 
-        allResults.addAll(documents.map<PlaceSearchResult>((doc) {
-          return PlaceSearchResult(
-            name: doc['place_name'] ?? '',
-            address: doc['road_address_name'] ?? doc['address_name'] ?? '',
-            category: doc['category_group_name'] ?? '',
-            lat: double.tryParse(doc['y'] ?? '') ?? 0,
-            lng: double.tryParse(doc['x'] ?? '') ?? 0,
-            phone: doc['phone'],
-            distance: doc['distance'],
-            placeUrl: doc['place_url'],
-          );
-        }).where((r) => r.name.isNotEmpty));
+        allResults.addAll(
+          documents
+              .map<PlaceSearchResult>((doc) {
+                return PlaceSearchResult(
+                  name: doc['place_name'] ?? '',
+                  address:
+                      doc['road_address_name'] ?? doc['address_name'] ?? '',
+                  category: doc['category_group_name'] ?? '',
+                  lat: double.tryParse(doc['y'] ?? '') ?? 0,
+                  lng: double.tryParse(doc['x'] ?? '') ?? 0,
+                  phone: doc['phone'],
+                  distance: doc['distance'],
+                  placeUrl: doc['place_url'],
+                );
+              })
+              .where((r) => r.name.isNotEmpty),
+        );
       }
 
       return allResults;
