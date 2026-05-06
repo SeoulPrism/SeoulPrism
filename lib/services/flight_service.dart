@@ -11,15 +11,17 @@ class FlightService {
   FlightService._();
 
   // ── OpenSky (실시간 위치) ──
-  static const String _openSkyUrl = 'https://opensky-network.org/api/states/all';
+  static const String _openSkyUrl =
+      'https://opensky-network.org/api/states/all';
   static const double _lamin = 37.1;
   static const double _lomin = 126.1;
   static const double _lamax = 37.85;
   static const double _lomax = 127.5;
 
   // ── 인천공항 여객기 스케줄 ──
-  static const String _icnBaseUrl = 'https://apis.data.go.kr/B551177/StatusOfPassengerFlightsDeOdp';
-  String get _icnServiceKey => '8zuGRSxHcN3d2Mdx2HxWOnPKYeOg0GP%2B4yeio%2FDD607HmJlQPOLMor7YleR1rRHbXw9ddQWULxRTz6lPI7fwvw%3D%3D';
+  static const String _icnBaseUrl =
+      'https://apis.data.go.kr/B551177/StatusOfPassengerFlightsDeOdp';
+  String get _icnServiceKey => ApiKeys.dataGoKrApiKey;
 
   // OAuth2 토큰
   String? _accessToken;
@@ -35,19 +37,26 @@ class FlightService {
 
   /// OAuth2 토큰 발급/갱신
   Future<void> _ensureToken() async {
-    if (_accessToken != null && _tokenExpiry != null &&
-        DateTime.now().isBefore(_tokenExpiry!.subtract(const Duration(seconds: 30)))) {
+    if (_accessToken != null &&
+        _tokenExpiry != null &&
+        DateTime.now().isBefore(
+          _tokenExpiry!.subtract(const Duration(seconds: 30)),
+        )) {
       return; // 아직 유효
     }
     try {
-      final resp = await http.post(
-        Uri.parse('https://opensky-network.org/auth/realms/opensky/protocol/openid-connect/token'),
-        body: {
-          'client_id': ApiKeys.openSkyClientId,
-          'client_secret': ApiKeys.openSkyClientSecret,
-          'grant_type': 'client_credentials',
-        },
-      ).timeout(const Duration(seconds: 10));
+      final resp = await http
+          .post(
+            Uri.parse(
+              'https://opensky-network.org/auth/realms/opensky/protocol/openid-connect/token',
+            ),
+            body: {
+              'client_id': ApiKeys.openSkyClientId,
+              'client_secret': ApiKeys.openSkyClientSecret,
+              'grant_type': 'client_credentials',
+            },
+          )
+          .timeout(const Duration(seconds: 10));
 
       if (resp.statusCode == 200) {
         final data = jsonDecode(resp.body);
@@ -71,7 +80,8 @@ class FlightService {
     }
 
     // 429 백오프 중이면 스킵
-    if (_rateLimitedUntil != null && DateTime.now().isBefore(_rateLimitedUntil!)) {
+    if (_rateLimitedUntil != null &&
+        DateTime.now().isBefore(_rateLimitedUntil!)) {
       return [];
     }
     _rateLimitedUntil = null;
@@ -79,16 +89,17 @@ class FlightService {
     // OAuth2 토큰 갱신
     await _ensureToken();
 
-    final url = '$_openSkyUrl?lamin=$_lamin&lomin=$_lomin&lamax=$_lamax&lomax=$_lomax';
+    final url =
+        '$_openSkyUrl?lamin=$_lamin&lomin=$_lomin&lamax=$_lamax&lomax=$_lomax';
 
     try {
       final headers = <String, String>{};
       if (_accessToken != null) {
         headers['Authorization'] = 'Bearer $_accessToken';
       }
-      final response = await http.get(Uri.parse(url), headers: headers).timeout(
-        const Duration(seconds: 15),
-      );
+      final response = await http
+          .get(Uri.parse(url), headers: headers)
+          .timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -102,18 +113,20 @@ class FlightService {
           final lng = (s[5] as num?)?.toDouble();
           if (lat == null || lng == null) continue;
 
-          flights.add(FlightPosition(
-            icao24: (s[0] as String?) ?? '',
-            callsign: ((s[1] as String?) ?? '').trim(),
-            lat: lat,
-            lng: lng,
-            altitude: (s[7] as num?)?.toDouble() ?? 0,
-            velocity: (s[9] as num?)?.toDouble() ?? 0,
-            heading: (s[10] as num?)?.toDouble() ?? 0,
-            verticalRate: (s[11] as num?)?.toDouble() ?? 0,
-            onGround: (s[8] as bool?) ?? false,
-            originCountry: (s[2] as String?) ?? '',
-          ));
+          flights.add(
+            FlightPosition(
+              icao24: (s[0] as String?) ?? '',
+              callsign: ((s[1] as String?) ?? '').trim(),
+              lat: lat,
+              lng: lng,
+              altitude: (s[7] as num?)?.toDouble() ?? 0,
+              velocity: (s[9] as num?)?.toDouble() ?? 0,
+              heading: (s[10] as num?)?.toDouble() ?? 0,
+              verticalRate: (s[11] as num?)?.toDouble() ?? 0,
+              onGround: (s[8] as bool?) ?? false,
+              originCountry: (s[2] as String?) ?? '',
+            ),
+          );
         }
 
         return flights;
@@ -142,31 +155,43 @@ class FlightService {
   Future<void> _fetchSchedules() async {
     _lastScheduleFetch = DateTime.now();
     final now = DateTime.now();
-    final fromTime = '${(now.hour * 100 + now.minute - 30).clamp(0, 2359).toString().padLeft(4, '0')}';
-    final toTime = '${(now.hour * 100 + now.minute + 30).clamp(0, 2359).toString().padLeft(4, '0')}';
+    final fromTime =
+        '${(now.hour * 100 + now.minute - 30).clamp(0, 2359).toString().padLeft(4, '0')}';
+    final toTime =
+        '${(now.hour * 100 + now.minute + 30).clamp(0, 2359).toString().padLeft(4, '0')}';
 
     try {
       // 출발편
-      final depUrl = '$_icnBaseUrl/getPassengerDeparturesDeOdp'
+      final depUrl =
+          '$_icnBaseUrl/getPassengerDeparturesDeOdp'
           '?serviceKey=$_icnServiceKey&pageNo=1&numOfRows=30&type=json'
           '&from_time=$fromTime&to_time=$toTime';
-      final depResp = await http.get(Uri.parse(depUrl)).timeout(const Duration(seconds: 10));
+      final depResp = await http
+          .get(Uri.parse(depUrl))
+          .timeout(const Duration(seconds: 10));
       if (depResp.statusCode == 200) {
         final data = jsonDecode(depResp.body);
         final items = data['response']?['body']?['items'] as List? ?? [];
-        _departureSchedules = items.map((e) => IcnFlightSchedule.fromJson(e, true)).toList();
+        _departureSchedules = items
+            .map((e) => IcnFlightSchedule.fromJson(e, true))
+            .toList();
         debugPrint('[FlightAPI] ✅ 인천 출발 스케줄: ${_departureSchedules.length}편');
       }
 
       // 도착편
-      final arrUrl = '$_icnBaseUrl/getPassengerArrivalsDeOdp'
+      final arrUrl =
+          '$_icnBaseUrl/getPassengerArrivalsDeOdp'
           '?serviceKey=$_icnServiceKey&pageNo=1&numOfRows=30&type=json'
           '&from_time=$fromTime&to_time=$toTime';
-      final arrResp = await http.get(Uri.parse(arrUrl)).timeout(const Duration(seconds: 10));
+      final arrResp = await http
+          .get(Uri.parse(arrUrl))
+          .timeout(const Duration(seconds: 10));
       if (arrResp.statusCode == 200) {
         final data = jsonDecode(arrResp.body);
         final items = data['response']?['body']?['items'] as List? ?? [];
-        _arrivalSchedules = items.map((e) => IcnFlightSchedule.fromJson(e, false)).toList();
+        _arrivalSchedules = items
+            .map((e) => IcnFlightSchedule.fromJson(e, false))
+            .toList();
         debugPrint('[FlightAPI] ✅ 인천 도착 스케줄: ${_arrivalSchedules.length}편');
       }
     } catch (e) {
@@ -210,7 +235,11 @@ class FlightService {
   }
 
   FlightPosition? _simulateDeparture(
-    double apLat, double apLng, double heading, double t, IcnFlightSchedule sched,
+    double apLat,
+    double apLng,
+    double heading,
+    double t,
+    IcnFlightSchedule sched,
   ) {
     final rad = heading * 3.14159265 / 180.0;
     final cosH = cos(rad);
@@ -237,7 +266,8 @@ class FlightService {
     return FlightPosition(
       icao24: 'sim_dep_${sched.flightId}',
       callsign: sched.flightId,
-      lat: lat, lng: lng,
+      lat: lat,
+      lng: lng,
       altitude: alt,
       velocity: t < 0.3 ? 50 + t * 200 : 200,
       heading: heading,
@@ -248,7 +278,11 @@ class FlightService {
   }
 
   FlightPosition? _simulateArrival(
-    double apLat, double apLng, double heading, double t, IcnFlightSchedule sched,
+    double apLat,
+    double apLng,
+    double heading,
+    double t,
+    IcnFlightSchedule sched,
   ) {
     // 반대 방향에서 접근
     final appHeading = (heading + 180) % 360;
@@ -279,7 +313,8 @@ class FlightService {
     return FlightPosition(
       icao24: 'sim_arr_${sched.flightId}',
       callsign: sched.flightId,
-      lat: lat, lng: lng,
+      lat: lat,
+      lng: lng,
       altitude: alt,
       velocity: t < 0.7 ? 250 - t * 150 : 80 - (t - 0.7) * 200,
       heading: t < 0.7 ? (appHeading + 180) % 360 : landHeading,
@@ -288,20 +323,19 @@ class FlightService {
       originCountry: 'Republic of Korea',
     );
   }
-
 }
 
 /// 항공기 위치 데이터
 class FlightPosition {
-  final String icao24;       // ICAO 24-bit 고유 주소
-  final String callsign;     // 콜사인 (예: KAL1822, AAR8956)
+  final String icao24; // ICAO 24-bit 고유 주소
+  final String callsign; // 콜사인 (예: KAL1822, AAR8956)
   final double lat;
   final double lng;
-  final double altitude;     // 기압 고도 (m)
-  final double velocity;     // 대지 속도 (m/s)
-  final double heading;      // 방향 (도, 북=0 시계방향)
+  final double altitude; // 기압 고도 (m)
+  final double velocity; // 대지 속도 (m/s)
+  final double heading; // 방향 (도, 북=0 시계방향)
   final double verticalRate; // 수직 속도 (m/s, +상승 -하강)
-  final bool onGround;       // 지상 여부
+  final bool onGround; // 지상 여부
   final String originCountry;
 
   FlightPosition({
@@ -362,12 +396,12 @@ class FlightPosition {
 
 /// 인천공항 여객기 스케줄
 class IcnFlightSchedule {
-  final String flightId;    // 편명 (KE901 등)
-  final String airline;     // 항공사명
-  final String airport;     // 출발지/도착지 공항명
+  final String flightId; // 편명 (KE901 등)
+  final String airline; // 항공사명
+  final String airport; // 출발지/도착지 공항명
   final int scheduledMinute; // 예정 시각 (분 단위, 0~1440)
   final bool isDeparture;
-  final String? remark;     // 운항 상태
+  final String? remark; // 운항 상태
 
   IcnFlightSchedule({
     required this.flightId,
@@ -378,7 +412,10 @@ class IcnFlightSchedule {
     this.remark,
   });
 
-  factory IcnFlightSchedule.fromJson(Map<String, dynamic> json, bool departure) {
+  factory IcnFlightSchedule.fromJson(
+    Map<String, dynamic> json,
+    bool departure,
+  ) {
     final timeStr = (json['scheduleDateTime'] ?? '000000000000').toString();
     // YYYYMMDDHHMM → 분으로 변환
     int minute = 0;
