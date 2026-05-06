@@ -6,6 +6,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart' hide Visibility;
+import '../core/api_keys.dart';
 import '../core/map_interface.dart';
 import '../models/subway_models.dart';
 import '../data/seoul_subway_data.dart';
@@ -54,12 +55,14 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
   static const _routeUndergroundLayerId = 'subway-routes-underground-layer';
   static const _routeArrowSourceId = 'route-arrow-source';
   static const _routeArrowLayerId = 'route-arrow-layer';
-  static const _stationSourceId = 'subway-stations-source';       // 노선별 도트 (Point)
-  static const _stationPillSourceId = 'subway-stations-pill-source'; // 캡슐 배경 (LineString)
+  static const _stationSourceId = 'subway-stations-source'; // 노선별 도트 (Point)
+  static const _stationPillSourceId =
+      'subway-stations-pill-source'; // 캡슐 배경 (LineString)
   static const _stationDotLayerId = 'subway-stations-dot-layer';
   static const _stationLabelLayerId = 'subway-stations-label-layer';
   static const _stationOutlineLayerId = 'subway-stations-outline-layer';
-  static const _stationPillOutlineLayerId = 'subway-stations-pill-outline-layer';
+  static const _stationPillOutlineLayerId =
+      'subway-stations-pill-outline-layer';
   static const _stationPillFillLayerId = 'subway-stations-pill-fill-layer';
   // 열차별 지연 표시 레이어
   static const _delaySourceId = 'subway-delay-source';
@@ -133,7 +136,13 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
   static const double _mPerDegLng = 88000.0; // ~111320 * cos(37.5°)
 
   @override
-  void moveTo(double lat, double lng, {double? zoom, double? pitch, double? bearing}) {
+  void moveTo(
+    double lat,
+    double lng, {
+    double? zoom,
+    double? pitch,
+    double? bearing,
+  }) {
     _mapboxMap?.flyTo(
       CameraOptions(
         center: Point(coordinates: Position(lng, lat)),
@@ -146,10 +155,12 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
   }
 
   @override
-  void setPitch(double pitch) => _mapboxMap?.setCamera(CameraOptions(pitch: pitch));
+  void setPitch(double pitch) =>
+      _mapboxMap?.setCamera(CameraOptions(pitch: pitch));
 
   @override
-  void setBearing(double bearing) => _mapboxMap?.setCamera(CameraOptions(bearing: bearing));
+  void setBearing(double bearing) =>
+      _mapboxMap?.setCamera(CameraOptions(bearing: bearing));
 
   @override
   void setZoom(double zoom) => _mapboxMap?.setCamera(CameraOptions(zoom: zoom));
@@ -161,7 +172,11 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
   void toggleLayer(String layerId, bool visible) {
     _mapboxMap?.style.styleLayerExists(layerId).then((exists) {
       if (exists) {
-        _mapboxMap?.style.setStyleLayerProperty(layerId, 'visibility', visible ? 'visible' : 'none');
+        _mapboxMap?.style.setStyleLayerProperty(
+          layerId,
+          'visibility',
+          visible ? 'visible' : 'none',
+        );
       }
     });
   }
@@ -174,7 +189,11 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
   @override
   void setLightPreset(String preset) {
     try {
-      _mapboxMap?.style.setStyleImportConfigProperty("basemap", "lightPreset", preset);
+      _mapboxMap?.style.setStyleImportConfigProperty(
+        "basemap",
+        "lightPreset",
+        preset,
+      );
     } catch (e) {
       debugPrint('[MapboxEngine] lightPreset 설정 실패: $e');
     }
@@ -194,16 +213,23 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
 
     if (!_satelliteInitialized) {
       try {
-        await style.addSource(RasterSource(
-          id: 'mapbox-satellite',
-          tiles: ['https://api.mapbox.com/v4/mapbox.satellite/{z}/{x}/{y}@2x.png?access_token=pk.eyJ1IjoicnVzaDk0NDM0IiwiYSI6ImNtbnNidzRzZTAxZ3AycnM5bzA5cHZrNG0ifQ.ek1du-tS4bZhNQ_Xajdmgg'],
-          tileSize: 256,
-        ));
-        await style.addLayerAt(RasterLayer(
-          id: 'satellite-layer',
-          sourceId: 'mapbox-satellite',
-          rasterOpacity: 0.85,
-        ), LayerPosition(at: 0));
+        await style.addSource(
+          RasterSource(
+            id: 'mapbox-satellite',
+            tiles: [
+              'https://api.mapbox.com/v4/mapbox.satellite/{z}/{x}/{y}@2x.png?access_token=${ApiKeys.mapboxAccessToken}',
+            ],
+            tileSize: 256,
+          ),
+        );
+        await style.addLayerAt(
+          RasterLayer(
+            id: 'satellite-layer',
+            sourceId: 'mapbox-satellite',
+            rasterOpacity: 0.85,
+          ),
+          LayerPosition(at: 0),
+        );
         _satelliteInitialized = true;
       } catch (e) {
         debugPrint('[MapboxEngine] satellite 초기화 실패: $e');
@@ -211,7 +237,11 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
       }
     }
 
-    await style.setStyleLayerProperty('satellite-layer', 'visibility', visible ? 'visible' : 'none');
+    await style.setStyleLayerProperty(
+      'satellite-layer',
+      'visibility',
+      visible ? 'visible' : 'none',
+    );
   }
 
   @override
@@ -225,16 +255,22 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
 
     if (!_trafficInitialized) {
       try {
-        await style.addSource(RasterSource(
-          id: 'mapbox-traffic',
-          tiles: ['https://api.mapbox.com/v4/mapbox.mapbox-traffic-v1/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoicnVzaDk0NDM0IiwiYSI6ImNtbnNidzRzZTAxZ3AycnMs5bzA5cHZrNG0ifQ.ek1du-tS4bZhNQ_Xajdmgg'],
-          tileSize: 256,
-        ));
-        await style.addLayer(RasterLayer(
-          id: 'traffic-layer',
-          sourceId: 'mapbox-traffic',
-          rasterOpacity: 0.7,
-        ));
+        await style.addSource(
+          RasterSource(
+            id: 'mapbox-traffic',
+            tiles: [
+              'https://api.mapbox.com/v4/mapbox.mapbox-traffic-v1/{z}/{x}/{y}.png?access_token=${ApiKeys.mapboxAccessToken}',
+            ],
+            tileSize: 256,
+          ),
+        );
+        await style.addLayer(
+          RasterLayer(
+            id: 'traffic-layer',
+            sourceId: 'mapbox-traffic',
+            rasterOpacity: 0.7,
+          ),
+        );
         _trafficInitialized = true;
       } catch (e) {
         debugPrint('[MapboxEngine] traffic 초기화 실패: $e');
@@ -242,7 +278,11 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
       }
     }
 
-    await style.setStyleLayerProperty('traffic-layer', 'visibility', visible ? 'visible' : 'none');
+    await style.setStyleLayerProperty(
+      'traffic-layer',
+      'visibility',
+      visible ? 'visible' : 'none',
+    );
   }
 
   @override
@@ -263,7 +303,9 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
       try {
         // Standard style의 fog 설정 — config property 사용
         _mapboxMap!.style.setStyleImportConfigProperty(
-          "basemap", "fog", fogOpacity > 0.3 ? "high" : "low",
+          "basemap",
+          "fog",
+          fogOpacity > 0.3 ? "high" : "low",
         );
       } catch (e) {
         debugPrint('[MapboxEngine] fog 설정 실패 (무시): $e');
@@ -279,17 +321,25 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
   // ── 마커 (Annotation) ──
 
   @override
-  Future<void> addMarker(String id, double lat, double lng, {String? title, String? iconPath}) async {
+  Future<void> addMarker(
+    String id,
+    double lat,
+    double lng, {
+    String? title,
+    String? iconPath,
+  }) async {
     if (_pointAnnotationManager == null) return;
 
-    _pointAnnotationManager?.create(PointAnnotationOptions(
-      geometry: Point(coordinates: Position(lng, lat)),
-      textField: title,
-      textColor: Colors.white.toARGB32(),
-      textSize: 12.0,
-      textOffset: [0, 2.0],
-      iconImage: 'marker-15',
-    ));
+    _pointAnnotationManager?.create(
+      PointAnnotationOptions(
+        geometry: Point(coordinates: Position(lng, lat)),
+        textField: title,
+        textColor: Colors.white.toARGB32(),
+        textSize: 12.0,
+        textOffset: [0, 2.0],
+        iconImage: 'marker-15',
+      ),
+    );
   }
 
   // ── 장소 핀 마커 (위치 아이콘) ──
@@ -301,7 +351,15 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
     final bytes = await _getPinIcon();
     try {
       final mbImg = MbxImage(width: 120, height: 120, data: bytes);
-      await _mapboxMap!.style.addStyleImage('location-pin', 3.0, mbImg, false, [], [], null);
+      await _mapboxMap!.style.addStyleImage(
+        'location-pin',
+        3.0,
+        mbImg,
+        false,
+        [],
+        [],
+        null,
+      );
       _pinRegistered = true;
     } catch (_) {
       _pinRegistered = true;
@@ -329,7 +387,10 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
       textDirection: TextDirection.ltr,
     );
     textPainter.layout();
-    textPainter.paint(canvas, Offset((size - textPainter.width) / 2, (size - textPainter.height) / 2));
+    textPainter.paint(
+      canvas,
+      Offset((size - textPainter.width) / 2, (size - textPainter.height) / 2),
+    );
 
     final picture = recorder.endRecording();
     final img = await picture.toImage(size.toInt(), size.toInt());
@@ -375,9 +436,11 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
     }
   }
 
-
   @override
-  Future<void> addArrowMarker(String id, double lat, double lng, {
+  Future<void> addArrowMarker(
+    String id,
+    double lat,
+    double lng, {
     required double bearing,
     Color color = Colors.white,
   }) async {
@@ -387,54 +450,69 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
   /// 경로 화살표 일괄 업데이트 (SymbolLayer — 충돌 감지 없이 항상 표시)
   Future<void> updateRouteArrows(List<Map<String, dynamic>> arrows) async {
     if (_mapboxMap == null) return;
-    final style = _mapboxMap!.style;
-
-    // Source가 없으면 생성
-    try {
-      await style.getStyleSourceProperties(_routeArrowSourceId);
-    } catch (_) {
-      // Source + Layer 초기 생성
-      await style.addSource(GeoJsonSource(
-        id: _routeArrowSourceId,
-        data: '{"type":"FeatureCollection","features":[]}',
-      ));
-      await style.addLayer(SymbolLayer(
-        id: _routeArrowLayerId,
-        sourceId: _routeArrowSourceId,
-        textField: '▶',
-        textSize: 12.0,
-        textColorExpression: ['to-color', ['get', 'color']],
-        textHaloColor: Colors.white.toARGB32(),
-        textHaloWidth: 1.5,
-        textRotateExpression: ['get', 'bearing'],
-        textAllowOverlap: true,
-        textIgnorePlacement: true,
-        iconAllowOverlap: true,
-        iconIgnorePlacement: true,
-        textPitchAlignment: TextPitchAlignment.MAP,
-        textRotationAlignment: TextRotationAlignment.MAP,
-      ));
-    }
+    await _ensureRouteArrowSourceAndLayer();
 
     // GeoJSON 데이터 업데이트
     final buf = StringBuffer('{"type":"FeatureCollection","features":[');
     for (int i = 0; i < arrows.length; i++) {
       if (i > 0) buf.write(',');
       final a = arrows[i];
-      buf.write('{"type":"Feature","geometry":{"type":"Point",'
-          '"coordinates":[${a['lng']},${a['lat']}]},'
-          '"properties":{"bearing":${a['bearing']},"color":"${a['color']}"}}');
+      buf.write(
+        '{"type":"Feature","geometry":{"type":"Point",'
+        '"coordinates":[${a['lng']},${a['lat']}]},'
+        '"properties":{"bearing":${a['bearing']},"color":"${a['color']}"}}',
+      );
     }
     buf.write(']}');
     await _updateSourceData(_routeArrowSourceId, buf.toString());
+  }
+
+  Future<void> _ensureRouteArrowSourceAndLayer() async {
+    final style = _mapboxMap!.style;
+    final empty = '{"type":"FeatureCollection","features":[]}';
+
+    if (!await style.styleSourceExists(_routeArrowSourceId)) {
+      await style.addSource(
+        GeoJsonSource(id: _routeArrowSourceId, data: empty),
+      );
+    }
+
+    if (!await style.styleLayerExists(_routeArrowLayerId)) {
+      await style.addLayer(
+        SymbolLayer(
+          id: _routeArrowLayerId,
+          sourceId: _routeArrowSourceId,
+          textField: '▶',
+          textSize: 12.0,
+          textColorExpression: [
+            'to-color',
+            ['get', 'color'],
+          ],
+          textHaloColor: Colors.white.toARGB32(),
+          textHaloWidth: 1.5,
+          textRotateExpression: ['get', 'bearing'],
+          textAllowOverlap: true,
+          textIgnorePlacement: true,
+          iconAllowOverlap: true,
+          iconIgnorePlacement: true,
+          textPitchAlignment: TextPitchAlignment.MAP,
+          textRotationAlignment: TextRotationAlignment.MAP,
+        ),
+      );
+    }
   }
 
   /// 경로 화살표 제거
   Future<void> clearRouteArrows() async {
     if (_mapboxMap == null) return;
     try {
-      await _updateSourceData(_routeArrowSourceId,
-          '{"type":"FeatureCollection","features":[]}');
+      if (!await _mapboxMap!.style.styleSourceExists(_routeArrowSourceId)) {
+        return;
+      }
+      await _updateSourceData(
+        _routeArrowSourceId,
+        '{"type":"FeatureCollection","features":[]}',
+      );
     } catch (_) {}
   }
 
@@ -449,22 +527,30 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
   // ── 폴리라인 (노선 경로) ──
 
   @override
-  Future<void> addPolyline(String id, List<List<double>> coordinates, {
+  Future<void> addPolyline(
+    String id,
+    List<List<double>> coordinates, {
     Color color = Colors.blue,
     double width = 3.0,
     double opacity = 1.0,
   }) async {
     if (_polylineAnnotationManager == null) return;
 
-    final points = coordinates.map((c) =>
-      Point(coordinates: Position(c[1], c[0])) // [lat, lng] → Position(lng, lat)
-    ).toList();
+    final points = coordinates
+        .map(
+          (c) => Point(
+            coordinates: Position(c[1], c[0]),
+          ), // [lat, lng] → Position(lng, lat)
+        )
+        .toList();
 
     if (points.length < 2) return;
 
     await _polylineAnnotationManager?.create(
       PolylineAnnotationOptions(
-        geometry: LineString(coordinates: points.map((p) => p.coordinates).toList()),
+        geometry: LineString(
+          coordinates: points.map((p) => p.coordinates).toList(),
+        ),
         lineColor: color.toARGB32(),
         lineWidth: width,
         lineOpacity: opacity,
@@ -487,7 +573,10 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
   // ── 원형 마커 (열차 위치) ──
 
   @override
-  Future<void> addCircleMarker(String id, double lat, double lng, {
+  Future<void> addCircleMarker(
+    String id,
+    double lat,
+    double lng, {
     Color color = Colors.red,
     double radius = 6.0,
     Color strokeColor = Colors.white,
@@ -522,7 +611,10 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
   // ── 역 마커 ──
 
   @override
-  Future<void> addStationMarker(String id, double lat, double lng, {
+  Future<void> addStationMarker(
+    String id,
+    double lat,
+    double lng, {
     String? name,
     Color color = Colors.white,
     double radius = 3.0,
@@ -573,349 +665,614 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
 
     try {
       // 1) 열차 위치 — FillExtrusionLayer (실제 3D 블록)
-      await style.addSource(GeoJsonSource(id: _trainSourceId, data: emptyGeoJson));
+      await style.addSource(
+        GeoJsonSource(id: _trainSourceId, data: emptyGeoJson),
+      );
 
       // 3D 기둥 (메인 몸체) — emissive로 야간에도 자체 발광
-      await style.addLayer(FillExtrusionLayer(
-        id: _trainLayerId,
-        sourceId: _trainSourceId,
-        fillExtrusionColorExpression: ['to-color', ['get', 'color']],
-        fillExtrusionBaseExpression: ['get', 'base'],
-        fillExtrusionHeightExpression: ['get', 'top'],
-        fillExtrusionOpacity: 0.85,
-        fillExtrusionVerticalGradient: true,
-        fillExtrusionEmissiveStrength: 1.0,
-      ));
+      await style.addLayer(
+        FillExtrusionLayer(
+          id: _trainLayerId,
+          sourceId: _trainSourceId,
+          fillExtrusionColorExpression: [
+            'to-color',
+            ['get', 'color'],
+          ],
+          fillExtrusionBaseExpression: ['get', 'base'],
+          fillExtrusionHeightExpression: ['get', 'top'],
+          fillExtrusionOpacity: 0.85,
+          fillExtrusionVerticalGradient: true,
+          fillExtrusionEmissiveStrength: 1.0,
+        ),
+      );
 
       debugPrint('[MapboxEngine] ✅ 열차 FillExtrusionLayer 생성 완료');
 
       // 1-b) 선택된 열차 하이라이트 — 노선색 발광 링 (CircleLayer)
-      await style.addSource(GeoJsonSource(id: _selectedTrainSourceId, data: emptyGeoJson));
+      await style.addSource(
+        GeoJsonSource(id: _selectedTrainSourceId, data: emptyGeoJson),
+      );
 
       // 외곽 발광 (큰 원 + 블러)
-      await style.addLayer(CircleLayer(
-        id: _selectedTrainLayerId,
-        sourceId: _selectedTrainSourceId,
-        circleColorExpression: ['to-color', ['get', 'color']],
-        circleRadiusExpression: [
-          'interpolate', ['linear'], ['zoom'],
-          10, 8.0,
-          13, 16.0,
-          15, 28.0,
-          17, 45.0,
-        ],
-        circleBlur: 0.6,
-        circleOpacityExpression: ['get', 'opacity'],
-        circlePitchAlignment: CirclePitchAlignment.MAP,
-        circleSortKey: 9,
-        circleEmissiveStrength: 1.0,
-      ));
+      await style.addLayer(
+        CircleLayer(
+          id: _selectedTrainLayerId,
+          sourceId: _selectedTrainSourceId,
+          circleColorExpression: [
+            'to-color',
+            ['get', 'color'],
+          ],
+          circleRadiusExpression: [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            10,
+            8.0,
+            13,
+            16.0,
+            15,
+            28.0,
+            17,
+            45.0,
+          ],
+          circleBlur: 0.6,
+          circleOpacityExpression: ['get', 'opacity'],
+          circlePitchAlignment: CirclePitchAlignment.MAP,
+          circleSortKey: 9,
+          circleEmissiveStrength: 1.0,
+        ),
+      );
 
       // 내부 링 (선명한 작은 원)
-      await style.addLayer(CircleLayer(
-        id: '${_selectedTrainLayerId}-inner',
-        sourceId: _selectedTrainSourceId,
-        circleColorExpression: ['to-color', ['get', 'color']],
-        circleRadiusExpression: [
-          'interpolate', ['linear'], ['zoom'],
-          10, 4.0,
-          13, 8.0,
-          15, 14.0,
-          17, 22.0,
-        ],
-        circleOpacityExpression: ['get', 'innerOpacity'],
-        circleStrokeColorExpression: ['to-color', ['get', 'color']],
-        circleStrokeWidthExpression: [
-          'interpolate', ['linear'], ['zoom'],
-          10, 1.0,
-          15, 2.5,
-        ],
-        circleStrokeOpacity: 0.9,
-        circlePitchAlignment: CirclePitchAlignment.MAP,
-        circleSortKey: 10,
-        circleEmissiveStrength: 1.0,
-      ));
+      await style.addLayer(
+        CircleLayer(
+          id: '${_selectedTrainLayerId}-inner',
+          sourceId: _selectedTrainSourceId,
+          circleColorExpression: [
+            'to-color',
+            ['get', 'color'],
+          ],
+          circleRadiusExpression: [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            10,
+            4.0,
+            13,
+            8.0,
+            15,
+            14.0,
+            17,
+            22.0,
+          ],
+          circleOpacityExpression: ['get', 'innerOpacity'],
+          circleStrokeColorExpression: [
+            'to-color',
+            ['get', 'color'],
+          ],
+          circleStrokeWidthExpression: [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            10,
+            1.0,
+            15,
+            2.5,
+          ],
+          circleStrokeOpacity: 0.9,
+          circlePitchAlignment: CirclePitchAlignment.MAP,
+          circleSortKey: 10,
+          circleEmissiveStrength: 1.0,
+        ),
+      );
 
       // 1-c) 선택된 역 하이라이트 — 발광 링 (CircleLayer, 노선별 동심원)
-      await style.addSource(GeoJsonSource(id: _selectedStationSourceId, data: emptyGeoJson));
-      await style.addLayer(CircleLayer(
-        id: _selectedStationLayerId,
-        sourceId: _selectedStationSourceId,
-        circleColorExpression: ['to-color', ['get', 'color']],
-        circleRadiusExpression: [
-          'interpolate', ['linear'], ['zoom'],
-          10, ['*', ['number', ['get', 'scale'], 1.0], 10.0],
-          13, ['*', ['number', ['get', 'scale'], 1.0], 22.0],
-          15, ['*', ['number', ['get', 'scale'], 1.0], 38.0],
-          17, ['*', ['number', ['get', 'scale'], 1.0], 55.0],
-        ],
-        circleBlur: 0.5,
-        circleOpacityExpression: ['get', 'opacity'],
-        circlePitchAlignment: CirclePitchAlignment.MAP,
-        circleSortKey: 2,
-        circleEmissiveStrength: 1.0,
-      ));
+      await style.addSource(
+        GeoJsonSource(id: _selectedStationSourceId, data: emptyGeoJson),
+      );
+      await style.addLayer(
+        CircleLayer(
+          id: _selectedStationLayerId,
+          sourceId: _selectedStationSourceId,
+          circleColorExpression: [
+            'to-color',
+            ['get', 'color'],
+          ],
+          circleRadiusExpression: [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            10,
+            [
+              '*',
+              [
+                'number',
+                ['get', 'scale'],
+                1.0,
+              ],
+              10.0,
+            ],
+            13,
+            [
+              '*',
+              [
+                'number',
+                ['get', 'scale'],
+                1.0,
+              ],
+              22.0,
+            ],
+            15,
+            [
+              '*',
+              [
+                'number',
+                ['get', 'scale'],
+                1.0,
+              ],
+              38.0,
+            ],
+            17,
+            [
+              '*',
+              [
+                'number',
+                ['get', 'scale'],
+                1.0,
+              ],
+              55.0,
+            ],
+          ],
+          circleBlur: 0.5,
+          circleOpacityExpression: ['get', 'opacity'],
+          circlePitchAlignment: CirclePitchAlignment.MAP,
+          circleSortKey: 2,
+          circleEmissiveStrength: 1.0,
+        ),
+      );
 
       // 2) 지상 노선 경로 — LineLayer (고가 철도 높이에 맞춰 3D 띄움)
-      await style.addSource(GeoJsonSource(id: _routeSurfaceSourceId, data: emptyGeoJson));
+      await style.addSource(
+        GeoJsonSource(id: _routeSurfaceSourceId, data: emptyGeoJson),
+      );
 
-      await style.addLayer(LineLayer(
-        id: _routeSurfaceLayerId,
-        sourceId: _routeSurfaceSourceId,
-        lineColorExpression: ['to-color', ['get', 'color']],
-        lineWidthExpression: [
-          'interpolate', ['linear'], ['zoom'],
-          8, 1.5,
-          11, 3.0,
-          14, 5.0,
-          17, 8.0,
-        ],
-        lineOpacity: 0.9,
-        lineCap: LineCap.ROUND,
-        lineJoin: LineJoin.ROUND,
-        lineEmissiveStrength: 0.8,
-      ));
+      await style.addLayer(
+        LineLayer(
+          id: _routeSurfaceLayerId,
+          sourceId: _routeSurfaceSourceId,
+          lineColorExpression: [
+            'to-color',
+            ['get', 'color'],
+          ],
+          lineWidthExpression: [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            8,
+            1.5,
+            11,
+            3.0,
+            14,
+            5.0,
+            17,
+            8.0,
+          ],
+          lineOpacity: 0.9,
+          lineCap: LineCap.ROUND,
+          lineJoin: LineJoin.ROUND,
+          lineEmissiveStrength: 0.8,
+        ),
+      );
 
       debugPrint('[MapboxEngine] ✅ 지상 노선 LineLayer 생성 완료');
 
       // 3) 지하 노선 경로 — LineLayer (바닥, 점선으로 구분)
-      await style.addSource(GeoJsonSource(id: _routeUndergroundSourceId, data: emptyGeoJson));
+      await style.addSource(
+        GeoJsonSource(id: _routeUndergroundSourceId, data: emptyGeoJson),
+      );
 
-      await style.addLayer(LineLayer(
-        id: _routeUndergroundLayerId,
-        sourceId: _routeUndergroundSourceId,
-        lineColorExpression: ['to-color', ['get', 'color']],
-        lineWidthExpression: [
-          'interpolate', ['linear'], ['zoom'],
-          8, 1.0,
-          11, 2.0,
-          14, 4.0,
-          17, 7.0,
-        ],
-        lineOpacity: 0.7,
-        lineDasharray: [3.0, 2.0],
-        lineCap: LineCap.ROUND,
-        lineJoin: LineJoin.ROUND,
-        lineEmissiveStrength: 1.0,
-      ));
+      await style.addLayer(
+        LineLayer(
+          id: _routeUndergroundLayerId,
+          sourceId: _routeUndergroundSourceId,
+          lineColorExpression: [
+            'to-color',
+            ['get', 'color'],
+          ],
+          lineWidthExpression: [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            8,
+            1.0,
+            11,
+            2.0,
+            14,
+            4.0,
+            17,
+            7.0,
+          ],
+          lineOpacity: 0.7,
+          lineDasharray: [3.0, 2.0],
+          lineCap: LineCap.ROUND,
+          lineJoin: LineJoin.ROUND,
+          lineEmissiveStrength: 1.0,
+        ),
+      );
 
       debugPrint('[MapboxEngine] ✅ 지하 노선 LineLayer 생성 완료');
 
       // 4) 역 마커 — MiniTokyo3D 스타일 캡슐/필(pill) 마커
       // 캡슐 배경 소스 (LineString — 둥근 끝캡으로 필 모양)
-      await style.addSource(GeoJsonSource(id: _stationPillSourceId, data: emptyGeoJson));
+      await style.addSource(
+        GeoJsonSource(id: _stationPillSourceId, data: emptyGeoJson),
+      );
       // ���선별 도트 소스 (Point — 캡슐 안에 배치)
-      await style.addSource(GeoJsonSource(id: _stationSourceId, data: emptyGeoJson));
+      await style.addSource(
+        GeoJsonSource(id: _stationSourceId, data: emptyGeoJson),
+      );
 
       // 4-a) 캡슐 외곽선 (어두운 테두리)
-      await style.addLayer(LineLayer(
-        id: _stationPillOutlineLayerId,
-        sourceId: _stationPillSourceId,
-        lineColor: const Color(0xFF333333).toARGB32(),
-        lineWidthExpression: [
-          'interpolate', ['linear'], ['zoom'],
-          8, 4.0,
-          11, 7.0,
-          13, 12.0,
-          15, 18.0,
-          17, 26.0,
-        ],
-        lineCap: LineCap.ROUND,
-        lineJoin: LineJoin.ROUND,
-        lineEmissiveStrength: 0.8,
-      ));
+      await style.addLayer(
+        LineLayer(
+          id: _stationPillOutlineLayerId,
+          sourceId: _stationPillSourceId,
+          lineColor: const Color(0xFF333333).toARGB32(),
+          lineWidthExpression: [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            8,
+            4.0,
+            11,
+            7.0,
+            13,
+            12.0,
+            15,
+            18.0,
+            17,
+            26.0,
+          ],
+          lineCap: LineCap.ROUND,
+          lineJoin: LineJoin.ROUND,
+          lineEmissiveStrength: 0.8,
+        ),
+      );
 
       // 4-b) 캡슐 내부 (흰색 채움)
-      await style.addLayer(LineLayer(
-        id: _stationPillFillLayerId,
-        sourceId: _stationPillSourceId,
-        lineColor: Colors.white.toARGB32(),
-        lineWidthExpression: [
-          'interpolate', ['linear'], ['zoom'],
-          8, 2.5,
-          11, 5.0,
-          13, 9.0,
-          15, 14.0,
-          17, 22.0,
-        ],
-        lineCap: LineCap.ROUND,
-        lineJoin: LineJoin.ROUND,
-        lineEmissiveStrength: 0.8,
-      ));
+      await style.addLayer(
+        LineLayer(
+          id: _stationPillFillLayerId,
+          sourceId: _stationPillSourceId,
+          lineColor: Colors.white.toARGB32(),
+          lineWidthExpression: [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            8,
+            2.5,
+            11,
+            5.0,
+            13,
+            9.0,
+            15,
+            14.0,
+            17,
+            22.0,
+          ],
+          lineCap: LineCap.ROUND,
+          lineJoin: LineJoin.ROUND,
+          lineEmissiveStrength: 0.8,
+        ),
+      );
 
       // 4-c) 노선색 도트 (캡슐 안에 각 노선별 1개)
-      await style.addLayer(CircleLayer(
-        id: _stationOutlineLayerId,
-        sourceId: _stationSourceId,
-        circleColorExpression: ['to-color', ['get', 'color']],
-        circleRadiusExpression: [
-          'interpolate', ['linear'], ['zoom'],
-          8, 1.2,
-          11, 2.2,
-          13, 4.0,
-          15, 6.0,
-          17, 9.5,
-        ],
-        circleStrokeWidth: 0.0,
-        circlePitchAlignment: CirclePitchAlignment.MAP,
-        circleSortKey: 4,
-        circleEmissiveStrength: 0.8,
-      ));
+      await style.addLayer(
+        CircleLayer(
+          id: _stationOutlineLayerId,
+          sourceId: _stationSourceId,
+          circleColorExpression: [
+            'to-color',
+            ['get', 'color'],
+          ],
+          circleRadiusExpression: [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            8,
+            1.2,
+            11,
+            2.2,
+            13,
+            4.0,
+            15,
+            6.0,
+            17,
+            9.5,
+          ],
+          circleStrokeWidth: 0.0,
+          circlePitchAlignment: CirclePitchAlignment.MAP,
+          circleSortKey: 4,
+          circleEmissiveStrength: 0.8,
+        ),
+      );
 
       // 4-d) 도트 내부 흰색 점 (미니도쿄 스타일)
-      await style.addLayer(CircleLayer(
-        id: _stationDotLayerId,
-        sourceId: _stationSourceId,
-        circleColor: Colors.white.toARGB32(),
-        circleRadiusExpression: [
-          'interpolate', ['linear'], ['zoom'],
-          8, 0.5,
-          11, 1.0,
-          13, 1.8,
-          15, 2.8,
-          17, 4.5,
-        ],
-        circleStrokeWidth: 0.0,
-        circlePitchAlignment: CirclePitchAlignment.MAP,
-        circleSortKey: 5,
-        circleEmissiveStrength: 0.8,
-      ));
+      await style.addLayer(
+        CircleLayer(
+          id: _stationDotLayerId,
+          sourceId: _stationSourceId,
+          circleColor: Colors.white.toARGB32(),
+          circleRadiusExpression: [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            8,
+            0.5,
+            11,
+            1.0,
+            13,
+            1.8,
+            15,
+            2.8,
+            17,
+            4.5,
+          ],
+          circleStrokeWidth: 0.0,
+          circlePitchAlignment: CirclePitchAlignment.MAP,
+          circleSortKey: 5,
+          circleEmissiveStrength: 0.8,
+        ),
+      );
 
       // 4-e) 역명 라벨 (줌 14 이상, 캡슐 소스 기준 — 역 1개당 1라벨)
-      await style.addLayer(SymbolLayer(
-        id: _stationLabelLayerId,
-        sourceId: _stationPillSourceId,
-        textFieldExpression: ['get', 'name'],
-        textSize: 11.0,
-        textColor: Colors.white.toARGB32(),
-        textHaloColor: const Color(0xFF1a1a2e).toARGB32(),
-        textHaloWidth: 1.5,
-        textOffsetExpression: ['literal', [0, 1.5]],
-        textAnchor: TextAnchor.TOP,
-        textOptional: true,
-        textAllowOverlap: false,
-        symbolPlacement: SymbolPlacement.POINT,
-        minZoom: 14.0,
-        textEmissiveStrength: 1.0,
-      ));
+      await style.addLayer(
+        SymbolLayer(
+          id: _stationLabelLayerId,
+          sourceId: _stationPillSourceId,
+          textFieldExpression: ['get', 'name'],
+          textSize: 11.0,
+          textColor: Colors.white.toARGB32(),
+          textHaloColor: const Color(0xFF1a1a2e).toARGB32(),
+          textHaloWidth: 1.5,
+          textOffsetExpression: [
+            'literal',
+            [0, 1.5],
+          ],
+          textAnchor: TextAnchor.TOP,
+          textOptional: true,
+          textAllowOverlap: false,
+          symbolPlacement: SymbolPlacement.POINT,
+          minZoom: 14.0,
+          textEmissiveStrength: 1.0,
+        ),
+      );
 
       debugPrint('[MapboxEngine] ✅ 역 마커 레이어 생성 완료 (MiniTokyo3D 캡슐 스타일)');
 
       // 5) 열차별 지연 표시 — 발광 링 + "N분" 라벨
-      await style.addSource(GeoJsonSource(id: _delaySourceId, data: emptyGeoJson));
+      await style.addSource(
+        GeoJsonSource(id: _delaySourceId, data: emptyGeoJson),
+      );
 
       // 빨간 발광 링 (지연 열차 주변)
-      await style.addLayer(CircleLayer(
-        id: _delayGlowLayerId,
-        sourceId: _delaySourceId,
-        circleColorExpression: ['to-color', ['get', 'color']],
-        circleRadiusExpression: [
-          'interpolate', ['linear'], ['zoom'],
-          10, 10.0,
-          13, 18.0,
-          15, 30.0,
-          17, 48.0,
-        ],
-        circleBlur: 0.6,
-        circleOpacityExpression: ['get', 'opacity'],
-        circlePitchAlignment: CirclePitchAlignment.MAP,
-        circleSortKey: 8,
-        circleEmissiveStrength: 1.0,
-      ));
+      await style.addLayer(
+        CircleLayer(
+          id: _delayGlowLayerId,
+          sourceId: _delaySourceId,
+          circleColorExpression: [
+            'to-color',
+            ['get', 'color'],
+          ],
+          circleRadiusExpression: [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            10,
+            10.0,
+            13,
+            18.0,
+            15,
+            30.0,
+            17,
+            48.0,
+          ],
+          circleBlur: 0.6,
+          circleOpacityExpression: ['get', 'opacity'],
+          circlePitchAlignment: CirclePitchAlignment.MAP,
+          circleSortKey: 8,
+          circleEmissiveStrength: 1.0,
+        ),
+      );
 
       // "N분 지연" 라벨 — 확대 시(줌 14+)에만 표시
-      await style.addLayer(SymbolLayer(
-        id: _delayLabelLayerId,
-        sourceId: _delaySourceId,
-        textFieldExpression: ['get', 'label'],
-        textSizeExpression: [
-          'interpolate', ['linear'], ['zoom'],
-          16, 9.0,
-          17, 11.0,
-          18, 13.0,
-        ],
-        textColor: Colors.white.toARGB32(),
-        textHaloColor: const Color(0xFFCC2222).toARGB32(),
-        textHaloWidth: 2.0,
-        textOffsetExpression: ['literal', [0, -2.2]],
-        textAnchor: TextAnchor.BOTTOM,
-        textAllowOverlap: true,
-        textEmissiveStrength: 1.0,
-        minZoom: 16.0,
-      ));
+      await style.addLayer(
+        SymbolLayer(
+          id: _delayLabelLayerId,
+          sourceId: _delaySourceId,
+          textFieldExpression: ['get', 'label'],
+          textSizeExpression: [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            16,
+            9.0,
+            17,
+            11.0,
+            18,
+            13.0,
+          ],
+          textColor: Colors.white.toARGB32(),
+          textHaloColor: const Color(0xFFCC2222).toARGB32(),
+          textHaloWidth: 2.0,
+          textOffsetExpression: [
+            'literal',
+            [0, -2.2],
+          ],
+          textAnchor: TextAnchor.BOTTOM,
+          textAllowOverlap: true,
+          textEmissiveStrength: 1.0,
+          minZoom: 16.0,
+        ),
+      );
 
       debugPrint('[MapboxEngine] ✅ 열차 지연 표시 레이어 생성 완료');
 
       // 6) 혼잡도 시각화 레이어 (히트맵 + 원형 마커 + 라벨)
-      await style.addSource(GeoJsonSource(id: _congestionSourceId, data: emptyGeoJson));
+      await style.addSource(
+        GeoJsonSource(id: _congestionSourceId, data: emptyGeoJson),
+      );
 
       // 히트맵 (낮은 줌에서 표시)
-      await style.addLayerAt(HeatmapLayer(
-        id: _congestionHeatmapLayerId,
-        sourceId: _congestionSourceId,
-        heatmapWeightExpression: ['get', 'weight'],
-        heatmapIntensityExpression: ['interpolate', ['linear'], ['zoom'], 8, 0.8, 13, 1.5],
-        heatmapRadiusExpression: ['interpolate', ['linear'], ['zoom'], 8, 15.0, 11, 30.0, 13, 50.0],
-        heatmapColorExpression: [
-          'interpolate', ['linear'], ['heatmap-density'],
-          0, 'rgba(0,0,0,0)',
-          0.2, 'rgba(0,228,0,0.3)',
-          0.4, 'rgba(200,255,0,0.4)',
-          0.6, 'rgba(255,200,0,0.5)',
-          0.8, 'rgba(255,100,0,0.6)',
-          1.0, 'rgba(255,0,0,0.7)',
-        ],
-        heatmapOpacityExpression: ['interpolate', ['linear'], ['zoom'], 12, 0.8, 15, 0.0],
-        // visibility: 초기 숨김 (아래에서 setStyleLayerProperty로 처리)
-      ), LayerPosition(below: _stationPillOutlineLayerId));
+      await style.addLayerAt(
+        HeatmapLayer(
+          id: _congestionHeatmapLayerId,
+          sourceId: _congestionSourceId,
+          heatmapWeightExpression: ['get', 'weight'],
+          heatmapIntensityExpression: [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            8,
+            0.8,
+            13,
+            1.5,
+          ],
+          heatmapRadiusExpression: [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            8,
+            15.0,
+            11,
+            30.0,
+            13,
+            50.0,
+          ],
+          heatmapColorExpression: [
+            'interpolate',
+            ['linear'],
+            ['heatmap-density'],
+            0,
+            'rgba(0,0,0,0)',
+            0.2,
+            'rgba(0,228,0,0.3)',
+            0.4,
+            'rgba(200,255,0,0.4)',
+            0.6,
+            'rgba(255,200,0,0.5)',
+            0.8,
+            'rgba(255,100,0,0.6)',
+            1.0,
+            'rgba(255,0,0,0.7)',
+          ],
+          heatmapOpacityExpression: [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            12,
+            0.8,
+            15,
+            0.0,
+          ],
+          // visibility: 초기 숨김 (아래에서 setStyleLayerProperty로 처리)
+        ),
+        LayerPosition(below: _stationPillOutlineLayerId),
+      );
 
       // 혼잡도 원형 마커 (높은 줌에서 표시)
-      await style.addLayerAt(CircleLayer(
-        id: _congestionCircleLayerId,
-        sourceId: _congestionSourceId,
-        circleColorExpression: [
-          'interpolate', ['linear'], ['get', 'weight'],
-          0.0, 'rgba(76,175,80,0.6)',
-          0.3, 'rgba(255,235,59,0.7)',
-          0.6, 'rgba(255,152,0,0.8)',
-          0.85, 'rgba(244,67,54,0.9)',
-        ],
-        circleRadiusExpression: [
-          'interpolate', ['linear'], ['get', 'weight'],
-          0.0, 4.0,
-          0.3, 8.0,
-          0.6, 14.0,
-          1.0, 24.0,
-        ],
-        circleOpacityExpression: ['interpolate', ['linear'], ['zoom'], 12, 0.0, 13, 0.7],
-        circleBlur: 0.3,
-        // visibility: 초기 숨김 (아래에서 setStyleLayerProperty로 처리)
-      ), LayerPosition(below: _stationPillOutlineLayerId));
+      await style.addLayerAt(
+        CircleLayer(
+          id: _congestionCircleLayerId,
+          sourceId: _congestionSourceId,
+          circleColorExpression: [
+            'interpolate',
+            ['linear'],
+            ['get', 'weight'],
+            0.0,
+            'rgba(76,175,80,0.6)',
+            0.3,
+            'rgba(255,235,59,0.7)',
+            0.6,
+            'rgba(255,152,0,0.8)',
+            0.85,
+            'rgba(244,67,54,0.9)',
+          ],
+          circleRadiusExpression: [
+            'interpolate',
+            ['linear'],
+            ['get', 'weight'],
+            0.0,
+            4.0,
+            0.3,
+            8.0,
+            0.6,
+            14.0,
+            1.0,
+            24.0,
+          ],
+          circleOpacityExpression: [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            12,
+            0.0,
+            13,
+            0.7,
+          ],
+          circleBlur: 0.3,
+          // visibility: 초기 숨김 (아래에서 setStyleLayerProperty로 처리)
+        ),
+        LayerPosition(below: _stationPillOutlineLayerId),
+      );
 
       // 혼잡도 라벨 (높은 줌에서)
-      await style.addLayerAt(SymbolLayer(
-        id: _congestionLabelLayerId,
-        sourceId: _congestionSourceId,
-        textFieldExpression: ['get', 'label'],
-        textSize: 10.0,
-        textColorExpression: [
-          'interpolate', ['linear'], ['get', 'weight'],
-          0.0, 'rgba(56,142,60,1)',
-          0.5, 'rgba(230,81,0,1)',
-          1.0, 'rgba(198,40,40,1)',
-        ],
-        textHaloColor: Colors.white.toARGB32(),
-        textHaloWidth: 1.5,
-        textOffsetExpression: ['literal', [0, 2.0]],
-        textAllowOverlap: false,
-        minZoom: 15.0,
-        // visibility: 초기 숨김 (아래에서 setStyleLayerProperty로 처리)
-      ), LayerPosition(above: _congestionCircleLayerId));
+      await style.addLayerAt(
+        SymbolLayer(
+          id: _congestionLabelLayerId,
+          sourceId: _congestionSourceId,
+          textFieldExpression: ['get', 'label'],
+          textSize: 10.0,
+          textColorExpression: [
+            'interpolate',
+            ['linear'],
+            ['get', 'weight'],
+            0.0,
+            'rgba(56,142,60,1)',
+            0.5,
+            'rgba(230,81,0,1)',
+            1.0,
+            'rgba(198,40,40,1)',
+          ],
+          textHaloColor: Colors.white.toARGB32(),
+          textHaloWidth: 1.5,
+          textOffsetExpression: [
+            'literal',
+            [0, 2.0],
+          ],
+          textAllowOverlap: false,
+          minZoom: 15.0,
+          // visibility: 초기 숨김 (아래에서 setStyleLayerProperty로 처리)
+        ),
+        LayerPosition(above: _congestionCircleLayerId),
+      );
 
       // 혼잡도 레이어 초기 숨김
-      style.setStyleLayerProperty(_congestionHeatmapLayerId, 'visibility', 'none');
-      style.setStyleLayerProperty(_congestionCircleLayerId, 'visibility', 'none');
-      style.setStyleLayerProperty(_congestionLabelLayerId, 'visibility', 'none');
+      style.setStyleLayerProperty(
+        _congestionHeatmapLayerId,
+        'visibility',
+        'none',
+      );
+      style.setStyleLayerProperty(
+        _congestionCircleLayerId,
+        'visibility',
+        'none',
+      );
+      style.setStyleLayerProperty(
+        _congestionLabelLayerId,
+        'visibility',
+        'none',
+      );
 
       debugPrint('[MapboxEngine] ✅ 혼잡도 레이어 생성 완료');
 
@@ -931,22 +1288,35 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
     final style = _mapboxMap!.style;
 
     for (final layerId in [
-      _congestionLabelLayerId, _congestionCircleLayerId, _congestionHeatmapLayerId,
-      _delayLabelLayerId, _delayGlowLayerId,
-      _stationLabelLayerId, _stationDotLayerId, _stationOutlineLayerId,
-      _stationPillFillLayerId, _stationPillOutlineLayerId,
+      _congestionLabelLayerId,
+      _congestionCircleLayerId,
+      _congestionHeatmapLayerId,
+      _delayLabelLayerId,
+      _delayGlowLayerId,
+      _stationLabelLayerId,
+      _stationDotLayerId,
+      _stationOutlineLayerId,
+      _stationPillFillLayerId,
+      _stationPillOutlineLayerId,
       _selectedStationLayerId,
-      '${_selectedTrainLayerId}-inner', _selectedTrainLayerId, _trainLayerId,
-      _routeSurfaceLayerId, _routeUndergroundLayerId,
+      '${_selectedTrainLayerId}-inner',
+      _selectedTrainLayerId,
+      _trainLayerId,
+      _routeSurfaceLayerId,
+      _routeUndergroundLayerId,
     ]) {
       style.removeStyleLayer(layerId).catchError((_) {});
     }
     for (final sourceId in [
       _congestionSourceId,
       _delaySourceId,
-      _stationSourceId, _stationPillSourceId, _selectedStationSourceId,
-      _selectedTrainSourceId, _trainSourceId,
-      _routeSurfaceSourceId, _routeUndergroundSourceId,
+      _stationSourceId,
+      _stationPillSourceId,
+      _selectedStationSourceId,
+      _selectedTrainSourceId,
+      _trainSourceId,
+      _routeSurfaceSourceId,
+      _routeUndergroundSourceId,
     ]) {
       style.removeStyleSource(sourceId).catchError((_) {});
     }
@@ -968,23 +1338,27 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
   /// 진행방향 기준 수직으로 오프셋된 좌표 계산
   /// direction: 0=상행(왼쪽), 1=하행(오른쪽)
   static List<double> _offsetPosition(
-    double lat, double lng, double bearing, int direction,
+    double lat,
+    double lng,
+    double bearing,
+    int direction,
   ) {
     final rad = bearing * 3.14159265 / 180.0;
     // 수직 방향: bearing + 90°(오른쪽) 또는 -90°(왼쪽)
     final sign = direction == 0 ? -1.0 : 1.0;
     final perpX = sign * cos(rad) * _trackOffsetM; // 수직 오프셋 X
     final perpY = sign * -sin(rad) * _trackOffsetM; // 수직 오프셋 Y
-    return [
-      lat + perpY / _mPerDegLat,
-      lng + perpX / _mPerDegLng,
-    ];
+    return [lat + perpY / _mPerDegLat, lng + perpX / _mPerDegLng];
   }
 
   /// 열차 위치를 3D 블록용 Polygon으로 변환
   /// 진행방향(bearing)에 맞게 회전 + 상행/하행 오프셋 적용
   List<List<double>> _trainPolygon(
-    double lat, double lng, double bearing, int expressType, int direction,
+    double lat,
+    double lng,
+    double bearing,
+    int expressType,
+    int direction,
   ) {
     final offset = _offsetPosition(lat, lng, bearing, direction);
     final oLat = offset[0];
@@ -992,11 +1366,14 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
 
     final double lengthM, widthM;
     if (expressType == 7) {
-      lengthM = 75.0; widthM = 28.0;
+      lengthM = 75.0;
+      widthM = 28.0;
     } else if (expressType == 1) {
-      lengthM = 60.0; widthM = 25.0;
+      lengthM = 60.0;
+      widthM = 25.0;
     } else {
-      lengthM = 45.0; widthM = 20.0;
+      lengthM = 45.0;
+      widthM = 20.0;
     }
     final halfL = lengthM / 2;
     final halfW = widthM / 2;
@@ -1007,14 +1384,14 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
 
     final offsets = <List<double>>[
       [-halfW, -halfL],
-      [ halfW, -halfL],
-      [ halfW,  halfL],
-      [-halfW,  halfL],
+      [halfW, -halfL],
+      [halfW, halfL],
+      [-halfW, halfL],
     ];
 
     final coords = <List<double>>[];
     for (final o in offsets) {
-      final rotX =  o[0] * cosB + o[1] * sinB;
+      final rotX = o[0] * cosB + o[1] * sinB;
       final rotY = -o[0] * sinB + o[1] * cosB;
       coords.add([oLng + rotX / _mPerDegLng, oLat + rotY / _mPerDegLat]);
     }
@@ -1043,7 +1420,7 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
       }
       // 수직 방향 (오른쪽 90도)
       final perpLng = -dLat / len * offsetM / _mPerDegLng;
-      final perpLat =  dLng / len * offsetM / _mPerDegLat;
+      final perpLat = dLng / len * offsetM / _mPerDegLat;
       result.add([coords[i][0] + perpLng, coords[i][1] + perpLat]);
     }
     return result;
@@ -1076,7 +1453,10 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
   }
 
   @override
-  Future<void> updateTrainPositions3D(List<InterpolatedTrainPosition> trains, {Map<String, int> trainDelays = const {}}) async {
+  Future<void> updateTrainPositions3D(
+    List<InterpolatedTrainPosition> trains, {
+    Map<String, int> trainDelays = const {},
+  }) async {
     if (_mapboxMap == null || !_layersInitialized3D) return;
     _frameCounter++;
 
@@ -1104,7 +1484,8 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
         final r = (color.r + (1.0 - color.r) * blend).clamp(0.0, 1.0);
         final g = (color.g * (1.0 - blend * 0.7)).clamp(0.0, 1.0);
         final b = (color.b * (1.0 - blend * 0.7)).clamp(0.0, 1.0);
-        colorStr = 'rgba(${(r*255).round()},${(g*255).round()},${(b*255).round()},1)';
+        colorStr =
+            'rgba(${(r * 255).round()},${(g * 255).round()},${(b * 255).round()},1)';
       } else if (isSuperExpress) {
         // 초급행: 금색 하이라이트 (노선색 + 골드 블렌드)
         final color = SubwayColors.getColor(train.subwayId);
@@ -1157,21 +1538,26 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
         if (train.trainNo == _selectedTrainNo) {
           final colorStr = _getCachedColorStr(train.subwayId);
           // 펄스 (1500ms 삼각파)
-          final p = (DateTime.now().millisecondsSinceEpoch % 1500) / 1500.0 * 2.0;
+          final p =
+              (DateTime.now().millisecondsSinceEpoch % 1500) / 1500.0 * 2.0;
           final pulse = p < 1.0 ? p : 2.0 - p;
           final oOp = (0.15 + pulse * 0.35);
           final iOp = (0.05 + pulse * 0.15);
 
-          await _updateSourceData(_selectedTrainSourceId,
+          await _updateSourceData(
+            _selectedTrainSourceId,
             '{"type":"FeatureCollection","features":[{"type":"Feature",'
             '"geometry":{"type":"Point","coordinates":[${train.lng},${train.lat}]},'
-            '"properties":{"color":"$colorStr","opacity":$oOp,"innerOpacity":$iOp}}]}');
+            '"properties":{"color":"$colorStr","opacity":$oOp,"innerOpacity":$iOp}}]}',
+          );
           break;
         }
       }
     } else if (_lastSelectedHighlightTrainNo != null) {
-      await _updateSourceData(_selectedTrainSourceId,
-        '{"type":"FeatureCollection","features":[]}');
+      await _updateSourceData(
+        _selectedTrainSourceId,
+        '{"type":"FeatureCollection","features":[]}',
+      );
     }
     _lastSelectedHighlightTrainNo = _selectedTrainNo;
 
@@ -1191,20 +1577,27 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
         if (!dFirst) dSb.write(',');
         dFirst = false;
 
-        final delayColor = delayMin >= 10 ? 'rgba(220,30,30,1)'
-            : delayMin >= 5 ? 'rgba(255,60,60,1)' : 'rgba(255,160,40,1)';
+        final delayColor = delayMin >= 10
+            ? 'rgba(220,30,30,1)'
+            : delayMin >= 5
+            ? 'rgba(255,60,60,1)'
+            : 'rgba(255,160,40,1)';
 
-        dSb.write('{"type":"Feature","geometry":{"type":"Point",'
-            '"coordinates":[${train.lng},${train.lat}]},'
-            '"properties":{"color":"$delayColor","opacity":$opacity,'
-            '"label":"$delayMin분 지연"}}');
+        dSb.write(
+          '{"type":"Feature","geometry":{"type":"Point",'
+          '"coordinates":[${train.lng},${train.lat}]},'
+          '"properties":{"color":"$delayColor","opacity":$opacity,'
+          '"label":"$delayMin분 지연"}}',
+        );
       }
       dSb.write(']}');
       await _updateSourceData(_delaySourceId, dSb.toString());
     } else if (trainDelays.isEmpty && _lastDelayUpdateFrame > 0) {
       _lastDelayUpdateFrame = 0;
-      await _updateSourceData(_delaySourceId,
-        '{"type":"FeatureCollection","features":[]}');
+      await _updateSourceData(
+        _delaySourceId,
+        '{"type":"FeatureCollection","features":[]}',
+      );
     }
 
     // ── 선택 역 하이라이트: 역 변경 시에만 갱신 (매 프레임 X) ──
@@ -1236,9 +1629,11 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
         final n = lineColorList.length;
         if (n == 1) {
           final colorStr = _colorToRgba(lineColorList[0]);
-          buf.write('{"type":"Feature",'
-              '"geometry":{"type":"Point","coordinates":[$hlLng,$hlLat]},'
-              '"properties":{"color":"$colorStr","opacity":0.5,"scale":1.0}}');
+          buf.write(
+            '{"type":"Feature",'
+            '"geometry":{"type":"Point","coordinates":[$hlLng,$hlLat]},'
+            '"properties":{"color":"$colorStr","opacity":0.5,"scale":1.0}}',
+          );
         } else {
           const offset = 0.00008; // ~9m
           for (int i = 0; i < n; i++) {
@@ -1247,21 +1642,28 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
             final oLng = hlLng! + offset * cos(angle);
             final oLat = hlLat! + offset * sin(angle);
             final colorStr = _colorToRgba(lineColorList[i]);
-            buf.write('{"type":"Feature",'
-                '"geometry":{"type":"Point","coordinates":[$oLng,$oLat]},'
-                '"properties":{"color":"$colorStr","opacity":0.5,"scale":1.0}}');
+            buf.write(
+              '{"type":"Feature",'
+              '"geometry":{"type":"Point","coordinates":[$oLng,$oLat]},'
+              '"properties":{"color":"$colorStr","opacity":0.5,"scale":1.0}}',
+            );
           }
         }
         buf.write(']}');
         _cachedStationHighlightJson = buf.toString();
-        await _updateSourceData(_selectedStationSourceId, _cachedStationHighlightJson!);
+        await _updateSourceData(
+          _selectedStationSourceId,
+          _cachedStationHighlightJson!,
+        );
       }
     } else if (_selectedStationName == null &&
         _lastSelectedStationHighlight != null) {
       _lastSelectedStationHighlight = null;
       _cachedStationHighlightJson = null;
-      await _updateSourceData(_selectedStationSourceId,
-        '{"type":"FeatureCollection","features":[]}');
+      await _updateSourceData(
+        _selectedStationSourceId,
+        '{"type":"FeatureCollection","features":[]}',
+      );
     }
   }
 
@@ -1275,18 +1677,26 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
     int expressType,
   ) {
     // 폴리곤 좌표 계산 (인라인)
-    final offset = _offsetPosition(train.lat, train.lng, train.bearing, train.direction);
+    final offset = _offsetPosition(
+      train.lat,
+      train.lng,
+      train.bearing,
+      train.direction,
+    );
     final oLat = offset[0];
     final oLng = offset[1];
 
     // 급행/초급행은 더 큰 열차 블록
     final double lengthM, widthM;
     if (expressType == 7) {
-      lengthM = 75.0; widthM = 28.0; // 초급행: 가장 큼
+      lengthM = 75.0;
+      widthM = 28.0; // 초급행: 가장 큼
     } else if (expressType == 1) {
-      lengthM = 60.0; widthM = 25.0; // 급행
+      lengthM = 60.0;
+      widthM = 25.0; // 급행
     } else {
-      lengthM = 45.0; widthM = 20.0; // 일반
+      lengthM = 45.0;
+      widthM = 20.0; // 일반
     }
     final halfL = lengthM / 2;
     final halfW = widthM / 2;
@@ -1306,11 +1716,13 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
     final y3 = oLat + (-(-halfW) * sinB + halfL * cosB) / _mPerDegLat;
 
     // 최소한의 properties만 포함 (렌더링: color/base/top, 클릭: trainNo)
-    sb.write('{"type":"Feature","geometry":{"type":"Polygon","coordinates":'
-        '[[[$x0,$y0],[$x1,$y1],[$x2,$y2],[$x3,$y3],[$x0,$y0]]]},'
-        '"properties":{"color":"$colorStr",'
-        '"base":${train.altitude},"top":${train.altitude + height},'
-        '"trainNo":"${train.trainNo}"}}');
+    sb.write(
+      '{"type":"Feature","geometry":{"type":"Polygon","coordinates":'
+      '[[[$x0,$y0],[$x1,$y1],[$x2,$y2],[$x3,$y3],[$x0,$y0]]]},'
+      '"properties":{"color":"$colorStr",'
+      '"base":${train.altitude},"top":${train.altitude + height},'
+      '"trainNo":"${train.trainNo}"}}',
+    );
   }
 
   @override
@@ -1340,10 +1752,7 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
         for (final track in [left, right]) {
           final feature = {
             'type': 'Feature',
-            'geometry': {
-              'type': 'LineString',
-              'coordinates': track,
-            },
+            'geometry': {'type': 'LineString', 'coordinates': track},
             'properties': {'color': colorStr, 'lineId': lineId},
           };
           if (isUG) {
@@ -1374,22 +1783,30 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
     }
 
     // Source 업데이트 (setStyleSourceProperty 직접 사용)
-    await _updateSourceData(_routeSurfaceSourceId, jsonEncode({
-      'type': 'FeatureCollection',
-      'features': surfaceFeatures,
-    }));
+    await _updateSourceData(
+      _routeSurfaceSourceId,
+      jsonEncode({'type': 'FeatureCollection', 'features': surfaceFeatures}),
+    );
 
-    await _updateSourceData(_routeUndergroundSourceId, jsonEncode({
-      'type': 'FeatureCollection',
-      'features': undergroundFeatures,
-    }));
+    await _updateSourceData(
+      _routeUndergroundSourceId,
+      jsonEncode({
+        'type': 'FeatureCollection',
+        'features': undergroundFeatures,
+      }),
+    );
 
-    debugPrint('[MapboxEngine] Routes 3D: ${surfaceFeatures.length} surface, '
-        '${undergroundFeatures.length} underground segments');
+    debugPrint(
+      '[MapboxEngine] Routes 3D: ${surfaceFeatures.length} surface, '
+      '${undergroundFeatures.length} underground segments',
+    );
   }
 
   @override
-  Future<void> updateStations3D(List<Map<String, dynamic>> pills, List<Map<String, dynamic>> dots) async {
+  Future<void> updateStations3D(
+    List<Map<String, dynamic>> pills,
+    List<Map<String, dynamic>> dots,
+  ) async {
     if (_mapboxMap == null || !_layersInitialized3D) return;
 
     // 캡슐 배경 (LineString — 둥근 끝캡으로 필 모양 생성)
@@ -1397,10 +1814,14 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
       final n = p['lineCount'] as int;
       // 단일역: 극소 길이 LineString (둥근 끝캡 → 원형)
       final coords = n <= 1
-          ? [[p['startLng'], p['startLat']],
-             [p['startLng'] + 0.0000001, p['startLat'] + 0.0000001]]
-          : [[p['startLng'], p['startLat']],
-             [p['endLng'], p['endLat']]];
+          ? [
+              [p['startLng'], p['startLat']],
+              [p['startLng'] + 0.0000001, p['startLat'] + 0.0000001],
+            ]
+          : [
+              [p['startLng'], p['startLat']],
+              [p['endLng'], p['endLat']],
+            ];
       return {
         'type': 'Feature',
         'geometry': {'type': 'LineString', 'coordinates': coords},
@@ -1408,30 +1829,33 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
       };
     }).toList();
 
-    await _updateSourceData(_stationPillSourceId, jsonEncode({
-      'type': 'FeatureCollection',
-      'features': pillFeatures,
-    }));
+    await _updateSourceData(
+      _stationPillSourceId,
+      jsonEncode({'type': 'FeatureCollection', 'features': pillFeatures}),
+    );
 
     // 노선별 컬러 도트 (Point)
-    final dotFeatures = dots.map((d) => {
-      'type': 'Feature',
-      'geometry': {
-        'type': 'Point',
-        'coordinates': [d['lng'], d['lat']],
-      },
-      'properties': {
-        'name': d['name'],
-        'color': d['color'],
-      },
-    }).toList();
+    final dotFeatures = dots
+        .map(
+          (d) => {
+            'type': 'Feature',
+            'geometry': {
+              'type': 'Point',
+              'coordinates': [d['lng'], d['lat']],
+            },
+            'properties': {'name': d['name'], 'color': d['color']},
+          },
+        )
+        .toList();
 
-    await _updateSourceData(_stationSourceId, jsonEncode({
-      'type': 'FeatureCollection',
-      'features': dotFeatures,
-    }));
+    await _updateSourceData(
+      _stationSourceId,
+      jsonEncode({'type': 'FeatureCollection', 'features': dotFeatures}),
+    );
 
-    debugPrint('[MapboxEngine] 🚉 역 ${pills.length}개 (도트 ${dots.length}개) 업데이트');
+    debugPrint(
+      '[MapboxEngine] 🚉 역 ${pills.length}개 (도트 ${dots.length}개) 업데이트',
+    );
   }
 
   @override
@@ -1440,7 +1864,9 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
   }
 
   @override
-  Future<void> updateCongestionHeatmap(List<Map<String, dynamic>> points) async {
+  Future<void> updateCongestionHeatmap(
+    List<Map<String, dynamic>> points,
+  ) async {
     if (_mapboxMap == null || !_layersInitialized3D) return;
 
     final sb = StringBuffer('{"type":"FeatureCollection","features":[');
@@ -1452,8 +1878,10 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
       final lng = p['lng'];
       final weight = (p['weight'] as double).clamp(0.0, 1.0);
       final label = p['label'] ?? '';
-      sb.write('{"type":"Feature","geometry":{"type":"Point","coordinates":[$lng,$lat]},'
-          '"properties":{"weight":$weight,"label":"$label"}}');
+      sb.write(
+        '{"type":"Feature","geometry":{"type":"Point","coordinates":[$lng,$lat]},'
+        '"properties":{"weight":$weight,"label":"$label"}}',
+      );
     }
     sb.write(']}');
     await _updateSourceData(_congestionSourceId, sb.toString());
@@ -1463,9 +1891,21 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
   void setCongestionVisible(bool visible) {
     if (_mapboxMap == null || !_layersInitialized3D) return;
     final v = visible ? 'visible' : 'none';
-    _mapboxMap!.style.setStyleLayerProperty(_congestionHeatmapLayerId, 'visibility', v);
-    _mapboxMap!.style.setStyleLayerProperty(_congestionCircleLayerId, 'visibility', v);
-    _mapboxMap!.style.setStyleLayerProperty(_congestionLabelLayerId, 'visibility', v);
+    _mapboxMap!.style.setStyleLayerProperty(
+      _congestionHeatmapLayerId,
+      'visibility',
+      v,
+    );
+    _mapboxMap!.style.setStyleLayerProperty(
+      _congestionCircleLayerId,
+      'visibility',
+      v,
+    );
+    _mapboxMap!.style.setStyleLayerProperty(
+      _congestionLabelLayerId,
+      'visibility',
+      v,
+    );
   }
 
   @override
@@ -1501,7 +1941,9 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
   }
 
   @override
-  void setOnPoiTapped(void Function(String name, double lat, double lng)? callback) {
+  void setOnPoiTapped(
+    void Function(String name, double lat, double lng)? callback,
+  ) {
     _onPoiTapped = callback;
   }
 
@@ -1511,7 +1953,9 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
   }
 
   @override
-  void setOnCameraIdle(void Function(double lat, double lng, double zoom)? callback) {
+  void setOnCameraIdle(
+    void Function(double lat, double lng, double zoom)? callback,
+  ) {
     _onCameraIdle = callback;
   }
 
@@ -1521,17 +1965,18 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
     final style = _mapboxMap!.style;
 
     // GeoJSON 생성
-    final features = pois.map((poi) => {
-      'type': 'Feature',
-      'geometry': {
-        'type': 'Point',
-        'coordinates': [poi['lng'], poi['lat']],
-      },
-      'properties': {
-        'name': poi['name'],
-        'category': poi['category'],
-      },
-    }).toList();
+    final features = pois
+        .map(
+          (poi) => {
+            'type': 'Feature',
+            'geometry': {
+              'type': 'Point',
+              'coordinates': [poi['lng'], poi['lat']],
+            },
+            'properties': {'name': poi['name'], 'category': poi['category']},
+          },
+        )
+        .toList();
 
     final geojson = jsonEncode({
       'type': 'FeatureCollection',
@@ -1547,30 +1992,34 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
         await style.addSource(GeoJsonSource(id: _poiSourceId, data: geojson));
 
         // 원형 마커 레이어 (탭 가능하도록 충분히 큰 크기)
-        await style.addLayer(CircleLayer(
-          id: _poiLayerId,
-          sourceId: _poiSourceId,
-          circleRadius: 8.0,
-          circleColor: const Color(0xFFE53935).toARGB32(),
-          circleStrokeColor: Colors.white.toARGB32(),
-          circleStrokeWidth: 2.0,
-          circleOpacity: 0.9,
-        ));
+        await style.addLayer(
+          CircleLayer(
+            id: _poiLayerId,
+            sourceId: _poiSourceId,
+            circleRadius: 8.0,
+            circleColor: const Color(0xFFE53935).toARGB32(),
+            circleStrokeColor: Colors.white.toARGB32(),
+            circleStrokeWidth: 2.0,
+            circleOpacity: 0.9,
+          ),
+        );
 
         // 텍스트 라벨 레이어
-        await style.addLayer(SymbolLayer(
-          id: _poiLabelLayerId,
-          sourceId: _poiSourceId,
-          textField: '{name}',
-          textSize: 12.0,
-          textColor: Colors.white.toARGB32(),
-          textHaloColor: const Color(0xFF222222).toARGB32(),
-          textHaloWidth: 1.5,
-          textOffset: [0.0, 1.5],
-          textAnchor: TextAnchor.TOP,
-          textOptional: true,
-          textAllowOverlap: false,
-        ));
+        await style.addLayer(
+          SymbolLayer(
+            id: _poiLabelLayerId,
+            sourceId: _poiSourceId,
+            textField: '{name}',
+            textSize: 12.0,
+            textColor: Colors.white.toARGB32(),
+            textHaloColor: const Color(0xFF222222).toARGB32(),
+            textHaloWidth: 1.5,
+            textOffset: [0.0, 1.5],
+            textAnchor: TextAnchor.TOP,
+            textOptional: true,
+            textAllowOverlap: false,
+          ),
+        );
 
         _poiLayerInitialized = true;
       }
@@ -1587,7 +2036,11 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
         'type': 'FeatureCollection',
         'features': <dynamic>[],
       });
-      _mapboxMap!.style.setStyleSourceProperty(_poiSourceId, 'data', emptyGeojson);
+      _mapboxMap!.style.setStyleSourceProperty(
+        _poiSourceId,
+        'data',
+        emptyGeojson,
+      );
     } catch (_) {}
   }
 
@@ -1613,8 +2066,10 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
   void setSelectedStation(String? stationName) {
     _selectedStationName = stationName;
     if (stationName == null) {
-      _updateSourceData(_selectedStationSourceId,
-        '{"type":"FeatureCollection","features":[]}');
+      _updateSourceData(
+        _selectedStationSourceId,
+        '{"type":"FeatureCollection","features":[]}',
+      );
     }
   }
 
@@ -1626,20 +2081,36 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
     if (_riverBusHighlightInit || _mapboxMap == null) return;
     final style = _mapboxMap!.style;
     try {
-      await style.addSource(GeoJsonSource(id: _riverBusHighlightSourceId, data: '{"type":"FeatureCollection","features":[]}'));
-      await style.addLayer(CircleLayer(
-        id: _riverBusHighlightLayerId,
-        sourceId: _riverBusHighlightSourceId,
-        circleColor: const Color(0xFF00ACC1).toARGB32(),
-        circleRadiusExpression: [
-          'interpolate', ['linear'], ['zoom'],
-          10, 10.0, 13, 22.0, 15, 38.0, 17, 55.0,
-        ],
-        circleBlur: 0.5,
-        circleOpacity: 0.5,
-        circlePitchAlignment: CirclePitchAlignment.MAP,
-        circleEmissiveStrength: 1.0,
-      ));
+      await style.addSource(
+        GeoJsonSource(
+          id: _riverBusHighlightSourceId,
+          data: '{"type":"FeatureCollection","features":[]}',
+        ),
+      );
+      await style.addLayer(
+        CircleLayer(
+          id: _riverBusHighlightLayerId,
+          sourceId: _riverBusHighlightSourceId,
+          circleColor: const Color(0xFF00ACC1).toARGB32(),
+          circleRadiusExpression: [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            10,
+            10.0,
+            13,
+            22.0,
+            15,
+            38.0,
+            17,
+            55.0,
+          ],
+          circleBlur: 0.5,
+          circleOpacity: 0.5,
+          circlePitchAlignment: CirclePitchAlignment.MAP,
+          circleEmissiveStrength: 1.0,
+        ),
+      );
       _riverBusHighlightInit = true;
     } catch (_) {}
   }
@@ -1649,20 +2120,27 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
     if (!_riverBusHighlightInit) {
       _ensureRiverBusHighlight().then((_) {
         if (_riverBusHighlightInit) {
-          _updateSourceData(_riverBusHighlightSourceId,
-            '{"type":"FeatureCollection","features":[{"type":"Feature","geometry":{"type":"Point","coordinates":[$lng,$lat]},"properties":{}}]}');
+          _updateSourceData(
+            _riverBusHighlightSourceId,
+            '{"type":"FeatureCollection","features":[{"type":"Feature","geometry":{"type":"Point","coordinates":[$lng,$lat]},"properties":{}}]}',
+          );
         }
       });
       return;
     }
-    _updateSourceData(_riverBusHighlightSourceId,
-      '{"type":"FeatureCollection","features":[{"type":"Feature","geometry":{"type":"Point","coordinates":[$lng,$lat]},"properties":{}}]}');
+    _updateSourceData(
+      _riverBusHighlightSourceId,
+      '{"type":"FeatureCollection","features":[{"type":"Feature","geometry":{"type":"Point","coordinates":[$lng,$lat]},"properties":{}}]}',
+    );
   }
 
   @override
   void hideRiverBusHighlight() {
     if (!_riverBusHighlightInit) return;
-    _updateSourceData(_riverBusHighlightSourceId, '{"type":"FeatureCollection","features":[]}');
+    _updateSourceData(
+      _riverBusHighlightSourceId,
+      '{"type":"FeatureCollection","features":[]}',
+    );
   }
 
   @override
@@ -1684,9 +2162,9 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
       // flyTo 진행 중이면 무시
       if (DateTime.now().millisecondsSinceEpoch < _flyToEndTime) return;
       // 추적 중: setCamera로 강제 고정
-      _mapboxMap!.setCamera(CameraOptions(
-        center: Point(coordinates: Position(lng, lat)),
-      ));
+      _mapboxMap!.setCamera(
+        CameraOptions(center: Point(coordinates: Position(lng, lat))),
+      );
     }
   }
 
@@ -1703,7 +2181,8 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
     // 위치 권한 확인 + 현재 위치 (플러그인 실패 시 서울 폴백)
     bool geoAvailable = true;
     try {
-      geo.LocationPermission permission = await geo.Geolocator.checkPermission();
+      geo.LocationPermission permission =
+          await geo.Geolocator.checkPermission();
       if (permission == geo.LocationPermission.denied) {
         permission = await geo.Geolocator.requestPermission();
         if (permission == geo.LocationPermission.denied ||
@@ -1722,7 +2201,9 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
     if (geoAvailable) {
       try {
         _currentPosition = await geo.Geolocator.getCurrentPosition(
-          locationSettings: const geo.LocationSettings(accuracy: geo.LocationAccuracy.high),
+          locationSettings: const geo.LocationSettings(
+            accuracy: geo.LocationAccuracy.high,
+          ),
         );
         // 서울 범위 밖이면 폴백 (시뮬레이터 미국 위치 등)
         if (_currentPosition != null) {
@@ -1751,21 +2232,24 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
     // 실시간 위치 스트림 (geolocator 사용 가능할 때만)
     if (geoAvailable && !_locationFailed) {
       try {
-        _positionSubscription = geo.Geolocator.getPositionStream(
-          locationSettings: const geo.LocationSettings(
-            accuracy: geo.LocationAccuracy.high,
-            distanceFilter: 5,
-          ),
-        ).listen((position) {
-          // 서울 범위 체크
-          if (position.latitude >= 37.0 && position.latitude <= 38.0 &&
-              position.longitude >= 126.5 && position.longitude <= 127.5) {
-            _currentPosition = position;
-          } else {
-            _currentPosition = _seoulFallbackPosition();
-          }
-          _updateLocationAvatar(_currentPosition!);
-        });
+        _positionSubscription =
+            geo.Geolocator.getPositionStream(
+              locationSettings: const geo.LocationSettings(
+                accuracy: geo.LocationAccuracy.high,
+                distanceFilter: 5,
+              ),
+            ).listen((position) {
+              // 서울 범위 체크
+              if (position.latitude >= 37.0 &&
+                  position.latitude <= 38.0 &&
+                  position.longitude >= 126.5 &&
+                  position.longitude <= 127.5) {
+                _currentPosition = position;
+              } else {
+                _currentPosition = _seoulFallbackPosition();
+              }
+              _updateLocationAvatar(_currentPosition!);
+            });
       } catch (e) {
         debugPrint('[MapboxEngine] 위치 스트림 실패: $e');
       }
@@ -1783,8 +2267,12 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
   Future<void> moveToCurrentLocation() async {
     if (!_locationEnabled) await enableLocationPuck();
     if (_currentPosition != null) {
-      moveTo(_currentPosition!.latitude, _currentPosition!.longitude,
-          zoom: 16.0, pitch: 50.0);
+      moveTo(
+        _currentPosition!.latitude,
+        _currentPosition!.longitude,
+        zoom: 16.0,
+        pitch: 50.0,
+      );
     }
   }
 
@@ -1795,54 +2283,77 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
 
     try {
       // 펄스 링 (CircleLayer — 발광 효과)
-      await style.addSource(GeoJsonSource(id: _locationPulseSourceId, data: emptyGeoJson));
-      await style.addLayer(CircleLayer(
-        id: _locationPulseLayerId,
-        sourceId: _locationPulseSourceId,
-        circleColor: const Color(0xFF4A90D9).toARGB32(),
-        circleRadiusExpression: [
-          'interpolate', ['linear'], ['zoom'],
-          10, 20.0,
-          14, 40.0,
-          17, 60.0,
-        ],
-        circleBlur: 0.7,
-        circleOpacity: 0.3,
-        circlePitchAlignment: CirclePitchAlignment.MAP,
-        circleEmissiveStrength: 1.0,
-      ));
+      await style.addSource(
+        GeoJsonSource(id: _locationPulseSourceId, data: emptyGeoJson),
+      );
+      await style.addLayer(
+        CircleLayer(
+          id: _locationPulseLayerId,
+          sourceId: _locationPulseSourceId,
+          circleColor: const Color(0xFF4A90D9).toARGB32(),
+          circleRadiusExpression: [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            10,
+            20.0,
+            14,
+            40.0,
+            17,
+            60.0,
+          ],
+          circleBlur: 0.7,
+          circleOpacity: 0.3,
+          circlePitchAlignment: CirclePitchAlignment.MAP,
+          circleEmissiveStrength: 1.0,
+        ),
+      );
 
       // 사람 몸체 (FillExtrusionLayer — 3D 원기둥형)
-      await style.addSource(GeoJsonSource(id: _locationSourceId, data: emptyGeoJson));
-      await style.addLayer(FillExtrusionLayer(
-        id: _locationBodyLayerId,
-        sourceId: _locationSourceId,
-        fillExtrusionColorExpression: ['to-color', ['get', 'color']],
-        fillExtrusionBaseExpression: ['get', 'base'],
-        fillExtrusionHeightExpression: ['get', 'top'],
-        fillExtrusionOpacity: 0.92,
-        fillExtrusionVerticalGradient: true,
-        fillExtrusionEmissiveStrength: 1.0,
-      ));
+      await style.addSource(
+        GeoJsonSource(id: _locationSourceId, data: emptyGeoJson),
+      );
+      await style.addLayer(
+        FillExtrusionLayer(
+          id: _locationBodyLayerId,
+          sourceId: _locationSourceId,
+          fillExtrusionColorExpression: [
+            'to-color',
+            ['get', 'color'],
+          ],
+          fillExtrusionBaseExpression: ['get', 'base'],
+          fillExtrusionHeightExpression: ['get', 'top'],
+          fillExtrusionOpacity: 0.92,
+          fillExtrusionVerticalGradient: true,
+          fillExtrusionEmissiveStrength: 1.0,
+        ),
+      );
 
       // 머리 (CircleLayer — 3D 기둥 위에 떠있는 원)
-      await style.addLayer(CircleLayer(
-        id: _locationHeadLayerId,
-        sourceId: _locationPulseSourceId, // 같은 Point 소스 재사용
-        circleColor: const Color(0xFFFFD7A8).toARGB32(), // 피부색
-        circleRadiusExpression: [
-          'interpolate', ['linear'], ['zoom'],
-          10, 4.0,
-          14, 8.0,
-          17, 14.0,
-        ],
-        circleStrokeColor: const Color(0xFF4A90D9).toARGB32(),
-        circleStrokeWidth: 2.0,
-        circleOpacity: 1.0,
-        circlePitchAlignment: CirclePitchAlignment.MAP,
-        circleSortKey: 100,
-        circleEmissiveStrength: 1.0,
-      ));
+      await style.addLayer(
+        CircleLayer(
+          id: _locationHeadLayerId,
+          sourceId: _locationPulseSourceId, // 같은 Point 소스 재사용
+          circleColor: const Color(0xFFFFD7A8).toARGB32(), // 피부색
+          circleRadiusExpression: [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            10,
+            4.0,
+            14,
+            8.0,
+            17,
+            14.0,
+          ],
+          circleStrokeColor: const Color(0xFF4A90D9).toARGB32(),
+          circleStrokeWidth: 2.0,
+          circleOpacity: 1.0,
+          circlePitchAlignment: CirclePitchAlignment.MAP,
+          circleSortKey: 100,
+          circleEmissiveStrength: 1.0,
+        ),
+      );
 
       debugPrint('[MapboxEngine] ✅ 3D 위치 아바타 레이어 생성 완료');
     } catch (e) {
@@ -1873,7 +2384,8 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
 
     // 사람 몸체: 8각형 원기둥 (반지름 ~2.5m, 지면에 붙임)
     final bodyCoords = _generateOctagon(lat, lng, 2.5);
-    final bodyJson = '{"type":"FeatureCollection","features":['
+    final bodyJson =
+        '{"type":"FeatureCollection","features":['
         // 하체 (진한 파란색 — 바닥부터)
         '{"type":"Feature","geometry":{"type":"Polygon","coordinates":[${_coordsToJson(bodyCoords)}]},'
         '"properties":{"color":"rgba(55,120,200,1)","base":0,"top":8}},'
@@ -1885,7 +2397,8 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
     await _updateSourceData(_locationSourceId, bodyJson);
 
     // 펄스/머리 좌표
-    final pulseJson = '{"type":"FeatureCollection","features":['
+    final pulseJson =
+        '{"type":"FeatureCollection","features":['
         '{"type":"Feature","geometry":{"type":"Point","coordinates":[$lng,$lat]},"properties":{}}'
         ']}';
     await _updateSourceData(_locationPulseSourceId, pulseJson);
@@ -1898,7 +2411,9 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
     final opacity = (0.15 + 0.25 * sin(t * 2 * pi)).clamp(0.05, 0.4);
     try {
       _mapboxMap!.style.setStyleLayerProperty(
-        _locationPulseLayerId, 'circle-opacity', opacity,
+        _locationPulseLayerId,
+        'circle-opacity',
+        opacity,
       );
     } catch (_) {}
   }
@@ -1938,36 +2453,56 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
 
     try {
       // 버스 위치 발광 링 (CircleLayer)
-      await style.addSource(GeoJsonSource(id: _busGlowSourceId, data: emptyGeoJson));
-      await style.addLayer(CircleLayer(
-        id: _busGlowLayerId,
-        sourceId: _busGlowSourceId,
-        circleColorExpression: ['to-color', ['get', 'color']],
-        circleRadiusExpression: [
-          'interpolate', ['linear'], ['zoom'],
-          10, 4.0,
-          13, 8.0,
-          15, 14.0,
-          17, 22.0,
-        ],
-        circleBlur: 0.4,
-        circleOpacity: 0.6,
-        circlePitchAlignment: CirclePitchAlignment.MAP,
-        circleEmissiveStrength: 0.8,
-      ));
+      await style.addSource(
+        GeoJsonSource(id: _busGlowSourceId, data: emptyGeoJson),
+      );
+      await style.addLayer(
+        CircleLayer(
+          id: _busGlowLayerId,
+          sourceId: _busGlowSourceId,
+          circleColorExpression: [
+            'to-color',
+            ['get', 'color'],
+          ],
+          circleRadiusExpression: [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            10,
+            4.0,
+            13,
+            8.0,
+            15,
+            14.0,
+            17,
+            22.0,
+          ],
+          circleBlur: 0.4,
+          circleOpacity: 0.6,
+          circlePitchAlignment: CirclePitchAlignment.MAP,
+          circleEmissiveStrength: 0.8,
+        ),
+      );
 
       // 버스 몸체 (FillExtrusionLayer — 3D 블록)
-      await style.addSource(GeoJsonSource(id: _busSourceId, data: emptyGeoJson));
-      await style.addLayer(FillExtrusionLayer(
-        id: _busLayerId,
-        sourceId: _busSourceId,
-        fillExtrusionColorExpression: ['to-color', ['get', 'color']],
-        fillExtrusionBaseExpression: ['get', 'base'],
-        fillExtrusionHeightExpression: ['get', 'top'],
-        fillExtrusionOpacity: 0.9,
-        fillExtrusionVerticalGradient: true,
-        fillExtrusionEmissiveStrength: 0.9,
-      ));
+      await style.addSource(
+        GeoJsonSource(id: _busSourceId, data: emptyGeoJson),
+      );
+      await style.addLayer(
+        FillExtrusionLayer(
+          id: _busLayerId,
+          sourceId: _busSourceId,
+          fillExtrusionColorExpression: [
+            'to-color',
+            ['get', 'color'],
+          ],
+          fillExtrusionBaseExpression: ['get', 'base'],
+          fillExtrusionHeightExpression: ['get', 'top'],
+          fillExtrusionOpacity: 0.9,
+          fillExtrusionVerticalGradient: true,
+          fillExtrusionEmissiveStrength: 0.9,
+        ),
+      );
 
       _busLayersInitialized = true;
       debugPrint('[MapboxEngine] ✅ 버스 3D 레이어 생성 완료');
@@ -1998,7 +2533,10 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
     bool first = true;
 
     for (final bus in buses) {
-      if (!first) { sb.write(','); glowSb.write(','); }
+      if (!first) {
+        sb.write(',');
+        glowSb.write(',');
+      }
       first = false;
 
       // 버스 크기 (지하철 일반: 45x20, 버스: 30x15 — 지하철과 비슷한 비율)
@@ -2024,14 +2562,18 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
       // 높이: 지하철과 동일 (20m 기본)
       const busHeight = 20.0;
 
-      sb.write('{"type":"Feature","geometry":{"type":"Polygon","coordinates":'
-          '[[[$x0,$y0],[$x1,$y1],[$x2,$y2],[$x3,$y3],[$x0,$y0]]]},'
-          '"properties":{"color":"${bus.color}","base":0,"top":$busHeight,"vehId":"${bus.vehId}"}}');
+      sb.write(
+        '{"type":"Feature","geometry":{"type":"Polygon","coordinates":'
+        '[[[$x0,$y0],[$x1,$y1],[$x2,$y2],[$x3,$y3],[$x0,$y0]]]},'
+        '"properties":{"color":"${bus.color}","base":0,"top":$busHeight,"vehId":"${bus.vehId}"}}',
+      );
 
       // 발광 링 (지하철 선택 하이라이트와 비슷)
-      glowSb.write('{"type":"Feature","geometry":{"type":"Point",'
-          '"coordinates":[${bus.lng},${bus.lat}]},'
-          '"properties":{"color":"${bus.color}"}}');
+      glowSb.write(
+        '{"type":"Feature","geometry":{"type":"Point",'
+        '"coordinates":[${bus.lng},${bus.lat}]},'
+        '"properties":{"color":"${bus.color}"}}',
+      );
     }
 
     sb.write(']}');
@@ -2054,35 +2596,54 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
 
     try {
       // 비행 궤적 (LineLayer — 그림자/꼬리 효과)
-      await style.addSource(GeoJsonSource(id: _flightTrailSourceId, data: emptyGeoJson));
-      await style.addLayer(CircleLayer(
-        id: _flightTrailLayerId,
-        sourceId: _flightTrailSourceId,
-        circleColorExpression: ['to-color', ['get', 'color']],
-        circleRadiusExpression: [
-          'interpolate', ['linear'], ['zoom'],
-          8, 2.0,
-          12, 4.0,
-          15, 7.0,
-        ],
-        circleBlur: 0.5,
-        circleOpacity: 0.4,
-        circlePitchAlignment: CirclePitchAlignment.MAP,
-        circleEmissiveStrength: 0.6,
-      ));
+      await style.addSource(
+        GeoJsonSource(id: _flightTrailSourceId, data: emptyGeoJson),
+      );
+      await style.addLayer(
+        CircleLayer(
+          id: _flightTrailLayerId,
+          sourceId: _flightTrailSourceId,
+          circleColorExpression: [
+            'to-color',
+            ['get', 'color'],
+          ],
+          circleRadiusExpression: [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            8,
+            2.0,
+            12,
+            4.0,
+            15,
+            7.0,
+          ],
+          circleBlur: 0.5,
+          circleOpacity: 0.4,
+          circlePitchAlignment: CirclePitchAlignment.MAP,
+          circleEmissiveStrength: 0.6,
+        ),
+      );
 
       // 비행기 몸체 (FillExtrusionLayer — 고도 비례 높이)
-      await style.addSource(GeoJsonSource(id: _flightSourceId, data: emptyGeoJson));
-      await style.addLayer(FillExtrusionLayer(
-        id: _flightLayerId,
-        sourceId: _flightSourceId,
-        fillExtrusionColorExpression: ['to-color', ['get', 'color']],
-        fillExtrusionBaseExpression: ['get', 'base'],
-        fillExtrusionHeightExpression: ['get', 'top'],
-        fillExtrusionOpacity: 0.95,
-        fillExtrusionVerticalGradient: true,
-        fillExtrusionEmissiveStrength: 1.0,
-      ));
+      await style.addSource(
+        GeoJsonSource(id: _flightSourceId, data: emptyGeoJson),
+      );
+      await style.addLayer(
+        FillExtrusionLayer(
+          id: _flightLayerId,
+          sourceId: _flightSourceId,
+          fillExtrusionColorExpression: [
+            'to-color',
+            ['get', 'color'],
+          ],
+          fillExtrusionBaseExpression: ['get', 'base'],
+          fillExtrusionHeightExpression: ['get', 'top'],
+          fillExtrusionOpacity: 0.95,
+          fillExtrusionVerticalGradient: true,
+          fillExtrusionEmissiveStrength: 1.0,
+        ),
+      );
 
       _flightLayersInitialized = true;
       debugPrint('[MapboxEngine] ✅ 항공기 3D 레이어 생성 완료');
@@ -2114,7 +2675,9 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
     for (final f in flights) {
       // 유효하지 않은 좌표 스킵
       if (f.lat == 0 || f.lng == 0 || f.lat.isNaN || f.lng.isNaN) continue;
-      if (!first) { sb.write(','); }
+      if (!first) {
+        sb.write(',');
+      }
       first = false;
 
       // 미니도쿄 스타일: 고도 → 3D 높이
@@ -2139,17 +2702,30 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
       const tailL = 4.0, tailW = 15.0, tailH = 25.0;
 
       // 각 박스를 Polygon으로 변환하는 헬퍼
-      String box(double halfX, double halfY, double base, double top, double ofsX, double ofsY) {
+      String box(
+        double halfX,
+        double halfY,
+        double base,
+        double top,
+        double ofsX,
+        double ofsY,
+      ) {
         // 로컬 4점 + 오프셋
-        final pts = [[-halfX + ofsX, -halfY + ofsY], [halfX + ofsX, -halfY + ofsY],
-                     [halfX + ofsX, halfY + ofsY], [-halfX + ofsX, halfY + ofsY]];
+        final pts = [
+          [-halfX + ofsX, -halfY + ofsY],
+          [halfX + ofsX, -halfY + ofsY],
+          [halfX + ofsX, halfY + ofsY],
+          [-halfX + ofsX, halfY + ofsY],
+        ];
         final buf = StringBuffer('[');
         for (int i = 0; i <= 4; i++) {
           final p = pts[i % 4];
           final rx = p[0] * cosB + p[1] * sinB;
           final ry = -p[0] * sinB + p[1] * cosB;
           if (i > 0) buf.write(',');
-          buf.write('[${f.lng + rx / _mPerDegLng},${f.lat + ry / _mPerDegLat}]');
+          buf.write(
+            '[${f.lng + rx / _mPerDegLng},${f.lat + ry / _mPerDegLat}]',
+          );
         }
         buf.write(']');
         return '{"type":"Feature","geometry":{"type":"Polygon","coordinates":[$buf]},'
@@ -2161,16 +2737,40 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
       sb.write(box(bodyW / 2, bodyL / 2, 0, bodyH, 0, 0));
       sb.write(',');
       // 날개 (중심, 약간 아래 위치)
-      sb.write(box(wingW / 2, wingL / 2, (bodyH - wingH) / 2, (bodyH + wingH) / 2, 0, 0));
+      sb.write(
+        box(
+          wingW / 2,
+          wingL / 2,
+          (bodyH - wingH) / 2,
+          (bodyH + wingH) / 2,
+          0,
+          0,
+        ),
+      );
       sb.write(',');
       // 수직 꼬리 (뒤쪽에, 동체 위로 솟음)
-      sb.write(box(tailW / 2, tailL / 2, bodyH * 0.3, bodyH * 0.3 + tailH, 0, -bodyL * 0.35));
+      sb.write(
+        box(
+          tailW / 2,
+          tailL / 2,
+          bodyH * 0.3,
+          bodyH * 0.3 + tailH,
+          0,
+          -bodyL * 0.35,
+        ),
+      );
 
       // 지면 그림자
-      if (trailFirst) { trailFirst = false; } else { trailSb.write(','); }
-      trailSb.write('{"type":"Feature","geometry":{"type":"Point",'
-          '"coordinates":[${f.lng},${f.lat}]},'
-          '"properties":{"color":"${f.color}"}}');
+      if (trailFirst) {
+        trailFirst = false;
+      } else {
+        trailSb.write(',');
+      }
+      trailSb.write(
+        '{"type":"Feature","geometry":{"type":"Point",'
+        '"coordinates":[${f.lng},${f.lat}]},'
+        '"properties":{"color":"${f.color}"}}',
+      );
     }
 
     sb.write(']}');
@@ -2191,28 +2791,52 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
     final style = _mapboxMap!.style;
     const emptyGeoJson = '{"type":"FeatureCollection","features":[]}';
     try {
-      await style.addSource(GeoJsonSource(id: _riverBusWakeSourceId, data: emptyGeoJson));
-      await style.addLayer(CircleLayer(
-        id: _riverBusWakeLayerId,
-        sourceId: _riverBusWakeSourceId,
-        circleColorExpression: ['to-color', ['get', 'color']],
-        circleRadiusExpression: ['interpolate', ['linear'], ['zoom'], 10, 5.0, 14, 12.0, 17, 20.0],
-        circleBlur: 0.6,
-        circleOpacity: 0.4,
-        circlePitchAlignment: CirclePitchAlignment.MAP,
-        circleEmissiveStrength: 0.8,
-      ));
-      await style.addSource(GeoJsonSource(id: _riverBusSourceId, data: emptyGeoJson));
-      await style.addLayer(FillExtrusionLayer(
-        id: _riverBusLayerId,
-        sourceId: _riverBusSourceId,
-        fillExtrusionColorExpression: ['to-color', ['get', 'color']],
-        fillExtrusionBaseExpression: ['get', 'base'],
-        fillExtrusionHeightExpression: ['get', 'top'],
-        fillExtrusionOpacity: 0.92,
-        fillExtrusionVerticalGradient: true,
-        fillExtrusionEmissiveStrength: 1.0,
-      ));
+      await style.addSource(
+        GeoJsonSource(id: _riverBusWakeSourceId, data: emptyGeoJson),
+      );
+      await style.addLayer(
+        CircleLayer(
+          id: _riverBusWakeLayerId,
+          sourceId: _riverBusWakeSourceId,
+          circleColorExpression: [
+            'to-color',
+            ['get', 'color'],
+          ],
+          circleRadiusExpression: [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            10,
+            5.0,
+            14,
+            12.0,
+            17,
+            20.0,
+          ],
+          circleBlur: 0.6,
+          circleOpacity: 0.4,
+          circlePitchAlignment: CirclePitchAlignment.MAP,
+          circleEmissiveStrength: 0.8,
+        ),
+      );
+      await style.addSource(
+        GeoJsonSource(id: _riverBusSourceId, data: emptyGeoJson),
+      );
+      await style.addLayer(
+        FillExtrusionLayer(
+          id: _riverBusLayerId,
+          sourceId: _riverBusSourceId,
+          fillExtrusionColorExpression: [
+            'to-color',
+            ['get', 'color'],
+          ],
+          fillExtrusionBaseExpression: ['get', 'base'],
+          fillExtrusionHeightExpression: ['get', 'top'],
+          fillExtrusionOpacity: 0.92,
+          fillExtrusionVerticalGradient: true,
+          fillExtrusionEmissiveStrength: 1.0,
+        ),
+      );
       _riverBusLayersInitialized = true;
       debugPrint('[MapboxEngine] ✅ 리버버스 3D 레이어 생성 완료');
     } catch (e) {
@@ -2251,17 +2875,18 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
       const hB = beam / 2;
       // 6각형: 뱃머리(뾰족) + 몸통(직사각) + 선미(평평)
       final pts = <List<double>>[
-        [0, len * 0.5],          // 뱃머리 끝 (중앙)
-        [hB, len * 0.2],         // 우현 앞
-        [hB, -len * 0.4],        // 우현 뒤
-        [hB * 0.7, -len * 0.5],  // 선미 우
+        [0, len * 0.5], // 뱃머리 끝 (중앙)
+        [hB, len * 0.2], // 우현 앞
+        [hB, -len * 0.4], // 우현 뒤
+        [hB * 0.7, -len * 0.5], // 선미 우
         [-hB * 0.7, -len * 0.5], // 선미 좌
-        [-hB, -len * 0.4],       // 좌현 뒤
-        [-hB, len * 0.2],        // 좌현 앞
+        [-hB, -len * 0.4], // 좌현 뒤
+        [-hB, len * 0.2], // 좌현 앞
       ];
 
       // 선체 (hull) — 시안색
-      if (!first) sb.write(','); first = false;
+      if (!first) sb.write(',');
+      first = false;
       final hull = StringBuffer('[');
       for (int i = 0; i <= pts.length; i++) {
         final p = pts[i % pts.length];
@@ -2272,18 +2897,27 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
       }
       hull.write(']');
       // 선체를 갑판 높이까지 채움 (구멍 없음)
-      sb.write('{"type":"Feature","geometry":{"type":"Polygon","coordinates":[$hull]},'
-          '"properties":{"color":"${v.color}","base":0,"top":14,"vehId":"${v.vehId}"}}');
+      sb.write(
+        '{"type":"Feature","geometry":{"type":"Polygon","coordinates":[$hull]},'
+        '"properties":{"color":"${v.color}","base":0,"top":14,"vehId":"${v.vehId}"}}',
+      );
 
       // 갑판 (deck) — 흰색, 선체 위에 얇게
       sb.write(',');
-      sb.write('{"type":"Feature","geometry":{"type":"Polygon","coordinates":[$hull]},'
-          '"properties":{"color":"rgba(240,248,255,1)","base":12,"top":14,"vehId":"${v.vehId}"}}');
+      sb.write(
+        '{"type":"Feature","geometry":{"type":"Polygon","coordinates":[$hull]},'
+        '"properties":{"color":"rgba(240,248,255,1)","base":12,"top":14,"vehId":"${v.vehId}"}}',
+      );
 
       // 조타실 (cabin) — 흰색, 배 뒤쪽에 높게
       sb.write(',');
       const cL = 15.0, cW = 14.0, cY = -12.0;
-      final cPts = [[-cW/2, -cL/2+cY], [cW/2, -cL/2+cY], [cW/2, cL/2+cY], [-cW/2, cL/2+cY]];
+      final cPts = [
+        [-cW / 2, -cL / 2 + cY],
+        [cW / 2, -cL / 2 + cY],
+        [cW / 2, cL / 2 + cY],
+        [-cW / 2, cL / 2 + cY],
+      ];
       final cab = StringBuffer('[');
       for (int i = 0; i <= 4; i++) {
         final p = cPts[i % 4];
@@ -2293,13 +2927,18 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
         cab.write('[${v.lng + rx / _mPerDegLng},${v.lat + ry / _mPerDegLat}]');
       }
       cab.write(']');
-      sb.write('{"type":"Feature","geometry":{"type":"Polygon","coordinates":[$cab]},'
-          '"properties":{"color":"rgba(255,255,255,1)","base":14,"top":22,"vehId":"${v.vehId}"}}');
+      sb.write(
+        '{"type":"Feature","geometry":{"type":"Polygon","coordinates":[$cab]},'
+        '"properties":{"color":"rgba(255,255,255,1)","base":14,"top":22,"vehId":"${v.vehId}"}}',
+      );
 
       // 물결
-      if (!wakeFirst) wakeSb.write(','); wakeFirst = false;
-      wakeSb.write('{"type":"Feature","geometry":{"type":"Point",'
-          '"coordinates":[${v.lng},${v.lat}]},"properties":{"color":"${v.color}"}}');
+      if (!wakeFirst) wakeSb.write(',');
+      wakeFirst = false;
+      wakeSb.write(
+        '{"type":"Feature","geometry":{"type":"Point",'
+        '"coordinates":[${v.lng},${v.lat}]},"properties":{"color":"${v.color}"}}',
+      );
     }
 
     sb.write(']}');
@@ -2312,70 +2951,97 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
     _mapboxMap = mapboxMap;
 
     // 나침반: 우상단, 검색바 아래로 여유있게
-    mapboxMap.compass.updateSettings(CompassSettings(
-      position: OrnamentPosition.TOP_RIGHT,
-      marginTop: 120,
-      marginRight: 16,
-    ));
+    mapboxMap.compass.updateSettings(
+      CompassSettings(
+        position: OrnamentPosition.TOP_RIGHT,
+        marginTop: 120,
+        marginRight: 16,
+      ),
+    );
     // 로고: 좌하단, 어트리뷰션: 우하단 (탭바 위)
-    mapboxMap.logo.updateSettings(LogoSettings(
-      position: OrnamentPosition.BOTTOM_LEFT,
-      marginBottom: 90, marginLeft: 8,
-    ));
-    mapboxMap.attribution.updateSettings(AttributionSettings(
-      position: OrnamentPosition.BOTTOM_RIGHT,
-      marginBottom: 90, marginRight: 8,
-    ));
+    mapboxMap.logo.updateSettings(
+      LogoSettings(
+        position: OrnamentPosition.BOTTOM_LEFT,
+        marginBottom: 90,
+        marginLeft: 8,
+      ),
+    );
+    mapboxMap.attribution.updateSettings(
+      AttributionSettings(
+        position: OrnamentPosition.BOTTOM_RIGHT,
+        marginBottom: 90,
+        marginRight: 8,
+      ),
+    );
     // 스케일바 숨김
     mapboxMap.scaleBar.updateSettings(ScaleBarSettings(enabled: false));
 
     // POI 라벨 활성화 (줌 15+에서 주변 상점/카페/건물 이름 표시)
     mapboxMap.style.setStyleImportConfigProperty(
-      'basemap', 'showPointOfInterestLabels', true,
+      'basemap',
+      'showPointOfInterestLabels',
+      true,
     );
     mapboxMap.style.setStyleImportConfigProperty(
-      'basemap', 'showPlaceLabels', true,
+      'basemap',
+      'showPlaceLabels',
+      true,
     );
 
     // Standard POI 탭 인터랙션 (Interactions API — 반드시 setOnMapTapListener보다 먼저)
-    mapboxMap.addInteraction(TapInteraction(StandardPOIs(), (feature, context) {
-      _onAnyMapTap?.call();
-      final name = feature.name;
-      if (name == null || name.isEmpty || _onPoiTapped == null) return;
-      // ferry(한강버스) POI는 자체 마커로 처리
-      final group = feature.group;
-      if (group == 'transit' && (feature.category == 'ferry' || name.contains('한강버스'))) return;
-      // 대중교통 POI(지하철역/버스정류장)는 기존 역 탭으로 처리
-      if (feature.category == 'rail_station' || feature.category == 'metro_rail'
-          || feature.category == 'station' || group == 'transit') return;
+    mapboxMap.addInteraction(
+      TapInteraction(StandardPOIs(), (feature, context) {
+        _onAnyMapTap?.call();
+        final name = feature.name;
+        if (name == null || name.isEmpty || _onPoiTapped == null) return;
+        // ferry(한강버스) POI는 자체 마커로 처리
+        final group = feature.group;
+        if (group == 'transit' &&
+            (feature.category == 'ferry' || name.contains('한강버스')))
+          return;
+        // 대중교통 POI(지하철역/버스정류장)는 기존 역 탭으로 처리
+        if (feature.category == 'rail_station' ||
+            feature.category == 'metro_rail' ||
+            feature.category == 'station' ||
+            group == 'transit')
+          return;
 
-      // POI를 먼저 저장 — _handleMapTap에서 역을 찾으면 덮어씀
-      _pendingPoiName = name;
-      _pendingPoiTriggered = true;
+        // POI를 먼저 저장 — _handleMapTap에서 역을 찾으면 덮어씀
+        _pendingPoiName = name;
+        _pendingPoiTriggered = true;
 
-      try {
-        final raw = feature.geometry['coordinates'];
-        if (raw is List && raw.length >= 2) {
-          final lng = (raw[0] as num).toDouble();
-          final lat = (raw[1] as num).toDouble();
-          _pendingPoiLat = lat;
-          _pendingPoiLng = lng;
-          // 50ms 후에 역 탭이 안 왔으면 POI 처리
-          Future.delayed(const Duration(milliseconds: 50), () {
-            if (_pendingPoiTriggered && _onPoiTapped != null) {
-              _poiTappedThisFrame = true;
-              _onPoiTapped!(_pendingPoiName!, _pendingPoiLat!, _pendingPoiLng!);
-            }
-            _pendingPoiTriggered = false;
-          });
-        } else {
-          final point = context.point;
-          _onPoiTapped!(name, point.coordinates.lat.toDouble(), point.coordinates.lng.toDouble());
+        try {
+          final raw = feature.geometry['coordinates'];
+          if (raw is List && raw.length >= 2) {
+            final lng = (raw[0] as num).toDouble();
+            final lat = (raw[1] as num).toDouble();
+            _pendingPoiLat = lat;
+            _pendingPoiLng = lng;
+            // 50ms 후에 역 탭이 안 왔으면 POI 처리
+            Future.delayed(const Duration(milliseconds: 50), () {
+              if (_pendingPoiTriggered && _onPoiTapped != null) {
+                _poiTappedThisFrame = true;
+                _onPoiTapped!(
+                  _pendingPoiName!,
+                  _pendingPoiLat!,
+                  _pendingPoiLng!,
+                );
+              }
+              _pendingPoiTriggered = false;
+            });
+          } else {
+            final point = context.point;
+            _onPoiTapped!(
+              name,
+              point.coordinates.lat.toDouble(),
+              point.coordinates.lng.toDouble(),
+            );
+          }
+        } catch (e) {
+          debugPrint('[POI] ERROR: $e');
         }
-      } catch (e) {
-        debugPrint('[POI] ERROR: $e');
-      }
-    }, stopPropagation: false));
+      }, stopPropagation: false),
+    );
 
     // 맵 탭 리스너 — 열차/버스/역 클릭 감지
     mapboxMap.setOnMapTapListener((ctx) {
@@ -2404,7 +3070,9 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
   Future<void> _handleMapTap(MapContentGestureContext context) async {
     // 탭 좌표 디버그 출력 (한강 좌표 확인용)
     final coord = context.point.coordinates;
-    debugPrint('[MapTap] 📍 lat=${coord.lat.toStringAsFixed(6)}, lng=${coord.lng.toStringAsFixed(6)}');
+    debugPrint(
+      '[MapTap] 📍 lat=${coord.lat.toStringAsFixed(6)}, lng=${coord.lng.toStringAsFixed(6)}',
+    );
 
     // POI Interaction이 이미 처리한 탭이면 스킵
     if (_poiTappedThisFrame) {
@@ -2511,7 +3179,9 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
       );
       final stationFeatures = await _mapboxMap!.queryRenderedFeatures(
         RenderedQueryGeometry.fromScreenBox(stationBox),
-        RenderedQueryOptions(layerIds: [_stationOutlineLayerId, _stationDotLayerId]),
+        RenderedQueryOptions(
+          layerIds: [_stationOutlineLayerId, _stationDotLayerId],
+        ),
       );
 
       if (stationFeatures.isNotEmpty) {
@@ -2525,7 +3195,8 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
         String? tappedName;
         Map<Object?, Object?>? chosenFeature;
         if (validFeatures.isNotEmpty) {
-          final firstName = (validFeatures.first['properties'] as Map?)?['name'];
+          final firstName =
+              (validFeatures.first['properties'] as Map?)?['name'];
           final sameNameFeatures = validFeatures
               .where((f) => (f['properties'] as Map?)?['name'] == firstName)
               .toList();
@@ -2553,7 +3224,10 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
       // 좌표 기반 탭 콜백 (선착장 등 체크용)
       if (_onMapCoordTapped != null) {
         final point = context.point;
-        _onMapCoordTapped!(point.coordinates.lat.toDouble(), point.coordinates.lng.toDouble());
+        _onMapCoordTapped!(
+          point.coordinates.lat.toDouble(),
+          point.coordinates.lng.toDouble(),
+        );
       }
 
       // 빈 곳 탭 — 선택 해제
@@ -2585,7 +3259,12 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
       },
       textureView: true,
       cameraOptions: CameraOptions(
-        center: Point(coordinates: Position(widget.initialCamera.lng, widget.initialCamera.lat)),
+        center: Point(
+          coordinates: Position(
+            widget.initialCamera.lng,
+            widget.initialCamera.lat,
+          ),
+        ),
         zoom: widget.initialCamera.zoom,
         pitch: widget.initialCamera.pitch,
         bearing: widget.initialCamera.bearing,
