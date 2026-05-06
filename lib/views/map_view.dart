@@ -302,10 +302,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
         }
         color = const Color(0xFF4FC3F7); // 도보: 밝은 파랑
       } else if (segment.mode == TransportMode.bus) {
-        // 버스 구간: 정류소 좌표 직선 연결
-        final coords = _resolveBusStopCoords(segment.lineId, segment.stations);
-        if (coords.length < 2) continue;
-        segCoords = coords;
+        // 버스 구간: 정류소 좌표를 Mapbox Map Matching 으로 도로에 스냅.
+        // 매칭 실패 시 직선 폴백 (이전 동작 보존).
+        final stopCoords = _resolveBusStopCoords(
+          segment.lineId,
+          segment.stations,
+        );
+        if (stopCoords.length < 2) continue;
+        final matched = await DirectionsService.instance.getMatchedRoute(
+          stopCoords,
+        );
+        segCoords = (matched != null && matched.length >= 2)
+            ? matched
+            : stopCoords;
         // 버스 색상
         final ref = segment.lineId.startsWith('bus_')
             ? segment.lineId.substring(4)
