@@ -32,6 +32,7 @@ migrate_working_dir/
 .pub/
 /build/
 /coverage/
+android/build/
 
 # Symbolication related
 app.*.symbols
@@ -50,6 +51,11 @@ android/app/upload-keystore.jks
 
 # API keys
 lib/core/api_keys.dart
+
+# Generated transit data caches
+tools/bus_data_cache.json
+tools/csv/*.csv
+assets/geojson/seoul_bus.geojson
 
 # MCP config (contains project refs)
 .mcp.json
