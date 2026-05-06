@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer' as developer;
 import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
@@ -39,6 +40,8 @@ import '../services/gemini_service.dart';
 import '../services/day_plan_service.dart';
 import '../services/path_finding_service.dart';
 import '../data/subway_geojson_loader.dart';
+import '../data/seoul_bus_data.dart';
+import '../services/seoul_subway_service.dart';
 import '../theme/app_theme.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
@@ -65,7 +68,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   bool _savedOpen = false;
   bool _hideButtonForPanel = false; // 패널 닫힌 후 버튼 딜레이용
   String _aiStatus = '';
-  final GlobalKey<UnifiedSearchBarState> _searchBarKey = GlobalKey<UnifiedSearchBarState>();
+  final GlobalKey<UnifiedSearchBarState> _searchBarKey =
+      GlobalKey<UnifiedSearchBarState>();
   PlaceSearchResult? _selectedPlace;
   PlaceSearchResult? _lastSelectedPlace;
   RiverBusStop? _selectedRiverStop;
@@ -76,7 +80,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
       // 한강버스 패널 닫기
       _selectedRiverStop = null;
       // 같은 장소의 상세정보 업데이트면 그냥 교체
-      if (_selectedPlace != null && _selectedPlace!.lat == place.lat && _selectedPlace!.lng == place.lng) {
+      if (_selectedPlace != null &&
+          _selectedPlace!.lat == place.lat &&
+          _selectedPlace!.lng == place.lng) {
         _lastSelectedPlace = place;
         _selectedPlace = place;
         return;
@@ -106,11 +112,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
     _selectedRiverStop = stop;
   }
+
   bool _satelliteOn = false;
   List<DayPlan>? _dayPlans;
 
   final CameraInfo _cameraInfo = CameraInfo(
-    lat: 37.5665, lng: 126.9780, zoom: 14.0, pitch: 50.0, bearing: -15.0,
+    lat: 37.5665,
+    lng: 126.9780,
+    zoom: 14.0,
+    pitch: 50.0,
+    bearing: -15.0,
   );
 
   // 지하철 오버레이 컨트롤러
@@ -134,11 +145,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
   // 길찾기 모드 / 검색 포커스 상태
   bool _isNavMode = false;
   bool _isSearchFocused = false;
-  PathResult? _routeResult;         // 요약 바텀 패널용
+  PathResult? _routeResult; // 요약 바텀 패널용
   int _transportMode = 0; // 0: 대중교통, 1: 자동차, 2: 도보
   Map<int, DirectionsResult> _directionsCache = {};
-  List<DirectionsResult> _transitRoutes = [];
-  bool _directionsLoading = false;
+
+  /// 도보 구간 턴바이턴 안내 캐시 (segment index → steps)
+  Map<int, List<WalkStep>> _walkStepsCache = {};
+
+  /// 탑승역 열차 도착 정보 (실시간 갱신)
+  List<String> _boardingArrivals = []; // ["당고개행 약 3분", "당고개행 약 7분"]
+  Timer? _arrivalRefreshTimer;
 
   // 슬라이드아웃 애니메이션용
   String? _lastSelectedMapStation;
@@ -193,6 +209,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   void dispose() {
+    _arrivalRefreshTimer?.cancel();
+    _routeNavigationTimer?.cancel();
     _subwayController.dispose();
     _busController.dispose();
     _flightController.dispose();
@@ -208,36 +226,129 @@ class _DashboardScreenState extends State<DashboardScreen> {
     if (mc == null) return;
 
     _clearRouteFromMap();
+    _walkStepsCache = {};
     final animId = ++_routeAnimId;
 
     // GeoJSON 선로 좌표 로드
     final geojsonRoutes = await SubwayGeoJsonLoader.load();
 
-    // 전체 구간 좌표 미리 계산
-    final segmentData = <({List<List<double>> coords, Color color, StationInfo first, StationInfo last})>[];
+    // 첫 지하철 탑승역의 실시간 도착 정보 로드
+    _loadBoardingArrival(route);
+
+    // 전체 구간 좌표 미리 계산 (지하철 + 버스 + 도보)
+    final segmentData =
+        <
+          ({
+            List<List<double>> coords,
+            Color color,
+            double startLat,
+            double startLng,
+            double endLat,
+            double endLng,
+            bool isWalk,
+          })
+        >[];
     double minLat = 90, maxLat = -90, minLng = 180, maxLng = -180;
 
     for (final segment in route.segments) {
       if (segment.isTransfer || segment.stations.length < 2) continue;
-      final firstStn = SeoulSubwayData.findStation(segment.stations.first);
-      final lastStn = SeoulSubwayData.findStation(segment.stations.last);
-      if (firstStn == null || lastStn == null) continue;
 
-      final lineCoords = geojsonRoutes[segment.lineId];
       List<List<double>> segCoords;
-      if (lineCoords != null && lineCoords.length >= 2) {
-        segCoords = _extractSegmentFromRoute(lineCoords, firstStn, lastStn);
-      } else {
-        segCoords = segment.stations
-            .map((n) => SeoulSubwayData.findStation(n))
-            .where((s) => s != null)
-            .map((s) => [s!.lat, s.lng])
-            .toList();
-      }
-      if (segCoords.length < 2) continue;
+      Color color;
 
-      final color = SubwayColors.lineColors[segment.lineId] ?? AppColors.accent;
-      segmentData.add((coords: segCoords, color: color, first: firstStn, last: lastStn));
+      if (segment.mode == TransportMode.walk) {
+        // 도보 구간: PathSegment 좌표 → TMAP 도보 경로
+        double? fromLat = segment.startLat;
+        double? fromLng = segment.startLng;
+        double? toLat = segment.endLat;
+        double? toLng = segment.endLng;
+        // 좌표 없으면 역명으로 폴백
+        if (fromLat == null ||
+            fromLng == null ||
+            toLat == null ||
+            toLng == null) {
+          final stationCoords = _resolveStationCoords(segment.stations);
+          if (stationCoords.length >= 2) {
+            fromLat ??= stationCoords.first[0];
+            fromLng ??= stationCoords.first[1];
+            toLat ??= stationCoords.last[0];
+            toLng ??= stationCoords.last[1];
+          }
+        }
+        if (fromLat == null ||
+            fromLng == null ||
+            toLat == null ||
+            toLng == null)
+          continue;
+
+        final walkRoute = await DirectionsService.instance.getWalkingRoute(
+          fromLat,
+          fromLng,
+          toLat,
+          toLng,
+        );
+        if (walkRoute != null && walkRoute.coordinates.length >= 2) {
+          segCoords = walkRoute.coordinates;
+          // 도보 안내 캐시 (출구 정보 포함)
+          if (walkRoute.walkSteps.isNotEmpty) {
+            _walkStepsCache[route.segments.indexOf(segment)] =
+                walkRoute.walkSteps;
+          }
+        } else {
+          segCoords = [
+            [fromLat, fromLng],
+            [toLat, toLng],
+          ];
+        }
+        color = const Color(0xFF4FC3F7); // 도보: 밝은 파랑
+      } else if (segment.mode == TransportMode.bus) {
+        // 버스 구간: 정류소 좌표 직선 연결
+        final coords = _resolveBusStopCoords(segment.lineId, segment.stations);
+        if (coords.length < 2) continue;
+        segCoords = coords;
+        // 버스 색상
+        final ref = segment.lineId.startsWith('bus_')
+            ? segment.lineId.substring(4)
+            : '';
+        final num = int.tryParse(ref);
+        if (num != null && num >= 100 && num <= 999) {
+          color = BusColors.trunk;
+        } else if (num != null && num >= 1000) {
+          color = BusColors.branch;
+        } else if (ref.startsWith('M')) {
+          color = BusColors.express;
+        } else {
+          color = BusColors.branch;
+        }
+      } else {
+        // 지하철 구간
+        final firstStn = SeoulSubwayData.findStation(segment.stations.first);
+        final lastStn = SeoulSubwayData.findStation(segment.stations.last);
+        if (firstStn == null || lastStn == null) continue;
+
+        final lineCoords = geojsonRoutes[segment.lineId];
+        if (lineCoords != null && lineCoords.length >= 2) {
+          segCoords = _extractSegmentFromRoute(lineCoords, firstStn, lastStn);
+        } else {
+          segCoords = segment.stations
+              .map((n) => SeoulSubwayData.findStation(n))
+              .where((s) => s != null)
+              .map((s) => [s!.lat, s.lng])
+              .toList();
+        }
+        color = SubwayColors.lineColors[segment.lineId] ?? AppColors.accent;
+      }
+
+      if (segCoords.length < 2) continue;
+      segmentData.add((
+        coords: segCoords,
+        color: color,
+        startLat: segCoords.first[0],
+        startLng: segCoords.first[1],
+        endLat: segCoords.last[0],
+        endLng: segCoords.last[1],
+        isWalk: segment.mode == TransportMode.walk,
+      ));
 
       for (final c in segCoords) {
         if (c[0] < minLat) minLat = c[0];
@@ -249,93 +360,192 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     if (segmentData.isEmpty) return;
 
-    // 카메라 이동 — 경로 방향에 맞춘 bearing + 적응 zoom
+    // 카메라 이동
     if (minLat < maxLat && minLng < maxLng) {
-      // 출발→도착 bearing 계산
-      final depInfo0 = SeoulSubwayData.findStation(route.departure);
-      final arrInfo0 = SeoulSubwayData.findStation(route.arrival);
       double bearing = 0;
-      if (depInfo0 != null && arrInfo0 != null) {
-        final dLng = (arrInfo0.lng - depInfo0.lng) * pi / 180;
-        final lat1 = depInfo0.lat * pi / 180;
-        final lat2 = arrInfo0.lat * pi / 180;
-        final y = sin(dLng) * cos(lat2);
-        final x = cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(dLng);
-        bearing = (atan2(y, x) * 180 / pi + 360) % 360;
-      }
-      // 바텀 패널이 하단을 가리므로 중심을 살짝 아래로 (위도 -20%)
+      final first = segmentData.first;
+      final last = segmentData.last;
+      final dLng = (last.endLng - first.startLng) * pi / 180;
+      final lat1 = first.startLat * pi / 180;
+      final lat2 = last.endLat * pi / 180;
+      final y = sin(dLng) * cos(lat2);
+      final x = cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(dLng);
+      bearing = (atan2(y, x) * 180 / pi + 360) % 360;
+
       final latSpan = maxLat - minLat;
       final centerLat = (minLat + maxLat) / 2 - latSpan * 0.1;
       final centerLng = (minLng + maxLng) / 2;
       final span = max(latSpan, maxLng - minLng);
-      final zoom = span > 0.3 ? 10.0 : span > 0.15 ? 11.0 : span > 0.08 ? 12.0 : 13.0;
+      final zoom = span > 0.3
+          ? 10.0
+          : span > 0.15
+          ? 11.0
+          : span > 0.08
+          ? 12.0
+          : 13.0;
       mc.moveTo(centerLat, centerLng, zoom: zoom, pitch: 45, bearing: bearing);
     }
 
-    // 출발 마커 (먼저 표시)
-    final depInfo = SeoulSubwayData.findStation(route.departure);
-    if (depInfo != null) {
-      mc.addCircleMarker('route_dep', depInfo.lat, depInfo.lng,
-        color: AppColors.success, radius: 12, strokeColor: AppColors.textPrimary, strokeWidth: 4);
-    }
+    // 출발 마커
+    mc.addCircleMarker(
+      'route_dep',
+      segmentData.first.startLat,
+      segmentData.first.startLng,
+      color: AppColors.success,
+      radius: 12,
+      strokeColor: AppColors.textPrimary,
+      strokeWidth: 4,
+    );
 
     await Future.delayed(const Duration(milliseconds: 600));
     if (_routeAnimId != animId) return;
 
-    // 구간별 순차 애니메이션 — 부드럽게
+    // 구간별 순차 애니메이션
     for (int s = 0; s < segmentData.length; s++) {
       if (_routeAnimId != animId) return;
       final seg = segmentData[s];
 
-      mc.addCircleMarker('route_mk_${s}_s', seg.first.lat, seg.first.lng,
-        color: seg.color, radius: 8, strokeColor: Colors.white, strokeWidth: 3);
-
-      // 외곽선 (어두운 테두리 — 밝은 지도에서도 보이도록)
-      await mc.addPolyline('route_outline_$s', seg.coords,
-        color: Colors.black.withValues(alpha: 0.4), width: 8.0, opacity: 1.0);
-
-      final totalPoints = seg.coords.length;
-      final step = max(1, totalPoints ~/ 12);
-
-      for (int i = step; i <= totalPoints; i += step) {
-        if (_routeAnimId != animId) return;
-        final partial = seg.coords.sublist(0, min(i, totalPoints));
-        if (partial.length >= 2) {
-          mc.removePolyline('route_seg_$s');
-          await mc.addPolyline('route_seg_$s', partial,
-            color: seg.color, width: 5.0, opacity: 1.0);
-        }
-        await Future.delayed(const Duration(milliseconds: 80));
+      if (!seg.isWalk) {
+        mc.addCircleMarker(
+          'route_mk_${s}_s',
+          seg.startLat,
+          seg.startLng,
+          color: seg.color,
+          radius: 8,
+          strokeColor: Colors.white,
+          strokeWidth: 3,
+        );
       }
 
-      if (_routeAnimId != animId) return;
-      mc.removePolyline('route_seg_$s');
-      await mc.addPolyline('route_seg_$s', seg.coords,
-        color: seg.color, width: 5.0, opacity: 1.0);
+      // 도보: 점선 스타일 (배경 흰색 + 위에 밝은 파랑), 나머지: 실선
+      final lineWidth = seg.isWalk ? 4.0 : 5.0;
+      final outlineWidth = seg.isWalk ? 6.0 : 8.0;
 
-      mc.addCircleMarker('route_mk_${s}_e', seg.last.lat, seg.last.lng,
-        color: seg.color, radius: 8, strokeColor: Colors.white, strokeWidth: 3);
+      await mc.addPolyline(
+        'route_outline_$s',
+        seg.coords,
+        color: seg.isWalk ? Colors.white : Colors.black.withValues(alpha: 0.4),
+        width: outlineWidth,
+        opacity: 1.0,
+      );
+
+      // 애니메이션 (도보는 즉시 그리기)
+      if (seg.isWalk) {
+        await mc.addPolyline(
+          'route_seg_$s',
+          seg.coords,
+          color: seg.color,
+          width: lineWidth,
+          opacity: 0.9,
+        );
+      } else {
+        final totalPoints = seg.coords.length;
+        final step = max(1, totalPoints ~/ 12);
+        for (int i = step; i <= totalPoints; i += step) {
+          if (_routeAnimId != animId) return;
+          final partial = seg.coords.sublist(0, min(i, totalPoints));
+          if (partial.length >= 2) {
+            mc.removePolyline('route_seg_$s');
+            await mc.addPolyline(
+              'route_seg_$s',
+              partial,
+              color: seg.color,
+              width: lineWidth,
+              opacity: 1.0,
+            );
+          }
+          await Future.delayed(const Duration(milliseconds: 80));
+        }
+        if (_routeAnimId != animId) return;
+        mc.removePolyline('route_seg_$s');
+        await mc.addPolyline(
+          'route_seg_$s',
+          seg.coords,
+          color: seg.color,
+          width: lineWidth,
+          opacity: 1.0,
+        );
+      }
+
+      if (!seg.isWalk) {
+        mc.addCircleMarker(
+          'route_mk_${s}_e',
+          seg.endLat,
+          seg.endLng,
+          color: seg.color,
+          radius: 8,
+          strokeColor: Colors.white,
+          strokeWidth: 3,
+        );
+      }
 
       if (s < segmentData.length - 1) {
         await Future.delayed(const Duration(milliseconds: 300));
       }
     }
 
-    // 화살표 마커 — 모든 구간의 화살표를 한 번에 생성
+    // 화살표
     if (_routeAnimId != animId) return;
     final allArrows = <Map<String, dynamic>>[];
     for (final seg in segmentData) {
-      _collectArrows(allArrows, seg.coords, seg.color);
+      if (!seg.isWalk) _collectArrows(allArrows, seg.coords, seg.color);
     }
-    await mc.updateRouteArrows(allArrows);
+    if (allArrows.isNotEmpty) await mc.updateRouteArrows(allArrows);
 
-    // 도착 마커 (마지막에 표시)
+    // 도착 마커
     if (_routeAnimId != animId) return;
-    final arrInfo = SeoulSubwayData.findStation(route.arrival);
-    if (arrInfo != null) {
-      mc.addCircleMarker('route_arr', arrInfo.lat, arrInfo.lng,
-        color: AppColors.danger, radius: 12, strokeColor: AppColors.textPrimary, strokeWidth: 4);
+    mc.addCircleMarker(
+      'route_arr',
+      segmentData.last.endLat,
+      segmentData.last.endLng,
+      color: AppColors.danger,
+      radius: 12,
+      strokeColor: AppColors.textPrimary,
+      strokeWidth: 4,
+    );
+  }
+
+  /// 역/정류소명 리스트 → 좌표 리스트 (지하철+버스 통합)
+  List<List<double>> _resolveStationCoords(List<String> names) {
+    final coords = <List<double>>[];
+    for (final name in names) {
+      final sub = SeoulSubwayData.findStation(name);
+      if (sub != null) {
+        coords.add([sub.lat, sub.lng]);
+        continue;
+      }
+      // 버스 정류소
+      for (final route in SeoulBusData.allRoutes) {
+        final stop = route.stops.where((s) => s.name == name).firstOrNull;
+        if (stop != null) {
+          coords.add([stop.lat, stop.lng]);
+          break;
+        }
+      }
     }
+    return coords;
+  }
+
+  /// 버스 노선의 정류소 좌표 추출
+  List<List<double>> _resolveBusStopCoords(
+    String lineId,
+    List<String> stationNames,
+  ) {
+    final routeRef = lineId.startsWith('bus_') ? lineId.substring(4) : lineId;
+    final busRoute = SeoulBusData.getRouteByName(routeRef);
+    if (busRoute == null) {
+      // 폴백: 이름으로 좌표 찾기
+      return _resolveStationCoords(stationNames);
+    }
+    // 노선 정류소에서 매칭
+    final coords = <List<double>>[];
+    for (final name in stationNames) {
+      final stop = busRoute.stops.where((s) => s.name == name).firstOrNull;
+      if (stop != null) {
+        coords.add([stop.lat, stop.lng]);
+      }
+    }
+    return coords.length >= 2 ? coords : _resolveStationCoords(stationNames);
   }
 
   /// GeoJSON 선로 좌표에서 두 역 사이 구간만 추출
@@ -345,10 +555,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
     StationInfo endStation,
   ) {
     // 선로 좌표에서 각 역에 가장 가까운 인덱스 찾기
-    int startIdx = _findClosestIndex(routeCoords, startStation.lat, startStation.lng);
+    int startIdx = _findClosestIndex(
+      routeCoords,
+      startStation.lat,
+      startStation.lng,
+    );
     int endIdx = _findClosestIndex(routeCoords, endStation.lat, endStation.lng);
 
-    if (startIdx == endIdx) return [[startStation.lat, startStation.lng], [endStation.lat, endStation.lng]];
+    if (startIdx == endIdx)
+      return [
+        [startStation.lat, startStation.lng],
+        [endStation.lat, endStation.lng],
+      ];
 
     // 방향 보정 (startIdx가 endIdx보다 뒤에 있을 수 있음)
     if (startIdx > endIdx) {
@@ -376,6 +594,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   void _clearRouteFromMap() {
+    _arrivalRefreshTimer?.cancel();
+    _routeNavigationTimer?.cancel();
+    _boardingArrivals = [];
+    _segmentArrivals = {};
+    _routeNavigationActive = false;
     final mc = _mapController;
     if (mc == null) return;
     mc.clearPolylines();
@@ -384,10 +607,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   /// 경로를 따라 화살표 데이터를 수집
-  void _collectArrows(List<Map<String, dynamic>> arrows, List<List<double>> coords, Color color) {
+  void _collectArrows(
+    List<Map<String, dynamic>> arrows,
+    List<List<double>> coords,
+    Color color,
+  ) {
     if (coords.length < 2) return;
 
-    final colorStr = 'rgba(${(color.r * 255).round()},${(color.g * 255).round()},${(color.b * 255).round()},1)';
+    final colorStr =
+        'rgba(${(color.r * 255).round()},${(color.g * 255).round()},${(color.b * 255).round()},1)';
     const intervalDeg = 0.0012; // 약 130m 간격
     double accumulated = 0;
 
@@ -488,7 +716,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
       _setSelectedRiverStop(null);
 
       final basicPlace = PlaceSearchResult(
-        name: name, address: '', category: '장소', lat: lat, lng: lng,
+        name: name,
+        address: '',
+        category: '장소',
+        lat: lat,
+        lng: lng,
       );
       _showPlaceMarker(basicPlace);
       setState(() => _setSelectedPlace(null));
@@ -511,7 +743,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
         setState(() => _setSelectedPlace(best ?? basicPlace));
       });
     });
-
 
     // 한강버스 선착장 좌표 탭 감지
     controller.setOnMapCoordTapped((lat, lng) {
@@ -562,299 +793,367 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Scaffold(
       extendBody: true,
       resizeToAvoidBottomInset: false,
-      bottomNavigationBar: (_routeResult != null && _isNavMode) ? null : Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // AI 상태 텍스트 (탭바 바로 위)
-          if (_aiOpen && _aiStatus.isNotEmpty)
-            _buildAiStatusBar(),
-          _buildBottomTabBar(),
-        ],
-      ),
+      bottomNavigationBar: (_routeResult != null && _isNavMode)
+          ? null
+          : Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // AI 상태 텍스트 (탭바 바로 위)
+                if (_aiOpen && _aiStatus.isNotEmpty) _buildAiStatusBar(),
+                _buildBottomTabBar(),
+              ],
+            ),
       body: AnimatedScale(
         scale: (_aiOpen && !_aiClosing) ? 0.995 : 1.0,
         duration: const Duration(milliseconds: 600),
         curve: Curves.elasticOut,
         child: Stack(
-        children: [
-          // 지도 엔진 (항상 렌더링)
-          Positioned.fill(child: MapboxEngine(initialCamera: _cameraInfo, onMapCreated: _onMapCreated)),
+          children: [
+            // 지도 엔진 (항상 렌더링)
+            Positioned.fill(
+              child: MapboxEngine(
+                initialCamera: _cameraInfo,
+                onMapCreated: _onMapCreated,
+              ),
+            ),
 
-          // 검색바 + 길찾기 + 프로필 (상단, 리퀴드 글라스)
-          UnifiedSearchBar(
-            key: _searchBarKey,
-            onStationSelected: (name) {
-              _subwayController.selectStation(name);
-            },
-            onPlaceSelected: (place) {
-              // 장소 선택 시 지도 카메라 이동 + 마커 + 상세 패널
-              _mapController?.moveTo(place.lat, place.lng, zoom: 16.0);
-              _showPlaceMarker(place);
-              setState(() => _setSelectedPlace(place));
-            },
-            onBusSelected: (route) {
-              // 버스 노선 선택 시 추적 시작
-              _busController.addRoute(route);
-              setState(() {});
-            },
-            onRiverBusStopSelected: (stop) {
-              // 한강버스 선착장 선택 시 카메라 이동 + 상세 패널
-              _mapController?.moveTo(stop.lat, stop.lng, zoom: 16.0);
-              _showRiverBusStopPanel(stop);
-            },
-            onRouteFound: (route) {
-              _drawRouteOnMap(route);
-              setState(() {
-                _routeResult = route;
-                _transportMode = 0;
-                _directionsCache.clear();
-              });
-              // 다른 모드도 백그라운드로 로드
-              _preloadDirections();
-            },
-            onNavModeChanged: (isNav) {
-              setState(() {
-                _isNavMode = isNav;
-                if (!isNav) _routeResult = null;
-              });
-              if (!isNav) _clearRouteFromMap();
-            },
-            onFocusChanged: (focused) {
-              setState(() => _isSearchFocused = focused);
-            },
-            onProfileTap: () => _openProfile(),
-          ),
+            // 검색바 + 길찾기 + 프로필 (상단, 리퀴드 글라스)
+            UnifiedSearchBar(
+              key: _searchBarKey,
+              onStationSelected: (name) {
+                _subwayController.selectStation(name);
+              },
+              onPlaceSelected: (place) {
+                // 장소 선택 시 지도 카메라 이동 + 마커 + 상세 패널
+                _mapController?.moveTo(place.lat, place.lng, zoom: 16.0);
+                _showPlaceMarker(place);
+                setState(() => _setSelectedPlace(place));
+              },
+              onBusSelected: (route) {
+                // 버스 노선 선택 시 추적 시작
+                _busController.addRoute(route);
+                setState(() {});
+              },
+              onRiverBusStopSelected: (stop) {
+                // 한강버스 선착장 선택 시 카메라 이동 + 상세 패널
+                _mapController?.moveTo(stop.lat, stop.lng, zoom: 16.0);
+                _showRiverBusStopPanel(stop);
+              },
+              onRouteFound: (route) {
+                _drawRouteOnMap(route);
+                setState(() {
+                  _routeResult = route;
+                  _transportMode = 0;
+                  _directionsCache.clear();
+                });
+                // 다른 모드도 백그라운드로 로드
+                _preloadDirections();
+              },
+              onNavModeChanged: (isNav) {
+                setState(() {
+                  _isNavMode = isNav;
+                  if (!isNav) _routeResult = null;
+                });
+                if (!isNav) _clearRouteFromMap();
+              },
+              onFocusChanged: (focused) {
+                setState(() => _isSearchFocused = focused);
+              },
+              onProfileTap: () => _openProfile(),
+            ),
 
-          // 날씨/시간 위젯 (검색바 아래 좌측, 패널/검색/길찾기 시 페이드아웃)
-          if (_subwayController.isActive)
+            // 날씨/시간 위젯 (검색바 아래 좌측, 패널/검색/길찾기 시 페이드아웃)
+            if (_subwayController.isActive)
+              Positioned(
+                top: MediaQuery.of(context).padding.top + 62,
+                left: 16,
+                child: AnimatedOpacity(
+                  duration: const Duration(milliseconds: 250),
+                  curve: Curves.easeInOut,
+                  opacity:
+                      (_isNavMode ||
+                          _isSearchFocused ||
+                          _settingsOpen ||
+                          _recommendOpen)
+                      ? 0.0
+                      : 1.0,
+                  child: IgnorePointer(
+                    ignoring:
+                        _isNavMode ||
+                        _isSearchFocused ||
+                        _settingsOpen ||
+                        _recommendOpen,
+                    child: WeatherTimeWidget(
+                      environment: _subwayController.environment,
+                    ),
+                  ),
+                ),
+              ),
+
+            // 위성지도 토글 버튼 (우상단)
             Positioned(
-              top: MediaQuery.of(context).padding.top + 62,
-              left: 16,
+              top: MediaQuery.of(context).padding.top + 64,
+              right: 16,
               child: AnimatedOpacity(
                 duration: const Duration(milliseconds: 250),
-                curve: Curves.easeInOut,
-                opacity: (_isNavMode || _isSearchFocused || _settingsOpen || _recommendOpen) ? 0.0 : 1.0,
+                opacity:
+                    (_isNavMode ||
+                        _isSearchFocused ||
+                        _settingsOpen ||
+                        _recommendOpen)
+                    ? 0.0
+                    : 1.0,
                 child: IgnorePointer(
-                  ignoring: _isNavMode || _isSearchFocused || _settingsOpen || _recommendOpen,
-                  child: WeatherTimeWidget(environment: _subwayController.environment),
+                  ignoring:
+                      _isNavMode ||
+                      _isSearchFocused ||
+                      _settingsOpen ||
+                      _recommendOpen,
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 300),
+                    child: AdaptiveGlassIconButton(
+                      key: ValueKey(_satelliteOn),
+                      icon: _satelliteOn
+                          ? Icons.map_outlined
+                          : Icons.travel_explore,
+                      size: 44,
+                      iconSize: 20,
+                      tint: _satelliteOn
+                          ? Colors.greenAccent
+                          : Theme.of(context).colorScheme.onSurfaceVariant,
+                      onPressed: () {
+                        setState(() => _satelliteOn = !_satelliteOn);
+                        _mapController?.setSatelliteVisible(_satelliteOn);
+                      },
+                    ),
+                  ),
                 ),
               ),
             ),
 
-          // 위성지도 토글 버튼 (우상단)
-          Positioned(
-            top: MediaQuery.of(context).padding.top + 64,
-            right: 16,
-            child: AnimatedOpacity(
-              duration: const Duration(milliseconds: 250),
-              opacity: (_isNavMode || _isSearchFocused || _settingsOpen || _recommendOpen) ? 0.0 : 1.0,
-              child: IgnorePointer(
-                ignoring: _isNavMode || _isSearchFocused || _settingsOpen || _recommendOpen,
-                child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 300),
+            // 내 위치 버튼 (우측 하단, Mapbox 어트리뷰션 위)
+            Positioned(
+              bottom: bottomInset + 60,
+              right: 6,
+              child: AnimatedOpacity(
+                duration: const Duration(milliseconds: 300),
+                opacity:
+                    (_isNavMode ||
+                        _selectedTrain != null ||
+                        _selectedMapStation != null ||
+                        _hideButtonForPanel)
+                    ? 0.0
+                    : 1.0,
+                child: IgnorePointer(
+                  ignoring:
+                      _isNavMode ||
+                      _selectedTrain != null ||
+                      _selectedMapStation != null ||
+                      _hideButtonForPanel,
                   child: AdaptiveGlassIconButton(
-                    key: ValueKey(_satelliteOn),
-                    icon: _satelliteOn ? Icons.map_outlined : Icons.travel_explore,
-                    size: 44,
-                    iconSize: 20,
-                    tint: _satelliteOn ? Colors.greenAccent : Theme.of(context).colorScheme.onSurfaceVariant,
+                    icon: Icons.my_location,
+                    size: 48,
+                    iconSize: 22,
+                    tint: const Color(0xFF4A90D9),
                     onPressed: () {
-                      setState(() => _satelliteOn = !_satelliteOn);
-                      _mapController?.setSatelliteVisible(_satelliteOn);
+                      _mapController?.moveToCurrentLocation();
                     },
                   ),
                 ),
               ),
             ),
-          ),
 
-          // 내 위치 버튼 (우측 하단, Mapbox 어트리뷰션 위)
-          Positioned(
-            bottom: bottomInset + 60,
-            right: 6,
-            child: AnimatedOpacity(
-              duration: const Duration(milliseconds: 300),
-              opacity: (_isNavMode || _selectedTrain != null || _selectedMapStation != null || _hideButtonForPanel) ? 0.0 : 1.0,
-              child: IgnorePointer(
-                ignoring: _isNavMode || _selectedTrain != null || _selectedMapStation != null || _hideButtonForPanel,
-                child: AdaptiveGlassIconButton(
-                  icon: Icons.my_location,
-                  size: 48,
-                  iconSize: 22,
-                  tint: const Color(0xFF4A90D9),
-                  onPressed: () {
-                    _mapController?.moveToCurrentLocation();
-                  },
-                ),
-              ),
-            ),
-          ),
-
-          // 열차 상세 패널 (바텀 슬라이드 애니메이션)
-          if (_lastSelectedTrain != null)
-            AnimatedPositioned(
-              duration: const Duration(milliseconds: 350),
-              curve: _selectedTrain != null ? Curves.easeOutCubic : Curves.easeInCubic,
-              bottom: _selectedTrain != null ? bottomInset : -280,
-              left: 0,
-              right: 0,
-              child: AnimatedOpacity(
-                duration: const Duration(milliseconds: 300),
-                opacity: _selectedTrain != null ? 1.0 : 0.0,
-                child: TrainDetailPanel(
-                  train: (_selectedTrain ?? _lastSelectedTrain)!,
-                  delayMinutes: _subwayController.trainDelays[(_selectedTrain ?? _lastSelectedTrain)!.trainNo] ?? 0,
-                  onClose: () {
-                    _subwayController.deselectTrain();
-                  },
-                ),
-              ),
-            ),
-
-          // 버스 상세 패널 (바텀 슬라이드)
-          if (_busController.selectedBus != null)
-            AnimatedPositioned(
-              duration: const Duration(milliseconds: 350),
-              curve: Curves.easeOutCubic,
-              bottom: bottomInset,
-              left: 0,
-              right: 0,
-              child: _buildBusDetailPanel(),
-            ),
-
-          // 비행기 상세 패널 (바텀 슬라이드)
-          if (_flightController.selectedFlight != null)
-            AnimatedPositioned(
-              duration: const Duration(milliseconds: 350),
-              curve: Curves.easeOutCubic,
-              bottom: bottomInset,
-              left: 0,
-              right: 0,
-              child: _buildFlightDetailPanel(),
-            ),
-
-          // 한강버스 상세 패널 (슬라이드 애니메이션)
-          AnimatedPositioned(
-            duration: const Duration(milliseconds: 400),
-            curve: _busController.selectedVessel != null ? Curves.easeOutCubic : Curves.easeInCubic,
-            bottom: _busController.selectedVessel != null ? bottomInset : -250,
-            left: 0,
-            right: 0,
-            child: AnimatedOpacity(
-              duration: const Duration(milliseconds: 350),
-              opacity: _busController.selectedVessel != null ? 1.0 : 0.0,
-              child: _buildVesselDetailPanel(),
-            ),
-          ),
-
-          // 역 상세 패널 (바텀 슬라이드 — 화면 30% 제한)
-          if (_lastSelectedMapStation != null)
-            AnimatedPositioned(
-              duration: const Duration(milliseconds: 350),
-              curve: _selectedMapStation != null ? Curves.easeOutCubic : Curves.easeInCubic,
-              bottom: _selectedMapStation != null ? bottomInset : -(stationPanelMaxHeight + 50),
-              left: 0,
-              right: 0,
-              child: AnimatedOpacity(
-                duration: const Duration(milliseconds: 300),
-                opacity: _selectedMapStation != null ? 1.0 : 0.0,
-                child: ClipRect(
-                  child: SizedBox(
-                    height: stationPanelMaxHeight,
-                    child: StationDetailPanel(
-                    stationName: (_selectedMapStation ?? _lastSelectedMapStation)!,
-                    stationInfo: _selectedMapStation != null ? _selectedMapStationInfo : _lastSelectedMapStationInfo,
-                    arrivals: _selectedMapStation != null ? _selectedMapStationArrivals : _lastMapStationArrivals,
-                    isLoading: _mapStationLoading,
+            // 열차 상세 패널 (바텀 슬라이드 애니메이션)
+            if (_lastSelectedTrain != null)
+              AnimatedPositioned(
+                duration: const Duration(milliseconds: 350),
+                curve: _selectedTrain != null
+                    ? Curves.easeOutCubic
+                    : Curves.easeInCubic,
+                bottom: _selectedTrain != null ? bottomInset : -280,
+                left: 0,
+                right: 0,
+                child: AnimatedOpacity(
+                  duration: const Duration(milliseconds: 300),
+                  opacity: _selectedTrain != null ? 1.0 : 0.0,
+                  child: TrainDetailPanel(
+                    train: (_selectedTrain ?? _lastSelectedTrain)!,
+                    delayMinutes:
+                        _subwayController.trainDelays[(_selectedTrain ??
+                                _lastSelectedTrain)!
+                            .trainNo] ??
+                        0,
                     onClose: () {
-                      _subwayController.deselectStation();
-                    },
-                    onSetDeparture: (name) {
-                      _subwayController.deselectStation();
-                      _startNavWithDeparture(name);
-                    },
-                    onSetArrival: (name) {
-                      _subwayController.deselectStation();
-                      _startNavWithArrival(name);
+                      _subwayController.deselectTrain();
                     },
                   ),
                 ),
+              ),
+
+            // 버스 상세 패널 (바텀 슬라이드)
+            if (_busController.selectedBus != null)
+              AnimatedPositioned(
+                duration: const Duration(milliseconds: 350),
+                curve: Curves.easeOutCubic,
+                bottom: bottomInset,
+                left: 0,
+                right: 0,
+                child: _buildBusDetailPanel(),
+              ),
+
+            // 비행기 상세 패널 (바텀 슬라이드)
+            if (_flightController.selectedFlight != null)
+              AnimatedPositioned(
+                duration: const Duration(milliseconds: 350),
+                curve: Curves.easeOutCubic,
+                bottom: bottomInset,
+                left: 0,
+                right: 0,
+                child: _buildFlightDetailPanel(),
+              ),
+
+            // 한강버스 상세 패널 (슬라이드 애니메이션)
+            AnimatedPositioned(
+              duration: const Duration(milliseconds: 400),
+              curve: _busController.selectedVessel != null
+                  ? Curves.easeOutCubic
+                  : Curves.easeInCubic,
+              bottom: _busController.selectedVessel != null
+                  ? bottomInset
+                  : -250,
+              left: 0,
+              right: 0,
+              child: AnimatedOpacity(
+                duration: const Duration(milliseconds: 350),
+                opacity: _busController.selectedVessel != null ? 1.0 : 0.0,
+                child: _buildVesselDetailPanel(),
+              ),
+            ),
+
+            // 역 상세 패널 (바텀 슬라이드 — 화면 30% 제한)
+            if (_lastSelectedMapStation != null)
+              AnimatedPositioned(
+                duration: const Duration(milliseconds: 350),
+                curve: _selectedMapStation != null
+                    ? Curves.easeOutCubic
+                    : Curves.easeInCubic,
+                bottom: _selectedMapStation != null
+                    ? bottomInset
+                    : -(stationPanelMaxHeight + 50),
+                left: 0,
+                right: 0,
+                child: AnimatedOpacity(
+                  duration: const Duration(milliseconds: 300),
+                  opacity: _selectedMapStation != null ? 1.0 : 0.0,
+                  child: ClipRect(
+                    child: SizedBox(
+                      height: stationPanelMaxHeight,
+                      child: StationDetailPanel(
+                        stationName:
+                            (_selectedMapStation ?? _lastSelectedMapStation)!,
+                        stationInfo: _selectedMapStation != null
+                            ? _selectedMapStationInfo
+                            : _lastSelectedMapStationInfo,
+                        arrivals: _selectedMapStation != null
+                            ? _selectedMapStationArrivals
+                            : _lastMapStationArrivals,
+                        isLoading: _mapStationLoading,
+                        onClose: () {
+                          _subwayController.deselectStation();
+                        },
+                        onSetDeparture: (name) {
+                          _subwayController.deselectStation();
+                          _startNavWithDeparture(name);
+                        },
+                        onSetArrival: (name) {
+                          _subwayController.deselectStation();
+                          _startNavWithArrival(name);
+                        },
+                      ),
+                    ),
+                  ),
                 ),
               ),
-            ),
 
-          // 장소 상세 패널 (바텀 슬라이드 애니메이션)
-          AnimatedPositioned(
-            duration: const Duration(milliseconds: 400),
-            curve: _selectedPlace != null ? Curves.easeOutCubic : Curves.easeInCubic,
-            bottom: _selectedPlace != null ? bottomInset : -250,
-            left: 0,
-            right: 0,
-            child: AnimatedOpacity(
-              duration: const Duration(milliseconds: 350),
-              opacity: _selectedPlace != null ? 1.0 : 0.0,
-              child: _lastSelectedPlace != null
-                  ? _buildPlaceDetailPanel((_selectedPlace ?? _lastSelectedPlace)!)
-                  : const SizedBox(height: 200),
-            ),
-          ),
-
-          // 한강버스 선착장 패널 (바텀 슬라이드 애니메이션)
-          AnimatedPositioned(
-            duration: const Duration(milliseconds: 400),
-            curve: _selectedRiverStop != null ? Curves.easeOutCubic : Curves.easeInCubic,
-            bottom: _selectedRiverStop != null ? bottomInset : -250,
-            left: 0,
-            right: 0,
-            child: AnimatedOpacity(
-              duration: const Duration(milliseconds: 350),
-              opacity: _selectedRiverStop != null ? 1.0 : 0.0,
-              child: _lastSelectedRiverStop != null
-                  ? _buildRiverBusStopPanel((_selectedRiverStop ?? _lastSelectedRiverStop)!)
-                  : const SizedBox(height: 200),
-            ),
-          ),
-
-          // 경로 결과 바텀 패널 (설정 패널 스타일)
-          _buildRouteResultOverlay(context, screenHeight),
-
-          // 설정 패널 오버레이 (바텀시트 스타일)
-          _buildSettingsOverlay(context, screenHeight, bottomInset),
-
-          // 하루 플랜 오버레이 (지도 위 바텀 패널)
-          _buildDayPlanOverlay(context, bottomInset),
-
-          // 추천 패널 오버레이 (바텀시트 스타일, 설정 패널과 동일)
-          _buildRecommendOverlay(context, screenHeight),
-
-          // 저장 패널 오버레이 (바텀시트)
-          _buildSavedOverlay(context, screenHeight),
-
-          // 통합 AI 오버레이 (풀스크린 Glow + Gemini Live)
-          if (_aiOpen)
-            Positioned.fill(
-              child: AiView(
-                closing: _aiClosing,
-                onClose: () => setState(() {
-                  _aiOpen = false;
-                  _aiClosing = false;
-                  _aiStatus = '';
-                }),
-                onAction: _handleAiAction,
-                onStatusChanged: (status) {
-                  if (mounted) setState(() => _aiStatus = status);
-                },
+            // 장소 상세 패널 (바텀 슬라이드 애니메이션)
+            AnimatedPositioned(
+              duration: const Duration(milliseconds: 400),
+              curve: _selectedPlace != null
+                  ? Curves.easeOutCubic
+                  : Curves.easeInCubic,
+              bottom: _selectedPlace != null ? bottomInset : -250,
+              left: 0,
+              right: 0,
+              child: AnimatedOpacity(
+                duration: const Duration(milliseconds: 350),
+                opacity: _selectedPlace != null ? 1.0 : 0.0,
+                child: _lastSelectedPlace != null
+                    ? _buildPlaceDetailPanel(
+                        (_selectedPlace ?? _lastSelectedPlace)!,
+                      )
+                    : const SizedBox(height: 200),
               ),
             ),
 
-          // 기기 프로필 토스트 (페이드인/아웃)
-          _buildProfileToast(),
-        ],
-      ),
+            // 한강버스 선착장 패널 (바텀 슬라이드 애니메이션)
+            AnimatedPositioned(
+              duration: const Duration(milliseconds: 400),
+              curve: _selectedRiverStop != null
+                  ? Curves.easeOutCubic
+                  : Curves.easeInCubic,
+              bottom: _selectedRiverStop != null ? bottomInset : -250,
+              left: 0,
+              right: 0,
+              child: AnimatedOpacity(
+                duration: const Duration(milliseconds: 350),
+                opacity: _selectedRiverStop != null ? 1.0 : 0.0,
+                child: _lastSelectedRiverStop != null
+                    ? _buildRiverBusStopPanel(
+                        (_selectedRiverStop ?? _lastSelectedRiverStop)!,
+                      )
+                    : const SizedBox(height: 200),
+              ),
+            ),
+
+            // 경로 결과 바텀 패널 (설정 패널 스타일)
+            _buildRouteResultOverlay(context, screenHeight),
+
+            // 설정 패널 오버레이 (바텀시트 스타일)
+            _buildSettingsOverlay(context, screenHeight, bottomInset),
+
+            // 하루 플랜 오버레이 (지도 위 바텀 패널)
+            _buildDayPlanOverlay(context, bottomInset),
+
+            // 추천 패널 오버레이 (바텀시트 스타일, 설정 패널과 동일)
+            _buildRecommendOverlay(context, screenHeight),
+
+            // 저장 패널 오버레이 (바텀시트)
+            _buildSavedOverlay(context, screenHeight),
+
+            // 통합 AI 오버레이 (풀스크린 Glow + Gemini Live)
+            if (_aiOpen)
+              Positioned.fill(
+                child: AiView(
+                  closing: _aiClosing,
+                  onClose: () => setState(() {
+                    _aiOpen = false;
+                    _aiClosing = false;
+                    _aiStatus = '';
+                  }),
+                  onAction: _handleAiAction,
+                  onStatusChanged: (status) {
+                    if (mounted) setState(() => _aiStatus = status);
+                  },
+                ),
+              ),
+
+            // 기기 프로필 토스트 (페이드인/아웃)
+            _buildProfileToast(),
+          ],
+        ),
       ),
     );
   }
-
 
   Widget _buildBusDetailPanel() {
     final bus = _busController.selectedBus;
@@ -896,33 +1195,56 @@ class _DashboardScreenState extends State<DashboardScreen> {
             // 헤더
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.15),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.lg,
+                vertical: AppSpacing.md,
               ),
+              decoration: BoxDecoration(color: color.withValues(alpha: 0.15)),
               child: Row(
                 children: [
                   Container(
-                    width: 36, height: 36,
-                    decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-                    child: const Center(child: Icon(Icons.directions_bus, size: 20, color: Colors.white)),
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: color,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Center(
+                      child: Icon(
+                        Icons.directions_bus,
+                        size: 20,
+                        color: Colors.white,
+                      ),
+                    ),
                   ),
                   const SizedBox(width: AppSpacing.md),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(route.routeName, style: AppTypography.titleMd.copyWith(color: color)),
+                        Text(
+                          route.routeName,
+                          style: AppTypography.titleMd.copyWith(color: color),
+                        ),
                         Text(
                           '${bus.plainNo} · ${bus.busType == 1 ? "저상버스" : "일반버스"}',
-                          style: AppTypography.bodySm.copyWith(color: AppColors.textSecondary),
+                          style: AppTypography.bodySm.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
                         ),
                       ],
                     ),
                   ),
                   GestureDetector(
-                    onTap: () { _busController.deselectBus(); setState(() {}); },
-                    child: Icon(Icons.close, size: 20, color: AppColors.textMuted),
+                    onTap: () {
+                      _busController.deselectBus();
+                      setState(() {});
+                    },
+                    child: Icon(
+                      Icons.close,
+                      size: 20,
+                      color: AppColors.textMuted,
+                    ),
                   ),
                 ],
               ),
@@ -933,12 +1255,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
               child: Row(
                 children: [
                   // 혼잡도
-                  Expanded(child: _busInfoItem('혼잡도', congestionText, congestionColor)),
+                  Expanded(
+                    child: _busInfoItem('혼잡도', congestionText, congestionColor),
+                  ),
                   // 상태
-                  Expanded(child: _busInfoItem('상태', bus.stopFlag == 1 ? '정차 중' : '운행 중', color)),
+                  Expanded(
+                    child: _busInfoItem(
+                      '상태',
+                      bus.stopFlag == 1 ? '정차 중' : '운행 중',
+                      color,
+                    ),
+                  ),
                   // 구간
                   if (bus.sectOrd != null)
-                    Expanded(child: _busInfoItem('구간', '${bus.sectOrd}번째', AppColors.textSecondary)),
+                    Expanded(
+                      child: _busInfoItem(
+                        '구간',
+                        '${bus.sectOrd}번째',
+                        AppColors.textSecondary,
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -951,9 +1287,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _busInfoItem(String label, String value, Color valueColor) {
     return Column(
       children: [
-        Text(label, style: AppTypography.caption.copyWith(color: AppColors.textMuted)),
+        Text(
+          label,
+          style: AppTypography.caption.copyWith(color: AppColors.textMuted),
+        ),
         const SizedBox(height: 4),
-        Text(value, style: AppTypography.bodySm.copyWith(color: valueColor, fontWeight: FontWeight.bold)),
+        Text(
+          value,
+          style: AppTypography.bodySm.copyWith(
+            color: valueColor,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ],
     );
   }
@@ -971,7 +1316,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
       _ => Colors.white,
     };
 
-    final altText = flight.onGround ? '지상' : '${(flight.altitude / 1000).toStringAsFixed(1)}km';
+    final altText = flight.onGround
+        ? '지상'
+        : '${(flight.altitude / 1000).toStringAsFixed(1)}km';
     final speedText = '${(flight.velocity * 3.6).round()}km/h';
 
     return Container(
@@ -990,16 +1337,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
             // 헤더
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.lg,
+                vertical: AppSpacing.md,
+              ),
               decoration: BoxDecoration(
                 color: phaseColor.withValues(alpha: 0.12),
               ),
               child: Row(
                 children: [
                   Container(
-                    width: 36, height: 36,
-                    decoration: BoxDecoration(color: phaseColor.withValues(alpha: 0.3), shape: BoxShape.circle),
-                    child: Center(child: Icon(Icons.flight, size: 20, color: phaseColor)),
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: phaseColor.withValues(alpha: 0.3),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Icon(Icons.flight, size: 20, color: phaseColor),
+                    ),
                   ),
                   const SizedBox(width: AppSpacing.md),
                   Expanded(
@@ -1007,19 +1363,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          flight.callsign.isNotEmpty ? flight.callsign : flight.icao24,
-                          style: AppTypography.titleMd.copyWith(color: phaseColor),
+                          flight.callsign.isNotEmpty
+                              ? flight.callsign
+                              : flight.icao24,
+                          style: AppTypography.titleMd.copyWith(
+                            color: phaseColor,
+                          ),
                         ),
                         Text(
                           '${flight.airline} · ${flight.originCountry}',
-                          style: AppTypography.bodySm.copyWith(color: AppColors.textSecondary),
+                          style: AppTypography.bodySm.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
                         ),
                       ],
                     ),
                   ),
                   GestureDetector(
-                    onTap: () { _flightController.deselectFlight(); setState(() {}); },
-                    child: Icon(Icons.close, size: 20, color: AppColors.textMuted),
+                    onTap: () {
+                      _flightController.deselectFlight();
+                      setState(() {});
+                    },
+                    child: Icon(
+                      Icons.close,
+                      size: 20,
+                      color: AppColors.textMuted,
+                    ),
                   ),
                 ],
               ),
@@ -1030,9 +1399,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
               child: Row(
                 children: [
                   Expanded(child: _busInfoItem('상태', flight.phase, phaseColor)),
-                  Expanded(child: _busInfoItem('고도', altText, AppColors.textSecondary)),
-                  Expanded(child: _busInfoItem('속도', speedText, AppColors.textSecondary)),
-                  Expanded(child: _busInfoItem('방향', '${flight.heading.round()}°', AppColors.textSecondary)),
+                  Expanded(
+                    child: _busInfoItem('고도', altText, AppColors.textSecondary),
+                  ),
+                  Expanded(
+                    child: _busInfoItem(
+                      '속도',
+                      speedText,
+                      AppColors.textSecondary,
+                    ),
+                  ),
+                  Expanded(
+                    child: _busInfoItem(
+                      '방향',
+                      '${flight.heading.round()}°',
+                      AppColors.textSecondary,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -1068,28 +1451,56 @@ class _DashboardScreenState extends State<DashboardScreen> {
           children: [
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.lg,
+                vertical: AppSpacing.md,
+              ),
               decoration: BoxDecoration(color: color.withValues(alpha: 0.12)),
               child: Row(
                 children: [
                   Container(
-                    width: 36, height: 36,
-                    decoration: BoxDecoration(color: color.withValues(alpha: 0.3), shape: BoxShape.circle),
-                    child: const Center(child: Icon(Icons.directions_boat, size: 20, color: color)),
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.3),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Center(
+                      child: Icon(
+                        Icons.directions_boat,
+                        size: 20,
+                        color: color,
+                      ),
+                    ),
                   ),
                   const SizedBox(width: AppSpacing.md),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('한강버스 ${display.routeName}', style: AppTypography.titleMd.copyWith(color: color)),
-                        Text('$dirText · ${display.phase}', style: AppTypography.bodySm.copyWith(color: AppColors.textSecondary)),
+                        Text(
+                          '한강버스 ${display.routeName}',
+                          style: AppTypography.titleMd.copyWith(color: color),
+                        ),
+                        Text(
+                          '$dirText · ${display.phase}',
+                          style: AppTypography.bodySm.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
                       ],
                     ),
                   ),
                   GestureDetector(
-                    onTap: () { _busController.deselectVessel(); setState(() {}); },
-                    child: Icon(Icons.close, size: 20, color: AppColors.textMuted),
+                    onTap: () {
+                      _busController.deselectVessel();
+                      setState(() {});
+                    },
+                    child: Icon(
+                      Icons.close,
+                      size: 20,
+                      color: AppColors.textMuted,
+                    ),
                   ),
                 ],
               ),
@@ -1098,13 +1509,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
               padding: const EdgeInsets.all(AppSpacing.lg),
               child: Row(
                 children: [
-                  Expanded(child: _busInfoItem(
-                    display.phase == '정차' ? '정차 중' : '다음',
-                    display.currentStopName ?? display.nextStopName,
-                    color,
-                  )),
-                  Expanded(child: _busInfoItem('진행', '${(display.progress * 100).round()}%', AppColors.textSecondary)),
-                  Expanded(child: _busInfoItem('상태', display.phase, display.phase == '정차' ? AppColors.warning : color)),
+                  Expanded(
+                    child: _busInfoItem(
+                      display.phase == '정차' ? '정차 중' : '다음',
+                      display.currentStopName ?? display.nextStopName,
+                      color,
+                    ),
+                  ),
+                  Expanded(
+                    child: _busInfoItem(
+                      '진행',
+                      '${(display.progress * 100).round()}%',
+                      AppColors.textSecondary,
+                    ),
+                  ),
+                  Expanded(
+                    child: _busInfoItem(
+                      '상태',
+                      display.phase,
+                      display.phase == '정차' ? AppColors.warning : color,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -1137,7 +1562,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
               builder: (context) {
                 final isDark = Theme.of(context).brightness == Brightness.dark;
                 return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 12,
+                  ),
                   decoration: BoxDecoration(
                     color: isDark
                         ? Colors.black.withValues(alpha: 0.7)
@@ -1145,7 +1573,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: isDark
                         ? null
-                        : [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 8)],
+                        : [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.1),
+                              blurRadius: 8,
+                            ),
+                          ],
                   ),
                   child: Text(
                     '${dp.rawModel} · $tierLabel\n'
@@ -1179,7 +1612,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
             const Color(0xFFF5B9EA).withValues(alpha: 0.1),
           ],
         ),
-        border: Border(top: BorderSide(color: const Color(0xFFBC82F3).withValues(alpha: 0.4))),
+        border: Border(
+          top: BorderSide(
+            color: const Color(0xFFBC82F3).withValues(alpha: 0.4),
+          ),
+        ),
       ),
       child: _AiStatusText(text: _aiStatus),
     );
@@ -1212,11 +1649,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final result = await Navigator.push<Map<String, dynamic>>(
       context,
       PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) => const ProfileView(),
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            const ProfileView(),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return SlideTransition(
-            position: Tween<Offset>(begin: const Offset(1.0, 0.0), end: Offset.zero)
-                .animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+            position:
+                Tween<Offset>(
+                  begin: const Offset(1.0, 0.0),
+                  end: Offset.zero,
+                ).animate(
+                  CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeOutCubic,
+                  ),
+                ),
             child: child,
           );
         },
@@ -1233,7 +1679,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
           _mapController?.moveTo(lat, lng, zoom: 16.0);
           // 장소 패널도 표시
           final place = PlaceSearchResult(
-            name: name, address: '', category: '저장된 장소', lat: lat, lng: lng,
+            name: name,
+            address: '',
+            category: '저장된 장소',
+            lat: lat,
+            lng: lng,
           );
           _showPlaceMarker(place);
           setState(() => _setSelectedPlace(place));
@@ -1244,7 +1694,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
             double bestDist = double.infinity;
             for (final r in results) {
               final d = (r.lat - lat).abs() + (r.lng - lng).abs();
-              if (d < bestDist) { bestDist = d; best = r; }
+              if (d < bestDist) {
+                bestDist = d;
+                best = r;
+              }
             }
             if (best != null) setState(() => _setSelectedPlace(best));
           });
@@ -1257,7 +1710,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   void _showRiverBusStopPanel(RiverBusStop stop) {
     _riverStopJustOpened = true;
-    Future.delayed(const Duration(milliseconds: 100), () => _riverStopJustOpened = false);
+    Future.delayed(
+      const Duration(milliseconds: 100),
+      () => _riverStopJustOpened = false,
+    );
     _mapController?.moveTo(stop.lat, stop.lng, zoom: 16.0, pitch: 50.0);
     // 바닥 glow 효과 (한강버스 전용)
     _mapController?.showRiverBusHighlight(stop.lat, stop.lng);
@@ -1271,7 +1727,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _buildRiverBusStopPanel(RiverBusStop stop) {
     final cs = Theme.of(context).colorScheme;
     // 이 선착장을 지나는 노선 찾기
-    final routes = RiverBusData.routes.where((r) => r.stopIds.contains(stop.id)).toList();
+    final routes = RiverBusData.routes
+        .where((r) => r.stopIds.contains(stop.id))
+        .toList();
     // 다음 운항 시간 계산
     final now = DateTime.now();
     final currentMin = now.hour * 60 + now.minute;
@@ -1283,7 +1741,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
         decoration: BoxDecoration(
           color: cs.surfaceContainer,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: const Color(0xFF00ACC1).withValues(alpha: 0.3)),
+          border: Border.all(
+            color: const Color(0xFF00ACC1).withValues(alpha: 0.3),
+          ),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -1293,18 +1753,41 @@ class _DashboardScreenState extends State<DashboardScreen> {
             Row(
               children: [
                 Container(
-                  width: 32, height: 32,
-                  decoration: BoxDecoration(color: const Color(0xFF00ACC1).withValues(alpha: 0.15), borderRadius: BorderRadius.circular(8)),
-                  child: const Icon(Icons.directions_boat, size: 18, color: Color(0xFF00ACC1)),
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF00ACC1).withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.directions_boat,
+                    size: 18,
+                    color: Color(0xFF00ACC1),
+                  ),
                 ),
                 const SizedBox(width: 10),
-                Expanded(child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('${stop.name} 선착장', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: cs.onSurface)),
-                    Text(stop.address, style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
-                  ],
-                )),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${stop.name} 선착장',
+                        style: TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.bold,
+                          color: cs.onSurface,
+                        ),
+                      ),
+                      Text(
+                        stop.address,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: cs.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
                 IconButton(
                   icon: Icon(Icons.close, size: 20, color: cs.onSurfaceVariant),
                   onPressed: () => setState(() => _setSelectedRiverStop(null)),
@@ -1318,11 +1801,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
               final isActive = r.isActive;
               String nextTime = '운항 종료';
               if (isActive) {
-                for (int dep = r.firstDeparture; dep <= r.lastDeparture; dep += r.intervalMin) {
+                for (
+                  int dep = r.firstDeparture;
+                  dep <= r.lastDeparture;
+                  dep += r.intervalMin
+                ) {
                   if (dep > currentMin) {
                     final h = dep ~/ 60;
                     final m = dep % 60;
-                    nextTime = '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}';
+                    nextTime =
+                        '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}';
                     break;
                   }
                 }
@@ -1332,18 +1820,42 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 child: Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
                         color: Color(r.color).withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(6),
                       ),
-                      child: Text(r.name, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(r.color))),
+                      child: Text(
+                        r.name,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: Color(r.color),
+                        ),
+                      ),
                     ),
                     const SizedBox(width: 8),
-                    Expanded(child: Text(r.displayName, style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant))),
+                    Expanded(
+                      child: Text(
+                        r.displayName,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: cs.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
                     Text(
                       isActive ? '다음 $nextTime' : '정비 중',
-                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: isActive ? const Color(0xFF00ACC1) : cs.onSurfaceVariant),
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: isActive
+                            ? const Color(0xFF00ACC1)
+                            : cs.onSurfaceVariant,
+                      ),
                     ),
                   ],
                 ),
@@ -1353,15 +1865,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
             // 출발/도착 버튼
             Row(
               children: [
-                _placeActionButton(icon: Icons.trip_origin, label: '출발', color: cs.primary, onTap: () {
-                  setState(() => _setSelectedRiverStop(null));
-                  _startNavWithDeparture('${stop.name} 선착장');
-                }),
+                _placeActionButton(
+                  icon: Icons.trip_origin,
+                  label: '출발',
+                  color: cs.primary,
+                  onTap: () {
+                    setState(() => _setSelectedRiverStop(null));
+                    _startNavWithDeparture('${stop.name} 선착장');
+                  },
+                ),
                 const SizedBox(width: 8),
-                _placeActionButton(icon: Icons.place, label: '도착', color: Colors.redAccent, onTap: () {
-                  setState(() => _setSelectedRiverStop(null));
-                  _startNavWithArrival('${stop.name} 선착장');
-                }),
+                _placeActionButton(
+                  icon: Icons.place,
+                  label: '도착',
+                  color: Colors.redAccent,
+                  onTap: () {
+                    setState(() => _setSelectedRiverStop(null));
+                    _startNavWithArrival('${stop.name} 선착장');
+                  },
+                ),
               ],
             ),
           ],
@@ -1380,12 +1902,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Row(
       children: modes.map((m) {
         final selected = _transportMode == m.$3;
-        final hasResult = m.$3 == 0 || _directionsCache.containsKey(m.$3);
+        final hasResult = m.$3 == 0
+            ? _routeResult != null
+            : _directionsCache.containsKey(m.$3);
         final timeStr = m.$3 == 0
-            ? null
+            ? (_routeResult != null && _routeResult!.totalTimeSec > 0
+                  ? _formatDurationShort(_routeResult!.totalTimeSec)
+                  : null)
             : _directionsCache[m.$3] != null
-                ? _formatDurationShort(_directionsCache[m.$3]!.durationSec)
-                : null;
+            ? _formatDurationShort(_directionsCache[m.$3]!.durationSec)
+            : null;
 
         return Expanded(
           child: GestureDetector(
@@ -1395,19 +1921,51 @@ class _DashboardScreenState extends State<DashboardScreen> {
               padding: const EdgeInsets.symmetric(vertical: 6),
               margin: const EdgeInsets.symmetric(horizontal: 2),
               decoration: BoxDecoration(
-                color: selected ? onSurface.withValues(alpha: 0.1) : Colors.transparent,
+                color: selected
+                    ? onSurface.withValues(alpha: 0.1)
+                    : Colors.transparent,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(m.$1, size: 18, color: selected ? onSurface : onSurface.withValues(alpha: 0.4)),
+                  Icon(
+                    m.$1,
+                    size: 18,
+                    color: selected
+                        ? onSurface
+                        : onSurface.withValues(alpha: 0.4),
+                  ),
                   if (timeStr != null)
-                    Text(timeStr, style: TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: selected ? onSurface : onSurface.withValues(alpha: 0.4)))
+                    Text(
+                      timeStr,
+                      style: TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.w600,
+                        color: selected
+                            ? onSurface
+                            : onSurface.withValues(alpha: 0.4),
+                      ),
+                    )
                   else if (m.$3 != 0 && !hasResult)
-                    SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 1, color: onSurface.withValues(alpha: 0.3)))
+                    SizedBox(
+                      width: 12,
+                      height: 12,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 1,
+                        color: onSurface.withValues(alpha: 0.3),
+                      ),
+                    )
                   else
-                    Text(m.$2, style: TextStyle(fontSize: 9, color: selected ? onSurface : onSurface.withValues(alpha: 0.4))),
+                    Text(
+                      m.$2,
+                      style: TextStyle(
+                        fontSize: 9,
+                        color: selected
+                            ? onSurface
+                            : onSurface.withValues(alpha: 0.4),
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -1417,10 +1975,552 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  /// 각 구간별 실시간 열차/버스 도착 정보 (segment index → 도착 메시지)
+  Map<int, List<String>> _segmentArrivals = {};
+  bool _routeNavigationActive = false;
+  int _activeNavigationSegmentIndex = 0;
+  Timer? _routeNavigationTimer;
+
+  /// 모든 탑승 구간의 실시간 도착 정보 시작 (5초마다 갱신)
+  void _loadBoardingArrival(PathResult route) {
+    _arrivalRefreshTimer?.cancel();
+    _boardingArrivals = [];
+    _segmentArrivals = {};
+
+    // 즉시 1회 + 주기 갱신
+    _updateAllSegmentArrivals(route);
+    _arrivalRefreshTimer = Timer.periodic(
+      const Duration(seconds: 15),
+      (_) => _updateAllSegmentArrivals(route),
+    );
+  }
+
+  /// 모든 지하철/버스 구간의 도착 정보 갱신
+  void _updateAllSegmentArrivals(PathResult route) {
+    for (int i = 0; i < route.segments.length; i++) {
+      final seg = route.segments[i];
+      if (seg.isTransfer) continue;
+      if (seg.mode == TransportMode.subway) {
+        _updateSegmentArrival(i, seg);
+      } else if (seg.mode == TransportMode.bus) {
+        _updateBusSegmentArrival(i, seg);
+      }
+    }
+  }
+
+  Future<void> _updateBusSegmentArrival(int segIdx, PathSegment seg) async {
+    final routeName = seg.lineId.startsWith('bus_')
+        ? seg.lineId.substring(4)
+        : seg.lineName.replaceAll('번 버스', '');
+    final route = SeoulBusData.getRouteByName(routeName);
+    if (route == null || seg.stations.isEmpty) {
+      if (mounted) setState(() => _segmentArrivals[segIdx] = ['버스 도착 정보 확인 중']);
+      return;
+    }
+    if (!RegExp(r'^\d{9}$').hasMatch(route.routeId)) {
+      if (mounted)
+        setState(() => _segmentArrivals[segIdx] = ['버스 실시간 데이터 갱신 필요']);
+      return;
+    }
+
+    final stopName = seg.stations.first;
+    final stop = route.stops.where((s) => s.name == stopName).firstOrNull;
+    if (stop == null || stop.stId.isEmpty) {
+      if (mounted) setState(() => _segmentArrivals[segIdx] = ['정류소 정보 확인 중']);
+      return;
+    }
+
+    final info = await SeoulBusService.instance.fetchArrivalByRouteAndStation(
+      route.routeId,
+      stop.stId,
+      stop.seq,
+    );
+    if (!mounted) return;
+
+    final msgs = <String>[];
+    if (info != null) {
+      if (info.arrmsg1.isNotEmpty && info.arrmsg1 != '정보없음') {
+        msgs.add(_compactBusArrivalMessage(info.arrmsg1));
+      }
+      if (info.arrmsg2.isNotEmpty && info.arrmsg2 != '정보없음') {
+        msgs.add(_compactBusArrivalMessage(info.arrmsg2));
+      }
+    }
+    if (msgs.isEmpty) msgs.add('${seg.lineName} 도착 정보 없음');
+    setState(() => _segmentArrivals[segIdx] = msgs.take(2).toList());
+  }
+
+  String _compactBusArrivalMessage(String message) {
+    return message
+        .replaceAll('분후 도착', '분')
+        .replaceAll('곧 도착', '곧 도착')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+  }
+
+  /// 개별 구간의 실시간 도착 정보 갱신 (네이버 열차 위치 기반)
+  void _updateSegmentArrival(int segIdx, PathSegment seg) {
+    final stationName = seg.stations.first;
+    final lineId = seg.lineId;
+    final lineName = SubwayColors.lineNames[lineId] ?? '';
+
+    final trains = _subwayController.currentTrains;
+    final lineTrains = trains.where((t) => t.subwayId == lineId).toList();
+
+    if (lineTrains.isEmpty) {
+      if (mounted) {
+        setState(() => _segmentArrivals[segIdx] = ['$lineName 열차 정보 로딩 중']);
+      }
+      return;
+    }
+
+    final lineStations = SeoulSubwayData.getLineStations(lineId);
+    final boardingIdx = lineStations.indexWhere((s) => s.name == stationName);
+    if (boardingIdx < 0) return;
+
+    // 방향 판단
+    int targetDir = 1;
+    if (seg.stations.length >= 2) {
+      final nextIdx = lineStations.indexWhere((s) => s.name == seg.stations[1]);
+      if (nextIdx >= 0) targetDir = nextIdx > boardingIdx ? 1 : 0;
+    }
+
+    // 해당 방향 + 탑승역 앞에 있는 열차
+    final approaching = <({String terminal, int stationsAway})>[];
+    for (final t in lineTrains) {
+      if (t.direction != targetDir) continue;
+      final trainIdx = lineStations.indexWhere((s) => s.name == t.stationName);
+      if (trainIdx < 0) continue;
+      final ahead = targetDir == 1
+          ? trainIdx <= boardingIdx
+          : trainIdx >= boardingIdx;
+      if (!ahead) continue;
+      approaching.add((
+        terminal: t.terminalName,
+        stationsAway: (boardingIdx - trainIdx).abs(),
+      ));
+    }
+
+    approaching.sort((a, b) => a.stationsAway.compareTo(b.stationsAway));
+
+    final msgs = <String>[];
+    for (int i = 0; i < approaching.length && i < 2; i++) {
+      final t = approaching[i];
+      final etaMin = t.stationsAway * 2;
+      msgs.add(
+        etaMin == 0 ? '${t.terminal}행 곧 도착' : '${t.terminal}행 ${etaMin}분',
+      );
+    }
+
+    if (msgs.isEmpty) msgs.add('$lineName 열차 접근 중');
+    if (mounted) setState(() => _segmentArrivals[segIdx] = msgs);
+  }
+
+  /// 경로 스텝 탭 → 해당 구간으로 카메라 줌인
+  void _focusOnSegment(PathSegment seg) {
+    final mc = _mapController;
+    if (mc == null || seg.stations.isEmpty) return;
+
+    // 구간 좌표 수집
+    List<List<double>> coords;
+    if (seg.mode == TransportMode.bus) {
+      coords = _resolveBusStopCoords(seg.lineId, seg.stations);
+    } else {
+      coords = _resolveStationCoords(seg.stations);
+    }
+
+    if (coords.isEmpty) return;
+
+    // bounding box 계산
+    double minLat = 90, maxLat = -90, minLng = 180, maxLng = -180;
+    for (final c in coords) {
+      if (c[0] < minLat) minLat = c[0];
+      if (c[0] > maxLat) maxLat = c[0];
+      if (c[1] < minLng) minLng = c[1];
+      if (c[1] > maxLng) maxLng = c[1];
+    }
+
+    final centerLat = (minLat + maxLat) / 2;
+    final centerLng = (minLng + maxLng) / 2;
+    final span = max(maxLat - minLat, maxLng - minLng);
+
+    // 구간 크기에 맞는 줌
+    final zoom = span < 0.002
+        ? 17.0
+        : span < 0.005
+        ? 16.0
+        : span < 0.01
+        ? 15.0
+        : span < 0.03
+        ? 14.0
+        : span < 0.08
+        ? 13.0
+        : 12.0;
+
+    // 출발→도착 방향 bearing
+    double bearing = 0;
+    if (coords.length >= 2) {
+      final first = coords.first;
+      final last = coords.last;
+      final dLng = (last[1] - first[1]) * pi / 180;
+      final lat1 = first[0] * pi / 180;
+      final lat2 = last[0] * pi / 180;
+      final y = sin(dLng) * cos(lat2);
+      final x = cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(dLng);
+      bearing = (atan2(y, x) * 180 / pi + 360) % 360;
+    }
+
+    mc.moveTo(centerLat, centerLng, zoom: zoom, pitch: 50, bearing: bearing);
+  }
+
+  void _focusOnRoutePoint(PathSegment seg, String stationName) {
+    final coord = _resolveRoutePointCoord(seg, stationName);
+    if (coord == null) {
+      _focusOnSegment(seg);
+      return;
+    }
+    _mapController?.moveTo(coord[0], coord[1], zoom: 17.0, pitch: 55);
+  }
+
+  List<double>? _resolveRoutePointCoord(PathSegment seg, String stationName) {
+    if (seg.mode == TransportMode.bus) {
+      final routeName = seg.lineId.startsWith('bus_')
+          ? seg.lineId.substring(4)
+          : seg.lineName.replaceAll('번 버스', '');
+      final route = SeoulBusData.getRouteByName(routeName);
+      final stop = route?.stops.where((s) => s.name == stationName).firstOrNull;
+      if (stop != null) return [stop.lat, stop.lng];
+    }
+    final direct = _resolveStationCoord(stationName);
+    if (direct != null) return direct;
+    if (seg.stations.first == stationName &&
+        seg.startLat != null &&
+        seg.startLng != null) {
+      return [seg.startLat!, seg.startLng!];
+    }
+    if (seg.stations.last == stationName &&
+        seg.endLat != null &&
+        seg.endLng != null) {
+      return [seg.endLat!, seg.endLng!];
+    }
+    return null;
+  }
+
+  void _startRouteNavigation() {
+    if (_routeResult == null) return;
+    final firstIndex = _routeResult!.segments.indexWhere((s) => !s.isTransfer);
+    if (firstIndex < 0) return;
+    setState(() {
+      _routeNavigationActive = true;
+      _activeNavigationSegmentIndex = firstIndex;
+      _routeSheetFraction = 0.24;
+    });
+    _focusNavigationStep();
+    _routeNavigationTimer?.cancel();
+    _routeNavigationTimer = Timer.periodic(
+      const Duration(seconds: 8),
+      (_) => _syncNavigationToCurrentLocation(),
+    );
+    _syncNavigationToCurrentLocation();
+  }
+
+  void _stopRouteNavigation() {
+    _routeNavigationTimer?.cancel();
+    setState(() => _routeNavigationActive = false);
+  }
+
+  void _advanceNavigationStep() {
+    final route = _routeResult;
+    if (route == null) return;
+    for (
+      int i = _activeNavigationSegmentIndex + 1;
+      i < route.segments.length;
+      i++
+    ) {
+      if (!route.segments[i].isTransfer) {
+        setState(() => _activeNavigationSegmentIndex = i);
+        _focusNavigationStep();
+        return;
+      }
+    }
+    _stopRouteNavigation();
+  }
+
+  Future<void> _syncNavigationToCurrentLocation() async {
+    final route = _routeResult;
+    if (!_routeNavigationActive || route == null) return;
+
+    final pos = await PlaceSearchService.instance.getCurrentPosition(
+      forceRefresh: true,
+    );
+    if (!mounted || !_routeNavigationActive || _routeResult == null) return;
+
+    final lat = pos.latitude;
+    final lng = pos.longitude;
+    int bestIndex = _activeNavigationSegmentIndex;
+    double bestDistance = double.infinity;
+
+    for (int i = 0; i < route.segments.length; i++) {
+      final seg = route.segments[i];
+      if (seg.isTransfer) continue;
+      final coords = _segmentNavigationCoords(seg);
+      if (coords.length < 2) continue;
+      final dist = _distanceToPolylineMeters(lat, lng, coords);
+      if (dist < bestDistance) {
+        bestDistance = dist;
+        bestIndex = i;
+      }
+    }
+
+    if (bestDistance < 300 && bestIndex != _activeNavigationSegmentIndex) {
+      setState(() => _activeNavigationSegmentIndex = bestIndex);
+    }
+
+    final active = _activeNavigationSegment;
+    if (active == null) return;
+    final coords = _segmentNavigationCoords(active);
+    if (coords.isEmpty) return;
+
+    final end = coords.last;
+    final endDistance = _distanceMeters(lat, lng, end[0], end[1]);
+    if (endDistance < 80) {
+      _advanceNavigationStep();
+      return;
+    }
+
+    final bearing = _bearingBetween(lat, lng, end[0], end[1]);
+    _mapController?.moveTo(lat, lng, zoom: 17.0, pitch: 60, bearing: bearing);
+  }
+
+  List<List<double>> _segmentNavigationCoords(PathSegment seg) {
+    if (seg.mode == TransportMode.bus) {
+      return _resolveBusStopCoords(seg.lineId, seg.stations);
+    }
+    if (seg.mode == TransportMode.walk) {
+      final coords = <List<double>>[];
+      if (seg.startLat != null && seg.startLng != null) {
+        coords.add([seg.startLat!, seg.startLng!]);
+      } else if (seg.stations.isNotEmpty) {
+        final start = _resolveRoutePointCoord(seg, seg.stations.first);
+        if (start != null) coords.add(start);
+      }
+      if (seg.endLat != null && seg.endLng != null) {
+        coords.add([seg.endLat!, seg.endLng!]);
+      } else if (seg.stations.isNotEmpty) {
+        final end = _resolveRoutePointCoord(seg, seg.stations.last);
+        if (end != null) coords.add(end);
+      }
+      return coords;
+    }
+    return _resolveStationCoords(seg.stations);
+  }
+
+  double _distanceToPolylineMeters(
+    double lat,
+    double lng,
+    List<List<double>> coords,
+  ) {
+    var best = double.infinity;
+    for (int i = 0; i < coords.length - 1; i++) {
+      best = min(
+        best,
+        _distanceToSegmentMeters(lat, lng, coords[i], coords[i + 1]),
+      );
+    }
+    return best;
+  }
+
+  double _distanceToSegmentMeters(
+    double lat,
+    double lng,
+    List<double> a,
+    List<double> b,
+  ) {
+    final latScale = 111320.0;
+    final lngScale = 111320.0 * cos(lat * pi / 180);
+    final px = lng * lngScale;
+    final py = lat * latScale;
+    final ax = a[1] * lngScale;
+    final ay = a[0] * latScale;
+    final bx = b[1] * lngScale;
+    final by = b[0] * latScale;
+    final dx = bx - ax;
+    final dy = by - ay;
+    final len2 = dx * dx + dy * dy;
+    if (len2 == 0) return sqrt(pow(px - ax, 2) + pow(py - ay, 2));
+    final t = (((px - ax) * dx + (py - ay) * dy) / len2).clamp(0.0, 1.0);
+    final cx = ax + dx * t;
+    final cy = ay + dy * t;
+    return sqrt(pow(px - cx, 2) + pow(py - cy, 2));
+  }
+
+  double _distanceMeters(double aLat, double aLng, double bLat, double bLng) {
+    const earthRadius = 6371000.0;
+    final dLat = (bLat - aLat) * pi / 180;
+    final dLng = (bLng - aLng) * pi / 180;
+    final lat1 = aLat * pi / 180;
+    final lat2 = bLat * pi / 180;
+    final h =
+        sin(dLat / 2) * sin(dLat / 2) +
+        cos(lat1) * cos(lat2) * sin(dLng / 2) * sin(dLng / 2);
+    return 2 * earthRadius * atan2(sqrt(h), sqrt(1 - h));
+  }
+
+  double _bearingBetween(double aLat, double aLng, double bLat, double bLng) {
+    final lat1 = aLat * pi / 180;
+    final lat2 = bLat * pi / 180;
+    final dLng = (bLng - aLng) * pi / 180;
+    final y = sin(dLng) * cos(lat2);
+    final x = cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(dLng);
+    return (atan2(y, x) * 180 / pi + 360) % 360;
+  }
+
+  void _focusNavigationStep() {
+    final route = _routeResult;
+    if (route == null || _activeNavigationSegmentIndex >= route.segments.length)
+      return;
+    _focusOnSegment(route.segments[_activeNavigationSegmentIndex]);
+  }
+
+  PathSegment? get _activeNavigationSegment {
+    final route = _routeResult;
+    if (route == null ||
+        _activeNavigationSegmentIndex >= route.segments.length) {
+      return null;
+    }
+    return route.segments[_activeNavigationSegmentIndex];
+  }
+
+  Widget _routePointText(
+    PathSegment seg,
+    String stationName, {
+    required TextStyle style,
+  }) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => _focusOnRoutePoint(seg, stationName),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Flexible(
+            child: Text(
+              stationName,
+              style: style,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const SizedBox(width: 4),
+          Icon(
+            Icons.my_location,
+            size: (style.fontSize ?? 14) - 1,
+            color: style.color?.withValues(alpha: 0.45),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNavigationBanner(Color onSurface, Color mutedColor) {
+    final seg = _activeNavigationSegment;
+    if (seg == null) return const SizedBox.shrink();
+    final segColor = _segmentColorForBar(seg);
+    final icon = seg.mode == TransportMode.walk
+        ? Icons.directions_walk
+        : seg.mode == TransportMode.bus
+        ? Icons.directions_bus
+        : Icons.train;
+    final action = seg.mode == TransportMode.walk
+        ? '${seg.stations.last}까지 도보'
+        : '${seg.stations.first}에서 ${seg.lineName} 승차';
+    final detail = seg.mode == TransportMode.walk
+        ? '${(seg.travelTimeSec / 60).ceil()}분 이동'
+        : '${seg.stations.last} 방면 · ${(seg.travelTimeSec / 60).ceil()}분';
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(12, 10, 10, 10),
+      decoration: BoxDecoration(
+        color: segColor.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: segColor.withValues(alpha: 0.20)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(shape: BoxShape.circle, color: segColor),
+            child: Icon(icon, size: 18, color: Colors.white),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  action,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                    color: onSurface,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  detail,
+                  style: TextStyle(fontSize: 12, color: mutedColor),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          GestureDetector(
+            onTap: _advanceNavigationStep,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+              decoration: BoxDecoration(
+                color: segColor.withValues(alpha: 0.14),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                '다음',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                  color: segColor,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Color _segmentColorForBar(PathSegment seg) {
+    if (seg.mode == TransportMode.bus) {
+      final ref = seg.lineId.startsWith('bus_') ? seg.lineId.substring(4) : '';
+      final num = int.tryParse(ref);
+      if (num != null && num >= 100 && num <= 999) return BusColors.trunk;
+      if (num != null && num >= 1000) return BusColors.branch;
+      if (ref.startsWith('M')) return BusColors.express;
+      return BusColors.branch;
+    }
+    if (seg.mode == TransportMode.walk) return Colors.grey;
+    return SubwayColors.lineColors[seg.lineId] ?? Colors.grey;
+  }
+
   String _formatDuration(int sec) {
     final min = sec ~/ 60;
     final hr = min ~/ 60;
     return hr > 0 ? '${hr}시간 ${min % 60}분' : '$min분';
+  }
+
+  String _formatWon(int won) {
+    return won.toString().replaceAllMapped(
+      RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
+      (m) => '${m[1]},',
+    );
   }
 
   String _formatDurationShort(int sec) {
@@ -1438,36 +2538,51 @@ class _DashboardScreenState extends State<DashboardScreen> {
     if (fromCoord == null || toCoord == null) return;
 
     final ds = DirectionsService.instance;
-    // 대중교통 (TMAP — 지하철+버스+도보 통합)
-    ds.getTransitRoutes(fromCoord[0], fromCoord[1], toCoord[0], toCoord[1]).then((routes) {
-      if (mounted && routes.isNotEmpty) {
-        setState(() {
-          _transitRoutes = routes;
-          _directionsCache[0] = routes.first;
-        });
-      }
-    });
     // 자동차
-    ds.getDrivingRoute(fromCoord[0], fromCoord[1], toCoord[0], toCoord[1]).then((r) {
-      if (r != null && mounted) setState(() => _directionsCache[1] = r);
-    });
+    ds.getDrivingRoute(fromCoord[0], fromCoord[1], toCoord[0], toCoord[1]).then(
+      (r) {
+        if (r != null && mounted) setState(() => _directionsCache[1] = r);
+      },
+    );
     // 도보
-    ds.getWalkingRoute(fromCoord[0], fromCoord[1], toCoord[0], toCoord[1]).then((r) {
-      if (r != null && mounted) setState(() => _directionsCache[2] = r);
-    });
+    ds.getWalkingRoute(fromCoord[0], fromCoord[1], toCoord[0], toCoord[1]).then(
+      (r) {
+        if (r != null && mounted) setState(() => _directionsCache[2] = r);
+      },
+    );
   }
 
   List<double>? _resolveStationCoord(String name) {
-    if (name == '내 위치') return null; // 비동기라 여기서 못 함
+    if (name == '내 위치') return null;
     // 지하철역
     for (final e in SubwayColors.lineColors.entries) {
       for (final s in SeoulSubwayData.getLineStations(e.key)) {
         if (s.name == name) return [s.lat, s.lng];
       }
     }
+    // 버스 정류소
+    for (final route in SeoulBusData.allRoutes) {
+      for (final stop in route.stops) {
+        if (stop.name == name) return [stop.lat, stop.lng];
+      }
+    }
     // 한강버스 선착장
     for (final s in RiverBusData.stops) {
       if (name.contains(s.name)) return [s.lat, s.lng];
+    }
+    // PathResult의 첫/마지막 구간에서 좌표 추출 (장소명일 때)
+    if (_routeResult != null) {
+      final segs = _routeResult!.segments;
+      if (segs.isNotEmpty) {
+        if (name == _routeResult!.departure) {
+          final coords = _resolveStationCoords(segs.first.stations);
+          if (coords.isNotEmpty) return coords.first;
+        }
+        if (name == _routeResult!.arrival) {
+          final coords = _resolveStationCoords(segs.last.stations);
+          if (coords.isNotEmpty) return coords.last;
+        }
+      }
     }
     return null;
   }
@@ -1476,35 +2591,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
     setState(() => _transportMode = mode);
     _clearRouteFromMap();
     if (mode == 0) {
-      // 대중교통 — TMAP 결과가 있으면 사용, 없으면 기존 지하철
-      final transit = _directionsCache[0];
-      if (transit != null && transit.legs.isNotEmpty) {
-        _drawTransitOnMap(transit);
-      } else if (_routeResult != null) {
+      // 대중교통 — 로컬 통합 길찾기 (지하철+버스)
+      if (_routeResult != null) {
         _drawRouteOnMap(_routeResult!);
       }
     } else {
       final result = _directionsCache[mode];
       if (result != null) _drawDirectionsOnMap(result);
-    }
-  }
-
-  void _drawTransitOnMap(DirectionsResult result) {
-    _clearRouteFromMap();
-    for (int i = 0; i < result.legs.length; i++) {
-      final leg = result.legs[i];
-      if (leg.coordinates.length < 2) continue;
-      final color = leg.mode == 'WALK'
-          ? Colors.grey
-          : leg.color != null
-              ? Color(leg.color!)
-              : Colors.blue;
-      _mapController?.addPolyline(
-        'transit_leg_$i', leg.coordinates,
-        color: color,
-        width: leg.mode == 'WALK' ? 3.0 : 5.0,
-        opacity: leg.mode == 'WALK' ? 0.5 : 0.8,
-      );
     }
   }
 
@@ -1517,7 +2610,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
     };
     // coordinates는 이미 [lat, lng]
     final coords = result.coordinates;
-    _mapController?.addPolyline('directions_route', coords, color: color, width: 5.0, opacity: 0.8);
+    _mapController?.addPolyline(
+      'directions_route',
+      coords,
+      color: color,
+      width: 5.0,
+      opacity: 0.8,
+    );
   }
 
   void _startNavWithDeparture(String name) {
@@ -1558,15 +2657,40 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(place.name, style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: cs.onSurface)),
+                        Text(
+                          place.name,
+                          style: TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.bold,
+                            color: cs.onSurface,
+                          ),
+                        ),
                         const SizedBox(height: 3),
                         Row(
                           children: [
                             if (place.category.isNotEmpty)
-                              Text(place.category, style: TextStyle(fontSize: 12, color: cs.primary)),
+                              Text(
+                                place.category,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: cs.primary,
+                                ),
+                              ),
                             if (hasDistance) ...[
-                              Text('  ·  ', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
-                              Text(_formatPlaceDistance(place.distance!), style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+                              Text(
+                                '  ·  ',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: cs.onSurfaceVariant,
+                                ),
+                              ),
+                              Text(
+                                _formatPlaceDistance(place.distance!),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: cs.onSurfaceVariant,
+                                ),
+                              ),
                             ],
                           ],
                         ),
@@ -1575,25 +2699,38 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                   IconButton(
                     icon: Icon(
-                      FavoritesService.instance.isFavorite(place.name) ? Icons.favorite : Icons.favorite_border,
+                      FavoritesService.instance.isFavorite(place.name)
+                          ? Icons.favorite
+                          : Icons.favorite_border,
                       size: 20,
-                      color: FavoritesService.instance.isFavorite(place.name) ? Colors.redAccent : cs.onSurfaceVariant,
+                      color: FavoritesService.instance.isFavorite(place.name)
+                          ? Colors.redAccent
+                          : cs.onSurfaceVariant,
                     ),
                     onPressed: () async {
-                      await FavoritesService.instance.toggle(FavoritePlace(
-                        name: place.name,
-                        address: place.address,
-                        category: place.category,
-                        lat: place.lat,
-                        lng: place.lng,
-                      ));
+                      await FavoritesService.instance.toggle(
+                        FavoritePlace(
+                          name: place.name,
+                          address: place.address,
+                          category: place.category,
+                          lat: place.lat,
+                          lng: place.lng,
+                        ),
+                      );
                       setState(() {});
                     },
                     visualDensity: VisualDensity.compact,
                   ),
                   IconButton(
-                    icon: Icon(Icons.close, size: 20, color: cs.onSurfaceVariant),
-                    onPressed: () => setState(() { _setSelectedPlace(null); _removePlaceMarker(); }),
+                    icon: Icon(
+                      Icons.close,
+                      size: 20,
+                      color: cs.onSurfaceVariant,
+                    ),
+                    onPressed: () => setState(() {
+                      _setSelectedPlace(null);
+                      _removePlaceMarker();
+                    }),
                     visualDensity: VisualDensity.compact,
                   ),
                 ],
@@ -1605,9 +2742,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 if (hasDetail)
                   Row(
                     children: [
-                      Icon(Icons.location_on_outlined, size: 14, color: cs.onSurfaceVariant),
+                      Icon(
+                        Icons.location_on_outlined,
+                        size: 14,
+                        color: cs.onSurfaceVariant,
+                      ),
                       const SizedBox(width: 4),
-                      Expanded(child: Text(place.address, style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant), maxLines: 1, overflow: TextOverflow.ellipsis)),
+                      Expanded(
+                        child: Text(
+                          place.address,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: cs.onSurfaceVariant,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
                     ],
                   ),
                 if (hasPhone) ...[
@@ -1618,7 +2769,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       children: [
                         Icon(Icons.phone_outlined, size: 14, color: cs.primary),
                         const SizedBox(width: 4),
-                        Text(place.phone!, style: TextStyle(fontSize: 12, color: cs.primary)),
+                        Text(
+                          place.phone!,
+                          style: TextStyle(fontSize: 12, color: cs.primary),
+                        ),
                       ],
                     ),
                   ),
@@ -1630,19 +2784,40 @@ class _DashboardScreenState extends State<DashboardScreen> {
               // 액션 버튼
               Row(
                 children: [
-                  _placeActionButton(icon: Icons.trip_origin, label: '출발', color: cs.primary, onTap: () {
-                    setState(() { _setSelectedPlace(null); _removePlaceMarker(); });
-                    _startNavWithDeparture(place.name);
-                  }),
+                  _placeActionButton(
+                    icon: Icons.trip_origin,
+                    label: '출발',
+                    color: cs.primary,
+                    onTap: () {
+                      setState(() {
+                        _setSelectedPlace(null);
+                        _removePlaceMarker();
+                      });
+                      _startNavWithDeparture(place.name);
+                    },
+                  ),
                   const SizedBox(width: 8),
-                  _placeActionButton(icon: Icons.place, label: '도착', color: Colors.redAccent, onTap: () {
-                    setState(() { _setSelectedPlace(null); _removePlaceMarker(); });
-                    _startNavWithArrival(place.name);
-                  }),
+                  _placeActionButton(
+                    icon: Icons.place,
+                    label: '도착',
+                    color: Colors.redAccent,
+                    onTap: () {
+                      setState(() {
+                        _setSelectedPlace(null);
+                        _removePlaceMarker();
+                      });
+                      _startNavWithArrival(place.name);
+                    },
+                  ),
                   const SizedBox(width: 8),
-                  _placeActionButton(icon: Icons.info_outline, label: '정보', color: cs.tertiary, onTap: () {
-                    if (hasUrl) _showPlaceWebView(place);
-                  }),
+                  _placeActionButton(
+                    icon: Icons.info_outline,
+                    label: '정보',
+                    color: cs.tertiary,
+                    onTap: () {
+                      if (hasUrl) _showPlaceWebView(place);
+                    },
+                  ),
                 ],
               ),
 
@@ -1651,7 +2826,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
                   child: Center(
-                    child: Text('탭하여 사진·리뷰·영업시간 보기', style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant.withValues(alpha: 0.6))),
+                    child: Text(
+                      '탭하여 사진·리뷰·영업시간 보기',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: cs.onSurfaceVariant.withValues(alpha: 0.6),
+                      ),
+                    ),
                   ),
                 ),
             ],
@@ -1723,18 +2904,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
         late final WebViewController controller;
         controller = WebViewController()
           ..setJavaScriptMode(JavaScriptMode.unrestricted)
-          ..setUserAgent('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1')
-          ..setNavigationDelegate(NavigationDelegate(
-            onPageFinished: (_) {
-              controller.runJavaScript(hideHeaderJS);
-              Future.delayed(const Duration(milliseconds: 800), () {
+          ..setUserAgent(
+            'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
+          )
+          ..setNavigationDelegate(
+            NavigationDelegate(
+              onPageFinished: (_) {
                 controller.runJavaScript(hideHeaderJS);
-              });
-              Future.delayed(const Duration(seconds: 2), () {
-                controller.runJavaScript(hideHeaderJS);
-              });
-            },
-          ))
+                Future.delayed(const Duration(milliseconds: 800), () {
+                  controller.runJavaScript(hideHeaderJS);
+                });
+                Future.delayed(const Duration(seconds: 2), () {
+                  controller.runJavaScript(hideHeaderJS);
+                });
+              },
+            ),
+          )
           ..loadRequest(Uri.parse(url));
 
         return Container(
@@ -1750,22 +2935,46 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 padding: const EdgeInsets.fromLTRB(16, 14, 8, 8),
                 child: Row(
                   children: [
-                    Expanded(child: Text(place.name, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: cs.onSurface))),
-                    IconButton(
-                      icon: Icon(Icons.open_in_new, size: 20, color: cs.onSurfaceVariant),
-                      onPressed: () => launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication),
+                    Expanded(
+                      child: Text(
+                        place.name,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: cs.onSurface,
+                        ),
+                      ),
                     ),
                     IconButton(
-                      icon: Icon(Icons.close, size: 20, color: cs.onSurfaceVariant),
+                      icon: Icon(
+                        Icons.open_in_new,
+                        size: 20,
+                        color: cs.onSurfaceVariant,
+                      ),
+                      onPressed: () => launchUrl(
+                        Uri.parse(url),
+                        mode: LaunchMode.externalApplication,
+                      ),
+                    ),
+                    IconButton(
+                      icon: Icon(
+                        Icons.close,
+                        size: 20,
+                        color: cs.onSurfaceVariant,
+                      ),
                       onPressed: () => Navigator.pop(ctx),
                     ),
                   ],
                 ),
               ),
-              Expanded(child: ClipRRect(
-                borderRadius: const BorderRadius.vertical(bottom: Radius.circular(0)),
-                child: WebViewWidget(controller: controller),
-              )),
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.vertical(
+                    bottom: Radius.circular(0),
+                  ),
+                  child: WebViewWidget(controller: controller),
+                ),
+              ),
             ],
           ),
         );
@@ -1773,7 +2982,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _placeActionButton({required IconData icon, required String label, required Color color, required VoidCallback onTap}) {
+  Widget _placeActionButton({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
     return Expanded(
       child: GestureDetector(
         onTap: onTap,
@@ -1789,7 +3003,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
             children: [
               Icon(icon, size: 14, color: color),
               const SizedBox(width: 4),
-              Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: color)),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: color,
+                ),
+              ),
             ],
           ),
         ),
@@ -1834,7 +3055,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
             // AI 닫고 → 카메라 줌 이동 → 역 선택
             _dismissAi();
             Future.delayed(const Duration(milliseconds: 600), () {
-              _mapController?.moveTo(station.lat, station.lng, zoom: 16, pitch: 50);
+              _mapController?.moveTo(
+                station.lat,
+                station.lng,
+                zoom: 16,
+                pitch: 50,
+              );
               // 카메라 이동 후 역 선택
               Future.delayed(const Duration(milliseconds: 800), () {
                 _subwayController.selectStation(station.name);
@@ -1850,7 +3076,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
           _dismissAi();
           Future.delayed(const Duration(milliseconds: 600), () {
             if (station != null) {
-              _mapController?.moveTo(station.lat, station.lng, zoom: 15, pitch: 45);
+              _mapController?.moveTo(
+                station.lat,
+                station.lng,
+                zoom: 15,
+                pitch: 45,
+              );
             }
             _subwayController.selectStation(station?.name ?? stationName);
           });
@@ -1898,26 +3129,34 @@ class _DashboardScreenState extends State<DashboardScreen> {
         break;
       case AiAction.addFavorite:
         if (_selectedPlace != null) {
-          FavoritesService.instance.toggle(FavoritePlace(
-            name: _selectedPlace!.name,
-            address: _selectedPlace!.address,
-            category: _selectedPlace!.category,
-            lat: _selectedPlace!.lat,
-            lng: _selectedPlace!.lng,
-          ));
+          FavoritesService.instance.toggle(
+            FavoritePlace(
+              name: _selectedPlace!.name,
+              address: _selectedPlace!.address,
+              category: _selectedPlace!.category,
+              lat: _selectedPlace!.lat,
+              lng: _selectedPlace!.lng,
+            ),
+          );
           setState(() {});
         }
         break;
       case AiAction.openRecommendation:
         _dismissAi();
         Future.delayed(const Duration(milliseconds: 600), () {
-          setState(() { _recommendOpen = true; _hideButtonForPanel = true; });
+          setState(() {
+            _recommendOpen = true;
+            _hideButtonForPanel = true;
+          });
         });
         break;
       case AiAction.openSaved:
         _dismissAi();
         Future.delayed(const Duration(milliseconds: 600), () {
-          setState(() { _savedOpen = true; _hideButtonForPanel = true; });
+          setState(() {
+            _savedOpen = true;
+            _hideButtonForPanel = true;
+          });
         });
         break;
       case AiAction.moveToLocation:
@@ -1945,7 +3184,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
         SnsContent(imagePaths: [], text: '', url: url),
       );
       if (result.places.isNotEmpty) {
-        final geoPlaces = await GeminiService.instance.geocodeAll(result.places);
+        final geoPlaces = await GeminiService.instance.geocodeAll(
+          result.places,
+        );
         final dayPlanService = DayPlanService.instance;
         final plans = await dayPlanService.generatePlans(geoPlaces);
         if (plans.isNotEmpty && mounted) {
@@ -1986,12 +3227,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final currentIndex = _recommendOpen
         ? 0
         : _savedOpen
-            ? 1
-            : _settingsOpen
-                ? 3
-                : _aiOpen
-                    ? 4
-                    : 2;
+        ? 1
+        : _settingsOpen
+        ? 3
+        : _aiOpen
+        ? 4
+        : 2;
 
     return AdaptiveTabBar(
       currentIndex: currentIndex,
@@ -1999,35 +3240,61 @@ class _DashboardScreenState extends State<DashboardScreen> {
         setState(() {
           if (index == 0) {
             // 추천
-            _settingsOpen = false; _savedOpen = false;
+            _settingsOpen = false;
+            _savedOpen = false;
             _dismissAi();
-            if (_recommendOpen) { _recommendOpen = false; _delayShowButton(); }
-            else { _recommendOpen = true; _hideButtonForPanel = true; }
+            if (_recommendOpen) {
+              _recommendOpen = false;
+              _delayShowButton();
+            } else {
+              _recommendOpen = true;
+              _hideButtonForPanel = true;
+            }
           } else if (index == 1) {
             // 저장
-            _settingsOpen = false; _recommendOpen = false;
+            _settingsOpen = false;
+            _recommendOpen = false;
             _dismissAi();
-            if (_savedOpen) { _savedOpen = false; _delayShowButton(); }
-            else { _savedOpen = true; _hideButtonForPanel = true; }
+            if (_savedOpen) {
+              _savedOpen = false;
+              _delayShowButton();
+            } else {
+              _savedOpen = true;
+              _hideButtonForPanel = true;
+            }
           } else if (index == 2) {
             // 지도
             final wasOpen = _settingsOpen || _recommendOpen || _savedOpen;
-            _settingsOpen = false; _recommendOpen = false; _savedOpen = false;
+            _settingsOpen = false;
+            _recommendOpen = false;
+            _savedOpen = false;
             _dismissAi();
             if (wasOpen) _delayShowButton();
           } else if (index == 3) {
             // 설정
-            _recommendOpen = false; _savedOpen = false;
+            _recommendOpen = false;
+            _savedOpen = false;
             _dismissAi();
-            if (_settingsOpen) { _settingsOpen = false; _delayShowButton(); }
-            else { _settingsOpen = true; _hideButtonForPanel = true; }
+            if (_settingsOpen) {
+              _settingsOpen = false;
+              _delayShowButton();
+            } else {
+              _settingsOpen = true;
+              _hideButtonForPanel = true;
+            }
           } else if (index == 4) {
             // AI
             final wasOpen = _settingsOpen || _recommendOpen || _savedOpen;
-            _settingsOpen = false; _recommendOpen = false; _savedOpen = false;
+            _settingsOpen = false;
+            _recommendOpen = false;
+            _savedOpen = false;
             if (wasOpen) _delayShowButton();
-            if (_aiOpen) { _dismissAi(); }
-            else { _aiOpen = true; _aiClosing = false; }
+            if (_aiOpen) {
+              _dismissAi();
+            } else {
+              _aiOpen = true;
+              _aiClosing = false;
+            }
           }
         });
       },
@@ -2041,157 +3308,839 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  // ── 경로 결과 바텀 시트 (구글맵 스타일 세로 타임라인) ──
+  final Set<int> _expandedSegments = {};
 
-  // ── 경로 결과 바텀 시트 (드래그로 요약↔상세 전환) ──
   Widget _buildRouteResultOverlay(BuildContext context, double screenHeight) {
     final hasRoute = _routeResult != null && _isNavMode;
     if (!hasRoute) return const SizedBox.shrink();
 
     final r = _routeResult!;
-    final rideSegments = r.segments.where((s) => !s.isTransfer).toList();
-    final totalTime = rideSegments.fold<int>(0, (sum, s) => sum + s.travelTimeSec);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final onSurface = Theme.of(context).colorScheme.onSurface;
+    final mutedColor = onSurface.withValues(alpha: 0.5);
 
-    // 경로 스텝 빌드
-    final steps = <Widget>[];
+    // 세로 타임라인 위젯 빌드
+    final timelineItems = <Widget>[];
+
+    // ── 출발 ──
+    timelineItems.add(
+      _timelineRow(
+        dotColor: const Color(0xFF34C759),
+        dotHollow: true,
+        lineColor: null,
+        lineBelow: true,
+        child: Padding(
+          padding: const EdgeInsets.only(top: 2),
+          child: r.segments.isNotEmpty
+              ? _routePointText(
+                  r.segments.first,
+                  r.departure,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: onSurface,
+                  ),
+                )
+              : Text(
+                  r.departure,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: onSurface,
+                  ),
+                ),
+        ),
+      ),
+    );
+
     for (int i = 0; i < r.segments.length; i++) {
       final seg = r.segments[i];
-      final lineColor = SubwayColors.lineColors[seg.lineId] ?? Colors.grey;
-      final isLast = i == r.segments.length - 1;
+      if (seg.isTransfer) continue;
 
-      if (seg.isTransfer) {
-        steps.add(Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6),
-          child: Row(children: [
-            Icon(Icons.swap_horiz, size: 16, color: onSurface.withValues(alpha: 0.5)),
-            const SizedBox(width: 8),
-            Text('환승 · ~3분', style: AppTypography.bodySm.copyWith(color: onSurface.withValues(alpha: 0.5))),
-          ]),
-        ));
-      } else {
-        final timeMins = (seg.travelTimeSec / 60).ceil();
-        steps.add(Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4),
-          child: Row(children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(color: lineColor, borderRadius: BorderRadius.circular(6)),
-              child: Text(seg.lineName, style: AppTypography.caption.copyWith(fontWeight: FontWeight.bold, color: Colors.white)),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                seg.stations.length > 1
-                    ? '${seg.stations.first} → ${seg.stations.last} · ${seg.stations.length}개 역'
-                    : seg.stations.firstOrNull ?? '',
-                style: AppTypography.bodySm.copyWith(color: onSurface),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            Text('$timeMins분', style: AppTypography.bodySm.copyWith(color: onSurface.withValues(alpha: 0.6))),
-          ]),
-        ));
-      }
-    }
+      final segColor = _segmentColorForBar(seg);
+      final timeMins = (seg.travelTimeSec / 60).ceil();
+      final isWalk = seg.mode == TransportMode.walk;
+      final isBus = seg.mode == TransportMode.bus;
+      final isSubway = seg.mode == TransportMode.subway;
+      final isExpanded = _expandedSegments.contains(i);
 
-    return DraggableScrollableSheet(
-      initialChildSize: 0.28,
-      minChildSize: 0.06,
-      maxChildSize: 0.50,
-      builder: (context, scrollController) {
-        return ClipRRect(
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: isDark
-                      ? [Colors.black.withValues(alpha: 0.40), Colors.black.withValues(alpha: 0.50), Colors.black.withValues(alpha: 0.65)]
-                      : [Colors.white.withValues(alpha: 0.70), Colors.white.withValues(alpha: 0.75), Colors.white.withValues(alpha: 0.85)],
-                ),
-                border: Border(top: BorderSide(color: isDark ? Colors.white24 : Colors.black.withValues(alpha: 0.08), width: 0.5)),
-              ),
-              child: ListView(
-                controller: scrollController,
-                padding: EdgeInsets.fromLTRB(20, 0, 20, MediaQuery.of(context).padding.bottom + 16),
-                children: [
-                  // 핸들
-                  Center(child: Container(
-                    margin: const EdgeInsets.only(top: 8, bottom: 8),
-                    width: 36, height: 4,
-                    decoration: BoxDecoration(color: isDark ? Colors.white24 : Colors.black12, borderRadius: BorderRadius.circular(2)),
-                  )),
-                  // 교통수단 탭
-                  _buildTransportModeBar(onSurface),
-                  const SizedBox(height: 10),
-                  // 시간 + 뱃지
-                  Row(children: [
-                    Text(_transportMode == 0
-                        ? r.totalTimeFormatted
-                        : _directionsCache[_transportMode] != null
-                            ? _formatDuration(_directionsCache[_transportMode]!.durationSec)
-                            : '...',
-                      style: AppTypography.displayLg.copyWith(color: onSurface)),
-                    const SizedBox(width: 12),
-                    if (_transportMode == 0) ...[
-                      if (r.transferCount > 0) AppBadge(text: '환승 ${r.transferCount}회', color: AppColors.warning, fontWeight: FontWeight.w600),
-                      const SizedBox(width: 6),
-                      AppBadge(text: '${r.totalDistanceKm.toStringAsFixed(1)}km', color: AppColors.textDisabled, fontWeight: FontWeight.w600),
-                    ] else if (_directionsCache[_transportMode] != null) ...[
-                      AppBadge(text: '${_directionsCache[_transportMode]!.distanceKm.toStringAsFixed(1)}km', color: AppColors.textDisabled, fontWeight: FontWeight.w600),
-                      if (_directionsCache[_transportMode]!.fare != null) ...[
-                        const SizedBox(width: 6),
-                        AppBadge(text: '택시 ~${(_directionsCache[_transportMode]!.fare! / 10000).toStringAsFixed(1)}만원', color: AppColors.warning, fontWeight: FontWeight.w600),
-                      ],
-                    ],
-                  ]),
-                  const SizedBox(height: 6),
-                  // 출발 → 도착
-                  Row(children: [
-                    Container(width: 8, height: 8, decoration: const BoxDecoration(shape: BoxShape.circle, color: Color(0xFF34C759))),
-                    const SizedBox(width: 6),
-                    Text(r.departure, style: AppTypography.bodySm.copyWith(color: AppColors.textSecondary)),
-                    Padding(padding: const EdgeInsets.symmetric(horizontal: 6), child: Icon(Icons.arrow_forward, size: 12, color: AppColors.textMuted)),
-                    const Icon(Icons.location_on_rounded, color: Color(0xFFFF453A), size: 12),
-                    const SizedBox(width: 4),
-                    Expanded(child: Text(r.arrival, style: AppTypography.bodySm.copyWith(color: onSurface, fontWeight: FontWeight.w600), overflow: TextOverflow.ellipsis)),
-                  ]),
-                  const SizedBox(height: 10),
-                  // 타임라인 바
-                  if (totalTime > 0)
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(4),
-                      child: SizedBox(height: 8, child: Row(children: [
-                        for (int i = 0; i < rideSegments.length; i++) ...[
-                          if (i > 0) const SizedBox(width: 2),
-                          Expanded(
-                            flex: (rideSegments[i].travelTimeSec * 100 / totalTime).round().clamp(1, 100),
-                            child: Container(color: SubwayColors.lineColors[rideSegments[i].lineId] ?? Colors.grey),
-                          ),
-                        ],
-                      ])),
+      if (isWalk) {
+        // ── 도보 구간 ──
+        String walkDesc = '도보';
+        final walkSteps = _walkStepsCache[i];
+        if (walkSteps != null && walkSteps.isNotEmpty) {
+          final exitStep = walkSteps
+              .where((s) => s.description.contains('출구'))
+              .firstOrNull;
+          if (exitStep != null) walkDesc = exitStep.description;
+        }
+        timelineItems.add(
+          _timelineRow(
+            dotColor: null,
+            lineColor: Colors.grey.withValues(alpha: 0.3),
+            lineDashed: true,
+            lineBelow: true,
+            child: GestureDetector(
+              onTap: () => _focusOnSegment(seg),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(
+                  children: [
+                    Icon(Icons.directions_walk, size: 16, color: mutedColor),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        walkDesc,
+                        style: TextStyle(fontSize: 13, color: mutedColor),
+                      ),
                     ),
-                  const SizedBox(height: 14),
-                  // 경로 스텝 (위로 당기면 보임)
-                  ...steps,
-                  const SizedBox(height: 20),
-                ],
+                    Text(
+                      '$timeMins분',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: mutedColor,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
         );
-      },
+      } else {
+        // ── 지하철/버스 구간 ──
+        final stationCount = seg.stations.length;
+        final hasMiddleStations = stationCount > 2;
+
+        timelineItems.add(
+          _timelineRow(
+            dotColor: segColor,
+            dotHollow: false,
+            lineColor: segColor,
+            lineBelow: true,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _routePointText(
+                  seg,
+                  seg.stations.first,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: onSurface,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                // 노선 뱃지 + 방면
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 9,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: segColor,
+                        borderRadius: BorderRadius.circular(5),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            isBus ? Icons.directions_bus : Icons.train,
+                            size: 12,
+                            color: Colors.white,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            seg.lineName,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        '${seg.stations.last} 방면',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: onSurface.withValues(alpha: 0.8),
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                // 실시간 열차/버스 도착
+                if ((isSubway || isBus) && _segmentArrivals.containsKey(i)) ...[
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: segColor.withValues(alpha: 0.10),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: segColor.withValues(alpha: 0.20),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          isBus ? Icons.directions_bus : Icons.train,
+                          size: 14,
+                          color: segColor,
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            _segmentArrivals[i]!.join('  ·  '),
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: segColor,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                ],
+                // 역 수 + 펼침 (AnimatedSize로 부드럽게)
+                GestureDetector(
+                  onTap: hasMiddleStations
+                      ? () => setState(() {
+                          if (isExpanded)
+                            _expandedSegments.remove(i);
+                          else
+                            _expandedSegments.add(i);
+                        })
+                      : null,
+                  child: Row(
+                    children: [
+                      if (hasMiddleStations)
+                        AnimatedRotation(
+                          turns: isExpanded ? 0.5 : 0,
+                          duration: const Duration(milliseconds: 200),
+                          child: Icon(
+                            Icons.keyboard_arrow_down,
+                            size: 18,
+                            color: segColor,
+                          ),
+                        ),
+                      if (hasMiddleStations) const SizedBox(width: 4),
+                      Text(
+                        '$stationCount개 ${isBus ? "정류장" : "역"} 이동 · $timeMins분',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: hasMiddleStations ? segColor : mutedColor,
+                          fontWeight: hasMiddleStations
+                              ? FontWeight.w500
+                              : FontWeight.w400,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // 중간역 펼침 (AnimatedSize)
+                AnimatedSize(
+                  duration: const Duration(milliseconds: 250),
+                  curve: Curves.easeInOut,
+                  child: isExpanded && hasMiddleStations
+                      ? Padding(
+                          padding: const EdgeInsets.only(top: 6),
+                          child: Column(
+                            children: seg.stations
+                                .sublist(1, stationCount - 1)
+                                .map(
+                                  (name) => Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 5,
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        const SizedBox(width: 4),
+                                        Container(
+                                          width: 7,
+                                          height: 7,
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            border: Border.all(
+                                              color: segColor.withValues(
+                                                alpha: 0.5,
+                                              ),
+                                              width: 1.5,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: _routePointText(
+                                            seg,
+                                            name,
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              color: onSurface.withValues(
+                                                alpha: 0.65,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                )
+                                .toList(),
+                          ),
+                        )
+                      : const SizedBox.shrink(),
+                ),
+                const SizedBox(height: 10),
+                // 하차역
+                Row(
+                  children: [
+                    Container(
+                      width: 9,
+                      height: 9,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: segColor,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    _routePointText(
+                      seg,
+                      seg.stations.last,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: onSurface,
+                      ),
+                    ),
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: mutedColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        '하차',
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: mutedColor,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+    }
+
+    // ── 도착 ──
+    timelineItems.add(
+      _timelineRow(
+        dotColor: const Color(0xFFFF453A),
+        dotHollow: true,
+        lineColor: null,
+        lineBelow: false,
+        child: Padding(
+          padding: const EdgeInsets.only(top: 2),
+          child: r.segments.isNotEmpty
+              ? _routePointText(
+                  r.segments.last,
+                  r.arrival,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: onSurface,
+                  ),
+                )
+              : Text(
+                  r.arrival,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: onSurface,
+                  ),
+                ),
+        ),
+      ),
+    );
+
+    return _buildRouteSheetWidget(isDark, onSurface, r, timelineItems, [
+      // 핸들
+      Center(
+        child: Container(
+          margin: const EdgeInsets.only(top: 10, bottom: 12),
+          width: 40,
+          height: 4,
+          decoration: BoxDecoration(
+            color: isDark ? Colors.white24 : Colors.black12,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+      ),
+      // ── 경로 타입 + 교통수단 탭 ──
+      Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              color: onSurface.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Text(
+              r.searchType == PathSearchType.duration
+                  ? '최적'
+                  : r.searchType == PathSearchType.distance
+                  ? '최단'
+                  : '최소환승',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: onSurface,
+              ),
+            ),
+          ),
+          if (r.transferCount > 0) ...[
+            const SizedBox(width: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: AppColors.warning.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                '환승 ${r.transferCount}회',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.warning,
+                ),
+              ),
+            ),
+          ],
+          const Spacer(),
+          // 교통수단 미니 탭
+          ...[0, 1, 2].map((m) {
+            final icons = [
+              Icons.directions_transit,
+              Icons.directions_car,
+              Icons.directions_walk,
+            ];
+            final selected = _transportMode == m;
+            return GestureDetector(
+              onTap: () => _switchTransportMode(m),
+              child: Container(
+                padding: const EdgeInsets.all(7),
+                margin: const EdgeInsets.only(left: 3),
+                decoration: BoxDecoration(
+                  color: selected
+                      ? onSurface.withValues(alpha: 0.12)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  icons[m],
+                  size: 18,
+                  color: selected ? onSurface : mutedColor,
+                ),
+              ),
+            );
+          }),
+        ],
+      ),
+      const SizedBox(height: 12),
+      if (_routeNavigationActive && _activeNavigationSegment != null) ...[
+        _buildNavigationBanner(onSurface, mutedColor),
+        const SizedBox(height: 12),
+      ],
+      // ── 큰 시간 + 출발~도착 시각 + 요금 ──
+      () {
+        final now = DateTime.now();
+        final totalSec = _transportMode == 0
+            ? r.totalTimeSec
+            : (_directionsCache[_transportMode]?.durationSec ?? 0);
+        final arriveTime = now.add(Duration(seconds: totalSec));
+        final depStr =
+            '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+        final arrStr =
+            '${arriveTime.hour.toString().padLeft(2, '0')}:${arriveTime.minute.toString().padLeft(2, '0')}';
+        // 기본 요금 계산 (지하철 1,400원 + 환승 0원)
+        final fare =
+            1400 +
+            (r.segments
+                    .where((s) => s.mode == TransportMode.bus && !s.isTransfer)
+                    .length *
+                0);
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 소요시간 큰 글자
+            Text(
+              _transportMode == 0
+                  ? r.totalTimeFormatted
+                  : _directionsCache[_transportMode] != null
+                  ? _formatDuration(
+                      _directionsCache[_transportMode]!.durationSec,
+                    )
+                  : '...',
+              style: TextStyle(
+                fontSize: 32,
+                fontWeight: FontWeight.w800,
+                color: onSurface,
+                height: 1.1,
+              ),
+            ),
+            const SizedBox(height: 4),
+            // 출발 시각 → 도착 시각 + 요금
+            Row(
+              children: [
+                Text(
+                  '$depStr 출발',
+                  style: TextStyle(fontSize: 14, color: mutedColor),
+                ),
+                Text(' — ', style: TextStyle(fontSize: 14, color: mutedColor)),
+                Text(
+                  '$arrStr 도착',
+                  style: TextStyle(fontSize: 14, color: mutedColor),
+                ),
+                const Spacer(),
+                if (_transportMode == 0)
+                  Text(
+                    '₩${_formatWon(fare)}',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: onSurface,
+                    ),
+                  ),
+                const SizedBox(width: 8),
+                if (_transportMode == 0)
+                  GestureDetector(
+                    onTap: _routeNavigationActive
+                        ? _stopRouteNavigation
+                        : _startRouteNavigation,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 7,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _routeNavigationActive
+                            ? AppColors.danger.withValues(alpha: 0.12)
+                            : AppColors.accent.withValues(alpha: 0.16),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            _routeNavigationActive
+                                ? Icons.stop_rounded
+                                : Icons.navigation_rounded,
+                            size: 14,
+                            color: _routeNavigationActive
+                                ? AppColors.danger
+                                : AppColors.accent,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            _routeNavigationActive ? '종료' : '시작',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                              color: _routeNavigationActive
+                                  ? AppColors.danger
+                                  : AppColors.accent,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ],
+        );
+      }(),
+      const SizedBox(height: 14),
+      // ── 가로 모드 바 (도보→지하철→도보 시각화) ──
+      () {
+        final segs = r.segments.where((s) => !s.isTransfer).toList();
+        final total = segs.fold<int>(0, (s, seg) => s + seg.travelTimeSec);
+        if (total == 0) return const SizedBox.shrink();
+        return Column(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: SizedBox(
+                height: 6,
+                child: Row(
+                  children: [
+                    for (int i = 0; i < segs.length; i++) ...[
+                      if (i > 0) const SizedBox(width: 1),
+                      Expanded(
+                        flex: (segs[i].travelTimeSec * 100 / total)
+                            .round()
+                            .clamp(1, 100),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: _segmentColorForBar(segs[i]),
+                            borderRadius: i == 0
+                                ? const BorderRadius.horizontal(
+                                    left: Radius.circular(4),
+                                  )
+                                : i == segs.length - 1
+                                ? const BorderRadius.horizontal(
+                                    right: Radius.circular(4),
+                                  )
+                                : null,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 4),
+            // 바 아래 모드 라벨
+            Row(
+              children: [
+                for (int i = 0; i < segs.length; i++) ...[
+                  if (i > 0) const SizedBox(width: 2),
+                  Expanded(
+                    flex: (segs[i].travelTimeSec * 100 / total).round().clamp(
+                      1,
+                      100,
+                    ),
+                    child: Text(
+                      segs[i].mode == TransportMode.walk
+                          ? '도보'
+                          : segs[i].mode == TransportMode.bus
+                          ? segs[i].lineName
+                          : segs[i].lineName,
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: _segmentColorForBar(segs[i]),
+                        fontWeight: FontWeight.w600,
+                      ),
+                      textAlign: TextAlign.center,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ],
+        );
+      }(),
+      const SizedBox(height: 6),
+    ]);
+  }
+
+  double _routeSheetFraction = 0.30;
+
+  Widget _buildRouteSheetWidget(
+    bool isDark,
+    Color onSurface,
+    PathResult r,
+    List<Widget> timelineItems,
+    List<Widget> headerChildren,
+  ) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+    final minSheetHeight = min(
+      screenHeight * 0.85,
+      max(220.0, bottomPadding + 190.0),
+    );
+    final minSheetFraction = minSheetHeight / screenHeight;
+    final sheetHeight =
+        screenHeight * _routeSheetFraction.clamp(minSheetFraction, 0.85);
+    final headerMaxHeight = max(
+      96.0,
+      min(sheetHeight - 72.0, screenHeight * 0.42),
+    );
+    final handle = headerChildren.isNotEmpty
+        ? headerChildren.first
+        : const SizedBox(height: 16);
+    final headerBody = headerChildren.length > 1
+        ? headerChildren.sublist(1)
+        : const <Widget>[];
+
+    return Positioned(
+      left: 0,
+      right: 0,
+      bottom: 0,
+      height: sheetHeight,
+      child: ClipRRect(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(28),
+              ),
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: isDark
+                    ? [
+                        Colors.black.withValues(alpha: 0.50),
+                        Colors.black.withValues(alpha: 0.70),
+                      ]
+                    : [
+                        Colors.white.withValues(alpha: 0.80),
+                        Colors.white.withValues(alpha: 0.95),
+                      ],
+              ),
+              border: Border(
+                top: BorderSide(
+                  color: isDark
+                      ? Colors.white24
+                      : Colors.black.withValues(alpha: 0.08),
+                  width: 0.5,
+                ),
+              ),
+            ),
+            child: Column(
+              children: [
+                // ── 핸들: 여기만 드래그로 시트 높이 조절 ──
+                GestureDetector(
+                  onVerticalDragUpdate: (d) {
+                    setState(() {
+                      _routeSheetFraction =
+                          (_routeSheetFraction - d.delta.dy / screenHeight)
+                              .clamp(minSheetFraction, 0.85);
+                    });
+                  },
+                  behavior: HitTestBehavior.opaque,
+                  child: SizedBox(width: double.infinity, child: handle),
+                ),
+                ConstrainedBox(
+                  constraints: BoxConstraints(maxHeight: headerMaxHeight),
+                  child: SingleChildScrollView(
+                    physics: const ClampingScrollPhysics(),
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 20, 0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: headerBody,
+                      ),
+                    ),
+                  ),
+                ),
+                Divider(
+                  color: isDark
+                      ? Colors.white10
+                      : Colors.black.withValues(alpha: 0.06),
+                  height: 1,
+                ),
+                // ── 타임라인: 독립 스크롤 ──
+                Expanded(
+                  child: ListView(
+                    padding: EdgeInsets.fromLTRB(
+                      16,
+                      10,
+                      20,
+                      MediaQuery.of(context).padding.bottom + 20,
+                    ),
+                    physics: const ClampingScrollPhysics(),
+                    children: timelineItems,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 
+  /// 세로 타임라인 한 행 (IntrinsicHeight 미사용 — AnimatedSize 호환)
+  Widget _timelineRow({
+    required Color? dotColor,
+    bool dotHollow = false,
+    Color? lineColor,
+    bool lineDashed = false,
+    bool lineBelow = true,
+    required Widget child,
+  }) {
+    final dot = dotColor != null
+        ? Container(
+            width: 14,
+            height: 14,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: dotHollow ? Colors.transparent : dotColor,
+              border: Border.all(color: dotColor, width: dotHollow ? 3 : 0),
+            ),
+          )
+        : const SizedBox(width: 14, height: 14);
+
+    // 왼쪽 선을 Container border로 처리 (높이를 콘텐츠에 맞춤)
+    final lineDecor = lineBelow
+        ? BoxDecoration(
+            border: Border(
+              left: BorderSide(
+                color: lineColor ?? Colors.grey.withValues(alpha: 0.2),
+                width: lineDashed ? 2 : 3.5,
+              ),
+            ),
+          )
+        : null;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 2),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 왼쪽 점
+          Padding(padding: const EdgeInsets.only(top: 4), child: dot),
+          const SizedBox(width: 5),
+          // 오른쪽: 콘텐츠 + 왼쪽 border가 선 역할
+          Expanded(
+            child: Container(
+              padding: const EdgeInsets.only(left: 10, bottom: 10),
+              decoration: lineDecor,
+              child: child,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   // ── 설정 오버레이 패널 ──
-  Widget _buildSettingsOverlay(BuildContext context, double screenHeight, double bottomInset) {
+  Widget _buildSettingsOverlay(
+    BuildContext context,
+    double screenHeight,
+    double bottomInset,
+  ) {
     final panelHeight = screenHeight * 0.58;
 
     return AnimatedPositioned(
@@ -2278,7 +4227,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 if (!mounted) return;
                 _mapController?.moveTo(lat, lng, zoom: 16.0);
                 final place = PlaceSearchResult(
-                  name: name, address: '', category: '저장된 장소', lat: lat, lng: lng,
+                  name: name,
+                  address: '',
+                  category: '저장된 장소',
+                  lat: lat,
+                  lng: lng,
                 );
                 _showPlaceMarker(place);
                 setState(() => _setSelectedPlace(place));
@@ -2288,7 +4241,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   double bestDist = double.infinity;
                   for (final r in results) {
                     final d = (r.lat - lat).abs() + (r.lng - lng).abs();
-                    if (d < bestDist) { bestDist = d; best = r; }
+                    if (d < bestDist) {
+                      bestDist = d;
+                      best = r;
+                    }
                   }
                   if (best != null) setState(() => _setSelectedPlace(best));
                 });
@@ -2325,7 +4281,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
               color: isDark
                   ? Colors.black.withValues(alpha: 0.85)
                   : Colors.white.withValues(alpha: 0.92),
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(24),
+              ),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.2),
@@ -2429,7 +4387,12 @@ class _SettingsPanelState extends State<SettingsPanel> {
         // 컨텐츠 스크롤
         Expanded(
           child: ListView(
-            padding: EdgeInsets.fromLTRB(24, 0, 24, MediaQuery.of(context).padding.bottom + 80),
+            padding: EdgeInsets.fromLTRB(
+              24,
+              0,
+              24,
+              MediaQuery.of(context).padding.bottom + 80,
+            ),
             children: [
               _sectionHeader('지하철'),
               _buildSubwaySection(),
@@ -2513,12 +4476,15 @@ class _SettingsPanelState extends State<SettingsPanel> {
   /// 라이트모드: 밝은 글라스 + 검정 글씨, 다크모드: 어두운 글라스 + 흰 글씨
   bool get _isLightTheme => Theme.of(context).brightness == Brightness.light;
 
-  Color get _panelTextPrimary =>
-      _isLightTheme ? Colors.black.withValues(alpha: 0.85) : Colors.white.withValues(alpha: 0.85);
-  Color get _panelTextSecondary =>
-      _isLightTheme ? Colors.black.withValues(alpha: 0.55) : Colors.white.withValues(alpha: 0.45);
-  Color get _panelTextMuted =>
-      _isLightTheme ? Colors.black.withValues(alpha: 0.35) : Colors.white.withValues(alpha: 0.35);
+  Color get _panelTextPrimary => _isLightTheme
+      ? Colors.black.withValues(alpha: 0.85)
+      : Colors.white.withValues(alpha: 0.85);
+  Color get _panelTextSecondary => _isLightTheme
+      ? Colors.black.withValues(alpha: 0.55)
+      : Colors.white.withValues(alpha: 0.45);
+  Color get _panelTextMuted => _isLightTheme
+      ? Colors.black.withValues(alpha: 0.35)
+      : Colors.white.withValues(alpha: 0.35);
 
   Widget _sectionHeader(String title) {
     return Padding(
@@ -2587,7 +4553,11 @@ class _SettingsPanelState extends State<SettingsPanel> {
             // 전원 + 모드
             Row(
               children: [
-                Icon(Icons.train, size: 18, color: isActive ? AppColors.success : Colors.grey),
+                Icon(
+                  Icons.train,
+                  size: 18,
+                  color: isActive ? AppColors.success : Colors.grey,
+                ),
                 const SizedBox(width: AppSpacing.sm),
                 Text(
                   isActive ? (isDemo ? 'DEMO 실행 중' : 'LIVE 실행 중') : '꺼짐',
@@ -2607,10 +4577,16 @@ class _SettingsPanelState extends State<SettingsPanel> {
                       setState(() {});
                     },
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 3),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.sm,
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
-                        color: (isDemo ? AppColors.warning : AppColors.accent).withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                        color: (isDemo ? AppColors.warning : AppColors.accent)
+                            .withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(
+                          AppSpacing.radiusMd,
+                        ),
                         border: Border.all(
                           color: isDemo ? AppColors.warning : AppColors.accent,
                           width: 0.8,
@@ -2641,7 +4617,9 @@ class _SettingsPanelState extends State<SettingsPanel> {
                   semanticLabel: isActive ? '지하철 끄기' : '지하철 켜기',
                   size: AppSpacing.buttonSm,
                   iconSize: 14,
-                  color: isActive ? AppColors.success.withValues(alpha: 0.2) : AppColors.surfaceOverlay,
+                  color: isActive
+                      ? AppColors.success.withValues(alpha: 0.2)
+                      : AppColors.surfaceOverlay,
                   borderColor: isActive ? AppColors.success : Colors.grey,
                 ),
               ],
@@ -2652,12 +4630,18 @@ class _SettingsPanelState extends State<SettingsPanel> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('열차 ${ctrl.currentTrains.length}대',
-                      style: AppTypography.caption.copyWith(color: _panelTextSecondary)),
+                  Text(
+                    '열차 ${ctrl.currentTrains.length}대',
+                    style: AppTypography.caption.copyWith(
+                      color: _panelTextSecondary,
+                    ),
+                  ),
                   if (ctrl.lastUpdate != null)
                     Text(
                       '갱신 ${ctrl.lastUpdate!.hour.toString().padLeft(2, '0')}:${ctrl.lastUpdate!.minute.toString().padLeft(2, '0')}:${ctrl.lastUpdate!.second.toString().padLeft(2, '0')}',
-                      style: AppTypography.caption.copyWith(color: _panelTextMuted),
+                      style: AppTypography.caption.copyWith(
+                        color: _panelTextMuted,
+                      ),
                     ),
                 ],
               ),
@@ -2681,7 +4665,11 @@ class _SettingsPanelState extends State<SettingsPanel> {
             // 상태 표시
             Row(
               children: [
-                Icon(Icons.directions_bus, size: 18, color: isActive ? BusColors.trunk : Colors.grey),
+                Icon(
+                  Icons.directions_bus,
+                  size: 18,
+                  color: isActive ? BusColors.trunk : Colors.grey,
+                ),
                 const SizedBox(width: 8),
                 Text(
                   isActive ? '버스 ${ctrl.totalBusCount}대 표시 중' : '노선을 선택하세요',
@@ -2694,8 +4682,14 @@ class _SettingsPanelState extends State<SettingsPanel> {
                 const Spacer(),
                 if (isActive)
                   GestureDetector(
-                    onTap: () { ctrl.stop(); setState(() {}); },
-                    child: Text('전체 끄기', style: TextStyle(color: _panelTextMuted, fontSize: 12)),
+                    onTap: () {
+                      ctrl.stop();
+                      setState(() {});
+                    },
+                    child: Text(
+                      '전체 끄기',
+                      style: TextStyle(color: _panelTextMuted, fontSize: 12),
+                    ),
                   ),
               ],
             ),
@@ -2707,9 +4701,15 @@ class _SettingsPanelState extends State<SettingsPanel> {
                 runSpacing: 6,
                 children: ctrl.trackedRoutes.map((route) {
                   return GestureDetector(
-                    onTap: () { ctrl.removeRoute(route.routeId); setState(() {}); },
+                    onTap: () {
+                      ctrl.removeRoute(route.routeId);
+                      setState(() {});
+                    },
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
                       decoration: BoxDecoration(
                         color: route.color.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(8),
@@ -2718,8 +4718,14 @@ class _SettingsPanelState extends State<SettingsPanel> {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text(route.routeName,
-                            style: TextStyle(color: route.color, fontSize: 13, fontWeight: FontWeight.bold)),
+                          Text(
+                            route.routeName,
+                            style: TextStyle(
+                              color: route.color,
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                           const SizedBox(width: 4),
                           Icon(Icons.close, size: 12, color: route.color),
                         ],
@@ -2742,7 +4748,10 @@ class _SettingsPanelState extends State<SettingsPanel> {
             }),
             const SizedBox(height: 12),
             // 인기 노선 프리셋 (탭해서 추가)
-            Text('노선 추가', style: TextStyle(fontSize: 12, color: _panelTextSecondary)),
+            Text(
+              '노선 추가',
+              style: TextStyle(fontSize: 12, color: _panelTextSecondary),
+            ),
             const SizedBox(height: 8),
             Wrap(
               spacing: 6,
@@ -2754,20 +4763,29 @@ class _SettingsPanelState extends State<SettingsPanel> {
                 final color = BusColors.fromRouteType(type);
                 final added = ctrl.trackedRoutes.any((r) => r.routeId == id);
                 return GestureDetector(
-                  onTap: added ? null : () async {
-                    await ctrl.addRoute(BusRouteInfo(
-                      busRouteId: id,
-                      busRouteNm: name,
-                      routeType: type,
-                      stStationNm: '',
-                      edStationNm: '',
-                    ));
-                    setState(() {});
-                  },
+                  onTap: added
+                      ? null
+                      : () async {
+                          await ctrl.addRoute(
+                            BusRouteInfo(
+                              busRouteId: id,
+                              busRouteNm: name,
+                              routeType: type,
+                              stStationNm: '',
+                              edStationNm: '',
+                            ),
+                          );
+                          setState(() {});
+                        },
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 5,
+                    ),
                     decoration: BoxDecoration(
-                      color: added ? color.withValues(alpha: 0.3) : color.withValues(alpha: 0.08),
+                      color: added
+                          ? color.withValues(alpha: 0.3)
+                          : color.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
                         color: added ? color : color.withValues(alpha: 0.4),
@@ -2802,8 +4820,11 @@ class _SettingsPanelState extends State<SettingsPanel> {
           children: [
             Row(
               children: [
-                Icon(Icons.flight, size: 18,
-                    color: ctrl.isActive ? Colors.white : Colors.grey),
+                Icon(
+                  Icons.flight,
+                  size: 18,
+                  color: ctrl.isActive ? Colors.white : Colors.grey,
+                ),
                 const SizedBox(width: 8),
                 Text(
                   ctrl.isActive
@@ -2812,7 +4833,9 @@ class _SettingsPanelState extends State<SettingsPanel> {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
-                    color: ctrl.isActive ? _panelTextPrimary : _panelTextSecondary,
+                    color: ctrl.isActive
+                        ? _panelTextPrimary
+                        : _panelTextSecondary,
                   ),
                 ),
                 const Spacer(),
@@ -2826,9 +4849,13 @@ class _SettingsPanelState extends State<SettingsPanel> {
                       setState(() {});
                     },
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
-                        color: (isDemo ? AppColors.warning : AppColors.accent).withValues(alpha: 0.2),
+                        color: (isDemo ? AppColors.warning : AppColors.accent)
+                            .withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
                           color: isDemo ? AppColors.warning : AppColors.accent,
@@ -2882,7 +4909,11 @@ class _SettingsPanelState extends State<SettingsPanel> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          ),
           const SizedBox(width: 4),
           Text(label, style: TextStyle(fontSize: 10, color: _panelTextMuted)),
         ],
@@ -2909,11 +4940,17 @@ class _SettingsPanelState extends State<SettingsPanel> {
               setState(() {});
             }),
             const Divider(height: AppSpacing.md, color: AppColors.divider),
-            _toggleRow('서울시 공공 API (60s)', widget.subwayController.useSeoulApi, (v) {
-              widget.subwayController.setUseSeoulApi(v);
-              setState(() {});
-            }),
-            _toggleRow('네이버 API (5s)', widget.subwayController.useNaverApi, (v) {
+            _toggleRow(
+              '서울시 공공 API (60s)',
+              widget.subwayController.useSeoulApi,
+              (v) {
+                widget.subwayController.setUseSeoulApi(v);
+                setState(() {});
+              },
+            ),
+            _toggleRow('네이버 API (5s)', widget.subwayController.useNaverApi, (
+              v,
+            ) {
               widget.subwayController.setUseNaverApi(v);
               setState(() {});
             }),
@@ -2933,14 +4970,24 @@ class _SettingsPanelState extends State<SettingsPanel> {
           children: [
             Row(
               children: [
-                Text('표시할 노선 선택', style: AppTypography.caption.copyWith(color: _panelTextSecondary)),
+                Text(
+                  '표시할 노선 선택',
+                  style: AppTypography.caption.copyWith(
+                    color: _panelTextSecondary,
+                  ),
+                ),
                 const Spacer(),
                 GestureDetector(
                   onTap: () {
                     ctrl.setLineFilter(null);
                     setState(() {});
                   },
-                  child: Text('전체', style: AppTypography.caption.copyWith(color: AppColors.accent)),
+                  child: Text(
+                    '전체',
+                    style: AppTypography.caption.copyWith(
+                      color: AppColors.accent,
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -2952,7 +4999,8 @@ class _SettingsPanelState extends State<SettingsPanel> {
                 final lineId = entry.key;
                 final color = entry.value;
                 final name = SubwayColors.lineNames[lineId] ?? lineId;
-                final isSelected = ctrl.selectedLines == null ||
+                final isSelected =
+                    ctrl.selectedLines == null ||
                     ctrl.selectedLines!.contains(lineId);
 
                 return AppFilterChip(
@@ -2960,7 +5008,8 @@ class _SettingsPanelState extends State<SettingsPanel> {
                   color: color,
                   isSelected: isSelected,
                   onTap: () {
-                    final current = ctrl.selectedLines ??
+                    final current =
+                        ctrl.selectedLines ??
                         Set<String>.from(SubwayColors.lineColors.keys);
                     if (current.contains(lineId)) {
                       current.remove(lineId);
@@ -3043,7 +5092,9 @@ class _SettingsPanelState extends State<SettingsPanel> {
                             : Colors.transparent,
                         border: isSelected
                             ? Border.all(
-                                color: _panelTextPrimary.withValues(alpha: 0.15),
+                                color: _panelTextPrimary.withValues(
+                                  alpha: 0.15,
+                                ),
                                 width: 0.5,
                               )
                             : null,
@@ -3056,7 +5107,9 @@ class _SettingsPanelState extends State<SettingsPanel> {
                                 ? _panelTextPrimary
                                 : _panelTextSecondary,
                             fontSize: 14,
-                            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                            fontWeight: isSelected
+                                ? FontWeight.w700
+                                : FontWeight.w500,
                           ),
                         ),
                       ),
@@ -3078,7 +5131,10 @@ class _SettingsPanelState extends State<SettingsPanel> {
                   label: '프레임',
                   value: '${ctrl.animFps} fps',
                   slider: Slider(
-                    value: ctrl.animFps.toDouble().clamp(5, isAndroid ? 30 : 60),
+                    value: ctrl.animFps.toDouble().clamp(
+                      5,
+                      isAndroid ? 30 : 60,
+                    ),
                     min: 5,
                     max: isAndroid ? 30 : 60,
                     divisions: isAndroid ? 5 : 11,
@@ -3125,7 +5181,11 @@ class _SettingsPanelState extends State<SettingsPanel> {
     );
   }
 
-  Widget _sliderRow({required String label, required String value, required Widget slider}) {
+  Widget _sliderRow({
+    required String label,
+    required String value,
+    required Widget slider,
+  }) {
     return Row(
       children: [
         SizedBox(
@@ -3159,7 +5219,9 @@ class _SettingsPanelState extends State<SettingsPanel> {
   Widget _buildLightingSection() {
     final presets = ['auto', 'day', 'night', 'dawn', 'dusk'];
     final labels = ['자동', '주간', '야간', '새벽', '석양'];
-    final selectedIndex = presets.indexOf(_lightPreset).clamp(0, presets.length - 1);
+    final selectedIndex = presets
+        .indexOf(_lightPreset)
+        .clamp(0, presets.length - 1);
 
     return _glassCard(
       child: Padding(
@@ -3178,7 +5240,9 @@ class _SettingsPanelState extends State<SettingsPanel> {
                   if (preset == 'auto') {
                     final env = widget.subwayController.environment;
                     if (env != null) {
-                      widget.mapController?.applyWeatherEffect(lightPreset: env.lightPreset);
+                      widget.mapController?.applyWeatherEffect(
+                        lightPreset: env.lightPreset,
+                      );
                     }
                   } else {
                     widget.mapController?.setLightPreset(preset);
@@ -3208,7 +5272,9 @@ class _SettingsPanelState extends State<SettingsPanel> {
                             ? _panelTextPrimary
                             : _panelTextSecondary,
                         fontSize: 13,
-                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                        fontWeight: isSelected
+                            ? FontWeight.w700
+                            : FontWeight.w500,
                       ),
                     ),
                   ),
@@ -3242,7 +5308,10 @@ class _SettingsPanelState extends State<SettingsPanel> {
             ),
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Divider(height: 1, color: _panelTextMuted.withValues(alpha: 0.15)),
+              child: Divider(
+                height: 1,
+                color: _panelTextMuted.withValues(alpha: 0.15),
+              ),
             ),
             _settingTile(
               icon: Icons.phone_android,
@@ -3251,12 +5320,16 @@ class _SettingsPanelState extends State<SettingsPanel> {
             ),
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Divider(height: 1, color: _panelTextMuted.withValues(alpha: 0.15)),
+              child: Divider(
+                height: 1,
+                color: _panelTextMuted.withValues(alpha: 0.15),
+              ),
             ),
             _settingTile(
               icon: Icons.speed,
               title: '성능 등급',
-              subtitle: '$tierLabel (${dp.profile.animFps}fps · ${dp.profile.naverPollMs}ms)',
+              subtitle:
+                  '$tierLabel (${dp.profile.animFps}fps · ${dp.profile.naverPollMs}ms)',
             ),
           ],
         ),
@@ -3277,15 +5350,18 @@ class _SettingsPanelState extends State<SettingsPanel> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: _panelTextPrimary,
-              )),
-              Text(subtitle, style: TextStyle(
-                fontSize: 12,
-                color: _panelTextMuted,
-              )),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: _panelTextPrimary,
+                ),
+              ),
+              Text(
+                subtitle,
+                style: TextStyle(fontSize: 12, color: _panelTextMuted),
+              ),
             ],
           ),
         ),
@@ -3322,8 +5398,13 @@ class _AiStatusTextState extends State<_AiStatusText> {
       if (widget.text.isEmpty) {
         // 클리어
         _timer?.cancel();
-        setState(() { _fullText = ''; _displayed = ''; _charIndex = 0; });
-      } else if (widget.text.length > _fullText.length && widget.text.startsWith(_fullText)) {
+        setState(() {
+          _fullText = '';
+          _displayed = '';
+          _charIndex = 0;
+        });
+      } else if (widget.text.length > _fullText.length &&
+          widget.text.startsWith(_fullText)) {
         // 이어붙이기 (같은 턴에서 텍스트가 추가됨)
         _fullText = widget.text;
         _continueTyping();
@@ -3345,7 +5426,10 @@ class _AiStatusTextState extends State<_AiStatusText> {
   void _continueTyping() {
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(milliseconds: 30), (t) {
-      if (!mounted || _charIndex >= _fullText.length) { t.cancel(); return; }
+      if (!mounted || _charIndex >= _fullText.length) {
+        t.cancel();
+        return;
+      }
       _charIndex++;
       setState(() => _displayed = _fullText.substring(0, _charIndex));
     });
@@ -3393,100 +5477,281 @@ class _SavedPanel extends StatefulWidget {
 class _SavedPanelState extends State<_SavedPanel> {
   int _tab = 0;
   bool get _isLightTheme => Theme.of(context).brightness == Brightness.light;
-  Color get _tp => _isLightTheme ? Colors.black.withValues(alpha: 0.85) : Colors.white.withValues(alpha: 0.85);
-  Color get _ts => _isLightTheme ? Colors.black.withValues(alpha: 0.55) : Colors.white.withValues(alpha: 0.45);
-  Color get _tm => _isLightTheme ? Colors.black.withValues(alpha: 0.35) : Colors.white.withValues(alpha: 0.35);
+  Color get _tp => _isLightTheme
+      ? Colors.black.withValues(alpha: 0.85)
+      : Colors.white.withValues(alpha: 0.85);
+  Color get _ts => _isLightTheme
+      ? Colors.black.withValues(alpha: 0.55)
+      : Colors.white.withValues(alpha: 0.45);
+  Color get _tm => _isLightTheme
+      ? Colors.black.withValues(alpha: 0.35)
+      : Colors.white.withValues(alpha: 0.35);
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final isM3 = Platform.isAndroid;
-    final content = Column(children: [
-      Padding(padding: const EdgeInsets.only(top: 12), child: Center(child: Container(width: 36, height: 4, decoration: BoxDecoration(borderRadius: BorderRadius.circular(2), color: _tm)))),
-      Padding(padding: const EdgeInsets.fromLTRB(24, 16, 12, 8), child: Row(children: [
-        Text('저장', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: _tp)),
-        const Spacer(),
-        IconButton(icon: Icon(Icons.close, size: 20, color: _ts), onPressed: widget.onClose, visualDensity: VisualDensity.compact),
-      ])),
-      Padding(padding: const EdgeInsets.symmetric(horizontal: 24), child: Container(
-        height: 36,
-        decoration: BoxDecoration(color: _tm.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(10)),
-        child: Row(children: [_tabBtn('즐겨찾기', 0), _tabBtn('최근 방문', 1), _tabBtn('자주 방문', 2)]),
-      )),
-      const SizedBox(height: 8),
-      Expanded(child: _tab == 0 ? _buildFavorites() : _tab == 1 ? _buildRecent() : _buildFrequent()),
-    ]);
+    final content = Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(top: 12),
+          child: Center(
+            child: Container(
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(2),
+                color: _tm,
+              ),
+            ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(24, 16, 12, 8),
+          child: Row(
+            children: [
+              Text(
+                '저장',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w800,
+                  color: _tp,
+                ),
+              ),
+              const Spacer(),
+              IconButton(
+                icon: Icon(Icons.close, size: 20, color: _ts),
+                onPressed: widget.onClose,
+                visualDensity: VisualDensity.compact,
+              ),
+            ],
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Container(
+            height: 36,
+            decoration: BoxDecoration(
+              color: _tm.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(
+              children: [
+                _tabBtn('즐겨찾기', 0),
+                _tabBtn('최근 방문', 1),
+                _tabBtn('자주 방문', 2),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Expanded(
+          child: _tab == 0
+              ? _buildFavorites()
+              : _tab == 1
+              ? _buildRecent()
+              : _buildFrequent(),
+        ),
+      ],
+    );
 
-    if (isM3) return Material(elevation: 6, borderRadius: const BorderRadius.vertical(top: Radius.circular(28)), color: cs.surfaceContainerHigh, surfaceTintColor: cs.surfaceTint, clipBehavior: Clip.antiAlias, child: content);
+    if (isM3)
+      return Material(
+        elevation: 6,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        color: cs.surfaceContainerHigh,
+        surfaceTintColor: cs.surfaceTint,
+        clipBehavior: Clip.antiAlias,
+        child: content,
+      );
 
     final lp = _isLightTheme;
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-      child: BackdropFilter(filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40), child: Container(
-        decoration: BoxDecoration(
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-          gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter,
-            colors: lp ? [Colors.white.withValues(alpha: 0.70), Colors.white.withValues(alpha: 0.75), Colors.white.withValues(alpha: 0.85)]
-                      : [Colors.black.withValues(alpha: 0.40), Colors.black.withValues(alpha: 0.50), Colors.black.withValues(alpha: 0.65)]),
-          border: Border(top: BorderSide(color: lp ? Colors.black.withValues(alpha: 0.08) : Colors.white24, width: 0.5)),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: lp
+                  ? [
+                      Colors.white.withValues(alpha: 0.70),
+                      Colors.white.withValues(alpha: 0.75),
+                      Colors.white.withValues(alpha: 0.85),
+                    ]
+                  : [
+                      Colors.black.withValues(alpha: 0.40),
+                      Colors.black.withValues(alpha: 0.50),
+                      Colors.black.withValues(alpha: 0.65),
+                    ],
+            ),
+            border: Border(
+              top: BorderSide(
+                color: lp
+                    ? Colors.black.withValues(alpha: 0.08)
+                    : Colors.white24,
+                width: 0.5,
+              ),
+            ),
+          ),
+          child: content,
         ),
-        child: content,
-      )),
+      ),
     );
   }
 
   Widget _tabBtn(String label, int index) {
     final sel = _tab == index;
-    return Expanded(child: GestureDetector(onTap: () => setState(() => _tab = index), child: AnimatedContainer(
-      duration: const Duration(milliseconds: 200), margin: const EdgeInsets.all(3),
-      decoration: BoxDecoration(color: sel ? _tp.withValues(alpha: 0.15) : Colors.transparent, borderRadius: BorderRadius.circular(8)),
-      alignment: Alignment.center,
-      child: Text(label, style: TextStyle(fontSize: 11, fontWeight: sel ? FontWeight.w700 : FontWeight.w500, color: sel ? _tp : _ts)),
-    )));
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => setState(() => _tab = index),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          margin: const EdgeInsets.all(3),
+          decoration: BoxDecoration(
+            color: sel ? _tp.withValues(alpha: 0.15) : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: sel ? FontWeight.w700 : FontWeight.w500,
+              color: sel ? _tp : _ts,
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildFavorites() {
     final items = FavoritesService.instance.favorites;
-    if (items.isEmpty) return Center(child: Text('저장한 장소가 없습니다', style: TextStyle(color: _tm)));
-    return ListView.builder(padding: const EdgeInsets.fromLTRB(24, 4, 24, 20), itemCount: items.length, itemBuilder: (_, i) {
-      final f = items[i];
-      return _row(f.name, f.category, f.lat, f.lng, trailing: IconButton(icon: const Icon(Icons.favorite, size: 18, color: Colors.redAccent),
-        onPressed: () async { await FavoritesService.instance.remove(f.name); setState(() {}); }, visualDensity: VisualDensity.compact));
-    });
+    if (items.isEmpty)
+      return Center(
+        child: Text('저장한 장소가 없습니다', style: TextStyle(color: _tm)),
+      );
+    return ListView.builder(
+      padding: const EdgeInsets.fromLTRB(24, 4, 24, 20),
+      itemCount: items.length,
+      itemBuilder: (_, i) {
+        final f = items[i];
+        return _row(
+          f.name,
+          f.category,
+          f.lat,
+          f.lng,
+          trailing: IconButton(
+            icon: const Icon(Icons.favorite, size: 18, color: Colors.redAccent),
+            onPressed: () async {
+              await FavoritesService.instance.remove(f.name);
+              setState(() {});
+            },
+            visualDensity: VisualDensity.compact,
+          ),
+        );
+      },
+    );
   }
 
   Widget _buildRecent() {
     final items = VisitHistoryService.instance.recentVisits;
-    if (items.isEmpty) return Center(child: Text('방문 기록이 없습니다', style: TextStyle(color: _tm)));
-    return ListView.builder(padding: const EdgeInsets.fromLTRB(24, 4, 24, 20), itemCount: items.length, itemBuilder: (_, i) {
-      final r = items[i];
-      final ago = DateTime.now().difference(r.visitedAt);
-      final s = ago.inDays > 0 ? '${ago.inDays}일 전' : ago.inHours > 0 ? '${ago.inHours}시간 전' : '방금';
-      return _row(r.name, r.category, r.lat, r.lng, trailing: Text(s, style: TextStyle(fontSize: 10, color: _tm)));
-    });
+    if (items.isEmpty)
+      return Center(
+        child: Text('방문 기록이 없습니다', style: TextStyle(color: _tm)),
+      );
+    return ListView.builder(
+      padding: const EdgeInsets.fromLTRB(24, 4, 24, 20),
+      itemCount: items.length,
+      itemBuilder: (_, i) {
+        final r = items[i];
+        final ago = DateTime.now().difference(r.visitedAt);
+        final s = ago.inDays > 0
+            ? '${ago.inDays}일 전'
+            : ago.inHours > 0
+            ? '${ago.inHours}시간 전'
+            : '방금';
+        return _row(
+          r.name,
+          r.category,
+          r.lat,
+          r.lng,
+          trailing: Text(s, style: TextStyle(fontSize: 10, color: _tm)),
+        );
+      },
+    );
   }
 
   Widget _buildFrequent() {
     final items = VisitHistoryService.instance.frequentVisits;
-    if (items.isEmpty) return Center(child: Text('방문 기록이 없습니다', style: TextStyle(color: _tm)));
-    return ListView.builder(padding: const EdgeInsets.fromLTRB(24, 4, 24, 20), itemCount: items.length, itemBuilder: (_, i) {
-      final r = items[i];
-      return _row(r.name, r.category, r.lat, r.lng, trailing: Text('${r.visitCount}회', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: _ts)));
-    });
+    if (items.isEmpty)
+      return Center(
+        child: Text('방문 기록이 없습니다', style: TextStyle(color: _tm)),
+      );
+    return ListView.builder(
+      padding: const EdgeInsets.fromLTRB(24, 4, 24, 20),
+      itemCount: items.length,
+      itemBuilder: (_, i) {
+        final r = items[i];
+        return _row(
+          r.name,
+          r.category,
+          r.lat,
+          r.lng,
+          trailing: Text(
+            '${r.visitCount}회',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: _ts,
+            ),
+          ),
+        );
+      },
+    );
   }
 
-  Widget _row(String name, String category, double lat, double lng, {Widget? trailing}) {
-    return GestureDetector(onTap: () => widget.onPlaceTap(lat, lng, name), behavior: HitTestBehavior.opaque, child: Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      child: Row(children: [
-        Icon(Icons.place, size: 18, color: _ts), const SizedBox(width: 10),
-        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(name, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: _tp)),
-          if (category.isNotEmpty) Text(category, style: TextStyle(fontSize: 11, color: _ts)),
-        ])),
-        if (trailing != null) trailing,
-      ]),
-    ));
+  Widget _row(
+    String name,
+    String category,
+    double lat,
+    double lng, {
+    Widget? trailing,
+  }) {
+    return GestureDetector(
+      onTap: () => widget.onPlaceTap(lat, lng, name),
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        child: Row(
+          children: [
+            Icon(Icons.place, size: 18, color: _ts),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: _tp,
+                    ),
+                  ),
+                  if (category.isNotEmpty)
+                    Text(category, style: TextStyle(fontSize: 11, color: _ts)),
+                ],
+              ),
+            ),
+            if (trailing != null) trailing,
+          ],
+        ),
+      ),
+    );
   }
 }
-
