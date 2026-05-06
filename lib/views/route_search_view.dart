@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../services/path_finding_service.dart';
 import '../models/subway_models.dart';
+import '../widgets/bus_overlay.dart';
 
 class RouteSearchOverlay extends StatefulWidget {
   const RouteSearchOverlay({
@@ -16,6 +17,20 @@ class RouteSearchOverlay extends StatefulWidget {
 
   @override
   State<RouteSearchOverlay> createState() => _RouteSearchOverlayState();
+}
+
+/// 구간 색상 헬퍼: 지하철 → SubwayColors, 버스 → BusColors
+Color _segmentColor(PathSegment seg) {
+  if (seg.mode == TransportMode.bus) {
+    final ref = seg.lineId.startsWith('bus_') ? seg.lineId.substring(4) : '';
+    final num = int.tryParse(ref);
+    if (num != null && num >= 100 && num <= 999) return BusColors.trunk;
+    if (num != null && num >= 1000) return BusColors.branch;
+    if (ref.startsWith('M')) return BusColors.express;
+    if (ref.startsWith('N')) return BusColors.night;
+    return BusColors.branch;
+  }
+  return SubwayColors.lineColors[seg.lineId] ?? Colors.grey;
 }
 
 class _RouteSearchOverlayState extends State<RouteSearchOverlay>
@@ -283,7 +298,7 @@ class _RouteSearchOverlayState extends State<RouteSearchOverlay>
               Expanded(
                 flex: (segments[i].travelTimeSec * 100 / totalTime).round().clamp(1, 100),
                 child: Container(
-                  color: SubwayColors.lineColors[segments[i].lineId] ?? Colors.grey,
+                  color: _segmentColor(segments[i]),
                 ),
               ),
             ],
@@ -300,7 +315,7 @@ class _RouteSearchOverlayState extends State<RouteSearchOverlay>
     steps.add(_RouteStep(
       dotColor: const Color(0xFF34C759),
       lineColor: _r.segments.isNotEmpty
-          ? (SubwayColors.lineColors[_r.segments.first.lineId] ?? Colors.grey)
+          ? (_segmentColor(_r.segments.first))
           : Colors.grey,
       title: _r.departure,
       subtitle: '출발',
@@ -309,12 +324,12 @@ class _RouteSearchOverlayState extends State<RouteSearchOverlay>
 
     for (int i = 0; i < _r.segments.length; i++) {
       final seg = _r.segments[i];
-      final lineColor = SubwayColors.lineColors[seg.lineId] ?? Colors.grey;
+      final lineColor = _segmentColor(seg);
 
       if (seg.isTransfer) {
         // 환승 구간
         final nextColor = i + 1 < _r.segments.length
-            ? (SubwayColors.lineColors[_r.segments[i + 1].lineId] ?? Colors.grey)
+            ? (_segmentColor(_r.segments[i + 1]))
             : Colors.grey;
         steps.add(_RouteStep(
           dotColor: Colors.white,
@@ -330,17 +345,18 @@ class _RouteSearchOverlayState extends State<RouteSearchOverlay>
         final isExpanded = _expandedSegments.contains(i);
         final isLast = i == _r.segments.length - 1;
         final nextLineColor = !isLast && i + 1 < _r.segments.length
-            ? (SubwayColors.lineColors[_r.segments[i + 1].lineId] ?? Colors.grey)
+            ? (_segmentColor(_r.segments[i + 1]))
             : null;
 
+        final isBus = seg.mode == TransportMode.bus;
         steps.add(_RouteStep(
           dotColor: lineColor,
           lineColor: isLast ? null : (nextLineColor ?? lineColor),
           title: '${seg.lineName} 승차',
           subtitle: stationCount > 1
-              ? '${seg.stations.first} → ${seg.stations.last} · ${stationCount}개 역 · $timeMins분'
+              ? '${seg.stations.first} → ${seg.stations.last} · ${stationCount}개 ${isBus ? "정류장" : "역"} · $timeMins분'
               : '${seg.stations.firstOrNull ?? ""} · $timeMins분',
-          icon: Icons.train_rounded,
+          icon: isBus ? Icons.directions_bus_rounded : Icons.train_rounded,
           badge: seg.lineName,
           badgeColor: lineColor,
           expandable: stationCount > 2,
