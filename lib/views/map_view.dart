@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:developer' as developer;
 import 'dart:io';
 import 'dart:ui';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
@@ -2008,6 +2009,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
   // 실시간 위치 스트림 — 길찾기 결과 표시 중 활성 구간 추적/도착 정보 즉시 갱신용.
   StreamSubscription<geo.Position>? _navLocationSub;
 
+  /// 사용자가 지정한 출발 시각. null 이면 현재 시각.
+  /// 결과 시트의 "출발 → 도착" 시각 표시에만 사용 (그래프 비용은 시간 의존성 없음).
+  DateTime? _customDepartureTime;
+
   /// 모든 탑승 구간의 실시간 도착 정보 시작 (15초 주기) + 자동 위치 추적.
   void _loadBoardingArrival(PathResult route) {
     _arrivalRefreshTimer?.cancel();
@@ -2283,6 +2288,97 @@ class _DashboardScreenState extends State<DashboardScreen> {
       _routeNavigationActive = false;
       _routeNavigationManual = false;
     });
+  }
+
+  /// 출발 시각 변경 picker. 빠른 옵션(지금/30분 후/1시간 후) + 직접 지정.
+  void _showDepartureTimePicker() {
+    showCupertinoModalPopup(
+      context: context,
+      builder: (ctx) => CupertinoActionSheet(
+        title: const Text('출발 시각'),
+        message: _customDepartureTime != null
+            ? const Text('지정된 시각 기준으로 도착 시각이 계산됩니다.')
+            : null,
+        actions: [
+          CupertinoActionSheetAction(
+            onPressed: () {
+              setState(() => _customDepartureTime = null);
+              Navigator.pop(ctx);
+            },
+            child: const Text('지금'),
+          ),
+          CupertinoActionSheetAction(
+            onPressed: () {
+              setState(
+                () => _customDepartureTime = DateTime.now().add(
+                  const Duration(minutes: 30),
+                ),
+              );
+              Navigator.pop(ctx);
+            },
+            child: const Text('30분 후'),
+          ),
+          CupertinoActionSheetAction(
+            onPressed: () {
+              setState(
+                () => _customDepartureTime = DateTime.now().add(
+                  const Duration(hours: 1),
+                ),
+              );
+              Navigator.pop(ctx);
+            },
+            child: const Text('1시간 후'),
+          ),
+          CupertinoActionSheetAction(
+            onPressed: () {
+              Navigator.pop(ctx);
+              _pickCustomDepartureTime();
+            },
+            child: const Text('직접 지정'),
+          ),
+        ],
+        cancelButton: CupertinoActionSheetAction(
+          onPressed: () => Navigator.pop(ctx),
+          isDefaultAction: true,
+          child: const Text('취소'),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickCustomDepartureTime() async {
+    DateTime selected = _customDepartureTime ?? DateTime.now();
+    await showCupertinoModalPopup(
+      context: context,
+      builder: (ctx) => Container(
+        height: 280,
+        color: CupertinoColors.systemBackground.resolveFrom(ctx),
+        child: SafeArea(
+          top: false,
+          child: Column(
+            children: [
+              Expanded(
+                child: CupertinoDatePicker(
+                  mode: CupertinoDatePickerMode.dateAndTime,
+                  initialDateTime: selected,
+                  minimumDate: DateTime.now().subtract(
+                    const Duration(minutes: 1),
+                  ),
+                  onDateTimeChanged: (dt) => selected = dt,
+                ),
+              ),
+              CupertinoButton(
+                onPressed: () {
+                  setState(() => _customDepartureTime = selected);
+                  Navigator.pop(ctx);
+                },
+                child: const Text('확인'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   void _advanceNavigationStep() {
@@ -3870,13 +3966,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ],
       // ── 큰 시간 + 출발~도착 시각 + 요금 ──
       () {
-        final now = DateTime.now();
+        // _customDepartureTime 이 지정돼 있으면 그 시각, 아니면 현재 시각 기준.
+        final depTime = _customDepartureTime ?? DateTime.now();
         final totalSec = _transportMode == 0
             ? r.totalTimeSec
             : (_directionsCache[_transportMode]?.durationSec ?? 0);
-        final arriveTime = now.add(Duration(seconds: totalSec));
+        final arriveTime = depTime.add(Duration(seconds: totalSec));
         final depStr =
-            '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+            '${depTime.hour.toString().padLeft(2, '0')}:${depTime.minute.toString().padLeft(2, '0')}';
         final arrStr =
             '${arriveTime.hour.toString().padLeft(2, '0')}:${arriveTime.minute.toString().padLeft(2, '0')}';
         // 기본 요금 계산 (지하철 1,400원 + 환승 0원)
@@ -3907,12 +4004,35 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ),
             const SizedBox(height: 4),
-            // 출발 시각 → 도착 시각 + 요금
+            // 출발 시각 → 도착 시각 + 요금. 출발 시각 탭하면 변경 picker.
             Row(
               children: [
-                Text(
-                  '$depStr 출발',
-                  style: TextStyle(fontSize: 14, color: mutedColor),
+                GestureDetector(
+                  onTap: _showDepartureTimePicker,
+                  behavior: HitTestBehavior.opaque,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        '$depStr 출발',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: _customDepartureTime != null
+                              ? onSurface
+                              : mutedColor,
+                          fontWeight: _customDepartureTime != null
+                              ? FontWeight.w600
+                              : FontWeight.normal,
+                        ),
+                      ),
+                      const SizedBox(width: 3),
+                      Icon(
+                        CupertinoIcons.chevron_down,
+                        size: 11,
+                        color: mutedColor,
+                      ),
+                    ],
+                  ),
                 ),
                 Text(' — ', style: TextStyle(fontSize: 14, color: mutedColor)),
                 Text(
