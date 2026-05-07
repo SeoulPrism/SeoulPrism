@@ -33,7 +33,7 @@ class SubwayOverlayController {
   final TrainInterpolator _interpolator = TrainInterpolator();
   final TrainSimulator _simulator = TrainSimulator();
   final RouteGeometry _routeGeometry = RouteGeometry();
-  final EnvironmentService _envService = EnvironmentService();
+  final EnvironmentService _envService = EnvironmentService.instance;
 
   IMapController? _mapController;
   Timer? _refreshTimer;
@@ -209,16 +209,17 @@ class SubwayOverlayController {
     _selectedStationArrivals = [];
     _stationLoading = true;
 
-    // 카메라를 역으로 이동 — OSM 스냅 좌표 우선 (지도 위 점과 동일 위치)
+    // 카메라를 역으로 이동 — 가운데 노선의 스냅 좌표 사용
     double? lat, lng;
-    // RouteGeometry에서 스냅 좌표 찾기 (모든 노선에서)
+    final allPositions = <List<double>>[];
     for (final lineId in SeoulSubwayData.lineIdToApiName.keys) {
       final snapped = _routeGeometry.getStationPosition(lineId, stationName);
-      if (snapped != null) {
-        lat = snapped[0];
-        lng = snapped[1];
-        break;
-      }
+      if (snapped != null) allPositions.add(snapped);
+    }
+    if (allPositions.isNotEmpty) {
+      final mid = allPositions[allPositions.length ~/ 2];
+      lat = mid[0];
+      lng = mid[1];
     }
     // 스냅 좌표 없으면 StationInfo 좌표 폴백
     lat ??= _selectedStationInfo?.lat;

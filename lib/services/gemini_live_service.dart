@@ -26,6 +26,13 @@ enum AiAction {
   addPlaces,
   removePlace,
   confirmPlan,
+  // v2 추가 액션
+  findRoute,          // 길찾기 (출발, 도착)
+  toggleSatellite,    // 위성지도 ���글
+  addFavorite,        // ���겨찾기 추가
+  openRecommendation, // 추천 탭 열기
+  openSaved,          // 저장 탭 열기
+  moveToLocation,     // 특정 좌표로 이동
 }
 
 /// AI가 실행할 액션 데이터
@@ -180,7 +187,10 @@ class GeminiLiveService {
           _handleResponse(response);
         }
       } catch (e) {
-        debugPrint('[GeminiLive] Receive error: $e');
+        // WebSocket 정상 종료 시 무시 (idle timeout)
+        if (!e.toString().contains('1006')) {
+          debugPrint('[GeminiLive] Receive error: $e');
+        }
         break;
       }
       await Future.delayed(const Duration(milliseconds: 100));

@@ -1,3 +1,4 @@
+import '../core/debug_log.dart';
 import 'dart:math';
 import 'package:flutter/foundation.dart';
 import '../models/subway_models.dart';
@@ -117,7 +118,7 @@ class TrainSimulator {
       _simTrains[lineId] = trains;
     }
 
-    debugPrint('[TrainSimulator] 데모 열차 초기화: '
+    DebugLog.log('[TrainSimulator] 데모 열차 초기화: '
         '${_simTrains.values.fold<int>(0, (s, l) => s + l.length)}개');
   }
 
@@ -501,9 +502,9 @@ class TrainSimulator {
     }
 
     final avgError = matched > 0 ? totalError ~/ matched : 0;
-    debugPrint('[TrainSim] === 정확도 (학습 ${_observedTravelMs.length}구간) ===');
-    debugPrint('[TrainSim] 전체: ${_segments.length}세그먼트, API ${observed.length}대, 비교 $matched대');
-    debugPrint('[TrainSim] 평균오차: ${avgError}m / 최대: ${maxError}m');
+    DebugLog.log('[TrainSim] === 정확도 (학습 ${_observedTravelMs.length}구간) ===');
+    DebugLog.log('[TrainSim] 전체: ${_segments.length}세그먼트, API ${observed.length}대, 비교 $matched대');
+    DebugLog.log('[TrainSim] 평균오차: ${avgError}m / 최대: ${maxError}m');
 
     // 노선별 요약
     final lineNames = SubwayColors.lineNames;
@@ -513,8 +514,8 @@ class TrainSimulator {
       final avgErr = count > 0 ? entry.value[1] ~/ count : 0;
       final name = lineNames[id] ?? id;
       final sample = samplePerLine[id] ?? '';
-      debugPrint('[TrainSim] $name: ${count}대 평균${avgErr}m');
-      if (sample.isNotEmpty) debugPrint(sample);
+      DebugLog.log('[TrainSim] $name: ${count}대 평균${avgErr}m');
+      if (sample.isNotEmpty) DebugLog.log(sample);
     }
   }
 

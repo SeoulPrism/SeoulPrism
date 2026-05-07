@@ -222,6 +222,18 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
         return 'remove_place';
       case AiAction.confirmPlan:
         return 'confirm_plan';
+      case AiAction.findRoute:
+        return 'find_route';
+      case AiAction.toggleSatellite:
+        return 'toggle_satellite';
+      case AiAction.addFavorite:
+        return 'add_favorite';
+      case AiAction.openRecommendation:
+        return 'open_recommendation';
+      case AiAction.openSaved:
+        return 'open_saved';
+      case AiAction.moveToLocation:
+        return 'move_to_location';
     }
   }
 
@@ -291,6 +303,18 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
           'status': 'success',
           'message': '일정을 생성했습니다. 사용자에게 일정이 만들어졌다고 안내해.',
         };
+      case AiAction.findRoute:
+        return {'status': 'success', 'message': '길찾기를 시작했습니다.'};
+      case AiAction.toggleSatellite:
+        return {'status': 'success', 'message': '위성지도를 토글했습니다.'};
+      case AiAction.addFavorite:
+        return {'status': 'success', 'message': '즐겨찾기에 추가/삭제했습니다.'};
+      case AiAction.openRecommendation:
+        return {'status': 'success', 'message': '추천 탭을 열었습니다.'};
+      case AiAction.openSaved:
+        return {'status': 'success', 'message': '저장 탭을 열었습니다.'};
+      case AiAction.moveToLocation:
+        return {'status': 'success', 'message': '해당 위치로 이동했습니다.'};
     }
   }
 

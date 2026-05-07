@@ -38,6 +38,18 @@ abstract class IMapController {
   /// 모든 폴리라인 제거
   void clearPolylines() {}
 
+  /// 화살표 마커 추가 (경로 방향 표시)
+  Future<void> addArrowMarker(String id, double lat, double lng, {
+    required double bearing,
+    Color color = Colors.white,
+  }) async {}
+
+  /// 경로 화살표 일괄 업데이트 (SymbolLayer)
+  Future<void> updateRouteArrows(List<Map<String, dynamic>> arrows) async {}
+
+  /// 경로 화살표 제거
+  Future<void> clearRouteArrows() async {}
+
   /// 원형 마커 추가 (열차 위치 표시)
   Future<void> addCircleMarker(String id, double lat, double lng, {
     Color color = Colors.red,
@@ -97,11 +109,48 @@ abstract class IMapController {
   /// 맵 어디든 탭 시 호출 (키보드 dismiss 등 용도)
   void setOnAnyMapTap(VoidCallback? callback) {}
 
+  /// 현재 위치 표시 활성화 (location puck)
+  Future<void> enableLocationPuck() async {}
+
+  /// 현재 위치로 카메라 이동
+  Future<void> moveToCurrentLocation() async {}
+
+  /// 위성지도 레이어 토글
+  void setSatelliteVisible(bool visible) {}
+
+  /// 실시간 교통정보 토글
+  void setTrafficVisible(bool visible) {}
+
+  /// 장소 핀 마커 표시 (빨간 드롭 핀)
+  Future<void> showPlacePin(double lat, double lng, {String? label}) async {}
+
+  /// 장소 핀 마커 제거
+  void removePlacePin() {}
+
+  /// POI 탭 콜백 설정 (지도 위 장소 아이콘 클릭 시)
+  void setOnPoiTapped(void Function(String name, double lat, double lng)? callback) {}
+
+  /// 좌표 기반 탭 콜백 (빈 곳 탭 시 좌표 전달)
+  void setOnMapCoordTapped(void Function(double lat, double lng)? callback) {}
+
+  /// 주변 POI 마커 표시 (카카오 데이터)
+  Future<void> showNearbyPoi(List<Map<String, dynamic>> pois) async {}
+
+  /// 주변 POI 마커 제거
+  void clearNearbyPoi() {}
+
+  /// 카메라 이동 완료 콜백
+  void setOnCameraIdle(void Function(double lat, double lng, double zoom)? callback) {}
+
   /// 선택된 열차 번호 설정 (하이라이트 표시용)
   void setSelectedTrain(String? trainNo) {}
 
   /// 선택된 역 이름 설정 (하이라이트 표시용)
   void setSelectedStation(String? stationName) {}
+
+  /// 한강버스 선착장/배 바닥 glow 표시
+  void showRiverBusHighlight(double lat, double lng) {}
+  void hideRiverBusHighlight() {}
 
   /// 날씨 시각 효과 적용 (안개, 비, 눈 등)
   void applyWeatherEffect({
@@ -121,6 +170,81 @@ abstract class IMapController {
 
   /// 혼잡도 히트맵 표시/숨김
   void setCongestionVisible(bool visible) {}
+
+  // ── 버스 3D 시각화 ──
+
+  /// 버스 탭 콜백 설정
+  void setOnBusTapped(void Function(String vehId)? callback) {}
+
+  // ── 리버버스 3D 시각화 ──
+  Future<void> initRiverBusLayers() async {}
+  void cleanupRiverBusLayers() {}
+  Future<void> updateRiverBusPositions3D(List<BusRenderData> vessels) async {}
+
+  /// 비행기 탭 콜백 설정
+  void setOnFlightTapped(void Function(String icao24)? callback) {}
+
+  // ── 항공기 3D 시각화 ──
+
+  /// 항공기 3D 레이어 초기화
+  Future<void> initFlightLayers() async {}
+
+  /// 항공기 3D 레이어 정리
+  void cleanupFlightLayers() {}
+
+  /// 항공기 위치 일괄 업데이트 (3D — 고도 비례 높이)
+  Future<void> updateFlightPositions3D(List<FlightRenderData> flights) async {}
+
+  /// 버스 3D 레이어 초기화
+  Future<void> initBusLayers() async {}
+
+  /// 버스 3D 레이어 정리
+  void cleanupBusLayers() {}
+
+  /// 버스 위치 일괄 업데이트 (3D 블록)
+  Future<void> updateBusPositions3D(List<BusRenderData> buses) async {}
+}
+
+/// 항공기 렌더링 데이터
+class FlightRenderData {
+  final String icao24;
+  final String callsign;
+  final double lat;
+  final double lng;
+  final double altitude; // 미터
+  final double bearing;
+  final String color;
+  final bool onGround;
+
+  FlightRenderData({
+    required this.icao24,
+    required this.callsign,
+    required this.lat,
+    required this.lng,
+    required this.altitude,
+    required this.bearing,
+    required this.color,
+    required this.onGround,
+  });
+}
+
+/// 버스 렌더링 데이터
+class BusRenderData {
+  final String vehId;
+  final double lat;
+  final double lng;
+  final double bearing;
+  final String color; // rgba 문자열
+  final int congestion; // 0~6
+
+  BusRenderData({
+    required this.vehId,
+    required this.lat,
+    required this.lng,
+    required this.bearing,
+    required this.color,
+    required this.congestion,
+  });
 }
 
 class CameraInfo {
