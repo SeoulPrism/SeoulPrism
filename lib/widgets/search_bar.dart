@@ -14,6 +14,7 @@ import 'search_bar/recent_routes_panel.dart';
 import 'search_bar/search_tiles.dart';
 import 'search_bar/search_dropdowns.dart';
 import 'search_bar/recent_search_dropdown.dart';
+import 'search_bar/route_chip.dart';
 import '../data/seoul_subway_data.dart';
 import '../models/subway_models.dart';
 import '../models/bus_models.dart';
@@ -1117,7 +1118,7 @@ class UnifiedSearchBarState extends State<UnifiedSearchBar>
                 itemBuilder: (_, i) {
                   final chip = chipData[i];
                   final selected = chip.type == _searchType;
-                  return _buildRouteChip(
+                  return RouteChip(
                     label: chip.label,
                     time: chip.time,
                     selected: selected,
@@ -1168,57 +1169,6 @@ class UnifiedSearchBarState extends State<UnifiedSearchBar>
     _findPath();
   }
 
-  Widget _buildRouteChip({
-    required String label,
-    required String time,
-    required bool selected,
-    required VoidCallback onTap,
-  }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textColor = isDark ? Colors.white : Colors.black;
-
-    if (Platform.isIOS) {
-      return CNButton(
-        label: '$label  |  $time',
-        onPressed: onTap,
-        tint: textColor,
-        config: CNButtonConfig(
-          style: selected ? CNButtonStyle.prominentGlass : CNButtonStyle.glass,
-          minHeight: 40,
-        ),
-      );
-    }
-
-    return SizedBox(
-      height: 40,
-      child: selected
-          ? FilledButton.tonal(
-              onPressed: onTap,
-              style: FilledButton.styleFrom(
-                foregroundColor: textColor,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                textStyle: AppTypography.bodySm.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              child: Text('$label  |  $time'),
-            )
-          : OutlinedButton(
-              onPressed: onTap,
-              style: OutlinedButton.styleFrom(
-                foregroundColor: textColor,
-                side: BorderSide(color: textColor.withValues(alpha: 0.2)),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                textStyle: AppTypography.bodySm,
-              ),
-              child: Text('$label  |  $time'),
-            ),
-    );
-  }
 
   Widget _buildNavHeader() {
     return Container(
