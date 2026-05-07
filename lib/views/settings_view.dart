@@ -219,11 +219,6 @@ class _SettingsViewState extends State<SettingsView> {
                   return AdaptiveSectionCard(
                     children: [
                       _ChevronItem(
-                        label: '이름 변경',
-                        onTap: () => _editUsername(),
-                      ),
-                      const _ItemDivider(),
-                      _ChevronItem(
                         label: '정식 계정으로 전환',
                         onTap: () => Navigator.push(
                           context,
