@@ -1,3 +1,4 @@
+import '../core/debug_log.dart';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
@@ -107,10 +108,10 @@ class ClosureService {
       }
 
       _loaded = true;
-      debugPrint('[Closure] ${_closures.length}건 로드 (${_byStation.length}개 역)');
+      DebugLog.log('[Closure] ${_closures.length}건 로드 (${_byStation.length}개 역)');
       return true;
     } catch (e) {
-      debugPrint('[Closure] fetch 실패: $e');
+      DebugLog.log('[Closure] fetch 실패: $e');
       return false;
     }
   }

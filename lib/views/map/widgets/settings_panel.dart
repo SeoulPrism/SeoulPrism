@@ -124,6 +124,9 @@ class _SettingsPanelState extends State<SettingsPanel> {
               const SizedBox(height: 24),
               _sectionHeader('정보'),
               _buildInfoSection(),
+              const SizedBox(height: 24),
+              _sectionHeader('개발자'),
+              _buildDebugSection(),
             ],
           ),
         ),
@@ -1039,6 +1042,22 @@ class _SettingsPanelState extends State<SettingsPanel> {
                   '$tierLabel (${dp.profile.animFps}fps · ${dp.profile.naverPollMs}ms)',
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDebugSection() {
+    return _glassCard(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: _toggleRow(
+          '디버그 로그 출력',
+          SettingsService.instance.debugLogs,
+          (v) {
+            SettingsService.instance.setDebugLogs(v);
+            setState(() {});
+          },
         ),
       ),
     );

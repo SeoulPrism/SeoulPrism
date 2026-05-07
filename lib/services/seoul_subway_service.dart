@@ -1,3 +1,4 @@
+import '../core/debug_log.dart';
 import 'dart:convert';
 import 'dart:async';
 import 'dart:developer' as developer;
@@ -65,7 +66,7 @@ class SeoulSubwayService {
         now.year != _countResetDate.year) {
       _callCount = 0;
       _countResetDate = now;
-      debugPrint('[SeoulSubwayAPI] 🔄 일일 호출 카운터 리셋');
+      DebugLog.log('[SeoulSubwayAPI] 🔄 일일 호출 카운터 리셋');
     }
   }
 
@@ -83,7 +84,7 @@ class SeoulSubwayService {
   /// 특정 노선의 실시간 열차 위치 조회
   Future<List<TrainPosition>> fetchTrainPositions(String lineName) async {
     if (remainingCalls <= 0) {
-      debugPrint('[SeoulSubwayAPI] 🚫 일일 호출 한도 소진 ($dailyLimit/$dailyLimit)');
+      DebugLog.log('[SeoulSubwayAPI] 🚫 일일 호출 한도 소진 ($dailyLimit/$dailyLimit)');
       throw SeoulApiException('일일 API 호출 한도($dailyLimit건) 소진', code: 'LIMIT');
     }
 
@@ -97,28 +98,28 @@ class SeoulSubwayService {
         final data = jsonDecode(response.body);
         if (data['realtimePositionList'] != null) {
           final list = data['realtimePositionList'] as List;
-          debugPrint('[SeoulSubwayAPI] ✅ $lineName: ${list.length}개 열차 (남은 호출: $remainingCalls)');
+          DebugLog.log('[SeoulSubwayAPI] ✅ $lineName: ${list.length}개 열차 (남은 호출: $remainingCalls)');
           return list.map((e) => TrainPosition.fromJson(e)).toList();
         }
         // API 에러 응답 처리
         if (data['status'] != null && data['status'] != 200) {
           final msg = data['message'] ?? 'API error';
           final code = data['code'] ?? '';
-          debugPrint('[SeoulSubwayAPI] ❌ $lineName 에러 응답: [$code] $msg');
+          DebugLog.log('[SeoulSubwayAPI] ❌ $lineName 에러 응답: [$code] $msg');
           developer.log('API error: [$code] $msg', name: 'SeoulSubwayAPI');
           throw SeoulApiException(msg, code: code);
         }
-        debugPrint('[SeoulSubwayAPI] ⚠️ $lineName: 데이터 없음 (status=${response.statusCode})');
+        DebugLog.log('[SeoulSubwayAPI] ⚠️ $lineName: 데이터 없음 (status=${response.statusCode})');
       } else {
-        debugPrint('[SeoulSubwayAPI] ❌ $lineName: HTTP ${response.statusCode}');
+        DebugLog.log('[SeoulSubwayAPI] ❌ $lineName: HTTP ${response.statusCode}');
       }
       return [];
     } on TimeoutException {
-      debugPrint('[SeoulSubwayAPI] ⏱️ $lineName: 요청 시간 초과');
+      DebugLog.log('[SeoulSubwayAPI] ⏱️ $lineName: 요청 시간 초과');
       throw SeoulApiException('요청 시간 초과', code: 'TIMEOUT');
     } catch (e) {
       if (e is SeoulApiException) rethrow;
-      debugPrint('[SeoulSubwayAPI] ❌ $lineName: 네트워크 오류 - $e');
+      DebugLog.log('[SeoulSubwayAPI] ❌ $lineName: 네트워크 오류 - $e');
       throw SeoulApiException('네트워크 오류: $e', code: 'NETWORK');
     }
   }
@@ -132,14 +133,14 @@ class SeoulSubwayService {
 
     // 심야 시간 체크
     if (isNonOperatingHours) {
-      debugPrint('[SeoulSubwayAPI] 🌙 심야 시간(01~05시) — 열차 미운행, API 호출 건너뜀');
+      DebugLog.log('[SeoulSubwayAPI] 🌙 심야 시간(01~05시) — 열차 미운행, API 호출 건너뜀');
       lastApiError = '심야 시간(01~05시) 열차 미운행';
       return {};
     }
 
     // 남은 호출 수가 요청할 노선 수보다 적으면 중단
     if (remainingCalls < targets.length) {
-      debugPrint('[SeoulSubwayAPI] 🚫 남은 호출($remainingCalls) < 요청 노선(${targets.length}), 중단');
+      DebugLog.log('[SeoulSubwayAPI] 🚫 남은 호출($remainingCalls) < 요청 노선(${targets.length}), 중단');
       lastApiError = '일일 한도 부족 (남은: $remainingCalls건)';
       return {};
     }
@@ -156,7 +157,7 @@ class SeoulSubwayService {
           final positions = await fetchTrainPositions(name);
           return MapEntry(name, positions);
         } catch (e) {
-          debugPrint('[SeoulSubwayAPI] 🚨 $name 조회 실패: $e');
+          DebugLog.log('[SeoulSubwayAPI] 🚨 $name 조회 실패: $e');
           lastApiError = '[$name] $e';
           return MapEntry(name, <TrainPosition>[]);
         }
@@ -170,7 +171,7 @@ class SeoulSubwayService {
       }
     }
     final totalTrains = results.values.fold<int>(0, (sum, list) => sum + list.length);
-    debugPrint('[SeoulSubwayAPI] 📊 결과: ${results.length}/${targets.length} 노선, '
+    DebugLog.log('[SeoulSubwayAPI] 📊 결과: ${results.length}/${targets.length} 노선, '
         '$totalTrains개 열차 | 오늘 사용: $_callCount/$dailyLimit'
         '${lastApiError != null ? ' | 에러: $lastApiError' : ''}');
     return results;
@@ -427,13 +428,13 @@ class SeoulSubwayService {
       }
 
       if (trainDelays.isNotEmpty) {
-        debugPrint('[SeoulSubwayAPI] ⚠️ 열차 지연: ${trainDelays.length}대 — '
+        DebugLog.log('[SeoulSubwayAPI] ⚠️ 열차 지연: ${trainDelays.length}대 — '
             '${trainDelays.entries.take(5).map((e) => '${e.key}(${e.value}분)').join(', ')}'
             '${trainDelays.length > 5 ? ' ...' : ''}');
       }
       return trainDelays;
     } catch (e) {
-      debugPrint('[SeoulSubwayAPI] ❌ 지연 감지 실패: $e');
+      DebugLog.log('[SeoulSubwayAPI] ❌ 지연 감지 실패: $e');
       return {};
     }
   }

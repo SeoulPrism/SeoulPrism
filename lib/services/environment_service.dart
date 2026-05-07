@@ -1,3 +1,4 @@
+import '../core/debug_log.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
@@ -115,7 +116,7 @@ class EnvironmentService {
         icon = weatherData['icon'] as IconData;
       }
     } catch (e) {
-      debugPrint('[EnvironmentService] 날씨 fetch 실패: $e');
+      DebugLog.log('[EnvironmentService] 날씨 fetch 실패: $e');
     }
 
     _current = EnvironmentData(
@@ -322,7 +323,7 @@ class EnvironmentService {
       }
       return result;
     } catch (e) {
-      debugPrint('[Environment] 주간예보 실패: $e');
+      DebugLog.log('[Environment] 주간예보 실패: $e');
       return [];
     }
   }

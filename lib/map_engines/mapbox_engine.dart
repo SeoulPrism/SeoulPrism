@@ -1,3 +1,4 @@
+import '../core/debug_log.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
@@ -30,6 +31,9 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
   PointAnnotationManager? _pointAnnotationManager;
   CircleAnnotationManager? _circleAnnotationManager;
   PolylineAnnotationManager? _polylineAnnotationManager;
+  bool _disposed = false;
+  // 채널 에러 발생한 소스: 스타일 재생성 전까지 호출 스킵 (로그 폭주 방지)
+  final Set<String> _failedSources = {};
 
   // 관리 중인 소스/레이어 ID 추적
   final Set<String> _polylineIds = {};
@@ -164,7 +168,10 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
   void setZoom(double zoom) => _mapboxMap?.setCamera(CameraOptions(zoom: zoom));
 
   @override
-  void setStyle(String styleUri) => _mapboxMap?.loadStyleURI(styleUri);
+  void setStyle(String styleUri) {
+    _failedSources.clear();
+    _mapboxMap?.loadStyleURI(styleUri);
+  }
 
   @override
   void toggleLayer(String layerId, bool visible) {
@@ -193,7 +200,7 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
         preset,
       );
     } catch (e) {
-      debugPrint('[MapboxEngine] lightPreset 설정 실패: $e');
+      DebugLog.log('[MapboxEngine] lightPreset 설정 실패: $e');
     }
   }
 
@@ -230,7 +237,7 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
         );
         _satelliteInitialized = true;
       } catch (e) {
-        debugPrint('[MapboxEngine] satellite 초기화 실패: $e');
+        DebugLog.log('[MapboxEngine] satellite 초기화 실패: $e');
         return;
       }
     }
@@ -271,7 +278,7 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
         );
         _trafficInitialized = true;
       } catch (e) {
-        debugPrint('[MapboxEngine] traffic 초기화 실패: $e');
+        DebugLog.log('[MapboxEngine] traffic 초기화 실패: $e');
         return;
       }
     }
@@ -306,7 +313,7 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
           fogOpacity > 0.3 ? "high" : "low",
         );
       } catch (e) {
-        debugPrint('[MapboxEngine] fog 설정 실패 (무시): $e');
+        DebugLog.log('[MapboxEngine] fog 설정 실패 (무시): $e');
       }
     }
   }
@@ -684,7 +691,7 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
         ),
       );
 
-      debugPrint('[MapboxEngine] ✅ 열차 FillExtrusionLayer 생성 완료');
+      DebugLog.log('[MapboxEngine] ✅ 열차 FillExtrusionLayer 생성 완료');
 
       // 1-b) 선택된 열차 하이라이트 — 노선색 발광 링 (CircleLayer)
       await style.addSource(
@@ -862,7 +869,7 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
         ),
       );
 
-      debugPrint('[MapboxEngine] ✅ 지상 노선 LineLayer 생성 완료');
+      DebugLog.log('[MapboxEngine] ✅ 지상 노선 LineLayer 생성 완료');
 
       // 3) 지하 노선 경로 — LineLayer (바닥, 점선으로 구분)
       await style.addSource(
@@ -898,7 +905,7 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
         ),
       );
 
-      debugPrint('[MapboxEngine] ✅ 지하 노선 LineLayer 생성 완료');
+      DebugLog.log('[MapboxEngine] ✅ 지하 노선 LineLayer 생성 완료');
 
       // 4) 역 마커 — MiniTokyo3D 스타일 캡슐/필(pill) 마커
       // 캡슐 배경 소스 (LineString — 둥근 끝캡으로 필 모양)
@@ -1046,7 +1053,7 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
         ),
       );
 
-      debugPrint('[MapboxEngine] ✅ 역 마커 레이어 생성 완료 (MiniTokyo3D 캡슐 스타일)');
+      DebugLog.log('[MapboxEngine] ✅ 역 마커 레이어 생성 완료 (MiniTokyo3D 캡슐 스타일)');
 
       // 5) 열차별 지연 표시 — 발광 링 + "N분" 라벨
       await style.addSource(
@@ -1114,7 +1121,7 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
         ),
       );
 
-      debugPrint('[MapboxEngine] ✅ 열차 지연 표시 레이어 생성 완료');
+      DebugLog.log('[MapboxEngine] ✅ 열차 지연 표시 레이어 생성 완료');
 
       // 6) 혼잡도 시각화 레이어 (히트맵 + 원형 마커 + 라벨)
       await style.addSource(
@@ -1272,11 +1279,11 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
         'none',
       );
 
-      debugPrint('[MapboxEngine] ✅ 혼잡도 레이어 생성 완료');
+      DebugLog.log('[MapboxEngine] ✅ 혼잡도 레이어 생성 완료');
 
       _layersInitialized3D = true;
     } catch (e) {
-      debugPrint('[MapboxEngine] ❌ 3D 레이어 초기화 실패: $e');
+      DebugLog.log('[MapboxEngine] ❌ 3D 레이어 초기화 실패: $e');
     }
   }
 
@@ -1323,10 +1330,18 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
 
   /// GeoJSON 소스 데이터 직접 업데이트 (getSource 대신 setStyleSourceProperty 사용)
   Future<void> _updateSourceData(String sourceId, String geojson) async {
+    if (_disposed || _mapboxMap == null) return;
+    if (_failedSources.contains(sourceId)) return;
     try {
       await _mapboxMap!.style.setStyleSourceProperty(sourceId, 'data', geojson);
     } catch (e) {
-      debugPrint('[MapboxEngine] ❌ 소스 업데이트 실패 ($sourceId): $e');
+      // 채널 에러는 디스포즈 직후 잔여 호출. 한 번만 로그 후 추가 호출 차단.
+      final msg = e.toString();
+      if (msg.contains('channel-error') || msg.contains('Unable to establish connection')) {
+        _failedSources.add(sourceId);
+        return;
+      }
+      DebugLog.log('[MapboxEngine] ❌ 소스 업데이트 실패 ($sourceId): $e');
     }
   }
 
@@ -1749,7 +1764,7 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
       }),
     );
 
-    debugPrint(
+    DebugLog.log(
       '[MapboxEngine] Routes 3D: ${surfaceFeatures.length} surface, '
       '${undergroundFeatures.length} underground segments',
     );
@@ -1806,7 +1821,7 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
       jsonEncode({'type': 'FeatureCollection', 'features': dotFeatures}),
     );
 
-    debugPrint(
+    DebugLog.log(
       '[MapboxEngine] 🚉 역 ${pills.length}개 (도트 ${dots.length}개) 업데이트',
     );
   }
@@ -1977,7 +1992,7 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
         _poiLayerInitialized = true;
       }
     } catch (e) {
-      debugPrint('[MapboxEngine] POI 레이어 오류: $e');
+      DebugLog.log('[MapboxEngine] POI 레이어 오류: $e');
     }
   }
 
@@ -2140,12 +2155,12 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
         permission = await geo.Geolocator.requestPermission();
         if (permission == geo.LocationPermission.denied ||
             permission == geo.LocationPermission.deniedForever) {
-          debugPrint('[MapboxEngine] 위치 권한 거부됨 → 서울 폴백');
+          DebugLog.log('[MapboxEngine] 위치 권한 거부됨 → 서울 폴백');
           geoAvailable = false;
         }
       }
     } catch (e) {
-      debugPrint('[MapboxEngine] ⚠️ 위치 플러그인 사용 불가: $e');
+      DebugLog.log('[MapboxEngine] ⚠️ 위치 플러그인 사용 불가: $e');
       geoAvailable = false;
       _locationFailed = true;
     }
@@ -2163,12 +2178,12 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
           final lat = _currentPosition!.latitude;
           final lng = _currentPosition!.longitude;
           if (lat < 37.0 || lat > 38.0 || lng < 126.5 || lng > 127.5) {
-            debugPrint('[MapboxEngine] 위치가 서울 범위 밖 → 서울시청 폴백');
+            DebugLog.log('[MapboxEngine] 위치가 서울 범위 밖 → 서울시청 폴백');
             _currentPosition = _seoulFallbackPosition();
           }
         }
       } catch (e) {
-        debugPrint('[MapboxEngine] 위치 가져오기 실패 → 서울 폴백: $e');
+        DebugLog.log('[MapboxEngine] 위치 가져오기 실패 → 서울 폴백: $e');
         _currentPosition = _seoulFallbackPosition();
       }
     } else {
@@ -2204,7 +2219,7 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
               _updateLocationAvatar(_currentPosition!);
             });
       } catch (e) {
-        debugPrint('[MapboxEngine] 위치 스트림 실패: $e');
+        DebugLog.log('[MapboxEngine] 위치 스트림 실패: $e');
       }
     }
 
@@ -2308,9 +2323,9 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
         ),
       );
 
-      debugPrint('[MapboxEngine] ✅ 3D 위치 아바타 레이어 생성 완료');
+      DebugLog.log('[MapboxEngine] ✅ 3D 위치 아바타 레이어 생성 완료');
     } catch (e) {
-      debugPrint('[MapboxEngine] ❌ 위치 레이어 초기화 실패: $e');
+      DebugLog.log('[MapboxEngine] ❌ 위치 레이어 초기화 실패: $e');
     }
   }
 
@@ -2458,9 +2473,9 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
       );
 
       _busLayersInitialized = true;
-      debugPrint('[MapboxEngine] ✅ 버스 3D 레이어 생성 완료');
+      DebugLog.log('[MapboxEngine] ✅ 버스 3D 레이어 생성 완료');
     } catch (e) {
-      debugPrint('[MapboxEngine] ❌ 버스 레이어 초기화 실패: $e');
+      DebugLog.log('[MapboxEngine] ❌ 버스 레이어 초기화 실패: $e');
     }
   }
 
@@ -2599,9 +2614,9 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
       );
 
       _flightLayersInitialized = true;
-      debugPrint('[MapboxEngine] ✅ 항공기 3D 레이어 생성 완료');
+      DebugLog.log('[MapboxEngine] ✅ 항공기 3D 레이어 생성 완료');
     } catch (e) {
-      debugPrint('[MapboxEngine] ❌ 항공기 레이어 초기화 실패: $e');
+      DebugLog.log('[MapboxEngine] ❌ 항공기 레이어 초기화 실패: $e');
     }
   }
 
@@ -2791,9 +2806,9 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
         ),
       );
       _riverBusLayersInitialized = true;
-      debugPrint('[MapboxEngine] ✅ 리버버스 3D 레이어 생성 완료');
+      DebugLog.log('[MapboxEngine] ✅ 리버버스 3D 레이어 생성 완료');
     } catch (e) {
-      debugPrint('[MapboxEngine] ❌ 리버버스 레이어 실패: $e');
+      DebugLog.log('[MapboxEngine] ❌ 리버버스 레이어 실패: $e');
     }
   }
 
@@ -2991,7 +3006,7 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
             );
           }
         } catch (e) {
-          debugPrint('[POI] ERROR: $e');
+          DebugLog.log('[POI] ERROR: $e');
         }
       }, stopPropagation: false),
     );
@@ -3023,7 +3038,7 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
   Future<void> _handleMapTap(MapContentGestureContext context) async {
     // 탭 좌표 디버그 출력 (한강 좌표 확인용)
     final coord = context.point.coordinates;
-    debugPrint(
+    DebugLog.log(
       '[MapTap] 📍 lat=${coord.lat.toStringAsFixed(6)}, lng=${coord.lng.toStringAsFixed(6)}',
     );
 
@@ -3189,14 +3204,16 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
       }
       _onMapTappedEmpty?.call();
     } catch (e) {
-      debugPrint('[MapboxEngine] 탭 쿼리 실패: $e');
+      DebugLog.log('[MapboxEngine] 탭 쿼리 실패: $e');
     }
   }
 
   @override
   void dispose() {
+    _disposed = true;
     _positionSubscription?.cancel();
     _locationPulseTimer?.cancel();
+    _mapboxMap = null;
     super.dispose();
   }
 

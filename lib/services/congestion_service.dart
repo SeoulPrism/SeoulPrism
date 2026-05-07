@@ -1,3 +1,4 @@
+import '../core/debug_log.dart';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
@@ -60,12 +61,12 @@ class CongestionService {
       if (success) {
         _dateStr = dateStr;
         _loaded = true;
-        debugPrint('[Congestion] ✅ $dateStr 데이터 로드: ${_data.length}개 역, 최대 $_maxTotal명');
+        DebugLog.log('[Congestion] ✅ $dateStr 데이터 로드: ${_data.length}개 역, 최대 $_maxTotal명');
         return true;
       }
     }
 
-    debugPrint('[Congestion] ❌ 최근 7일 데이터 없음');
+    DebugLog.log('[Congestion] ❌ 최근 7일 데이터 없음');
     return false;
   }
 
@@ -124,7 +125,7 @@ class CongestionService {
 
       return _data.isNotEmpty;
     } catch (e) {
-      debugPrint('[Congestion] 에러($dateStr): $e');
+      DebugLog.log('[Congestion] 에러($dateStr): $e');
       return false;
     }
   }

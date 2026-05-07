@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../core/debug_log.dart';
 
 /// 앱 설정 영속화 서비스
 /// SharedPreferences를 통해 설정을 저장/로드
@@ -13,6 +14,7 @@ class SettingsService {
     if (_instance != null) return _instance!;
     final prefs = await SharedPreferences.getInstance();
     _instance = SettingsService._(prefs);
+    DebugLog.enabled = prefs.getBool(_kDebugLogs) ?? false;
     return _instance!;
   }
 
@@ -36,6 +38,7 @@ class SettingsService {
   static const _kUseSeoulApi = 'use_seoul_api';
   static const _kUseNaverApi = 'use_naver_api';
   static const _kThemeMode = 'theme_mode'; // 'system' | 'light' | 'dark'
+  static const _kDebugLogs = 'debug_logs';
 
   // ── Getters ──
   bool get showRoutes => _prefs.getBool(_kShowRoutes) ?? true;
@@ -50,6 +53,7 @@ class SettingsService {
   bool get useSeoulApi => _prefs.getBool(_kUseSeoulApi) ?? true;
   bool get useNaverApi => _prefs.getBool(_kUseNaverApi) ?? true;
   String get themeMode => _prefs.getString(_kThemeMode) ?? 'dark';
+  bool get debugLogs => _prefs.getBool(_kDebugLogs) ?? false;
 
   Set<String>? get selectedLines {
     final val = _prefs.getString(_kSelectedLines);
@@ -68,6 +72,10 @@ class SettingsService {
   Future<void> setUseSeoulApi(bool v) => _prefs.setBool(_kUseSeoulApi, v);
   Future<void> setUseNaverApi(bool v) => _prefs.setBool(_kUseNaverApi, v);
   Future<void> setThemeMode(String v) => _prefs.setString(_kThemeMode, v);
+  Future<void> setDebugLogs(bool v) async {
+    await _prefs.setBool(_kDebugLogs, v);
+    DebugLog.enabled = v;
+  }
 
   Future<void> setSelectedLines(Set<String>? lines) async {
     if (lines == null) {

@@ -1,3 +1,4 @@
+import '../core/debug_log.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
@@ -45,7 +46,7 @@ class SeoulBusService {
         now.year != _countResetDate.year) {
       _callCount = 0;
       _countResetDate = now;
-      debugPrint('[SeoulBusAPI] 🔄 일일 호출 카운터 리셋');
+      DebugLog.log('[SeoulBusAPI] 🔄 일일 호출 카운터 리셋');
     }
   }
 
@@ -61,11 +62,11 @@ class SeoulBusService {
   /// 특정 노선의 실시간 버스 위치 조회
   Future<List<BusPosition>> fetchBusPositions(String busRouteId) async {
     if (_serviceKey.isEmpty) {
-      debugPrint('[SeoulBusAPI] ⚠️ DATA_GO_KR_API_KEY가 설정되지 않음');
+      DebugLog.log('[SeoulBusAPI] ⚠️ DATA_GO_KR_API_KEY가 설정되지 않음');
       return [];
     }
     if (remainingCalls <= 0) {
-      debugPrint('[SeoulBusAPI] 🚫 일일 호출 한도 소진');
+      DebugLog.log('[SeoulBusAPI] 🚫 일일 호출 한도 소진');
       return [];
     }
 
@@ -82,17 +83,17 @@ class SeoulBusService {
       if (response.statusCode == 200) {
         final items = _parseXmlItems(response.body, 'itemList');
         final positions = items.map((e) => BusPosition.fromXml(e)).toList();
-        debugPrint('[SeoulBusAPI] ✅ 노선 $busRouteId: ${positions.length}대 버스 (남은: $remainingCalls)');
+        DebugLog.log('[SeoulBusAPI] ✅ 노선 $busRouteId: ${positions.length}대 버스 (남은: $remainingCalls)');
         return positions;
       } else {
-        debugPrint('[SeoulBusAPI] ❌ HTTP ${response.statusCode}');
+        DebugLog.log('[SeoulBusAPI] ❌ HTTP ${response.statusCode}');
         return [];
       }
     } on TimeoutException {
-      debugPrint('[SeoulBusAPI] ⏱️ 버스위치 요청 시간 초과');
+      DebugLog.log('[SeoulBusAPI] ⏱️ 버스위치 요청 시간 초과');
       return [];
     } catch (e) {
-      debugPrint('[SeoulBusAPI] ❌ 버스위치 오류: $e');
+      DebugLog.log('[SeoulBusAPI] ❌ 버스위치 오류: $e');
       return [];
     }
   }
@@ -119,15 +120,15 @@ class SeoulBusService {
       if (response.statusCode == 200) {
         final items = _parseXmlItems(response.body, 'itemList');
         final arrivals = items.map((e) => BusArrivalInfo.fromXml(e)).toList();
-        debugPrint('[SeoulBusAPI] ✅ 도착정보 $busRouteId: ${arrivals.length}개 정류소');
+        DebugLog.log('[SeoulBusAPI] ✅ 도착정보 $busRouteId: ${arrivals.length}개 정류소');
         return arrivals;
       }
       return [];
     } on TimeoutException {
-      debugPrint('[SeoulBusAPI] ⏱️ 도착정보 시간 초과');
+      DebugLog.log('[SeoulBusAPI] ⏱️ 도착정보 시간 초과');
       return [];
     } catch (e) {
-      debugPrint('[SeoulBusAPI] ❌ 도착정보 오류: $e');
+      DebugLog.log('[SeoulBusAPI] ❌ 도착정보 오류: $e');
       return [];
     }
   }
@@ -161,7 +162,7 @@ class SeoulBusService {
       }
       return null;
     } catch (e) {
-      debugPrint('[SeoulBusAPI] ❌ 정류소 도착정보 오류: $e');
+      DebugLog.log('[SeoulBusAPI] ❌ 정류소 도착정보 오류: $e');
       return null;
     }
   }
@@ -188,12 +189,12 @@ class SeoulBusService {
       if (response.statusCode == 200) {
         final items = _parseXmlItems(response.body, 'itemList');
         final routes = items.map((e) => BusRouteInfo.fromXml(e)).toList();
-        debugPrint('[SeoulBusAPI] ✅ 노선 검색 "$keyword": ${routes.length}개');
+        DebugLog.log('[SeoulBusAPI] ✅ 노선 검색 "$keyword": ${routes.length}개');
         return routes;
       }
       return [];
     } catch (e) {
-      debugPrint('[SeoulBusAPI] ❌ 노선 검색 오류: $e');
+      DebugLog.log('[SeoulBusAPI] ❌ 노선 검색 오류: $e');
       return [];
     }
   }
@@ -217,12 +218,12 @@ class SeoulBusService {
         final items = _parseXmlItems(response.body, 'itemList');
         final stations = items.map((e) => BusRouteStation.fromXml(e)).toList();
         stations.sort((a, b) => a.seq.compareTo(b.seq));
-        debugPrint('[SeoulBusAPI] ✅ 노선정류소 $busRouteId: ${stations.length}개');
+        DebugLog.log('[SeoulBusAPI] ✅ 노선정류소 $busRouteId: ${stations.length}개');
         return stations;
       }
       return [];
     } catch (e) {
-      debugPrint('[SeoulBusAPI] ❌ 노선정류소 오류: $e');
+      DebugLog.log('[SeoulBusAPI] ❌ 노선정류소 오류: $e');
       return [];
     }
   }
@@ -249,12 +250,12 @@ class SeoulBusService {
       if (response.statusCode == 200) {
         final items = _parseXmlItems(response.body, 'itemList');
         final stations = items.map((e) => BusStationInfo.fromXml(e)).toList();
-        debugPrint('[SeoulBusAPI] ✅ 정류소 검색 "$name": ${stations.length}개');
+        DebugLog.log('[SeoulBusAPI] ✅ 정류소 검색 "$name": ${stations.length}개');
         return stations;
       }
       return [];
     } catch (e) {
-      debugPrint('[SeoulBusAPI] ❌ 정류소 검색 오류: $e');
+      DebugLog.log('[SeoulBusAPI] ❌ 정류소 검색 오류: $e');
       return [];
     }
   }
@@ -282,7 +283,7 @@ class SeoulBusService {
       }
       return null;
     } catch (e) {
-      debugPrint('[SeoulBusAPI] ❌ 정류소 조회 오류: $e');
+      DebugLog.log('[SeoulBusAPI] ❌ 정류소 조회 오류: $e');
       return null;
     }
   }
@@ -307,8 +308,8 @@ class SeoulBusService {
       }).toList();
     } catch (e) {
       // XML 파싱 실패 시 에러 코드 확인
-      debugPrint('[SeoulBusAPI] ⚠️ XML 파싱 실패: $e');
-      debugPrint('[SeoulBusAPI] 응답 본문(200자): ${body.substring(0, body.length.clamp(0, 200))}');
+      DebugLog.log('[SeoulBusAPI] ⚠️ XML 파싱 실패: $e');
+      DebugLog.log('[SeoulBusAPI] 응답 본문(200자): ${body.substring(0, body.length.clamp(0, 200))}');
       return [];
     }
   }

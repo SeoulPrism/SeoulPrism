@@ -1,3 +1,4 @@
+import '../core/debug_log.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
@@ -63,11 +64,11 @@ class FlightService {
         _accessToken = data['access_token'];
         final expiresIn = data['expires_in'] as int? ?? 300;
         _tokenExpiry = DateTime.now().add(Duration(seconds: expiresIn));
-        debugPrint('[FlightAPI] ✅ OAuth2 토큰 발급 (${expiresIn}s)');
+        DebugLog.log('[FlightAPI] ✅ OAuth2 토큰 발급 (${expiresIn}s)');
       }
     } catch (e) {
       // 토큰 실패해도 anonymous로 진행
-      debugPrint('[FlightAPI] ⚠️ OAuth2 토큰 실패 (anonymous 모드): $e');
+      DebugLog.log('[FlightAPI] ⚠️ OAuth2 토큰 실패 (anonymous 모드): $e');
     }
   }
 
@@ -132,17 +133,17 @@ class FlightService {
         return flights;
       } else if (response.statusCode == 429) {
         if (_rateLimitedUntil == null) {
-          debugPrint('[FlightAPI] ⚠️ Rate limited → 5분 대기');
+          DebugLog.log('[FlightAPI] ⚠️ Rate limited → 5분 대기');
         }
         _rateLimitedUntil = DateTime.now().add(const Duration(minutes: 5));
         return [];
       }
       return [];
     } on TimeoutException {
-      debugPrint('[FlightAPI] ⏱️ 요청 시간 초과');
+      DebugLog.log('[FlightAPI] ⏱️ 요청 시간 초과');
       return [];
     } catch (e) {
-      debugPrint('[FlightAPI] ❌ 오류: $e');
+      DebugLog.log('[FlightAPI] ❌ 오류: $e');
       return [];
     }
   }
@@ -175,7 +176,7 @@ class FlightService {
         _departureSchedules = items
             .map((e) => IcnFlightSchedule.fromJson(e, true))
             .toList();
-        debugPrint('[FlightAPI] ✅ 인천 출발 스케줄: ${_departureSchedules.length}편');
+        DebugLog.log('[FlightAPI] ✅ 인천 출발 스케줄: ${_departureSchedules.length}편');
       }
 
       // 도착편
@@ -192,10 +193,10 @@ class FlightService {
         _arrivalSchedules = items
             .map((e) => IcnFlightSchedule.fromJson(e, false))
             .toList();
-        debugPrint('[FlightAPI] ✅ 인천 도착 스케줄: ${_arrivalSchedules.length}편');
+        DebugLog.log('[FlightAPI] ✅ 인천 도착 스케줄: ${_arrivalSchedules.length}편');
       }
     } catch (e) {
-      debugPrint('[FlightAPI] ⚠️ 인천공항 스케줄 조회 실패: $e');
+      DebugLog.log('[FlightAPI] ⚠️ 인천공항 스케줄 조회 실패: $e');
     }
   }
 

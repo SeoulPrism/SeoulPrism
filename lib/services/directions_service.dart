@@ -1,3 +1,4 @@
+import '../core/debug_log.dart';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
@@ -115,7 +116,7 @@ class DirectionsService {
         legs: [],
       );
     } catch (e) {
-      debugPrint('[Directions] TMAP 자동차 실패: $e');
+      DebugLog.log('[Directions] TMAP 자동차 실패: $e');
       return null;
     }
   }
@@ -171,7 +172,7 @@ class DirectionsService {
         walkSteps: steps,
       );
     } catch (e) {
-      debugPrint('[Directions] TMAP 도보 실패: $e');
+      DebugLog.log('[Directions] TMAP 도보 실패: $e');
       return null;
     }
   }
@@ -225,7 +226,7 @@ class DirectionsService {
           .get(Uri.parse(url))
           .timeout(const Duration(seconds: 8));
       if (response.statusCode != 200) {
-        debugPrint('[Directions] Mapbox matching ${response.statusCode}');
+        DebugLog.log('[Directions] Mapbox matching ${response.statusCode}');
         return null;
       }
       final data = jsonDecode(response.body);
@@ -242,7 +243,7 @@ class DirectionsService {
       _matchCache[cacheKey] = out;
       return out;
     } catch (e) {
-      debugPrint('[Directions] Mapbox matching 실패: $e');
+      DebugLog.log('[Directions] Mapbox matching 실패: $e');
       return null;
     }
   }

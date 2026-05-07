@@ -1,3 +1,4 @@
+import '../core/debug_log.dart';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
@@ -101,7 +102,7 @@ class PlaceSearchService {
           .timeout(const Duration(seconds: 4));
 
       if (response.statusCode != 200) {
-        debugPrint('[PlaceSearch] 카카오 API 실패: ${response.statusCode}');
+        DebugLog.log('[PlaceSearch] 카카오 API 실패: ${response.statusCode}');
         return [];
       }
 
@@ -127,7 +128,7 @@ class PlaceSearchService {
           .where((r) => r.name.isNotEmpty)
           .toList();
     } catch (e) {
-      debugPrint('[PlaceSearch] 검색 실패: $e');
+      DebugLog.log('[PlaceSearch] 검색 실패: $e');
       return [];
     }
   }
@@ -186,7 +187,7 @@ class PlaceSearchService {
 
       return allResults;
     } catch (e) {
-      debugPrint('[PlaceSearch] 주변 POI 실패: $e');
+      DebugLog.log('[PlaceSearch] 주변 POI 실패: $e');
       return [];
     }
   }
