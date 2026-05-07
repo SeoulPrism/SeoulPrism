@@ -52,6 +52,20 @@ class FavoritesService {
   SupabaseClient get _sb => Supabase.instance.client;
   String? get _userId => _sb.auth.currentUser?.id;
 
+  // 변경 알림 — UI 가 등록해 setState 트리거.
+  final List<VoidCallback> _listeners = [];
+  void addListener(VoidCallback l) => _listeners.add(l);
+  void removeListener(VoidCallback l) => _listeners.remove(l);
+  void _notify() {
+    for (final l in List.of(_listeners)) {
+      try {
+        l();
+      } catch (_) {}
+    }
+  }
+
+  RealtimeChannel? _channel;
+
   Future<void> load() async {
     // 로컬 캐시 먼저
     final prefs = await SharedPreferences.getInstance();
@@ -127,5 +141,34 @@ class FavoritesService {
     } else {
       await add(place);
     }
+  }
+
+  /// 다른 디바이스에서 변경 시 자동 동기화. 로그인 후 호출.
+  /// RLS SELECT 정책에 의해 본인 row 의 INSERT/UPDATE/DELETE 이벤트만 수신.
+  void startRealtimeSync() {
+    if (_userId == null) return;
+    _channel?.unsubscribe();
+    _channel = _sb
+        .channel('favorites_${_userId!}')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'favorites',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'user_id',
+            value: _userId!,
+          ),
+          callback: (_) async {
+            await load();
+            _notify();
+          },
+        )
+        .subscribe();
+  }
+
+  void stopRealtimeSync() {
+    _channel?.unsubscribe();
+    _channel = null;
   }
 }

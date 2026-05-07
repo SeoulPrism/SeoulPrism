@@ -51,6 +51,14 @@ Future<void> main() async {
   await VisitHistoryService.instance.load();
   await RecentRouteService.instance.load();
 
+  // 이미 로그인된 상태로 시작하면 즉시 realtime 구독 시작.
+  // 로그인/로그아웃 변화는 onAuthStateChange listener 에서 처리.
+  if (Supabase.instance.client.auth.currentUser != null) {
+    FavoritesService.instance.startRealtimeSync();
+    VisitHistoryService.instance.startRealtimeSync();
+    RecentRouteService.instance.startRealtimeSync();
+  }
+
   runApp(const SeoulPrismApp());
 }
 
@@ -76,14 +84,25 @@ class _SeoulPrismAppState extends State<SeoulPrismApp> {
   void initState() {
     super.initState();
     _themeMode = _parseThemeMode(SettingsService.instance.themeMode);
-    supabase.auth.onAuthStateChange.listen((data) {
+    supabase.auth.onAuthStateChange.listen((data) async {
       final event = data.event;
       final session = data.session;
       if (event == AuthChangeEvent.signedIn && session != null) {
+        // 새 계정으로 로그인 시 다시 load + realtime 구독.
+        await FavoritesService.instance.load();
+        await VisitHistoryService.instance.load();
+        await RecentRouteService.instance.load();
+        FavoritesService.instance.startRealtimeSync();
+        VisitHistoryService.instance.startRealtimeSync();
+        RecentRouteService.instance.startRealtimeSync();
         _navigatorKey.currentState?.pushAndRemoveUntil(
           MaterialPageRoute(builder: (_) => const HomeView()),
           (_) => false,
         );
+      } else if (event == AuthChangeEvent.signedOut) {
+        FavoritesService.instance.stopRealtimeSync();
+        VisitHistoryService.instance.stopRealtimeSync();
+        RecentRouteService.instance.stopRealtimeSync();
       }
     });
   }

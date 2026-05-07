@@ -52,6 +52,19 @@ class VisitHistoryService {
   SupabaseClient get _sb => Supabase.instance.client;
   String? get _userId => _sb.auth.currentUser?.id;
 
+  final List<VoidCallback> _listeners = [];
+  void addListener(VoidCallback l) => _listeners.add(l);
+  void removeListener(VoidCallback l) => _listeners.remove(l);
+  void _notify() {
+    for (final l in List.of(_listeners)) {
+      try {
+        l();
+      } catch (_) {}
+    }
+  }
+
+  RealtimeChannel? _channel;
+
   Future<void> load() async {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getStringList(_key) ?? [];
@@ -138,5 +151,33 @@ class VisitHistoryService {
     final sorted = List<VisitRecord>.from(_records)
       ..sort((a, b) => b.visitCount.compareTo(a.visitCount));
     return sorted.take(10).toList();
+  }
+
+  /// 다른 디바이스 변경 자동 동기화.
+  void startRealtimeSync() {
+    if (_userId == null) return;
+    _channel?.unsubscribe();
+    _channel = _sb
+        .channel('visit_history_${_userId!}')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'visit_history',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'user_id',
+            value: _userId!,
+          ),
+          callback: (_) async {
+            await load();
+            _notify();
+          },
+        )
+        .subscribe();
+  }
+
+  void stopRealtimeSync() {
+    _channel?.unsubscribe();
+    _channel = null;
   }
 }

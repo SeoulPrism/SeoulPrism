@@ -73,6 +73,47 @@ class RecentRouteService {
   // 핫 리로드/재시작 시 초기화되므로 SQL 으로 테이블 생성 후 다시 동작.
   bool _supabaseDisabled = false;
 
+  final List<VoidCallback> _listeners = [];
+  void addListener(VoidCallback l) => _listeners.add(l);
+  void removeListener(VoidCallback l) => _listeners.remove(l);
+  void _notify() {
+    for (final l in List.of(_listeners)) {
+      try {
+        l();
+      } catch (_) {}
+    }
+  }
+
+  RealtimeChannel? _channel;
+
+  /// 다른 디바이스 변경 자동 동기화.
+  void startRealtimeSync() {
+    if (_userId == null || _supabaseDisabled) return;
+    _channel?.unsubscribe();
+    _channel = _sb
+        .channel('route_history_${_userId!}')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'route_history',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'user_id',
+            value: _userId!,
+          ),
+          callback: (_) async {
+            await load();
+            _notify();
+          },
+        )
+        .subscribe();
+  }
+
+  void stopRealtimeSync() {
+    _channel?.unsubscribe();
+    _channel = null;
+  }
+
   Future<void> load() async {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getStringList(_key) ?? [];
