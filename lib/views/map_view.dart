@@ -30,6 +30,7 @@ import '../services/incoming_url_service.dart';
 import 'map/widgets/departure_time_picker.dart';
 import 'map/widgets/place_action_button.dart';
 import 'map/widgets/place_detail_panel.dart';
+import 'map/widgets/river_bus_stop_panel.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 import '../services/visit_history_service.dart';
 import '../data/seoul_subway_data.dart';
@@ -1156,8 +1157,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 duration: const Duration(milliseconds: 350),
                 opacity: _selectedRiverStop != null ? 1.0 : 0.0,
                 child: _lastSelectedRiverStop != null
-                    ? _buildRiverBusStopPanel(
-                        (_selectedRiverStop ?? _lastSelectedRiverStop)!,
+                    ? RiverBusStopPanel(
+                        stop: (_selectedRiverStop ?? _lastSelectedRiverStop)!,
+                        onClose: () => setState(() => _setSelectedRiverStop(null)),
+                        onDeparture: _startNavWithDeparture,
+                        onArrival: _startNavWithArrival,
                       )
                     : const SizedBox(height: 200),
               ),
@@ -1772,181 +1776,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     });
   }
 
-  Widget _buildRiverBusStopPanel(RiverBusStop stop) {
-    final cs = Theme.of(context).colorScheme;
-    // 이 선착장을 지나는 노선 찾기
-    final routes = RiverBusData.routes
-        .where((r) => r.stopIds.contains(stop.id))
-        .toList();
-    // 다음 운항 시간 계산
-    final now = DateTime.now();
-    final currentMin = now.hour * 60 + now.minute;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 14),
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
-        decoration: BoxDecoration(
-          color: cs.surfaceContainer,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: const Color(0xFF00ACC1).withValues(alpha: 0.3),
-          ),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 헤더
-            Row(
-              children: [
-                Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF00ACC1).withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(
-                    Icons.directions_boat,
-                    size: 18,
-                    color: Color(0xFF00ACC1),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '${stop.name} 선착장',
-                        style: TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.bold,
-                          color: cs.onSurface,
-                        ),
-                      ),
-                      Text(
-                        stop.address,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: cs.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                IconButton(
-                  icon: Icon(Icons.close, size: 20, color: cs.onSurfaceVariant),
-                  onPressed: () => setState(() => _setSelectedRiverStop(null)),
-                  visualDensity: VisualDensity.compact,
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            // 노선 정보
-            ...routes.map((r) {
-              final isActive = r.isActive;
-              String nextTime = '운항 종료';
-              if (isActive) {
-                for (
-                  int dep = r.firstDeparture;
-                  dep <= r.lastDeparture;
-                  dep += r.intervalMin
-                ) {
-                  if (dep > currentMin) {
-                    final h = dep ~/ 60;
-                    final m = dep % 60;
-                    nextTime =
-                        '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}';
-                    break;
-                  }
-                }
-              }
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 6),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 3,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Color(r.color).withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        r.name,
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: Color(r.color),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        r.displayName,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: cs.onSurfaceVariant,
-                        ),
-                      ),
-                    ),
-                    Text(
-                      isActive ? '다음 $nextTime' : '정비 중',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: isActive
-                            ? const Color(0xFF00ACC1)
-                            : cs.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            }),
-            const SizedBox(height: 10),
-            // 출발/도착 버튼
-            Row(
-              children: [
-                PlaceActionButton(
-                  icon: Icons.trip_origin,
-                  label: '출발',
-                  color: cs.primary,
-                  onTap: () {
-                    setState(() => _setSelectedRiverStop(null));
-                    _startNavWithDeparture(
-                      '${stop.name} 선착장',
-                      lat: stop.lat,
-                      lng: stop.lng,
-                    );
-                  },
-                ),
-                const SizedBox(width: 8),
-                PlaceActionButton(
-                  icon: Icons.place,
-                  label: '도착',
-                  color: Colors.redAccent,
-                  onTap: () {
-                    setState(() => _setSelectedRiverStop(null));
-                    _startNavWithArrival(
-                      '${stop.name} 선착장',
-                      lat: stop.lat,
-                      lng: stop.lng,
-                    );
-                  },
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
 
   /// 각 구간별 실시간 열차/버스 도착 정보 (segment index → 도착 메시지)
