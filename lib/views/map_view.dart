@@ -1880,7 +1880,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   color: cs.primary,
                   onTap: () {
                     setState(() => _setSelectedRiverStop(null));
-                    _startNavWithDeparture('${stop.name} 선착장');
+                    _startNavWithDeparture(
+                      '${stop.name} 선착장',
+                      lat: stop.lat,
+                      lng: stop.lng,
+                    );
                   },
                 ),
                 const SizedBox(width: 8),
@@ -1890,7 +1894,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   color: Colors.redAccent,
                   onTap: () {
                     setState(() => _setSelectedRiverStop(null));
-                    _startNavWithArrival('${stop.name} 선착장');
+                    _startNavWithArrival(
+                      '${stop.name} 선착장',
+                      lat: stop.lat,
+                      lng: stop.lng,
+                    );
                   },
                 ),
               ],
@@ -2628,12 +2636,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  void _startNavWithDeparture(String name) {
-    _searchBarKey.currentState?.enterNavWithDeparture(name);
+  void _startNavWithDeparture(String name, {double? lat, double? lng}) {
+    _searchBarKey.currentState?.enterNavWithDeparture(
+      name,
+      lat: lat,
+      lng: lng,
+    );
   }
 
-  void _startNavWithArrival(String name) {
-    _searchBarKey.currentState?.enterNavWithArrival(name);
+  void _startNavWithArrival(String name, {double? lat, double? lng}) {
+    _searchBarKey.currentState?.enterNavWithArrival(name, lat: lat, lng: lng);
   }
 
   Widget _buildPlaceDetailPanel(PlaceSearchResult place) {
@@ -2802,7 +2814,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         _setSelectedPlace(null);
                         _removePlaceMarker();
                       });
-                      _startNavWithDeparture(place.name);
+                      _startNavWithDeparture(
+                        place.name,
+                        lat: place.lat,
+                        lng: place.lng,
+                      );
                     },
                   ),
                   const SizedBox(width: 8),
@@ -2815,7 +2831,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         _setSelectedPlace(null);
                         _removePlaceMarker();
                       });
-                      _startNavWithArrival(place.name);
+                      _startNavWithArrival(
+                        place.name,
+                        lat: place.lat,
+                        lng: place.lng,
+                      );
                     },
                   ),
                   const SizedBox(width: 8),

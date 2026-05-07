@@ -200,13 +200,25 @@ class UnifiedSearchBar extends StatefulWidget {
 
 class UnifiedSearchBarState extends State<UnifiedSearchBar>
     with TickerProviderStateMixin {
-  /// 외부에서 길찾기 모드 진입 + 출발지 설정
-  void enterNavWithDeparture(String name) {
-    _enterNav();
+  /// 외부에서 길찾기 모드 진입 + 출발지 설정.
+  /// 도착지가 비어 있으면 도착지 입력 대기 (네이버 지도 동작).
+  void enterNavWithDeparture(String name, {double? lat, double? lng}) {
     setState(() {
+      _isNavMode = true;
+      _cancelSearch();
       _depStation = name;
       _depCtrl.text = name;
+      _depLat = lat;
+      _depLng = lng;
+      _arrStation = null;
+      _arrCtrl.clear();
+      _arrLat = null;
+      _arrLng = null;
+      _pathResult = null;
+      _allRoutes = {};
     });
+    _navCtrl.forward();
+    widget.onNavModeChanged?.call(true);
     Future.delayed(const Duration(milliseconds: 350), () {
       if (mounted) _arrFocus.requestFocus();
     });
@@ -219,16 +231,28 @@ class UnifiedSearchBarState extends State<UnifiedSearchBar>
     _searchFocus.requestFocus();
   }
 
-  /// 외부에서 길찾기 모드 진입 + 도착지 설정
-  void enterNavWithArrival(String name) {
-    _enterNav();
+  /// 외부에서 길찾기 모드 진입 + 도착지 설정.
+  /// 출발지를 '내 위치'로 자동 채우고 좌표 받자마자 길찾기 즉시 시작 (네이버 지도 동작).
+  void enterNavWithArrival(String name, {double? lat, double? lng}) {
     setState(() {
+      _isNavMode = true;
+      _cancelSearch();
+      _depStation = '내 위치';
+      _depCtrl.text = '내 위치';
+      _depLat = null;
+      _depLng = null;
       _arrStation = name;
       _arrCtrl.text = name;
+      _arrLat = lat;
+      _arrLng = lng;
+      _pathResult = null;
+      _allRoutes = {};
     });
-    Future.delayed(const Duration(milliseconds: 350), () {
-      if (mounted) _depFocus.requestFocus();
-    });
+    _navCtrl.forward();
+    widget.onNavModeChanged?.call(true);
+    // 위치 좌표 확보 후 자동 길찾기. _setCurrentLocationForField 가 autoFind=true 면
+    // _depStation/_arrStation 모두 채워져 있을 때 _findPath 호출.
+    _setCurrentLocationForField(_NavField.departure, autoFind: true);
   }
 
   // 검색
