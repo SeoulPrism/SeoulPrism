@@ -9,6 +9,7 @@ import '../services/directions_service.dart';
 import '../data/river_bus_data.dart';
 import 'package:cupertino_native_better/cupertino_native_better.dart';
 import 'adaptive/adaptive.dart';
+import 'search_bar/glass_search_field.dart';
 import '../data/seoul_subway_data.dart';
 import '../models/subway_models.dart';
 import '../models/bus_models.dart';
@@ -1085,9 +1086,10 @@ class UnifiedSearchBarState extends State<UnifiedSearchBar>
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   Widget _buildSearchBar() {
-    return _GlassSearchField(
+    return GlassSearchField(
       controller: _searchController,
       focusNode: _searchFocus,
+      height: _kBarHeight,
       onChanged: _onSearchChanged,
       onSubmitted: () {
         if (_searchResults.isNotEmpty) _selectSearch(_searchResults.first);
@@ -2623,133 +2625,3 @@ class UnifiedSearchBarState extends State<UnifiedSearchBar>
 
 enum _NavField { departure, arrival }
 
-/// 리퀴드 글라스 검색 필드 — 별도 위젯으로 분리하여 부모 setState 시 리빌드 차단
-class _GlassSearchField extends StatefulWidget {
-  final TextEditingController controller;
-  final FocusNode focusNode;
-  final ValueChanged<String> onChanged;
-  final VoidCallback onSubmitted;
-  final VoidCallback onClear;
-  final VoidCallback? onProfileTap;
-
-  const _GlassSearchField({
-    required this.controller,
-    required this.focusNode,
-    required this.onChanged,
-    required this.onSubmitted,
-    required this.onClear,
-    this.onProfileTap,
-  });
-
-  @override
-  State<_GlassSearchField> createState() => _GlassSearchFieldState();
-}
-
-class _GlassSearchFieldState extends State<_GlassSearchField>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _pressCtrl;
-
-  @override
-  void initState() {
-    super.initState();
-    _pressCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 80),
-      reverseDuration: const Duration(milliseconds: 250),
-      lowerBound: 0.0,
-      upperBound: 1.0,
-    );
-    widget.focusNode.addListener(_onFocusChanged);
-  }
-
-  @override
-  void dispose() {
-    widget.focusNode.removeListener(_onFocusChanged);
-    _pressCtrl.dispose();
-    super.dispose();
-  }
-
-  void _onFocusChanged() {
-    if (widget.focusNode.hasFocus) {
-      _pressCtrl.forward().then((_) {
-        if (mounted) _pressCtrl.reverse();
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    // 리퀴드 글라스 위 텍스트: 밝은/어두운 배경 모두에서 보이는 중간 회색
-    const textColor = Color(0xFFB0B0B0);
-    const placeholderColor = Color(0xFF8E8E93);
-
-    final glassBar = SizedBox(
-      height: _kBarHeight,
-      child: AdaptiveGlassContainer.capsule(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-          child: Row(
-            children: [
-              Icon(CupertinoIcons.search, size: 20, color: placeholderColor),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: AdaptiveSearchField(
-                  controller: widget.controller,
-                  focusNode: widget.focusNode,
-                  placeholder: '장소, 버스, 지하철 검색',
-                  placeholderStyle: TextStyle(
-                    color: placeholderColor,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w400,
-                  ),
-                  style: AppTypography.bodyMd.copyWith(color: textColor),
-                  onChanged: widget.onChanged,
-                  onSubmitted: widget.onSubmitted,
-                ),
-              ),
-              ValueListenableBuilder<TextEditingValue>(
-                valueListenable: widget.controller,
-                builder: (_, value, __) {
-                  if (value.text.isEmpty) return const SizedBox.shrink();
-                  return Semantics(
-                    label: '검색어 지우기',
-                    button: true,
-                    child: GestureDetector(
-                      onTap: widget.onClear,
-                      child: Padding(
-                        padding: const EdgeInsets.only(left: AppSpacing.sm),
-                        child: Icon(
-                          CupertinoIcons.xmark_circle_fill,
-                          size: 20,
-                          color: placeholderColor,
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-
-    return AnimatedBuilder(
-      animation: _pressCtrl,
-      builder: (context, child) {
-        final t = _pressCtrl.value;
-        return Transform.scale(
-          scale: 1.0 - (t * 0.03),
-          child: Opacity(opacity: 1.0 - (t * 0.08), child: child),
-        );
-      },
-      child: GestureDetector(
-        onTapDown: (_) => _pressCtrl.forward(),
-        onTapUp: (_) => _pressCtrl.reverse(),
-        onTapCancel: () => _pressCtrl.reverse(),
-        behavior: HitTestBehavior.translucent,
-        child: glassBar,
-      ),
-    );
-  }
-}
