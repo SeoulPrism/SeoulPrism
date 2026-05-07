@@ -51,6 +51,16 @@ else
   echo "warning: GOOGLE_SERVICE_INFO_BASE64 not set, Firebase may not work"
 fi
 
+# 4-1. firebase_options.dart 생성 (gitignore 되어 있으므로 CI 에서 환경변수로 복원).
+# main.dart 가 이 파일을 import 하므로 누락 시 빌드 즉시 실패.
+if [ -n "$FIREBASE_OPTIONS_BASE64" ]; then
+  echo "$FIREBASE_OPTIONS_BASE64" | base64 -D > lib/firebase_options.dart
+  echo "firebase_options.dart generated from env"
+else
+  echo "error: FIREBASE_OPTIONS_BASE64 not set — main.dart 의 firebase_options import 가 깨짐"
+  exit 1
+fi
+
 # 5. Flutter 환경 확인 및 의존성 설치 (DNS 간헐 실패 대비 재시도)
 MAX_RETRIES=5
 RETRY_DELAY=10
