@@ -15,6 +15,7 @@ import 'services/recent_route_service.dart';
 import 'services/visit_history_service.dart';
 import 'theme/app_theme.dart';
 import 'views/home_view.dart';
+import 'views/onboarding/launch_loading_view.dart';
 import 'views/onboarding/onboarding_view.dart';
 import 'views/onboarding/widgets/onboarding_map_background.dart';
 
@@ -160,16 +161,85 @@ class _RootGate extends StatefulWidget {
   State<_RootGate> createState() => _RootGateState();
 }
 
+enum _GatePhase {
+  /// 튜토리얼 통과 사용자 — 로딩 화면 (subway 그리기 + 로고 + 페이드) 진행. HomeView 뒤에서 mount.
+  launch,
+
+  /// 튜토리얼 진행 중 — OnboardingView only.
+  tutorial,
+
+  /// 튜토리얼 finish 시퀀스 — HomeView 뒤에서 mount, OnboardingView 페이드/그리기.
+  finishing,
+
+  /// 시퀀스 완료 — OnboardingView/LaunchLoadingView 제거, HomeView 만.
+  done,
+}
+
 class _RootGateState extends State<_RootGate> {
-  bool _onboardingDone = false;
+  _GatePhase _phase = _GatePhase.tutorial;
+  OnboardingView? _onboardingView;
+  // GlobalKey 로 reparent 시 State 보존.
+  final _onboardingKey = GlobalKey();
+  // HomeView 도 마찬가지 — Stack 자식 → root 로 이동할 때 dispose 안 되도록.
+  // 이 키 없으면 finish 시퀀스 후 HomeView 가 재마운트되어 맵이 다시 로딩됨.
+  final _homeKey = GlobalKey();
+
+  @override
+  void initState() {
+    super.initState();
+    _onboardingView = OnboardingView.buildIfNeeded(
+      key: _onboardingKey,
+      background: const OnboardingMapBackground(),
+      onFinishStart: _onFinishStart,
+      onFinishComplete: _onFinishComplete,
+    );
+    // 튜토리얼이 필요 없으면 launch 로딩 화면을 거쳐 HomeView 진입.
+    if (_onboardingView == null) {
+      _phase = _GatePhase.launch;
+    }
+  }
+
+  void _onLaunchLoadingComplete() {
+    setState(() => _phase = _GatePhase.done);
+  }
+
+  void _onFinishStart() {
+    setState(() => _phase = _GatePhase.finishing);
+  }
+
+  void _onFinishComplete() {
+    setState(() => _phase = _GatePhase.done);
+  }
 
   @override
   Widget build(BuildContext context) {
-    if (_onboardingDone) return const HomeView();
-    final view = OnboardingView.buildIfNeeded(
-      background: const OnboardingMapBackground(),
-      onComplete: () => setState(() => _onboardingDone = true),
+    // done — HomeView 단독.
+    if (_phase == _GatePhase.done) {
+      return HomeView(key: _homeKey);
+    }
+
+    // tutorial — OnboardingView 만 보임 (HomeView 미마운트, 자원 절약).
+    if (_phase == _GatePhase.tutorial) {
+      return _onboardingView!;
+    }
+
+    // launch — 튜토리얼 통과 사용자의 첫 진입. HomeView 가 뒤에서 mount, 로딩 화면 위에서 시퀀스.
+    if (_phase == _GatePhase.launch) {
+      return Stack(
+        children: [
+          HomeView(key: _homeKey),
+          LaunchLoadingView(onComplete: _onLaunchLoadingComplete),
+        ],
+      );
+    }
+
+    // finishing — HomeView 가 뒤에서 mount, OnboardingView 가 위에서 finish 시퀀스.
+    return Stack(
+      children: [
+        HomeView(key: _homeKey),
+        _onboardingView!,
+      ],
     );
-    return view ?? const HomeView();
   }
 }
+
