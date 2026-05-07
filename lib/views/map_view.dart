@@ -158,8 +158,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
   /// 도보 구간 턴바이턴 안내 캐시 (segment index → steps)
   Map<int, List<WalkStep>> _walkStepsCache = {};
 
-  /// 탑승역 열차 도착 정보 (실시간 갱신)
-  List<String> _boardingArrivals = []; // ["당고개행 약 3분", "당고개행 약 7분"]
+  /// 첫 탑승역 도착 정보 — 1955줄 부근 폴링 후 reset 용 (write-only 라 analyzer 가 unused_field 경고).
+  // ignore: unused_field
+  List<String> _boardingArrivals = [];
   Timer? _arrivalRefreshTimer;
 
   // 슬라이드아웃 애니메이션용
@@ -1937,88 +1938,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildTransportModeBar(Color onSurface) {
-    final modes = [
-      (Icons.directions_transit, '대중교통', 0),
-      (Icons.directions_car, '자동차', 1),
-      (Icons.directions_walk, '도보', 2),
-    ];
-
-    return Row(
-      children: modes.map((m) {
-        final selected = _transportMode == m.$3;
-        final hasResult = m.$3 == 0
-            ? _routeResult != null
-            : _directionsCache.containsKey(m.$3);
-        final timeStr = m.$3 == 0
-            ? (_routeResult != null && _routeResult!.totalTimeSec > 0
-                  ? _formatDurationShort(_routeResult!.totalTimeSec)
-                  : null)
-            : _directionsCache[m.$3] != null
-            ? _formatDurationShort(_directionsCache[m.$3]!.durationSec)
-            : null;
-
-        return Expanded(
-          child: GestureDetector(
-            onTap: () => _switchTransportMode(m.$3),
-            behavior: HitTestBehavior.opaque,
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 6),
-              margin: const EdgeInsets.symmetric(horizontal: 2),
-              decoration: BoxDecoration(
-                color: selected
-                    ? onSurface.withValues(alpha: 0.1)
-                    : Colors.transparent,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    m.$1,
-                    size: 18,
-                    color: selected
-                        ? onSurface
-                        : onSurface.withValues(alpha: 0.4),
-                  ),
-                  if (timeStr != null)
-                    Text(
-                      timeStr,
-                      style: TextStyle(
-                        fontSize: 9,
-                        fontWeight: FontWeight.w600,
-                        color: selected
-                            ? onSurface
-                            : onSurface.withValues(alpha: 0.4),
-                      ),
-                    )
-                  else if (m.$3 != 0 && !hasResult)
-                    SizedBox(
-                      width: 12,
-                      height: 12,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 1,
-                        color: onSurface.withValues(alpha: 0.3),
-                      ),
-                    )
-                  else
-                    Text(
-                      m.$2,
-                      style: TextStyle(
-                        fontSize: 9,
-                        color: selected
-                            ? onSurface
-                            : onSurface.withValues(alpha: 0.4),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ),
-        );
-      }).toList(),
-    );
-  }
 
   /// 각 구간별 실시간 열차/버스 도착 정보 (segment index → 도착 메시지)
   Map<int, List<String>> _segmentArrivals = {};
@@ -2644,11 +2563,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  String _formatDurationShort(int sec) {
-    final min = sec ~/ 60;
-    final hr = min ~/ 60;
-    return hr > 0 ? '${hr}h${min % 60}m' : '${min}분';
-  }
 
   Future<void> _preloadDirections() async {
     if (_routeResult == null) return;

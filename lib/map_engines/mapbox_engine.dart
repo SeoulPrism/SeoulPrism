@@ -35,7 +35,6 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
   final Set<String> _polylineIds = {};
   final Set<String> _circleMarkerIds = {};
   PointAnnotation? _placePinAnnotation;
-  CircleAnnotation? _placeCircleAnnotation;
   static const _poiSourceId = 'kakao-poi-source';
   static const _poiLayerId = 'kakao-poi-layer';
   static const _poiLabelLayerId = 'kakao-poi-label-layer';
@@ -106,7 +105,6 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
   void Function(String name, double lat, double lng)? _onPoiTapped;
   void Function(double lat, double lng)? _onMapCoordTapped;
   bool _poiTappedThisFrame = false;
-  bool _coordTappedThisFrame = false;
   bool _pendingPoiTriggered = false;
   String? _pendingPoiName;
   double? _pendingPoiLat;
@@ -1353,51 +1351,6 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
 
   /// 열차 위치를 3D 블록용 Polygon으로 변환
   /// 진행방향(bearing)에 맞게 회전 + 상행/하행 오프셋 적용
-  List<List<double>> _trainPolygon(
-    double lat,
-    double lng,
-    double bearing,
-    int expressType,
-    int direction,
-  ) {
-    final offset = _offsetPosition(lat, lng, bearing, direction);
-    final oLat = offset[0];
-    final oLng = offset[1];
-
-    final double lengthM, widthM;
-    if (expressType == 7) {
-      lengthM = 75.0;
-      widthM = 28.0;
-    } else if (expressType == 1) {
-      lengthM = 60.0;
-      widthM = 25.0;
-    } else {
-      lengthM = 45.0;
-      widthM = 20.0;
-    }
-    final halfL = lengthM / 2;
-    final halfW = widthM / 2;
-
-    final rad = bearing * 3.14159265 / 180.0;
-    final cosB = cos(rad);
-    final sinB = sin(rad);
-
-    final offsets = <List<double>>[
-      [-halfW, -halfL],
-      [halfW, -halfL],
-      [halfW, halfL],
-      [-halfW, halfL],
-    ];
-
-    final coords = <List<double>>[];
-    for (final o in offsets) {
-      final rotX = o[0] * cosB + o[1] * sinB;
-      final rotY = -o[0] * sinB + o[1] * cosB;
-      coords.add([oLng + rotX / _mPerDegLng, oLat + rotY / _mPerDegLat]);
-    }
-    coords.add([coords[0][0], coords[0][1]]);
-    return coords;
-  }
 
   /// 노선 좌표를 상행/하행 방향으로 오프셋하여 복선 생성
   static List<List<double>> _offsetRoute(
