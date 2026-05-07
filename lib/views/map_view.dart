@@ -26,6 +26,7 @@ import '../services/favorites_service.dart';
 import '../services/directions_service.dart';
 import '../services/live_activity_service.dart';
 import '../services/incoming_url_service.dart';
+import 'map/widgets/departure_time_picker.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 import '../services/visit_history_service.dart';
 import '../data/seoul_subway_data.dart';
@@ -2315,95 +2316,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
     });
   }
 
-  /// 출발 시각 변경 picker. 빠른 옵션(지금/30분 후/1시간 후) + 직접 지정.
-  void _showDepartureTimePicker() {
-    showCupertinoModalPopup(
-      context: context,
-      builder: (ctx) => CupertinoActionSheet(
-        title: const Text('출발 시각'),
-        message: _customDepartureTime != null
-            ? const Text('지정된 시각 기준으로 도착 시각이 계산됩니다.')
-            : null,
-        actions: [
-          CupertinoActionSheetAction(
-            onPressed: () {
-              setState(() => _customDepartureTime = null);
-              Navigator.pop(ctx);
-            },
-            child: const Text('지금'),
-          ),
-          CupertinoActionSheetAction(
-            onPressed: () {
-              setState(
-                () => _customDepartureTime = DateTime.now().add(
-                  const Duration(minutes: 30),
-                ),
-              );
-              Navigator.pop(ctx);
-            },
-            child: const Text('30분 후'),
-          ),
-          CupertinoActionSheetAction(
-            onPressed: () {
-              setState(
-                () => _customDepartureTime = DateTime.now().add(
-                  const Duration(hours: 1),
-                ),
-              );
-              Navigator.pop(ctx);
-            },
-            child: const Text('1시간 후'),
-          ),
-          CupertinoActionSheetAction(
-            onPressed: () {
-              Navigator.pop(ctx);
-              _pickCustomDepartureTime();
-            },
-            child: const Text('직접 지정'),
-          ),
-        ],
-        cancelButton: CupertinoActionSheetAction(
-          onPressed: () => Navigator.pop(ctx),
-          isDefaultAction: true,
-          child: const Text('취소'),
-        ),
-      ),
+  Future<void> _showDepartureTimePicker() async {
+    final result = await showDepartureTimePicker(
+      context,
+      current: _customDepartureTime,
     );
-  }
-
-  Future<void> _pickCustomDepartureTime() async {
-    DateTime selected = _customDepartureTime ?? DateTime.now();
-    await showCupertinoModalPopup(
-      context: context,
-      builder: (ctx) => Container(
-        height: 280,
-        color: CupertinoColors.systemBackground.resolveFrom(ctx),
-        child: SafeArea(
-          top: false,
-          child: Column(
-            children: [
-              Expanded(
-                child: CupertinoDatePicker(
-                  mode: CupertinoDatePickerMode.dateAndTime,
-                  initialDateTime: selected,
-                  minimumDate: DateTime.now().subtract(
-                    const Duration(minutes: 1),
-                  ),
-                  onDateTimeChanged: (dt) => selected = dt,
-                ),
-              ),
-              CupertinoButton(
-                onPressed: () {
-                  setState(() => _customDepartureTime = selected);
-                  Navigator.pop(ctx);
-                },
-                child: const Text('확인'),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+    if (!mounted || !result.changed) return;
+    setState(() => _customDepartureTime = result.time);
   }
 
   void _advanceNavigationStep() {
