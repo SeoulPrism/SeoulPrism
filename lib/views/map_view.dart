@@ -33,6 +33,7 @@ import 'map/widgets/place_detail_panel.dart';
 import 'map/widgets/river_bus_stop_panel.dart';
 import 'map/widgets/vehicle_panels.dart';
 import 'map/widgets/route_sheet_shell.dart';
+import 'map/widgets/route_timeline.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 import '../services/visit_history_service.dart';
 import '../data/seoul_subway_data.dart';
@@ -1927,34 +1928,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
     String stationName, {
     required TextStyle style,
   }) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
+    return RoutePointText(
+      stationName: stationName,
+      style: style,
       onTap: () => _focusOnRoutePoint(seg, stationName),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Flexible(
-            child: Text(
-              stationName,
-              style: style,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          const SizedBox(width: 4),
-          Icon(
-            Icons.my_location,
-            size: (style.fontSize ?? 14) - 1,
-            color: style.color?.withValues(alpha: 0.45),
-          ),
-        ],
-      ),
     );
   }
 
   Widget _buildNavigationBanner(Color onSurface, Color mutedColor) {
     final seg = _activeNavigationSegment;
     if (seg == null) return const SizedBox.shrink();
-    final segColor = _segmentColorForBar(seg);
+    final segColor = segmentColorForBar(seg);
     final icon = seg.mode == TransportMode.walk
         ? Icons.directions_walk
         : seg.mode == TransportMode.bus
@@ -2028,18 +2012,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Color _segmentColorForBar(PathSegment seg) {
-    if (seg.mode == TransportMode.bus) {
-      final ref = seg.lineId.startsWith('bus_') ? seg.lineId.substring(4) : '';
-      final num = int.tryParse(ref);
-      if (num != null && num >= 100 && num <= 999) return BusColors.trunk;
-      if (num != null && num >= 1000) return BusColors.branch;
-      if (ref.startsWith('M')) return BusColors.express;
-      return BusColors.branch;
-    }
-    if (seg.mode == TransportMode.walk) return Colors.grey;
-    return SubwayColors.lineColors[seg.lineId] ?? Colors.grey;
-  }
 
   String _formatDuration(int sec) {
     final min = sec ~/ 60;
@@ -2634,7 +2606,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       final seg = r.segments[i];
       if (seg.isTransfer) continue;
 
-      final segColor = _segmentColorForBar(seg);
+      final segColor = segmentColorForBar(seg);
       final timeMins = (seg.travelTimeSec / 60).ceil();
       final isWalk = seg.mode == TransportMode.walk;
       final isBus = seg.mode == TransportMode.bus;
@@ -3213,7 +3185,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             .clamp(1, 100),
                         child: Container(
                           decoration: BoxDecoration(
-                            color: _segmentColorForBar(segs[i]),
+                            color: segmentColorForBar(segs[i]),
                             borderRadius: i == 0
                                 ? const BorderRadius.horizontal(
                                     left: Radius.circular(4),
@@ -3250,7 +3222,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           : segs[i].lineName,
                       style: TextStyle(
                         fontSize: 10,
-                        color: _segmentColorForBar(segs[i]),
+                        color: segmentColorForBar(segs[i]),
                         fontWeight: FontWeight.w600,
                       ),
                       textAlign: TextAlign.center,
@@ -3278,51 +3250,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
     bool lineDashed = false,
     bool lineBelow = true,
     required Widget child,
-  }) {
-    final dot = dotColor != null
-        ? Container(
-            width: 14,
-            height: 14,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: dotHollow ? Colors.transparent : dotColor,
-              border: Border.all(color: dotColor, width: dotHollow ? 3 : 0),
-            ),
-          )
-        : const SizedBox(width: 14, height: 14);
-
-    // 왼쪽 선을 Container border로 처리 (높이를 콘텐츠에 맞춤)
-    final lineDecor = lineBelow
-        ? BoxDecoration(
-            border: Border(
-              left: BorderSide(
-                color: lineColor ?? Colors.grey.withValues(alpha: 0.2),
-                width: lineDashed ? 2 : 3.5,
-              ),
-            ),
-          )
-        : null;
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 2),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 왼쪽 점
-          Padding(padding: const EdgeInsets.only(top: 4), child: dot),
-          const SizedBox(width: 5),
-          // 오른쪽: 콘텐츠 + 왼쪽 border가 선 역할
-          Expanded(
-            child: Container(
-              padding: const EdgeInsets.only(left: 10, bottom: 10),
-              decoration: lineDecor,
-              child: child,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  }) => TimelineRow(
+        dotColor: dotColor,
+        dotHollow: dotHollow,
+        lineColor: lineColor,
+        lineDashed: lineDashed,
+        lineBelow: lineBelow,
+        child: child,
+      );
 
   // ── 설정 오버레이 패널 ──
   Widget _buildSettingsOverlay(
