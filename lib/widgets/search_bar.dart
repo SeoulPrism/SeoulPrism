@@ -11,6 +11,7 @@ import 'package:cupertino_native_better/cupertino_native_better.dart';
 import 'adaptive/adaptive.dart';
 import 'search_bar/glass_search_field.dart';
 import 'search_bar/recent_routes_panel.dart';
+import 'search_bar/search_tiles.dart';
 import '../data/seoul_subway_data.dart';
 import '../models/subway_models.dart';
 import '../models/bus_models.dart';
@@ -1320,95 +1321,6 @@ class UnifiedSearchBarState extends State<UnifiedSearchBar>
 
 
 
-  Widget _buildTile(
-    StationSearchResult r,
-    void Function(StationSearchResult) onSelect,
-  ) {
-    // 환승역 판정은 allLineIds (등장하는 모든 노선 ID 합집합) 기반.
-    // 비어있을 수도 있는 const 기본값 호환: 비면 자기 노선만 사용.
-    final lineIds = r.allLineIds.isEmpty ? <String>[r.lineId] : r.allLineIds;
-    final allColors = <Color>[];
-    for (final id in lineIds) {
-      final c = SubwayColors.lineColors[id];
-      if (c != null && !allColors.contains(c)) allColors.add(c);
-    }
-    if (allColors.isEmpty) allColors.add(r.lineColor);
-    final hasTrf = allColors.length > 1;
-
-    return GestureDetector(
-      onTap: () => onSelect(r),
-      behavior: HitTestBehavior.opaque,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.lg,
-          vertical: AppSpacing.md,
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 28,
-              height: 28,
-              decoration: BoxDecoration(
-                gradient: allColors.length > 1
-                    ? LinearGradient(
-                        colors: allColors,
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      )
-                    : null,
-                color: allColors.length == 1 ? r.lineColor : null,
-                shape: BoxShape.circle,
-              ),
-              child: const Center(
-                child: Icon(Icons.subway, size: 15, color: Colors.white),
-              ),
-            ),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    r.station.name,
-                    style: AppTypography.bodyMd.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  if (hasTrf)
-                    Text(
-                      lineIds
-                          .map((id) => SubwayColors.lineNames[id] ?? id)
-                          .join(' · '),
-                      style: AppTypography.caption.copyWith(
-                        color: AppColors.textDisabled,
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            if (hasTrf)
-              ShaderMask(
-                shaderCallback: (bounds) =>
-                    LinearGradient(colors: allColors).createShader(bounds),
-                child: const Text(
-                  '지하철',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.white,
-                  ),
-                ),
-              )
-            else
-              Text(
-                r.lineName,
-                style: AppTypography.bodySm.copyWith(color: r.lineColor),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
 
 
   void _selectNavPlace(PlaceSearchResult place) {
@@ -1474,14 +1386,22 @@ class UnifiedSearchBarState extends State<UnifiedSearchBar>
         },
         itemBuilder: (_, i) {
           if (_showCurrentLocationResult && i == 0) {
-            return _buildCurrentLocationTile();
+            return CurrentLocationTile(
+              onTap: () => _setCurrentLocationForField(_activeField),
+            );
           }
           final stationIndex = i - currentLocationCount;
           if (stationIndex < _navResults.length) {
-            return _buildTile(_navResults[stationIndex], _selectNav);
+            return StationTile(
+              result: _navResults[stationIndex],
+              onSelect: _selectNav,
+            );
           }
           final place = _navPlaceResults[stationIndex - _navResults.length];
-          return _buildPlaceTileWith(place, () => _selectNavPlace(place));
+          return PlaceTile(
+            place: place,
+            onTap: () => _selectNavPlace(place),
+          );
         },
       );
     }
@@ -1522,44 +1442,6 @@ class UnifiedSearchBarState extends State<UnifiedSearchBar>
     );
   }
 
-  Widget _buildCurrentLocationTile() {
-    return InkWell(
-      onTap: () => _setCurrentLocationForField(_activeField),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md,
-          vertical: AppSpacing.sm,
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.accent.withValues(alpha: 0.15),
-              ),
-              child: const Icon(
-                Icons.my_location,
-                size: 16,
-                color: AppColors.accent,
-              ),
-            ),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: Text(
-                '내 위치',
-                style: AppTypography.bodyMd.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   // ── 최근 검색 드롭다운 ──
   Widget _buildRecentSearchDropdown() {
@@ -1712,15 +1594,18 @@ class UnifiedSearchBarState extends State<UnifiedSearchBar>
         },
         itemBuilder: (_, i) {
           if (i < _searchResults.length) {
-            return _buildTile(_searchResults[i], _selectSearch);
+            return StationTile(
+              result: _searchResults[i],
+              onSelect: _selectSearch,
+            );
           }
           final busIdx = i - _searchResults.length;
           if (busIdx < busCount) {
-            return _buildBusTile(_busResults[busIdx]);
+            final route = _busResults[busIdx];
+            return BusTile(route: route, onTap: () => _selectBus(route));
           }
-          return _buildPlaceTile(
-            _placeResults[i - _searchResults.length - busCount],
-          );
+          final p = _placeResults[i - _searchResults.length - busCount];
+          return PlaceTile(place: p, onTap: () => _selectPlace(p));
         },
       );
     }
@@ -1761,206 +1646,11 @@ class UnifiedSearchBarState extends State<UnifiedSearchBar>
     );
   }
 
-  Widget _buildBusTile(BusRouteInfo route) {
-    final color = BusColors.fromRouteType(route.routeType);
-    final typeName = _busTypeName(route.routeType);
 
-    return GestureDetector(
-      onTap: () => _selectBus(route),
-      behavior: HitTestBehavior.opaque,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.lg,
-          vertical: AppSpacing.md,
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 28,
-              height: 28,
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Center(
-                child: Icon(Icons.directions_bus, size: 15, color: color),
-              ),
-            ),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    route.busRouteNm,
-                    style: AppTypography.bodyMd.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  if (route.stStationNm.isNotEmpty ||
-                      route.edStationNm.isNotEmpty)
-                    Text(
-                      '${route.stStationNm} → ${route.edStationNm}',
-                      style: AppTypography.caption.copyWith(
-                        color: AppColors.textDisabled,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                ],
-              ),
-            ),
-            Text(typeName, style: AppTypography.caption.copyWith(color: color)),
-          ],
-        ),
-      ),
-    );
-  }
 
-  String _busTypeName(int type) {
-    switch (type) {
-      case 3:
-        return '간선';
-      case 4:
-        return '지선';
-      case 5:
-        return '순환';
-      case 6:
-        return '광역';
-      case 7:
-        return '인천';
-      case 8:
-        return '경기';
-      default:
-        return '버스';
-    }
-  }
 
-  Widget _buildPlaceTile(PlaceSearchResult place) {
-    return _buildPlaceTileWith(place, () => _selectPlace(place));
-  }
 
-  Widget _buildPlaceTileWith(PlaceSearchResult place, VoidCallback onTap) {
-    final icon = _placeIcon(place.category);
-    final color = _placeColor(place.category);
 
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.lg,
-          vertical: AppSpacing.md,
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 28,
-              height: 28,
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.2),
-                shape: BoxShape.circle,
-              ),
-              child: Center(child: Icon(icon, size: 15, color: color)),
-            ),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    place.name,
-                    style: AppTypography.bodyMd.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  if (place.address.isNotEmpty)
-                    Text(
-                      place.address,
-                      style: AppTypography.caption.copyWith(
-                        color: AppColors.textDisabled,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                ],
-              ),
-            ),
-            Text(
-              place.category,
-              style: AppTypography.caption.copyWith(color: color),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  IconData _placeIcon(String category) {
-    switch (category) {
-      case '음식점':
-        return Icons.restaurant;
-      case '카페':
-        return Icons.local_cafe;
-      case '공원':
-        return Icons.park;
-      case '쇼핑':
-        return Icons.shopping_bag;
-      case '의료':
-        return Icons.local_hospital;
-      case '교육':
-        return Icons.school;
-      case '숙박':
-        return Icons.hotel;
-      case '금융':
-        return Icons.account_balance;
-      case '교통':
-        return Icons.directions_transit;
-      case '주소':
-        return Icons.pin_drop;
-      case '도시':
-        return Icons.location_city;
-      case '동네':
-        return Icons.holiday_village;
-      case '도로':
-        return Icons.edit_road;
-      default:
-        return Icons.place;
-    }
-  }
-
-  Color _placeColor(String category) {
-    switch (category) {
-      case '음식점':
-        return Colors.orange;
-      case '카페':
-        return const Color(0xFF795548);
-      case '공원':
-        return Colors.green;
-      case '쇼핑':
-        return Colors.pink;
-      case '의료':
-        return Colors.red;
-      case '교육':
-        return Colors.indigo;
-      case '숙박':
-        return Colors.purple;
-      case '금융':
-        return Colors.teal;
-      case '교통':
-        return Colors.blue;
-      case '주소':
-        return Colors.blueGrey;
-      case '도시':
-        return Colors.deepPurple;
-      case '동네':
-        return Colors.amber;
-      case '도로':
-        return Colors.grey;
-      default:
-        return Colors.blueAccent;
-    }
-  }
 }
 
 enum _NavField { departure, arrival }
