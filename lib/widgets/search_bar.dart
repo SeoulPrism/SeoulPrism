@@ -13,6 +13,7 @@ import 'search_bar/glass_search_field.dart';
 import 'search_bar/recent_routes_panel.dart';
 import 'search_bar/search_tiles.dart';
 import 'search_bar/search_dropdowns.dart';
+import 'search_bar/recent_search_dropdown.dart';
 import '../data/seoul_subway_data.dart';
 import '../models/subway_models.dart';
 import '../models/bus_models.dart';
@@ -956,7 +957,22 @@ class UnifiedSearchBarState extends State<UnifiedSearchBar>
               top: top + AppSpacing.sm + _kBarHeight + AppSpacing.sm,
               left: _kHPadding,
               right: _kHPadding,
-              child: _buildRecentSearchDropdown(),
+              child: RecentSearchDropdown(
+                items: RecentSearchService.instance.items,
+                radius: _kBarRadius,
+                onSelect: (q) {
+                  _searchController.text = q;
+                  _onSearchChanged(q);
+                },
+                onRemove: (q) async {
+                  await RecentSearchService.instance.remove(q);
+                  if (mounted) setState(() {});
+                },
+                onClearAll: () async {
+                  await RecentSearchService.instance.clear();
+                  if (mounted) setState(() {});
+                },
+              ),
             ),
         ],
 
@@ -1371,116 +1387,6 @@ class UnifiedSearchBarState extends State<UnifiedSearchBar>
 
 
   // ── 최근 검색 드롭다운 ──
-  Widget _buildRecentSearchDropdown() {
-    final isM3 = Platform.isAndroid;
-    final recent = RecentSearchService.instance.items;
-
-    Widget buildList() {
-      return Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 10, 8, 6),
-            child: Row(
-              children: [
-                Text(
-                  '최근 검색',
-                  style: AppTypography.bodySm.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const Spacer(),
-                GestureDetector(
-                  onTap: () async {
-                    await RecentSearchService.instance.clear();
-                    setState(() {});
-                  },
-                  child: Text(
-                    '전체 삭제',
-                    style: AppTypography.caption.copyWith(
-                      color: AppColors.textDisabled,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-              ],
-            ),
-          ),
-          ...recent
-              .take(8)
-              .map(
-                (q) => GestureDetector(
-                  onTap: () {
-                    _searchController.text = q;
-                    _onSearchChanged(q);
-                  },
-                  behavior: HitTestBehavior.opaque,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 10,
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.history,
-                          size: 16,
-                          color: AppColors.textDisabled,
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(child: Text(q, style: AppTypography.bodyMd)),
-                        GestureDetector(
-                          onTap: () async {
-                            await RecentSearchService.instance.remove(q);
-                            setState(() {});
-                          },
-                          child: Icon(
-                            Icons.close,
-                            size: 14,
-                            color: AppColors.textDisabled,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-          const SizedBox(height: 6),
-        ],
-      );
-    }
-
-    if (isM3) {
-      final cs = Theme.of(context).colorScheme;
-      return Material(
-        elevation: 3,
-        shadowColor: cs.shadow.withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(_kBarRadius),
-        color: cs.surfaceContainer,
-        surfaceTintColor: cs.surfaceTint,
-        clipBehavior: Clip.antiAlias,
-        child: buildList(),
-      );
-    }
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(_kBarRadius),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: AppColors.glassDropOpacity),
-            borderRadius: BorderRadius.circular(_kBarRadius),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.15),
-              width: 0.5,
-            ),
-          ),
-          child: buildList(),
-        ),
-      ),
-    );
-  }
 
   // ── 통합 검색 드롭다운 (지하철 + 버스 + 장소) ──
 
