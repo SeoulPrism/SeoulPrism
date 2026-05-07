@@ -144,6 +144,7 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
     double? zoom,
     double? pitch,
     double? bearing,
+    int durationMs = 1500,
   }) {
     _mapboxMap?.flyTo(
       CameraOptions(
@@ -152,7 +153,35 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
         pitch: pitch,
         bearing: bearing,
       ),
-      MapAnimationOptions(duration: 1500),
+      MapAnimationOptions(duration: durationMs),
+    );
+  }
+
+  @override
+  void primeFollowMode() {
+    // 외부에서 카메라를 이미 의도한 zoom/pitch 로 맞췄음을 표시.
+    // 이후 followTrain 첫 호출이 flyTo(zoom 15.5/pitch 55) 로 카메라 덮어쓰지 않도록.
+    _isFollowing = true;
+    _flyToEndTime = 0;
+  }
+
+  @override
+  void easeTo(
+    double lat,
+    double lng, {
+    double? zoom,
+    double? pitch,
+    double? bearing,
+    int durationMs = 1200,
+  }) {
+    _mapboxMap?.easeTo(
+      CameraOptions(
+        center: Point(coordinates: Position(lng, lat)),
+        zoom: zoom,
+        pitch: pitch,
+        bearing: bearing,
+      ),
+      MapAnimationOptions(duration: durationMs),
     );
   }
 

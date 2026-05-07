@@ -67,6 +67,42 @@ class FlightOverlayController {
   List<FlightPosition> get currentFlights =>
       _states.values.map((s) => s.position).toList();
 
+  /// 보간된 현재 위치 (lat, lng, heading, altitude). 카메라 follow 용 — 매 프레임 부드럽게 갱신됨.
+  ({double lat, double lng, double heading, double altitude})? interpolatedById(
+      String icao24) {
+    final s = _states[icao24];
+    if (s == null) return null;
+    return (
+      lat: s.currentLat,
+      lng: s.currentLng,
+      heading: s.position.heading,
+      altitude: s.currentAlt,
+    );
+  }
+
+  /// 보간된 위치 기준 — 카메라에서 가장 가까운 비행기 (icao24, lat, lng).
+  ({String icao24, double lat, double lng})? nearestInterpolated(
+      double camLat, double camLng) {
+    String? bestId;
+    double bestLat = 0, bestLng = 0;
+    double bestSq = double.infinity;
+    for (final entry in _states.entries) {
+      final s = entry.value;
+      final dLat = s.currentLat - camLat;
+      final dLng = s.currentLng - camLng;
+      final sq = dLat * dLat + dLng * dLng;
+      if (sq < bestSq) {
+        bestSq = sq;
+        bestLat = s.currentLat;
+        bestLng = s.currentLng;
+        bestId = entry.key;
+      }
+    }
+    return bestId == null
+        ? null
+        : (icao24: bestId, lat: bestLat, lng: bestLng);
+  }
+
   void attachMap(IMapController controller) {
     _mapController = controller;
     controller.setOnFlightTapped((icao24) {

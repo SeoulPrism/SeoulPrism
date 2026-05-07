@@ -66,6 +66,9 @@ class BusOverlayController {
   bool _isActive = false;
   bool _showBuses = true;
   bool _showRiverBus = true;
+  // 추적 노선 0 개 + 외부에서 직접 bus 레이어 쓰는 경우 (예: 온보딩 시뮬레이터)
+  // 빈 리스트로 덮어쓰지 않게 — 마지막 비-empty render 가 있었는지 추적.
+  bool _lastBusRenderHadData = false;
 
   // 추적 중인 노선 목록
   final List<TrackedBusRoute> _trackedRoutes = [];
@@ -93,6 +96,7 @@ class BusOverlayController {
   bool get showRiverBus => _showRiverBus;
   List<TrackedBusRoute> get trackedRoutes => List.unmodifiable(_trackedRoutes);
   int get totalBusCount => _currentPositions.values.fold(0, (s, l) => s + l.length);
+  Map<String, List<BusPosition>> get currentPositions => Map.unmodifiable(_currentPositions);
   BusPosition? get selectedBus => _selectedBus;
   TrackedBusRoute? get selectedBusRoute => _selectedBusRoute;
   RiverBusVessel? get selectedVessel => _selectedVessel;
@@ -278,7 +282,10 @@ class BusOverlayController {
     if (mc == null) return;
 
     if (!_showBuses && !_showRiverBus) {
-      await mc.updateBusPositions3D([]);
+      if (_lastBusRenderHadData) {
+        await mc.updateBusPositions3D([]);
+        _lastBusRenderHadData = false;
+      }
       return;
     }
 
@@ -322,7 +329,11 @@ class BusOverlayController {
       }
     }
 
-    await mc.updateBusPositions3D(renderData);
+    // 외부에서 같은 bus 레이어를 쓰는 경우 (온보딩 시뮬레이터) 빈 리스트로 덮어쓰지 않게 가드.
+    if (renderData.isNotEmpty || _lastBusRenderHadData) {
+      await mc.updateBusPositions3D(renderData);
+      _lastBusRenderHadData = renderData.isNotEmpty;
+    }
 
     // 한강버스 (전용 레이어 — 배 모양)
     if (_showRiverBus) {
