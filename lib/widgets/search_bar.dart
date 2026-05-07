@@ -10,6 +10,7 @@ import '../data/river_bus_data.dart';
 import 'package:cupertino_native_better/cupertino_native_better.dart';
 import 'adaptive/adaptive.dart';
 import 'search_bar/glass_search_field.dart';
+import 'search_bar/recent_routes_panel.dart';
 import '../data/seoul_subway_data.dart';
 import '../models/subway_models.dart';
 import '../models/bus_models.dart';
@@ -1202,97 +1203,15 @@ class UnifiedSearchBarState extends State<UnifiedSearchBar>
     widget.onRouteFound?.call(route);
   }
 
-  /// 최근 길찾기 페어 패널 — 출발/도착이 비어있을 때 빠른 재선택용.
   Widget _buildRecentRoutesPanel() {
-    final recents = RecentRouteService.instance.routes.take(5).toList();
-    if (recents.isEmpty) return const SizedBox.shrink();
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(_kBarRadius),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: AppColors.glassDropOpacity),
-            borderRadius: BorderRadius.circular(_kBarRadius),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.15),
-              width: 0.5,
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
-                child: Text(
-                  '최근 길찾기',
-                  style: AppTypography.caption.copyWith(
-                    color: AppColors.textTertiary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-              ...recents.map(
-                (r) => InkWell(
-                  onTap: () => _selectRecentRoute(r),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 10,
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          CupertinoIcons.clock,
-                          size: 15,
-                          color: AppColors.textTertiary,
-                        ),
-                        const SizedBox(width: AppSpacing.md),
-                        Expanded(
-                          child: Text(
-                            '${r.departure}  →  ${r.arrival}',
-                            style: AppTypography.bodyMd,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        if (r.useCount > 1) ...[
-                          const SizedBox(width: 6),
-                          Text(
-                            '${r.useCount}',
-                            style: AppTypography.caption.copyWith(
-                              color: AppColors.textTertiary,
-                            ),
-                          ),
-                        ],
-                        const SizedBox(width: 4),
-                        GestureDetector(
-                          onTap: () async {
-                            await RecentRouteService.instance.remove(
-                              r.departure,
-                              r.arrival,
-                            );
-                            if (mounted) setState(() {});
-                          },
-                          behavior: HitTestBehavior.opaque,
-                          child: Padding(
-                            padding: const EdgeInsets.all(4),
-                            child: Icon(
-                              CupertinoIcons.xmark,
-                              size: 13,
-                              color: AppColors.textTertiary,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+    return RecentRoutesPanel(
+      routes: RecentRouteService.instance.routes.take(5).toList(),
+      radius: _kBarRadius,
+      onSelect: _selectRecentRoute,
+      onRemove: (r) async {
+        await RecentRouteService.instance.remove(r.departure, r.arrival);
+        if (mounted) setState(() {});
+      },
     );
   }
 
