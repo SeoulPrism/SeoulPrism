@@ -34,6 +34,7 @@ import 'map/widgets/river_bus_stop_panel.dart';
 import 'map/widgets/vehicle_panels.dart';
 import 'map/widgets/route_sheet_shell.dart';
 import 'map/widgets/route_timeline.dart';
+import 'map/widgets/navigation_banner.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 import '../services/visit_history_service.dart';
 import '../data/seoul_subway_data.dart';
@@ -1935,82 +1936,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildNavigationBanner(Color onSurface, Color mutedColor) {
-    final seg = _activeNavigationSegment;
-    if (seg == null) return const SizedBox.shrink();
-    final segColor = segmentColorForBar(seg);
-    final icon = seg.mode == TransportMode.walk
-        ? Icons.directions_walk
-        : seg.mode == TransportMode.bus
-        ? Icons.directions_bus
-        : Icons.train;
-    final action = seg.mode == TransportMode.walk
-        ? '${seg.stations.last}까지 도보'
-        : '${seg.stations.first}에서 ${seg.lineName} 승차';
-    final detail = seg.mode == TransportMode.walk
-        ? '${(seg.travelTimeSec / 60).ceil()}분 이동'
-        : '${seg.stations.last} 방면 · ${(seg.travelTimeSec / 60).ceil()}분';
-
-    return Container(
-      padding: const EdgeInsets.fromLTRB(12, 10, 10, 10),
-      decoration: BoxDecoration(
-        color: segColor.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: segColor.withValues(alpha: 0.20)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 34,
-            height: 34,
-            decoration: BoxDecoration(shape: BoxShape.circle, color: segColor),
-            child: Icon(icon, size: 18, color: Colors.white),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  action,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w800,
-                    color: onSurface,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  detail,
-                  style: TextStyle(fontSize: 12, color: mutedColor),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-          GestureDetector(
-            onTap: _advanceNavigationStep,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-              decoration: BoxDecoration(
-                color: segColor.withValues(alpha: 0.14),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                '다음',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
-                  color: segColor,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
 
   String _formatDuration(int sec) {
@@ -3026,7 +2951,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
       const SizedBox(height: 12),
       if (_routeNavigationActive && _activeNavigationSegment != null) ...[
-        _buildNavigationBanner(onSurface, mutedColor),
+        NavigationBanner(
+          activeSegment: _activeNavigationSegment,
+          onSurface: onSurface,
+          mutedColor: mutedColor,
+          onAdvance: _advanceNavigationStep,
+        ),
         const SizedBox(height: 12),
       ],
       // ── 큰 시간 + 출발~도착 시각 + 요금 ──
