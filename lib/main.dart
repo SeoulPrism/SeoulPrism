@@ -7,14 +7,16 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'firebase_options.dart';
 import 'core/api_keys.dart';
 import 'services/device_profile_service.dart';
+import 'services/onboarding_service.dart';
 import 'services/settings_service.dart';
 import 'services/favorites_service.dart';
 import 'services/recent_search_service.dart';
 import 'services/recent_route_service.dart';
 import 'services/visit_history_service.dart';
 import 'theme/app_theme.dart';
-import 'views/auth_view.dart';
 import 'views/home_view.dart';
+import 'views/onboarding/onboarding_view.dart';
+import 'views/onboarding/widgets/onboarding_map_background.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -33,6 +35,9 @@ Future<void> main() async {
 
   // Settings 초기화
   await SettingsService.init();
+
+  // 튜토리얼 진행 상태 초기화 (어떤 페이지를 봤는지 추적)
+  await OnboardingService.init();
 
   // 기기 프로필 감지 (Android: 기기별 최적화)
   await DeviceProfileService.init();
@@ -141,7 +146,30 @@ class _SeoulPrismAppState extends State<SeoulPrismApp> {
       themeMode: _themeMode,
       // App Store 심사 가이드 5.1.1(v) — 계정 기반이 아닌 기능에 로그인 강제 금지.
       // 항상 HomeView 부터 진입 (게스트 허용). 로그인은 사용자가 명시적으로 시작 (즐겨찾기 동기화/프로필 등).
-      home: const HomeView(),
+      home: const _RootGate(),
     );
+  }
+}
+
+/// 첫 진입 / 버전 업데이트 후 새 페이지가 있으면 OnboardingView 를,
+/// 그 외에는 HomeView 를 보여줌.
+class _RootGate extends StatefulWidget {
+  const _RootGate();
+
+  @override
+  State<_RootGate> createState() => _RootGateState();
+}
+
+class _RootGateState extends State<_RootGate> {
+  bool _onboardingDone = false;
+
+  @override
+  Widget build(BuildContext context) {
+    if (_onboardingDone) return const HomeView();
+    final view = OnboardingView.buildIfNeeded(
+      background: const OnboardingMapBackground(),
+      onComplete: () => setState(() => _onboardingDone = true),
+    );
+    return view ?? const HomeView();
   }
 }
