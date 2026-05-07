@@ -1,3 +1,4 @@
+import '../core/debug_log.dart';
 import 'dart:async';
 import 'dart:developer' as developer;
 import 'dart:io';
@@ -922,16 +923,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   opacity:
                       (_isNavMode ||
                           _isSearchFocused ||
-                          _settingsOpen ||
-                          _recommendOpen)
+                          _settingsOpen)
                       ? 0.0
                       : 1.0,
                   child: IgnorePointer(
                     ignoring:
                         _isNavMode ||
                         _isSearchFocused ||
-                        _settingsOpen ||
-                        _recommendOpen,
+                        _settingsOpen,
                     child: WeatherTimeWidget(
                       environment: _subwayController.environment,
                     ),
@@ -948,16 +947,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 opacity:
                     (_isNavMode ||
                         _isSearchFocused ||
-                        _settingsOpen ||
-                        _recommendOpen)
+                        _settingsOpen)
                     ? 0.0
                     : 1.0,
                 child: IgnorePointer(
                   ignoring:
                       _isNavMode ||
                       _isSearchFocused ||
-                      _settingsOpen ||
-                      _recommendOpen,
+                      _settingsOpen,
                   child: AnimatedSwitcher(
                     duration: const Duration(milliseconds: 300),
                     child: AdaptiveGlassIconButton(
@@ -2281,7 +2278,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         }
       }
     } catch (e) {
-      debugPrint('[AI Action] URL 분석 실패: $e');
+      DebugLog.log('[AI Action] URL 분석 실패: $e');
     }
   }
 
@@ -2296,13 +2293,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
         });
       }
     } catch (e) {
-      debugPrint('[AI Action] 플랜 생성 실패: $e');
+      DebugLog.log('[AI Action] 플랜 생성 실패: $e');
     }
   }
 
   /// AI 요청으로 플랜 생성 (텍스트 기반)
   Future<void> _createPlanFromAi(String style, String? placesJson) async {
-    debugPrint('[AI Action] Create plan: style=$style');
+    DebugLog.log('[AI Action] Create plan: style=$style');
   }
 
   // ── 하단 탭바 (리퀴드 글라스) ──
