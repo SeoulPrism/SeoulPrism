@@ -112,15 +112,21 @@ class _WeatherTimeWidgetState extends State<WeatherTimeWidget> {
               const SizedBox(width: 6),
               Text('${env.temperature.toStringAsFixed(0)}°', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: fg)),
               const SizedBox(width: 4),
-              Text(env.weatherDescription, style: TextStyle(fontSize: 12, color: fgSub)),
+              Flexible(
+                child: Text(
+                  env.weatherDescription,
+                  style: TextStyle(fontSize: 12, color: fgSub),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                ),
+              ),
+              const SizedBox(width: 8),
               if (_forecast != null && _forecast!.isNotEmpty) ...[
-                const Spacer(),
                 Text('주간 ', style: TextStyle(fontSize: 10, color: fgSub)),
                 Text('${_weeklyAvgMin()}°', style: TextStyle(fontSize: 10, color: Colors.lightBlueAccent.withValues(alpha: 0.8))),
                 Text(' / ', style: TextStyle(fontSize: 10, color: fgSub)),
                 Text('${_weeklyAvgMax()}°', style: TextStyle(fontSize: 10, color: Colors.orangeAccent.withValues(alpha: 0.9))),
               ] else ...[
-                const Spacer(),
                 Icon(timeIcon, size: 14, color: fgSub),
                 const SizedBox(width: 4),
                 Text(timeStr, style: TextStyle(fontSize: 11, color: fgSub)),
