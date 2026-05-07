@@ -18,6 +18,7 @@ import 'search_bar/route_chip.dart';
 import '../data/seoul_subway_data.dart';
 import '../models/subway_models.dart';
 import '../models/bus_models.dart';
+import '../core/geo_distance.dart';
 import '../services/path_finding_service.dart';
 import '../services/place_search_service.dart';
 import '../services/seoul_bus_service.dart';
@@ -324,6 +325,7 @@ class UnifiedSearchBarState extends State<UnifiedSearchBar>
   PathResult? _pathResult;
   Map<PathSearchType, PathResult> _allRoutes = {};
   bool _isPathLoading = false;
+  bool _outOfServiceArea = false;
   final PathFindingService _pathService = PathFindingService();
 
   // 애니메이션
@@ -756,10 +758,28 @@ class UnifiedSearchBarState extends State<UnifiedSearchBar>
     if (_depStation == null || _arrStation == null) return;
     await _ensureCurrentLocationCoords();
     if (_depStation == null || _arrStation == null) return;
+
+    // 서비스 영역 (수도권) 밖 좌표가 있으면 길찾기 차단.
+    // 시뮬레이터 기본 SF 좌표 등으로 서울까지 탐색 시도하면 비정상적으로 긴 시간이 계산됨.
+    final depOut = (_depLat != null && _depLng != null) &&
+        !isInServiceArea(_depLat!, _depLng!);
+    final arrOut = (_arrLat != null && _arrLng != null) &&
+        !isInServiceArea(_arrLat!, _arrLng!);
+    if (depOut || arrOut) {
+      setState(() {
+        _isPathLoading = false;
+        _pathResult = null;
+        _allRoutes = {};
+        _outOfServiceArea = true;
+      });
+      return;
+    }
+
     setState(() {
       _isPathLoading = true;
       _pathResult = null;
       _allRoutes = {};
+      _outOfServiceArea = false;
     });
 
     final results = await Future.wait([
@@ -1008,6 +1028,11 @@ class UnifiedSearchBarState extends State<UnifiedSearchBar>
                       radius: _kBarRadius,
                     ),
                   )
+                else if (_outOfServiceArea)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: _kHPadding),
+                    child: _buildOutOfServiceAreaPanel(),
+                  )
                 else if (_pathResult == null &&
                     !_isPathLoading &&
                     RecentRouteService.instance.routes.isNotEmpty)
@@ -1104,6 +1129,7 @@ class UnifiedSearchBarState extends State<UnifiedSearchBar>
                 setState(() {
                   _pathResult = null;
                   _allRoutes = {};
+                  _outOfServiceArea = false;
                 });
                 _depFocus.requestFocus();
               },
@@ -1152,6 +1178,50 @@ class UnifiedSearchBarState extends State<UnifiedSearchBar>
         await RecentRouteService.instance.remove(r.departure, r.arrival);
         if (mounted) setState(() {});
       },
+    );
+  }
+
+  Widget _buildOutOfServiceAreaPanel() {
+    return Container(
+      margin: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.85),
+        borderRadius: BorderRadius.circular(_kBarRadius),
+        border: Border.all(
+          color: AppColors.warning.withValues(alpha: 0.4),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.location_off_outlined,
+              size: 22, color: AppColors.warning),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '서비스 지역 밖이에요',
+                  style: AppTypography.bodyMd.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '현재 길찾기는 서울·인천·경기 수도권만 지원해요. '
+                  '출발 또는 도착지를 수도권 안에서 다시 선택해주세요.',
+                  style: AppTypography.caption.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 

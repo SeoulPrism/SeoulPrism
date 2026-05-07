@@ -54,6 +54,20 @@ double distanceToSegmentMeters(
   return sqrt(pow(px - cx, 2) + pow(py - cy, 2));
 }
 
+/// 서비스 가능한 영역 — 수도권 (서울/인천/경기 + 공항).
+/// 이 박스를 벗어난 좌표로는 길찾기를 시도하지 않음 (시뮬레이터 SF 좌표 등 방어).
+const double serviceMinLat = 36.7;
+const double serviceMaxLat = 38.0;
+const double serviceMinLng = 126.3;
+const double serviceMaxLng = 127.8;
+
+bool isInServiceArea(double lat, double lng) {
+  return lat >= serviceMinLat &&
+      lat <= serviceMaxLat &&
+      lng >= serviceMinLng &&
+      lng <= serviceMaxLng;
+}
+
 /// 두 좌표 사이 방위각 (북=0, 시계방향).
 double bearingBetween(double aLat, double aLng, double bLat, double bLng) {
   final lat1 = aLat * pi / 180;
