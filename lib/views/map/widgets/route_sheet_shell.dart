@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import '../../../core/platform_scroll.dart';
 
 /// 길찾기 결과 시트의 외곽 컨테이너.
 /// - 핸들 드래그로 높이 변경 (callback 으로 fraction 전달).
@@ -93,7 +94,7 @@ class RouteSheetShell extends StatelessWidget {
                 ConstrainedBox(
                   constraints: BoxConstraints(maxHeight: headerMaxHeight),
                   child: SingleChildScrollView(
-                    physics: const ClampingScrollPhysics(),
+                    physics: platformScrollPhysics(),
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(16, 0, 20, 0),
                       child: Column(
@@ -118,7 +119,7 @@ class RouteSheetShell extends StatelessWidget {
                       20,
                       MediaQuery.of(context).padding.bottom + 20,
                     ),
-                    physics: const ClampingScrollPhysics(),
+                    physics: platformScrollPhysics(),
                     children: timelineItems,
                   ),
                 ),

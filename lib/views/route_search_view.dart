@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import '../core/platform_scroll.dart';
 import '../services/path_finding_service.dart';
 import '../models/subway_models.dart';
 import '../widgets/bus_overlay.dart';
@@ -116,7 +117,7 @@ class _RouteSearchOverlayState extends State<RouteSearchOverlay>
                             color: Colors.transparent,
                             child: ListView(
                               controller: scrollController,
-                              physics: const ClampingScrollPhysics(),
+                              physics: platformScrollPhysics(),
                               padding: EdgeInsets.zero,
                               children: [
                                 // 핸들

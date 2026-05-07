@@ -4,6 +4,7 @@ import 'dart:math';
 import 'dart:ui';
 
 import 'package:crypto/crypto.dart';
+import '../core/platform_scroll.dart';
 import '../widgets/adaptive/adaptive.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -81,7 +82,7 @@ class _AuthViewState extends State<AuthView> {
                 builder: (context, constraints) {
                   return SingleChildScrollView(
                     physics: keyboardOpen
-                        ? const ClampingScrollPhysics()
+                        ? platformScrollPhysics()
                         : const NeverScrollableScrollPhysics(),
                     child: ConstrainedBox(
                       constraints: BoxConstraints(minHeight: constraints.maxHeight),
