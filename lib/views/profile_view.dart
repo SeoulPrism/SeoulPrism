@@ -136,32 +136,50 @@ class _ProfileViewState extends State<ProfileView> {
             ),
           ),
           const SizedBox(height: 14),
-          GestureDetector(
-            onTap: _editUsername,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  supabase.auth.currentUser?.userMetadata?['username'] ?? '사용자',
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
-                    color: cs.onSurface,
+          Builder(
+            builder: (_) {
+              final user = supabase.auth.currentUser;
+              final isGuest = user?.isAnonymous ?? true;
+              final displayName = isGuest
+                  ? '게스트'
+                  : (user?.userMetadata?['username'] ?? '사용자');
+              final subtitle = isGuest
+                  ? '정식 로그인하면 다른 기기에서도 동기화돼요'
+                  : (user?.email ?? '');
+              return Column(
+                children: [
+                  GestureDetector(
+                    onTap: isGuest ? null : _editUsername,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          displayName,
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                            color: cs.onSurface,
+                          ),
+                        ),
+                        if (!isGuest) ...[
+                          const SizedBox(width: 6),
+                          Icon(Icons.edit, size: 16, color: cs.onSurfaceVariant),
+                        ],
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(width: 6),
-                Icon(Icons.edit, size: 16, color: cs.onSurfaceVariant),
-              ],
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            supabase.auth.currentUser?.email ?? '',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w400,
-              color: cs.onSurfaceVariant,
-            ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w400,
+                      color: cs.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
         ],
       ),

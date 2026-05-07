@@ -210,29 +210,56 @@ class _SettingsViewState extends State<SettingsView> {
             const SizedBox(height: 16),
 
             // Section 5: 계정
-            AdaptiveSectionCard(
-              children: [
-                _ChevronItem(
-                  label: '이름 변경',
-                  onTap: () => _editUsername(),
-                ),
-                const _ItemDivider(),
-                _ChevronItem(
-                  label: '비밀번호 변경',
-                  onTap: () => _changePassword(),
-                ),
-                const _ItemDivider(),
-                _ChevronItem(
-                  label: '로그아웃',
-                  onTap: () => _confirmLogout(),
-                ),
-                const _ItemDivider(),
-                _ChevronItem(
-                  label: '회원 탈퇴',
-                  isDestructive: true,
-                  onTap: () => _confirmDeleteAccount(),
-                ),
-              ],
+            // 익명(게스트) 사용자는 비밀번호/로그아웃/탈퇴 의미 없음 → "정식 계정으로 전환" 만 노출.
+            Builder(
+              builder: (_) {
+                final isGuest =
+                    supabase.auth.currentUser?.isAnonymous ?? true;
+                if (isGuest) {
+                  return AdaptiveSectionCard(
+                    children: [
+                      _ChevronItem(
+                        label: '이름 변경',
+                        onTap: () => _editUsername(),
+                      ),
+                      const _ItemDivider(),
+                      _ChevronItem(
+                        label: '정식 계정으로 전환',
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const AuthView(),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                }
+                return AdaptiveSectionCard(
+                  children: [
+                    _ChevronItem(
+                      label: '이름 변경',
+                      onTap: () => _editUsername(),
+                    ),
+                    const _ItemDivider(),
+                    _ChevronItem(
+                      label: '비밀번호 변경',
+                      onTap: () => _changePassword(),
+                    ),
+                    const _ItemDivider(),
+                    _ChevronItem(
+                      label: '로그아웃',
+                      onTap: () => _confirmLogout(),
+                    ),
+                    const _ItemDivider(),
+                    _ChevronItem(
+                      label: '회원 탈퇴',
+                      isDestructive: true,
+                      onTap: () => _confirmDeleteAccount(),
+                    ),
+                  ],
+                );
+              },
             ),
             const SizedBox(height: 16),
 
