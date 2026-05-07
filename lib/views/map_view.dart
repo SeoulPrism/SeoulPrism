@@ -25,6 +25,7 @@ import '../services/place_search_service.dart';
 import '../services/favorites_service.dart';
 import '../services/directions_service.dart';
 import '../services/live_activity_service.dart';
+import '../services/incoming_url_service.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 import '../services/visit_history_service.dart';
 import '../data/seoul_subway_data.dart';
@@ -208,6 +209,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
     Future.delayed(const Duration(seconds: 2), () {
       GeminiLiveService.instance.startSession();
     });
+
+    // 위젯/Control 에서 들어온 URL 처리 (com.seoul.prism://route?dep=...&arr=...).
+    IncomingUrlService.instance.onUrl(_handleIncomingUrl);
+  }
+
+  void _handleIncomingUrl(Uri url) {
+    if (url.host != 'route') return;
+    final dep = url.queryParameters['dep'];
+    final arr = url.queryParameters['arr'];
+    if (dep == null || arr == null || dep.isEmpty || arr.isEmpty) return;
+    _searchBarKey.currentState?.enterNavWithPair(
+      dep,
+      arr,
+      depLat: double.tryParse(url.queryParameters['dep_lat'] ?? ''),
+      depLng: double.tryParse(url.queryParameters['dep_lng'] ?? ''),
+      arrLat: double.tryParse(url.queryParameters['arr_lat'] ?? ''),
+      arrLng: double.tryParse(url.queryParameters['arr_lng'] ?? ''),
+    );
   }
 
   @override

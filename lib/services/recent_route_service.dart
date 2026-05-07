@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'widget_data_service.dart';
 
 /// 최근 사용한 길찾기 출발-도착 페어. visit_history 와 비슷한 구조이되, 페어(쌍) 단위로 묶어 관리.
 class RecentRoute {
@@ -116,6 +117,8 @@ class RecentRouteService {
       _key,
       _routes.map((r) => jsonEncode(r.toJson())).toList(),
     );
+    // 홈위젯/Control 위젯이 읽도록 App Group UserDefaults 에 첫 페어 push.
+    WidgetDataService.instance.syncFromService();
   }
 
   /// 길찾기 성공 시 호출. 같은 페어가 있으면 useCount 증가 + 맨 앞으로.

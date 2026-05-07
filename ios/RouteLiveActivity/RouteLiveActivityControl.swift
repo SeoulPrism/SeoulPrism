@@ -1,77 +1,32 @@
-//
-//  RouteLiveActivityControl.swift
-//  RouteLiveActivity
-//
-//  Created by SeungPyo on 5/7/26.
-//
+// 제어 센터 (Control Center) 위젯 — iOS 18+.
+// "Seoul Vista 지도 열기" 버튼 — 누르면 com.seoul.prism://map URL 로 앱 진입.
 
 import AppIntents
 import SwiftUI
 import WidgetKit
 
+@available(iOS 18.0, *)
 struct RouteLiveActivityControl: ControlWidget {
-    static let kind: String = "com.seoul.prism.RouteLiveActivity"
+    static let kind: String = "com.seoul.prism.RouteLiveActivity.openMap"
 
     var body: some ControlWidgetConfiguration {
-        AppIntentControlConfiguration(
-            kind: Self.kind,
-            provider: Provider()
-        ) { value in
-            ControlWidgetToggle(
-                "Start Timer",
-                isOn: value.isRunning,
-                action: StartTimerIntent(value.name)
-            ) { isRunning in
-                Label(isRunning ? "On" : "Off", systemImage: "timer")
+        StaticControlConfiguration(kind: Self.kind) {
+            ControlWidgetButton(action: OpenSeoulVistaMapIntent()) {
+                Label("Seoul Vista", systemImage: "map.fill")
             }
         }
-        .displayName("Timer")
-        .description("A an example control that runs a timer.")
+        .displayName("Seoul Vista 지도")
+        .description("제어 센터에서 빠르게 지도 열기")
     }
 }
 
-extension RouteLiveActivityControl {
-    struct Value {
-        var isRunning: Bool
-        var name: String
-    }
+@available(iOS 18.0, *)
+struct OpenSeoulVistaMapIntent: AppIntent {
+    static let title: LocalizedStringResource = "Seoul Vista 지도 열기"
+    static let openAppWhenRun: Bool = true
 
-    struct Provider: AppIntentControlValueProvider {
-        func previewValue(configuration: TimerConfiguration) -> Value {
-            RouteLiveActivityControl.Value(isRunning: false, name: configuration.timerName)
-        }
-
-        func currentValue(configuration: TimerConfiguration) async throws -> Value {
-            let isRunning = true // Check if the timer is running
-            return RouteLiveActivityControl.Value(isRunning: isRunning, name: configuration.timerName)
-        }
-    }
-}
-
-struct TimerConfiguration: ControlConfigurationIntent {
-    static let title: LocalizedStringResource = "Timer Name Configuration"
-
-    @Parameter(title: "Timer Name", default: "Timer")
-    var timerName: String
-}
-
-struct StartTimerIntent: SetValueIntent {
-    static let title: LocalizedStringResource = "Start a timer"
-
-    @Parameter(title: "Timer Name")
-    var name: String
-
-    @Parameter(title: "Timer is running")
-    var value: Bool
-
-    init() {}
-
-    init(_ name: String) {
-        self.name = name
-    }
-
-    func perform() async throws -> some IntentResult {
-        // Start the timer…
-        return .result()
+    @MainActor
+    func perform() async throws -> some IntentResult & OpensIntent {
+        return .result(opensIntent: OpenURLIntent(URL(string: "com.seoul.prism://map")!))
     }
 }

@@ -232,6 +232,35 @@ class UnifiedSearchBarState extends State<UnifiedSearchBar>
     _searchFocus.requestFocus();
   }
 
+  /// 외부에서 길찾기 모드 진입 + 출발/도착 페어 직접 설정 → 즉시 길찾기.
+  /// 위젯/Control 에서 "마지막 길찾기 다시 시작" 같은 진입에 사용.
+  void enterNavWithPair(
+    String departure,
+    String arrival, {
+    double? depLat,
+    double? depLng,
+    double? arrLat,
+    double? arrLng,
+  }) {
+    setState(() {
+      _isNavMode = true;
+      _cancelSearch();
+      _depStation = departure;
+      _depCtrl.text = departure;
+      _depLat = depLat;
+      _depLng = depLng;
+      _arrStation = arrival;
+      _arrCtrl.text = arrival;
+      _arrLat = arrLat;
+      _arrLng = arrLng;
+      _pathResult = null;
+      _allRoutes = {};
+    });
+    _navCtrl.forward();
+    widget.onNavModeChanged?.call(true);
+    _findPath();
+  }
+
   /// 외부에서 길찾기 모드 진입 + 도착지 설정.
   /// 출발지를 '내 위치'로 자동 채우고 좌표 받자마자 길찾기 즉시 시작 (네이버 지도 동작).
   void enterNavWithArrival(String name, {double? lat, double? lng}) {
