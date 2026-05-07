@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../../theme/app_typography.dart';
+import '../../ai_mode_view.dart';
 import '../widgets/page_card.dart';
 
 class PathfindingPage extends StatelessWidget {
@@ -12,42 +13,49 @@ class PathfindingPage extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     final isIos = Platform.isIOS;
     final titleColor = isIos ? Colors.white : cs.onSurface;
-    final bodyColor = isIos ? Colors.white.withValues(alpha: 0.78) : cs.onSurfaceVariant;
+    final bodyColor =
+        isIos ? Colors.white.withValues(alpha: 0.78) : cs.onSurfaceVariant;
 
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24),
-        child: PageCard(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '어디든, 지금 바로',
-                style: AppTypography.displayLg.copyWith(
-                  color: titleColor,
-                  fontSize: 28,
-                  fontWeight: FontWeight.w700,
-                ),
+    return Stack(
+      children: [
+        // Apple Intelligence 글로우 — AI 비서 켜질 때의 그 효과 재사용
+        const Positioned.fill(child: AiModeView()),
+        Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: PageCard(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '어디든, 지금 바로',
+                    style: AppTypography.displayLg.copyWith(
+                      color: titleColor,
+                      fontSize: 28,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    '지하철·버스·도보를 합친 통합 길찾기.\n사진을 보여주거나 음성으로 물어봐도 OK.',
+                    style: AppTypography.bodyMd.copyWith(
+                      color: bodyColor,
+                      height: 1.45,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  _Bullet(icon: Icons.alt_route, text: '최소시간 / 최단거리 / 최소환승 비교'),
+                  const SizedBox(height: 12),
+                  _Bullet(icon: Icons.mic, text: 'Gemini AI 음성 비서'),
+                  const SizedBox(height: 12),
+                  _Bullet(icon: Icons.camera_alt, text: '사진 한 장으로 장소 분석'),
+                ],
               ),
-              const SizedBox(height: 12),
-              Text(
-                '지하철·버스·도보를 합친 통합 길찾기.\n사진을 보여주거나 음성으로 물어봐도 OK.',
-                style: AppTypography.bodyMd.copyWith(
-                  color: bodyColor,
-                  height: 1.45,
-                ),
-              ),
-              const SizedBox(height: 24),
-              _Bullet(icon: Icons.alt_route, text: '최소시간 / 최단거리 / 최소환승 비교'),
-              const SizedBox(height: 12),
-              _Bullet(icon: Icons.mic, text: 'Gemini AI 음성 비서'),
-              const SizedBox(height: 12),
-              _Bullet(icon: Icons.camera_alt, text: '사진 한 장으로 장소 분석'),
-            ],
+            ),
           ),
         ),
-      ),
+      ],
     );
   }
 }
@@ -61,11 +69,11 @@ class _Bullet extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final isIos = Platform.isIOS;
-    final iconBg = isIos
-        ? Colors.white.withValues(alpha: 0.12)
-        : cs.secondaryContainer;
+    final iconBg =
+        isIos ? Colors.white.withValues(alpha: 0.12) : cs.secondaryContainer;
     final iconFg = isIos ? Colors.white : cs.onSecondaryContainer;
-    final textColor = isIos ? Colors.white.withValues(alpha: 0.85) : cs.onSurface;
+    final textColor =
+        isIos ? Colors.white.withValues(alpha: 0.85) : cs.onSurface;
     return Row(
       children: [
         Container(

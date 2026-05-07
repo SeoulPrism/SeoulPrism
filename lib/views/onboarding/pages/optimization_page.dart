@@ -15,6 +15,7 @@ class OptimizationPage extends StatefulWidget {
 
 class _OptimizationPageState extends State<OptimizationPage> {
   late String _selected;
+  bool _advancedOpen = false;
 
   @override
   void initState() {
@@ -92,9 +93,189 @@ class _OptimizationPageState extends State<OptimizationPage> {
                 selected: _selected == 'low',
                 onTap: () => _select('low'),
               ),
+              const SizedBox(height: 16),
+              _AdvancedToggle(
+                open: _advancedOpen,
+                onTap: () => setState(() => _advancedOpen = !_advancedOpen),
+              ),
+              AnimatedSize(
+                duration: const Duration(milliseconds: 240),
+                curve: Curves.easeOutCubic,
+                child: _advancedOpen
+                    ? Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: _LayerToggles(onChanged: () => setState(() {})),
+                      )
+                    : const SizedBox(width: double.infinity),
+              ),
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _AdvancedToggle extends StatelessWidget {
+  final bool open;
+  final VoidCallback onTap;
+  const _AdvancedToggle({required this.open, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final isIos = Platform.isIOS;
+    final color = isIos ? Colors.white.withValues(alpha: 0.7) : cs.primary;
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: Row(
+          children: [
+            AnimatedRotation(
+              duration: const Duration(milliseconds: 200),
+              turns: open ? 0.25 : 0,
+              child: Icon(Icons.chevron_right, size: 18, color: color),
+            ),
+            const SizedBox(width: 4),
+            Text(
+              '고급 — 표시할 레이어 선택',
+              style: AppTypography.bodySm.copyWith(
+                color: color,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _LayerToggles extends StatelessWidget {
+  final VoidCallback onChanged;
+  const _LayerToggles({required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    final s = SettingsService.instance;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _LayerRow(
+          icon: Icons.directions_subway,
+          color: const Color(0xFF00B0FF),
+          label: '지하철 (실시간 열차 위치)',
+          subtitle: '서울 지하철 + 광역철도. GPU 부담이 가장 큼',
+          value: s.showTrains,
+          onChanged: (v) {
+            s.setShowTrains(v);
+            onChanged();
+          },
+        ),
+        _LayerRow(
+          icon: Icons.directions_bus,
+          color: const Color(0xFF00E676),
+          label: '시내버스',
+          subtitle: '서울 + 경기 시내버스 실시간 위치',
+          value: s.showBuses,
+          onChanged: (v) {
+            s.setShowBuses(v);
+            onChanged();
+          },
+        ),
+        _LayerRow(
+          icon: Icons.directions_boat,
+          color: const Color(0xFF00ACC1),
+          label: '한강버스',
+          subtitle: '한강 운항 선박',
+          value: s.showRiverBus,
+          onChanged: (v) {
+            s.setShowRiverBus(v);
+            onChanged();
+          },
+        ),
+        _LayerRow(
+          icon: Icons.flight,
+          color: const Color(0xFFFFC400),
+          label: '항공기',
+          subtitle: '인천공항 주변 실시간 항공기',
+          value: s.showFlights,
+          onChanged: (v) {
+            s.setShowFlights(v);
+            onChanged();
+          },
+        ),
+      ],
+    );
+  }
+}
+
+class _LayerRow extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final String label;
+  final String subtitle;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+  const _LayerRow({
+    required this.icon,
+    required this.color,
+    required this.label,
+    required this.subtitle,
+    required this.value,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final isIos = Platform.isIOS;
+    final labelColor = isIos ? Colors.white : cs.onSurface;
+    final subColor =
+        isIos ? Colors.white.withValues(alpha: 0.55) : cs.onSurfaceVariant;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.18),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, size: 16, color: color),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: AppTypography.bodySm.copyWith(
+                    color: labelColor,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                Text(
+                  subtitle,
+                  style: AppTypography.caption.copyWith(color: subColor),
+                ),
+              ],
+            ),
+          ),
+          Transform.scale(
+            scale: 0.8,
+            child: Switch.adaptive(
+              value: value,
+              onChanged: onChanged,
+              activeThumbColor: color,
+            ),
+          ),
+        ],
       ),
     );
   }

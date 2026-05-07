@@ -728,6 +728,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
         setState(() {});
       }
     };
+
+    // 온보딩 / 설정에서 선택한 레이어 활성화 상태 적용 (성능 부담 큰 레이어 끄기 가능).
+    final s = SettingsService.instance;
+    _busController.toggleBuses(s.showBuses);
+    _busController.toggleRiverBus(s.showRiverBus);
+    _flightController.toggle(s.showFlights);
+
     // 맵 탭 시 키보드 내림 + 선택 해제
     controller.setOnAnyMapTap(() {
       FocusManager.instance.primaryFocus?.unfocus();
