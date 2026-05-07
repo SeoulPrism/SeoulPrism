@@ -4,6 +4,7 @@ import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../services/recent_search_service.dart';
+import '../services/recent_route_service.dart';
 import '../services/directions_service.dart';
 import '../data/river_bus_data.dart';
 import 'package:cupertino_native_better/cupertino_native_better.dart';
@@ -794,7 +795,20 @@ class UnifiedSearchBarState extends State<UnifiedSearchBar>
       _pathResult = selected;
       _isPathLoading = false;
     });
-    if (selected != null) widget.onRouteFound?.call(selected);
+    if (selected != null) {
+      widget.onRouteFound?.call(selected);
+      // 최근 길찾기 페어 저장. '내 위치' 출발은 매번 좌표가 다르므로 페어로 의미 없어 제외.
+      if (_depStation != '내 위치' && _arrStation != '내 위치') {
+        RecentRouteService.instance.record(
+          departure: _depStation!,
+          arrival: _arrStation!,
+          depLat: _depLat,
+          depLng: _depLng,
+          arrLat: _arrLat,
+          arrLng: _arrLng,
+        );
+      }
+    }
   }
 
   Future<void> _ensureCurrentLocationCoords() async {
@@ -1022,6 +1036,13 @@ class UnifiedSearchBarState extends State<UnifiedSearchBar>
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: _kHPadding),
                     child: _buildNavCombinedDropdown(),
+                  )
+                else if (_pathResult == null &&
+                    !_isPathLoading &&
+                    RecentRouteService.instance.routes.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: _kHPadding),
+                    child: _buildRecentRoutesPanel(),
                   ),
               ],
             ),
@@ -1148,6 +1169,114 @@ class UnifiedSearchBarState extends State<UnifiedSearchBar>
       _pathResult = route;
     });
     widget.onRouteFound?.call(route);
+  }
+
+  /// 최근 길찾기 페어 패널 — 출발/도착이 비어있을 때 빠른 재선택용.
+  Widget _buildRecentRoutesPanel() {
+    final recents = RecentRouteService.instance.routes.take(5).toList();
+    if (recents.isEmpty) return const SizedBox.shrink();
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(_kBarRadius),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: AppColors.glassDropOpacity),
+            borderRadius: BorderRadius.circular(_kBarRadius),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.15),
+              width: 0.5,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
+                child: Text(
+                  '최근 길찾기',
+                  style: AppTypography.caption.copyWith(
+                    color: AppColors.textTertiary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              ...recents.map(
+                (r) => InkWell(
+                  onTap: () => _selectRecentRoute(r),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          CupertinoIcons.clock,
+                          size: 15,
+                          color: AppColors.textTertiary,
+                        ),
+                        const SizedBox(width: AppSpacing.md),
+                        Expanded(
+                          child: Text(
+                            '${r.departure}  →  ${r.arrival}',
+                            style: AppTypography.bodyMd,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (r.useCount > 1) ...[
+                          const SizedBox(width: 6),
+                          Text(
+                            '${r.useCount}',
+                            style: AppTypography.caption.copyWith(
+                              color: AppColors.textTertiary,
+                            ),
+                          ),
+                        ],
+                        const SizedBox(width: 4),
+                        GestureDetector(
+                          onTap: () async {
+                            await RecentRouteService.instance.remove(
+                              r.departure,
+                              r.arrival,
+                            );
+                            if (mounted) setState(() {});
+                          },
+                          behavior: HitTestBehavior.opaque,
+                          child: Padding(
+                            padding: const EdgeInsets.all(4),
+                            child: Icon(
+                              CupertinoIcons.xmark,
+                              size: 13,
+                              color: AppColors.textTertiary,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _selectRecentRoute(RecentRoute r) {
+    setState(() {
+      _depStation = r.departure;
+      _depCtrl.text = r.departure;
+      _depLat = r.depLat;
+      _depLng = r.depLng;
+      _arrStation = r.arrival;
+      _arrCtrl.text = r.arrival;
+      _arrLat = r.arrLat;
+      _arrLng = r.arrLng;
+    });
+    _findPath();
   }
 
   Widget _buildRouteChip({
