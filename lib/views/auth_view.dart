@@ -13,6 +13,7 @@ import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../main.dart';
+import 'home_view.dart';
 
 enum AuthMode { login, signUp }
 
@@ -440,13 +441,20 @@ class _AuthViewState extends State<AuthView> {
   }
 
   /// 게스트(익명) 로그인 — 사용자 입력 없이 user_id 발급.
-  /// 즐겨찾기/방문/길찾기 동기화 가능, 정식 로그인 시 linkIdentity 로 연결.
+  /// main.dart 가 앱 시작 시 자동 익명 로그인을 시도하므로, 이미 로그인 됐으면 바로 home 으로.
+  /// 정식 로그인 시 linkIdentity 로 연결.
   Future<void> _signInAnonymously() async {
     setState(() => _loading = true);
     try {
-      // 이미 로그인 (익명 포함) 됐으면 바로 home 으로.
       if (supabase.auth.currentUser == null) {
         await supabase.auth.signInAnonymously();
+      }
+      // signedIn 이벤트는 새 sign-in 시점만 발동. 이미 로그인 된 채 들어온 경우엔 직접 navigate.
+      if (mounted) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const HomeView()),
+          (_) => false,
+        );
       }
     } on AuthException catch (e) {
       if (mounted) _showError(_translateAuthError(e.message));
