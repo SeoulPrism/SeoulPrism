@@ -10,6 +10,7 @@ import '../widgets/adaptive/adaptive.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import '../core/map_interface.dart';
 import '../core/api_keys.dart';
+import '../core/geo_distance.dart';
 import '../map_engines/mapbox_engine.dart';
 import '../models/subway_models.dart';
 import '../widgets/subway_overlay.dart';
@@ -2437,7 +2438,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       if (seg.isTransfer) continue;
       final coords = _segmentNavigationCoords(seg);
       if (coords.length < 2) continue;
-      final dist = _distanceToPolylineMeters(lat, lng, coords);
+      final dist = distanceToPolylineMeters(lat, lng, coords);
       if (dist < bestDistance) {
         bestDistance = dist;
         bestIndex = i;
@@ -2457,7 +2458,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     if (coords.isEmpty) return;
 
     final end = coords.last;
-    final endDistance = _distanceMeters(lat, lng, end[0], end[1]);
+    final endDistance = distanceMeters(lat, lng, end[0], end[1]);
     if (endDistance < 80) {
       _advanceNavigationStep();
       return;
@@ -2466,7 +2467,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     // 카메라 이동은 사용자가 명시적으로 "시작" 한 turn-by-turn 모드일 때만.
     // 자동 시작(_loadBoardingArrival 트리거) 시에는 도착 정보만 갱신하고 카메라는 사용자 컨트롤 보존.
     if (_routeNavigationManual) {
-      final bearing = _bearingBetween(lat, lng, end[0], end[1]);
+      final bearing = bearingBetween(lat, lng, end[0], end[1]);
       _mapController?.moveTo(lat, lng, zoom: 17.0, pitch: 60, bearing: bearing);
     }
   }
@@ -2494,65 +2495,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return _resolveStationCoords(seg.stations);
   }
 
-  double _distanceToPolylineMeters(
-    double lat,
-    double lng,
-    List<List<double>> coords,
-  ) {
-    var best = double.infinity;
-    for (int i = 0; i < coords.length - 1; i++) {
-      best = min(
-        best,
-        _distanceToSegmentMeters(lat, lng, coords[i], coords[i + 1]),
-      );
-    }
-    return best;
-  }
-
-  double _distanceToSegmentMeters(
-    double lat,
-    double lng,
-    List<double> a,
-    List<double> b,
-  ) {
-    final latScale = 111320.0;
-    final lngScale = 111320.0 * cos(lat * pi / 180);
-    final px = lng * lngScale;
-    final py = lat * latScale;
-    final ax = a[1] * lngScale;
-    final ay = a[0] * latScale;
-    final bx = b[1] * lngScale;
-    final by = b[0] * latScale;
-    final dx = bx - ax;
-    final dy = by - ay;
-    final len2 = dx * dx + dy * dy;
-    if (len2 == 0) return sqrt(pow(px - ax, 2) + pow(py - ay, 2));
-    final t = (((px - ax) * dx + (py - ay) * dy) / len2).clamp(0.0, 1.0);
-    final cx = ax + dx * t;
-    final cy = ay + dy * t;
-    return sqrt(pow(px - cx, 2) + pow(py - cy, 2));
-  }
-
-  double _distanceMeters(double aLat, double aLng, double bLat, double bLng) {
-    const earthRadius = 6371000.0;
-    final dLat = (bLat - aLat) * pi / 180;
-    final dLng = (bLng - aLng) * pi / 180;
-    final lat1 = aLat * pi / 180;
-    final lat2 = bLat * pi / 180;
-    final h =
-        sin(dLat / 2) * sin(dLat / 2) +
-        cos(lat1) * cos(lat2) * sin(dLng / 2) * sin(dLng / 2);
-    return 2 * earthRadius * atan2(sqrt(h), sqrt(1 - h));
-  }
-
-  double _bearingBetween(double aLat, double aLng, double bLat, double bLng) {
-    final lat1 = aLat * pi / 180;
-    final lat2 = bLat * pi / 180;
-    final dLng = (bLng - aLng) * pi / 180;
-    final y = sin(dLng) * cos(lat2);
-    final x = cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(dLng);
-    return (atan2(y, x) * 180 / pi + 360) % 360;
-  }
 
   void _focusNavigationStep() {
     final route = _routeResult;
