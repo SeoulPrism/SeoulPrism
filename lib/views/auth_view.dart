@@ -382,11 +382,11 @@ class _AuthViewState extends State<AuthView> {
           iconSize: 20,
         ),
         const SizedBox(width: 16),
-        // Kakao
+        // 게스트 (익명 로그인) — 카카오 자리 대체.
         AdaptiveGlassIconButton(
-          icon: FontAwesomeIcons.comment.data,
-          onPressed: _loading ? null : _signInWithKakao,
-          tint: const Color(0xFFFEE500),
+          icon: FontAwesomeIcons.userSecret.data,
+          onPressed: _loading ? null : _signInAnonymously,
+          tint: const Color(0xFF8E8E93),
           iconSize: 20,
         ),
         const SizedBox(width: 16),
@@ -439,17 +439,19 @@ class _AuthViewState extends State<AuthView> {
     }
   }
 
-  Future<void> _signInWithKakao() async {
+  /// 게스트(익명) 로그인 — 사용자 입력 없이 user_id 발급.
+  /// 즐겨찾기/방문/길찾기 동기화 가능, 정식 로그인 시 linkIdentity 로 연결.
+  Future<void> _signInAnonymously() async {
     setState(() => _loading = true);
     try {
-      await supabase.auth.signInWithOAuth(
-        OAuthProvider.kakao,
-        redirectTo: _redirectUrl,
-      );
+      // 이미 로그인 (익명 포함) 됐으면 바로 home 으로.
+      if (supabase.auth.currentUser == null) {
+        await supabase.auth.signInAnonymously();
+      }
     } on AuthException catch (e) {
       if (mounted) _showError(_translateAuthError(e.message));
     } catch (e) {
-      if (mounted) _showError('카카오 로그인에 실패했습니다');
+      if (mounted) _showError('게스트 로그인에 실패했습니다');
     } finally {
       if (mounted) setState(() => _loading = false);
     }

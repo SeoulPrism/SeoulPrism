@@ -45,14 +45,26 @@ Future<void> main() async {
     url: ApiKeys.supabaseUrl,
     anonKey: ApiKeys.supabaseAnonKey,
   );
+
+  // 게스트 모드: 사용자 입력 없이 자동 익명 로그인 → user_id 확보.
+  // Apple 심사 5.1.1(v) 대응 (계정 기반 아닌 기능에 등록 강제 금지) +
+  // 즐겨찾기/방문/길찾기 페어 동기화 유지. 정식 로그인 시 linkIdentity 로 전환.
+  if (Supabase.instance.client.auth.currentUser == null) {
+    try {
+      await Supabase.instance.client.auth.signInAnonymously();
+    } catch (e) {
+      // 네트워크 또는 익명 sign-in 비활성 시 → 로컬만 사용 (앱은 정상 동작).
+      debugPrint('[Auth] 익명 로그인 실패: $e');
+    }
+  }
+
   // 즐겨찾기 + 최근 검색 + 최근 길찾기 페어 로드
   await FavoritesService.instance.load();
   await RecentSearchService.instance.load();
   await VisitHistoryService.instance.load();
   await RecentRouteService.instance.load();
 
-  // 이미 로그인된 상태로 시작하면 즉시 realtime 구독 시작.
-  // 로그인/로그아웃 변화는 onAuthStateChange listener 에서 처리.
+  // user (익명 또는 정식) 가 있으면 realtime 구독 시작.
   if (Supabase.instance.client.auth.currentUser != null) {
     FavoritesService.instance.startRealtimeSync();
     VisitHistoryService.instance.startRealtimeSync();
@@ -127,9 +139,9 @@ class _SeoulPrismAppState extends State<SeoulPrismApp> {
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       themeMode: _themeMode,
-      home: supabase.auth.currentSession != null
-          ? const HomeView()
-          : const AuthView(),
+      // App Store 심사 가이드 5.1.1(v) — 계정 기반이 아닌 기능에 로그인 강제 금지.
+      // 항상 HomeView 부터 진입 (게스트 허용). 로그인은 사용자가 명시적으로 시작 (즐겨찾기 동기화/프로필 등).
+      home: const HomeView(),
     );
   }
 }
