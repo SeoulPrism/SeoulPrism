@@ -31,6 +31,7 @@ import 'map/widgets/departure_time_picker.dart';
 import 'map/widgets/place_action_button.dart';
 import 'map/widgets/place_detail_panel.dart';
 import 'map/widgets/river_bus_stop_panel.dart';
+import 'map/widgets/vehicle_panels.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 import '../services/visit_history_service.dart';
 import '../data/seoul_subway_data.dart';
@@ -1039,10 +1040,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 bottom: bottomInset,
                 left: 0,
                 right: 0,
-                child: _buildBusDetailPanel(),
+                child: _busController.selectedBus != null &&
+                        _busController.selectedBusRoute != null
+                    ? BusDetailPanel(
+                        bus: _busController.selectedBus!,
+                        route: _busController.selectedBusRoute!,
+                        onClose: () {
+                          _busController.deselectBus();
+                          setState(() {});
+                        },
+                      )
+                    : const SizedBox.shrink(),
               ),
 
-            // 비행기 상세 패널 (바텀 슬라이드)
+            // 비행기 상세 패널
             if (_flightController.selectedFlight != null)
               AnimatedPositioned(
                 duration: const Duration(milliseconds: 350),
@@ -1050,7 +1061,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 bottom: bottomInset,
                 left: 0,
                 right: 0,
-                child: _buildFlightDetailPanel(),
+                child: FlightDetailPanel(
+                  flight: _flightController.selectedFlight!,
+                  onClose: () {
+                    _flightController.deselectFlight();
+                    setState(() {});
+                  },
+                ),
               ),
 
             // 한강버스 상세 패널 (슬라이드 애니메이션)
@@ -1067,7 +1084,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
               child: AnimatedOpacity(
                 duration: const Duration(milliseconds: 350),
                 opacity: _busController.selectedVessel != null ? 1.0 : 0.0,
-                child: _buildVesselDetailPanel(),
+                child: () {
+                  final v = _busController.selectedVessel;
+                  if (v != null) _lastVessel = v;
+                  final display = v ?? _lastVessel;
+                  if (display == null) return const SizedBox(height: 150);
+                  return VesselDetailPanel(
+                    vessel: display,
+                    onClose: () {
+                      _busController.deselectVessel();
+                      setState(() {});
+                    },
+                  );
+                }(),
               ),
             ),
 
@@ -1207,389 +1236,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildBusDetailPanel() {
-    final bus = _busController.selectedBus;
-    final route = _busController.selectedBusRoute;
-    if (bus == null || route == null) return const SizedBox.shrink();
 
-    final color = route.color;
-    final congestionText = switch (bus.congestion) {
-      0 => '정보없음',
-      1 => '여유',
-      2 => '여유',
-      3 => '보통',
-      4 => '혼잡',
-      5 => '매우혼잡',
-      6 => '만차',
-      _ => '정보없음',
-    };
-    final congestionColor = switch (bus.congestion) {
-      1 || 2 => AppColors.success,
-      3 => AppColors.warning,
-      4 || 5 => AppColors.danger,
-      6 => const Color(0xFF8B0000),
-      _ => AppColors.textMuted,
-    };
 
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainer,
-        borderRadius: BorderRadius.circular(AppSpacing.xl),
-        border: Border.all(color: color.withValues(alpha: 0.4), width: 1),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(AppSpacing.xl),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // 헤더
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.lg,
-                vertical: AppSpacing.md,
-              ),
-              decoration: BoxDecoration(color: color.withValues(alpha: 0.15)),
-              child: Row(
-                children: [
-                  Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: color,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Center(
-                      child: Icon(
-                        Icons.directions_bus,
-                        size: 20,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.md),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          route.routeName,
-                          style: AppTypography.titleMd.copyWith(color: color),
-                        ),
-                        Text(
-                          '${bus.plainNo} · ${bus.busType == 1 ? "저상버스" : "일반버스"}',
-                          style: AppTypography.bodySm.copyWith(
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: () {
-                      _busController.deselectBus();
-                      setState(() {});
-                    },
-                    child: Icon(
-                      Icons.close,
-                      size: 20,
-                      color: AppColors.textMuted,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            // 정보
-            Padding(
-              padding: const EdgeInsets.all(AppSpacing.lg),
-              child: Row(
-                children: [
-                  // 혼잡도
-                  Expanded(
-                    child: _busInfoItem('혼잡도', congestionText, congestionColor),
-                  ),
-                  // 상태
-                  Expanded(
-                    child: _busInfoItem(
-                      '상태',
-                      bus.stopFlag == 1 ? '정차 중' : '운행 중',
-                      color,
-                    ),
-                  ),
-                  // 구간
-                  if (bus.sectOrd != null)
-                    Expanded(
-                      child: _busInfoItem(
-                        '구간',
-                        '${bus.sectOrd}번째',
-                        AppColors.textSecondary,
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _busInfoItem(String label, String value, Color valueColor) {
-    return Column(
-      children: [
-        Text(
-          label,
-          style: AppTypography.caption.copyWith(color: AppColors.textMuted),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: AppTypography.bodySm.copyWith(
-            color: valueColor,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildFlightDetailPanel() {
-    final flight = _flightController.selectedFlight;
-    if (flight == null) return const SizedBox.shrink();
-
-    final phaseColor = switch (flight.phase) {
-      '상승' => const Color(0xFF00E676),
-      '순항' => Colors.white,
-      '하강' => const Color(0xFFFF9100),
-      '이착륙' => const Color(0xFFFF5252),
-      '지상' => Colors.grey,
-      _ => Colors.white,
-    };
-
-    final altText = flight.onGround
-        ? '지상'
-        : '${(flight.altitude / 1000).toStringAsFixed(1)}km';
-    final speedText = '${(flight.velocity * 3.6).round()}km/h';
-
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainer,
-        borderRadius: BorderRadius.circular(AppSpacing.xl),
-        border: Border.all(color: phaseColor.withValues(alpha: 0.4), width: 1),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(AppSpacing.xl),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // 헤더
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.lg,
-                vertical: AppSpacing.md,
-              ),
-              decoration: BoxDecoration(
-                color: phaseColor.withValues(alpha: 0.12),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: phaseColor.withValues(alpha: 0.3),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Center(
-                      child: Icon(Icons.flight, size: 20, color: phaseColor),
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.md),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          flight.callsign.isNotEmpty
-                              ? flight.callsign
-                              : flight.icao24,
-                          style: AppTypography.titleMd.copyWith(
-                            color: phaseColor,
-                          ),
-                        ),
-                        Text(
-                          '${flight.airline} · ${flight.originCountry}',
-                          style: AppTypography.bodySm.copyWith(
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: () {
-                      _flightController.deselectFlight();
-                      setState(() {});
-                    },
-                    child: Icon(
-                      Icons.close,
-                      size: 20,
-                      color: AppColors.textMuted,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            // 정보
-            Padding(
-              padding: const EdgeInsets.all(AppSpacing.lg),
-              child: Row(
-                children: [
-                  Expanded(child: _busInfoItem('상태', flight.phase, phaseColor)),
-                  Expanded(
-                    child: _busInfoItem('고도', altText, AppColors.textSecondary),
-                  ),
-                  Expanded(
-                    child: _busInfoItem(
-                      '속도',
-                      speedText,
-                      AppColors.textSecondary,
-                    ),
-                  ),
-                  Expanded(
-                    child: _busInfoItem(
-                      '방향',
-                      '${flight.heading.round()}°',
-                      AppColors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   RiverBusVessel? _lastVessel;
 
-  Widget _buildVesselDetailPanel() {
-    final v = _busController.selectedVessel;
-    if (v != null) _lastVessel = v;
-    final display = v ?? _lastVessel;
-    if (display == null) return const SizedBox(height: 150);
-
-    const color = Color(0xFF00ACC1);
-    final dirText = display.direction == 0 ? '정방향' : '역방향';
-
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainer,
-        borderRadius: BorderRadius.circular(AppSpacing.xl),
-        border: Border.all(color: color.withValues(alpha: 0.4), width: 1),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(AppSpacing.xl),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.lg,
-                vertical: AppSpacing.md,
-              ),
-              decoration: BoxDecoration(color: color.withValues(alpha: 0.12)),
-              child: Row(
-                children: [
-                  Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: color.withValues(alpha: 0.3),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Center(
-                      child: Icon(
-                        Icons.directions_boat,
-                        size: 20,
-                        color: color,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.md),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '한강버스 ${display.routeName}',
-                          style: AppTypography.titleMd.copyWith(color: color),
-                        ),
-                        Text(
-                          '$dirText · ${display.phase}',
-                          style: AppTypography.bodySm.copyWith(
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: () {
-                      _busController.deselectVessel();
-                      setState(() {});
-                    },
-                    child: Icon(
-                      Icons.close,
-                      size: 20,
-                      color: AppColors.textMuted,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(AppSpacing.lg),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: _busInfoItem(
-                      display.phase == '정차' ? '정차 중' : '다음',
-                      display.currentStopName ?? display.nextStopName,
-                      color,
-                    ),
-                  ),
-                  Expanded(
-                    child: _busInfoItem(
-                      '진행',
-                      '${(display.progress * 100).round()}%',
-                      AppColors.textSecondary,
-                    ),
-                  ),
-                  Expanded(
-                    child: _busInfoItem(
-                      '상태',
-                      display.phase,
-                      display.phase == '정차' ? AppColors.warning : color,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   Widget _buildProfileToast() {
     final dp = DeviceProfileService.instance;
