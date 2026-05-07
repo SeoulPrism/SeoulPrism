@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import '../../../data/river_bus_data.dart';
 import '../../../models/bus_models.dart';
+import '../../../services/flight_service.dart';
 import '../../../widgets/bus_overlay.dart';
-import '../../../widgets/flight_overlay.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
 import '../../../theme/app_spacing.dart';
@@ -175,7 +176,7 @@ class BusDetailPanel extends StatelessWidget {
 
 /// 비행기 상세 패널.
 class FlightDetailPanel extends StatelessWidget {
-  final FlightRenderData flight;
+  final FlightPosition flight;
   final VoidCallback onClose;
   const FlightDetailPanel({
     super.key,
