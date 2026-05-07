@@ -5,24 +5,14 @@ import ActivityKit
 @main
 @objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
 
-  // 다이나믹 아일랜드/잠금화면 Live Activity 핸들러.
-  // Dart 측 LiveActivityService 가 'seoul_prism/live_activity' MethodChannel 로 호출.
-  private var routeActivity: Any?
+  // 다이나믹 아일랜드/잠금화면 Live Activity 상태.
+  // SceneDelegate 가 'seoul_prism/live_activity' MethodChannel 을 등록해 이 메서드들로 위임.
+  var routeActivity: Any?
 
   override func application(
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
-    let controller = window?.rootViewController as? FlutterViewController
-    if let controller = controller {
-      let channel = FlutterMethodChannel(
-        name: "seoul_prism/live_activity",
-        binaryMessenger: controller.binaryMessenger
-      )
-      channel.setMethodCallHandler { [weak self] (call, result) in
-        self?.handleLiveActivityCall(call, result: result)
-      }
-    }
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
 
@@ -30,9 +20,11 @@ import ActivityKit
     GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
   }
 
-  private func handleLiveActivityCall(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+  // MARK: - Live Activity API (SceneDelegate 의 channel handler 가 호출)
+
+  func handleLiveActivityCall(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
     guard #available(iOS 16.1, *) else {
-      result(nil)  // 미지원 OS — silent no-op
+      result(nil)
       return
     }
     let args = call.arguments as? [String: Any] ?? [:]
