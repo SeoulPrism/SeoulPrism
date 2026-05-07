@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 70;
+	objectVersion = 54;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -11,6 +11,7 @@
 		1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */ = {isa = PBXBuildFile; fileRef = 1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */; };
 		331C808B294A63AB00263BE5 /* RunnerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 331C807B294A618700263BE5 /* RunnerTests.swift */; };
 		3B3967161E833CAA004F5970 /* AppFrameworkInfo.plist in Resources */ = {isa = PBXBuildFile; fileRef = 3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */; };
+		464E625F2C3E2515975E56CB /* RouteLiveActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 441A4597E4AC1748A1D1AC65 /* RouteLiveActivityAttributes.swift */; };
 		4C2AB93E2FAC2F79003566C4 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C2AB93D2FAC2F79003566C4 /* WidgetKit.framework */; };
 		4C2AB9402FAC2F79003566C4 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C2AB93F2FAC2F79003566C4 /* SwiftUI.framework */; };
 		4C2AB9512FAC2F79003566C4 /* RouteLiveActivityExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 4C2AB93C2FAC2F79003566C4 /* RouteLiveActivityExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -73,6 +74,7 @@
 		331C807B294A618700263BE5 /* RunnerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunnerTests.swift; sourceTree = "<group>"; };
 		331C8081294A63A400263BE5 /* RunnerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RunnerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = AppFrameworkInfo.plist; path = Flutter/AppFrameworkInfo.plist; sourceTree = "<group>"; };
+		441A4597E4AC1748A1D1AC65 /* RouteLiveActivityAttributes.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = RouteLiveActivityAttributes.swift; path = ../RouteLiveActivity/RouteLiveActivityAttributes.swift; sourceTree = "<group>"; };
 		4C2AB93C2FAC2F79003566C4 /* RouteLiveActivityExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = RouteLiveActivityExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		4C2AB93D2FAC2F79003566C4 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		4C2AB93F2FAC2F79003566C4 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
@@ -95,7 +97,7 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		4C2AB9562FAC2F79003566C4 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+		4C2AB9562FAC2F79003566C4 /* Exceptions for "RouteLiveActivity" folder in "RouteLiveActivityExtension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
@@ -105,7 +107,18 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		4C2AB9412FAC2F79003566C4 /* RouteLiveActivity */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (4C2AB9562FAC2F79003566C4 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = RouteLiveActivity; sourceTree = "<group>"; };
+		4C2AB9412FAC2F79003566C4 /* RouteLiveActivity */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				4C2AB9562FAC2F79003566C4 /* Exceptions for "RouteLiveActivity" folder in "RouteLiveActivityExtension" target */,
+			);
+			explicitFileTypes = {
+			};
+			explicitFolders = (
+			);
+			path = RouteLiveActivity;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -203,6 +216,7 @@
 				74858FAE1ED2DC5600515810 /* AppDelegate.swift */,
 				7884E8672EC3CC0400C636F2 /* SceneDelegate.swift */,
 				74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */,
+				441A4597E4AC1748A1D1AC65 /* RouteLiveActivityAttributes.swift */,
 			);
 			path = Runner;
 			sourceTree = "<group>";
@@ -258,8 +272,6 @@
 				4C2AB9412FAC2F79003566C4 /* RouteLiveActivity */,
 			);
 			name = RouteLiveActivityExtension;
-			packageProductDependencies = (
-			);
 			productName = RouteLiveActivityExtension;
 			productReference = 4C2AB93C2FAC2F79003566C4 /* RouteLiveActivityExtension.appex */;
 			productType = "com.apple.product-type.app-extension";
@@ -370,13 +382,9 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-resources-${CONFIGURATION}-input-files.xcfilelist",
 			);
-			inputPaths = (
-			);
 			name = "[CP] Copy Pods Resources";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-resources-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -444,13 +452,9 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
-			inputPaths = (
-			);
 			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-frameworks-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -504,6 +508,7 @@
 				74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */,
 				1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */,
 				7884E8682EC3CC0700C636F2 /* SceneDelegate.swift in Sources */,
+				464E625F2C3E2515975E56CB /* RouteLiveActivityAttributes.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

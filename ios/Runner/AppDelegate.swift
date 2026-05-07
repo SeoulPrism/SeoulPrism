@@ -61,11 +61,19 @@ import ActivityKit
       totalMinutes: args["totalMinutes"] as? Int ?? 0
     )
     do {
-      let activity = try Activity<RouteLiveActivityAttributes>.request(
-        attributes: attributes,
-        contentState: state,
-        pushType: nil
-      )
+      let activity: Activity<RouteLiveActivityAttributes>
+      if #available(iOS 16.2, *) {
+        let content = ActivityContent(state: state, staleDate: nil)
+        activity = try Activity<RouteLiveActivityAttributes>.request(
+          attributes: attributes,
+          content: content
+        )
+      } else {
+        activity = try Activity<RouteLiveActivityAttributes>.request(
+          attributes: attributes,
+          contentState: state
+        )
+      }
       self.routeActivity = activity
       result(activity.id)
     } catch {
@@ -86,7 +94,12 @@ import ActivityKit
       totalMinutes: args["totalMinutes"] as? Int ?? 0
     )
     Task {
-      await activity.update(using: state)
+      if #available(iOS 16.2, *) {
+        let content = ActivityContent(state: state, staleDate: nil)
+        await activity.update(content)
+      } else {
+        await activity.update(using: state)
+      }
       result(nil)
     }
   }
@@ -97,7 +110,11 @@ import ActivityKit
       result(nil); return
     }
     Task {
-      await activity.end(dismissalPolicy: .immediate)
+      if #available(iOS 16.2, *) {
+        await activity.end(nil, dismissalPolicy: ActivityUIDismissalPolicy.immediate)
+      } else {
+        await activity.end(dismissalPolicy: ActivityUIDismissalPolicy.immediate)
+      }
       self.routeActivity = nil
       result(nil)
     }

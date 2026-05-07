@@ -1,21 +1,9 @@
-// 다이나믹 아일랜드 + 잠금화면 Live Activity.
-// Dart 측 LiveActivityService 가 'seoul_prism/live_activity' MethodChannel 로 트리거.
+// 다이나믹 아일랜드 + 잠금화면 Live Activity 위젯.
+// ActivityAttributes 는 RouteLiveActivityAttributes.swift 에 분리 (Runner/Extension 공유).
 
 import ActivityKit
 import WidgetKit
 import SwiftUI
-
-struct RouteLiveActivityAttributes: ActivityAttributes {
-    public struct ContentState: Codable, Hashable {
-        var headline: String       // 예: "143번 버스 → 강남역"
-        var detail: String         // 예: "143번 5분"
-        var etaMinutes: Int        // 다이나믹 아일랜드 minimal 영역 큰 숫자
-        var lineColorHex: String?  // 노선 색 (#RRGGBB)
-        var totalMinutes: Int      // 전체 길찾기 잔여 분
-    }
-
-    var destination: String  // 최종 도착지 (활동 동안 변하지 않음)
-}
 
 struct RouteLiveActivityLiveActivity: Widget {
     var body: some WidgetConfiguration {
