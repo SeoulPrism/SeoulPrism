@@ -23,6 +23,7 @@ import '../widgets/search_bar.dart';
 import '../services/place_search_service.dart';
 import '../services/favorites_service.dart';
 import '../services/directions_service.dart';
+import 'package:geolocator/geolocator.dart' as geo;
 import '../services/visit_history_service.dart';
 import '../data/seoul_subway_data.dart';
 import '../services/device_profile_service.dart';
@@ -211,6 +212,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void dispose() {
     _arrivalRefreshTimer?.cancel();
     _routeNavigationTimer?.cancel();
+    _navLocationSub?.cancel();
     _subwayController.dispose();
     _busController.dispose();
     _flightController.dispose();
@@ -605,6 +607,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void _clearRouteFromMap() {
     _arrivalRefreshTimer?.cancel();
     _routeNavigationTimer?.cancel();
+    _navLocationSub?.cancel();
+    _navLocationSub = null;
     _boardingArrivals = [];
     _segmentArrivals = {};
     _routeNavigationActive = false;
@@ -1995,21 +1999,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
   /// 각 구간별 실시간 열차/버스 도착 정보 (segment index → 도착 메시지)
   Map<int, List<String>> _segmentArrivals = {};
   bool _routeNavigationActive = false;
+  // 사용자가 "시작" 버튼을 눌러 명시적 turn-by-turn 모드인지.
+  // true: 카메라가 사용자 위치/방향을 따라 이동.
+  // false: 길찾기 결과 받자마자 자동으로 켜진 백그라운드 추적 — 활성 구간/도착 정보만 갱신, 카메라는 사용자 컨트롤 보존.
+  bool _routeNavigationManual = false;
   int _activeNavigationSegmentIndex = 0;
   Timer? _routeNavigationTimer;
+  // 실시간 위치 스트림 — 길찾기 결과 표시 중 활성 구간 추적/도착 정보 즉시 갱신용.
+  StreamSubscription<geo.Position>? _navLocationSub;
 
-  /// 모든 탑승 구간의 실시간 도착 정보 시작 (5초마다 갱신)
+  /// 모든 탑승 구간의 실시간 도착 정보 시작 (15초 주기) + 자동 위치 추적.
   void _loadBoardingArrival(PathResult route) {
     _arrivalRefreshTimer?.cancel();
     _boardingArrivals = [];
     _segmentArrivals = {};
 
-    // 즉시 1회 + 주기 갱신
     _updateAllSegmentArrivals(route);
     _arrivalRefreshTimer = Timer.periodic(
       const Duration(seconds: 15),
       (_) => _updateAllSegmentArrivals(route),
     );
+
+    // 길찾기 결과 표시되자마자 자동으로 위치 추적 시작 — 사용자가 "시작" 누르지 않아도 됨.
+    // 시트 fraction 은 그대로 유지 (사용자가 보고 있는 시트 흐름 방해 X).
+    if (!_routeNavigationActive) {
+      _startRouteNavigation(shrinkSheet: false);
+    }
   }
 
   /// 모든 지하철/버스 구간의 도착 정보 갱신
@@ -2223,27 +2238,51 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return null;
   }
 
-  void _startRouteNavigation() {
+  /// 위치 추적 + 활성 구간 추적 시작.
+  /// [shrinkSheet] 가 true 면 시트를 축소해 카메라/턴바이턴 모드로 전환.
+  /// 길찾기 결과 자동 트리거 시에는 false (사용자 결과 시트 보존).
+  void _startRouteNavigation({bool shrinkSheet = true}) {
     if (_routeResult == null) return;
     final firstIndex = _routeResult!.segments.indexWhere((s) => !s.isTransfer);
     if (firstIndex < 0) return;
     setState(() {
       _routeNavigationActive = true;
+      _routeNavigationManual = shrinkSheet;
       _activeNavigationSegmentIndex = firstIndex;
-      _routeSheetFraction = 0.24;
+      if (shrinkSheet) _routeSheetFraction = 0.24;
     });
-    _focusNavigationStep();
+    if (shrinkSheet) _focusNavigationStep();
+
+    // 8초 백업 폴링 (스트림이 일시 정지되거나 권한 문제 시 안전망).
     _routeNavigationTimer?.cancel();
     _routeNavigationTimer = Timer.periodic(
       const Duration(seconds: 8),
       (_) => _syncNavigationToCurrentLocation(),
     );
+
+    // 실시간 위치 스트림 구독 — 10m 이동마다 즉시 활성 구간/도착 정보 갱신.
+    _navLocationSub?.cancel();
+    _navLocationSub =
+        geo.Geolocator.getPositionStream(
+          locationSettings: const geo.LocationSettings(
+            accuracy: geo.LocationAccuracy.high,
+            distanceFilter: 10,
+          ),
+        ).listen((pos) {
+          _syncNavigationToCurrentLocation(pos: pos);
+        }, onError: (_) {});
+
     _syncNavigationToCurrentLocation();
   }
 
   void _stopRouteNavigation() {
     _routeNavigationTimer?.cancel();
-    setState(() => _routeNavigationActive = false);
+    _navLocationSub?.cancel();
+    _navLocationSub = null;
+    setState(() {
+      _routeNavigationActive = false;
+      _routeNavigationManual = false;
+    });
   }
 
   void _advanceNavigationStep() {
@@ -2256,6 +2295,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     ) {
       if (!route.segments[i].isTransfer) {
         setState(() => _activeNavigationSegmentIndex = i);
+        _refreshActiveSegmentArrival(); // 새 구간 도착 정보 즉시 갱신
         _focusNavigationStep();
         return;
       }
@@ -2263,11 +2303,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _stopRouteNavigation();
   }
 
-  Future<void> _syncNavigationToCurrentLocation() async {
+  /// 현재 활성 구간의 도착 정보를 즉시 새로고침 (다음 폴링 사이클을 기다리지 않음).
+  void _refreshActiveSegmentArrival() {
+    final route = _routeResult;
+    if (route == null) return;
+    final idx = _activeNavigationSegmentIndex;
+    if (idx < 0 || idx >= route.segments.length) return;
+    final seg = route.segments[idx];
+    if (seg.isTransfer) return;
+    if (seg.mode == TransportMode.subway) {
+      _updateSegmentArrival(idx, seg);
+    } else if (seg.mode == TransportMode.bus) {
+      _updateBusSegmentArrival(idx, seg);
+    }
+  }
+
+  /// 위치 동기화 — 위치 스트림 콜백 또는 백업 폴링이 호출.
+  /// [pos] 가 주어지면 사용, 아니면 현재 위치를 강제 새로고침해 받음.
+  Future<void> _syncNavigationToCurrentLocation({geo.Position? pos}) async {
     final route = _routeResult;
     if (!_routeNavigationActive || route == null) return;
 
-    final pos = await PlaceSearchService.instance.getCurrentPosition(
+    pos ??= await PlaceSearchService.instance.getCurrentPosition(
       forceRefresh: true,
     );
     if (!mounted || !_routeNavigationActive || _routeResult == null) return;
@@ -2289,8 +2346,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
       }
     }
 
-    if (bestDistance < 300 && bestIndex != _activeNavigationSegmentIndex) {
+    final indexChanged =
+        bestDistance < 300 && bestIndex != _activeNavigationSegmentIndex;
+    if (indexChanged) {
       setState(() => _activeNavigationSegmentIndex = bestIndex);
+      _refreshActiveSegmentArrival(); // 활성 구간 변경 시 새 구간 도착 정보 즉시 갱신
     }
 
     final active = _activeNavigationSegment;
@@ -2305,8 +2365,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
       return;
     }
 
-    final bearing = _bearingBetween(lat, lng, end[0], end[1]);
-    _mapController?.moveTo(lat, lng, zoom: 17.0, pitch: 60, bearing: bearing);
+    // 카메라 이동은 사용자가 명시적으로 "시작" 한 turn-by-turn 모드일 때만.
+    // 자동 시작(_loadBoardingArrival 트리거) 시에는 도착 정보만 갱신하고 카메라는 사용자 컨트롤 보존.
+    if (_routeNavigationManual) {
+      final bearing = _bearingBetween(lat, lng, end[0], end[1]);
+      _mapController?.moveTo(lat, lng, zoom: 17.0, pitch: 60, bearing: bearing);
+    }
   }
 
   List<List<double>> _segmentNavigationCoords(PathSegment seg) {
