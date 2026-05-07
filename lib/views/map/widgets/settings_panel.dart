@@ -1,11 +1,13 @@
 import 'dart:io';
 import 'dart:ui';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../../../core/map_interface.dart';
 import '../../../data/seoul_subway_data.dart';
 import '../../../models/bus_models.dart';
 import '../../../models/subway_models.dart';
 import '../../../services/device_profile_service.dart';
+import '../../../services/onboarding_service.dart';
 import '../../../services/settings_service.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_spacing.dart';
@@ -1051,14 +1053,81 @@ class _SettingsPanelState extends State<SettingsPanel> {
     return _glassCard(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        child: _toggleRow(
-          '디버그 로그 출력',
-          SettingsService.instance.debugLogs,
-          (v) {
-            SettingsService.instance.setDebugLogs(v);
-            setState(() {});
-          },
+        child: Column(
+          children: [
+            _toggleRow(
+              '디버그 로그 출력',
+              SettingsService.instance.debugLogs,
+              (v) {
+                SettingsService.instance.setDebugLogs(v);
+                setState(() {});
+              },
+            ),
+            Divider(
+              height: 1,
+              color: _panelTextMuted.withValues(alpha: 0.15),
+            ),
+            _AdaptiveActionRow(
+              icon: Icons.replay,
+              label: '튜토리얼 다시 보기',
+              onTap: _resetTutorial,
+              labelColor: _panelTextPrimary,
+              iconColor: _panelTextSecondary,
+              chevronColor: _panelTextMuted,
+            ),
+          ],
         ),
+      ),
+    );
+  }
+
+  Future<void> _resetTutorial() async {
+    final confirmed = await _showResetConfirmDialog();
+    if (!mounted || confirmed != true) return;
+    await OnboardingService.instance.reset();
+  }
+
+  Future<bool?> _showResetConfirmDialog() {
+    const title = '튜토리얼 다시 보기';
+    const message = '저장된 진행 상태를 지우고 다음 앱 실행 시 튜토리얼을 처음부터 보여드려요.';
+    if (Platform.isIOS) {
+      return showCupertinoDialog<bool>(
+        context: context,
+        builder: (ctx) => CupertinoAlertDialog(
+          title: const Text(title),
+          content: const Padding(
+            padding: EdgeInsets.only(top: 8),
+            child: Text(message),
+          ),
+          actions: [
+            CupertinoDialogAction(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('취소'),
+            ),
+            CupertinoDialogAction(
+              isDefaultAction: true,
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: const Text('다시 보기'),
+            ),
+          ],
+        ),
+      );
+    }
+    return showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text(title),
+        content: const Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('취소'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('다시 보기'),
+          ),
+        ],
       ),
     );
   }
@@ -1092,6 +1161,92 @@ class _SettingsPanelState extends State<SettingsPanel> {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// 액션 행 — iOS = 리퀴드 글라스 톤의 부드러운 highlight, Android = M3 InkWell 잉크 효과.
+class _AdaptiveActionRow extends StatefulWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final Color labelColor;
+  final Color iconColor;
+  final Color chevronColor;
+
+  const _AdaptiveActionRow({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    required this.labelColor,
+    required this.iconColor,
+    required this.chevronColor,
+  });
+
+  @override
+  State<_AdaptiveActionRow> createState() => _AdaptiveActionRowState();
+}
+
+class _AdaptiveActionRowState extends State<_AdaptiveActionRow> {
+  bool _pressed = false;
+
+  Widget _content() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 14),
+      child: Row(
+        children: [
+          Icon(widget.icon, size: 18, color: widget.iconColor),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              widget.label,
+              style: TextStyle(
+                color: widget.labelColor,
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          Icon(Icons.chevron_right, size: 18, color: widget.chevronColor),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (Platform.isIOS) {
+      // iOS: 리퀴드 글라스 톤 — 잉크 없이 부드러운 fill 하이라이트
+      return GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTapDown: (_) => setState(() => _pressed = true),
+        onTapUp: (_) => setState(() => _pressed = false),
+        onTapCancel: () => setState(() => _pressed = false),
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 140),
+          decoration: BoxDecoration(
+            color: _pressed
+                ? Colors.white.withValues(alpha: 0.08)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: _content(),
+        ),
+      );
+    }
+
+    // Android: Material 3 — 표준 InkWell 잉크/리플
+    final cs = Theme.of(context).colorScheme;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: widget.onTap,
+        borderRadius: BorderRadius.circular(12),
+        splashColor: cs.primary.withValues(alpha: 0.12),
+        highlightColor: cs.primary.withValues(alpha: 0.06),
+        child: _content(),
+      ),
     );
   }
 }

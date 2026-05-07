@@ -261,7 +261,7 @@ class _SettingsViewState extends State<SettingsView> {
             // Section 6: 앱 정보
             AdaptiveSectionCard(
               children: [
-                _InfoItem(label: '앱 버전', value: '1.0.0'),
+                _InfoItem(label: '앱 버전', value: '1.0.3'),
                 const _ItemDivider(),
                 _ChevronItem(
                   label: '개인정보처리방침',
@@ -277,7 +277,7 @@ class _SettingsViewState extends State<SettingsView> {
                     showLicensePage(
                       context: context,
                       applicationName: 'Seoul Vista',
-                      applicationVersion: '1.0.0',
+                      applicationVersion: '1.0.3',
                     );
                   },
                 ),
