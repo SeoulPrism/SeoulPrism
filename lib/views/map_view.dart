@@ -28,6 +28,8 @@ import '../services/directions_service.dart';
 import '../services/live_activity_service.dart';
 import '../services/incoming_url_service.dart';
 import 'map/widgets/departure_time_picker.dart';
+import 'map/widgets/place_action_button.dart';
+import 'map/widgets/place_detail_panel.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 import '../services/visit_history_service.dart';
 import '../data/seoul_subway_data.dart';
@@ -1126,8 +1128,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 duration: const Duration(milliseconds: 350),
                 opacity: _selectedPlace != null ? 1.0 : 0.0,
                 child: _lastSelectedPlace != null
-                    ? _buildPlaceDetailPanel(
-                        (_selectedPlace ?? _lastSelectedPlace)!,
+                    ? PlaceDetailPanel(
+                        place: (_selectedPlace ?? _lastSelectedPlace)!,
+                        onClose: () => setState(() {
+                          _setSelectedPlace(null);
+                          _removePlaceMarker();
+                        }),
+                        onShowWebView: () =>
+                            _showPlaceWebView(_selectedPlace ?? _lastSelectedPlace!),
+                        onDeparture: _startNavWithDeparture,
+                        onArrival: _startNavWithArrival,
                       )
                     : const SizedBox(height: 200),
               ),
@@ -1903,7 +1913,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             // 출발/도착 버튼
             Row(
               children: [
-                _placeActionButton(
+                PlaceActionButton(
                   icon: Icons.trip_origin,
                   label: '출발',
                   color: cs.primary,
@@ -1917,7 +1927,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   },
                 ),
                 const SizedBox(width: 8),
-                _placeActionButton(
+                PlaceActionButton(
                   icon: Icons.place,
                   label: '도착',
                   color: Colors.redAccent,
@@ -2666,228 +2676,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _searchBarKey.currentState?.enterNavWithArrival(name, lat: lat, lng: lng);
   }
 
-  Widget _buildPlaceDetailPanel(PlaceSearchResult place) {
-    final cs = Theme.of(context).colorScheme;
-    final hasDetail = place.address.isNotEmpty;
-    final hasDistance = place.distance != null && place.distance!.isNotEmpty;
-    final hasPhone = place.phone != null && place.phone!.isNotEmpty;
-    final hasUrl = place.placeUrl != null && place.placeUrl!.isNotEmpty;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 14),
-      child: GestureDetector(
-        onTap: hasUrl ? () => _showPlaceWebView(place) : null,
-        child: Container(
-          padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
-          decoration: BoxDecoration(
-            color: cs.surfaceContainer,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 헤더
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          place.name,
-                          style: TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.bold,
-                            color: cs.onSurface,
-                          ),
-                        ),
-                        const SizedBox(height: 3),
-                        Row(
-                          children: [
-                            if (place.category.isNotEmpty)
-                              Text(
-                                place.category,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: cs.primary,
-                                ),
-                              ),
-                            if (hasDistance) ...[
-                              Text(
-                                '  ·  ',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: cs.onSurfaceVariant,
-                                ),
-                              ),
-                              Text(
-                                _formatPlaceDistance(place.distance!),
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: cs.onSurfaceVariant,
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  IconButton(
-                    icon: Icon(
-                      FavoritesService.instance.isFavorite(place.name)
-                          ? Icons.favorite
-                          : Icons.favorite_border,
-                      size: 20,
-                      color: FavoritesService.instance.isFavorite(place.name)
-                          ? Colors.redAccent
-                          : cs.onSurfaceVariant,
-                    ),
-                    onPressed: () async {
-                      await FavoritesService.instance.toggle(
-                        FavoritePlace(
-                          name: place.name,
-                          address: place.address,
-                          category: place.category,
-                          lat: place.lat,
-                          lng: place.lng,
-                        ),
-                      );
-                      setState(() {});
-                    },
-                    visualDensity: VisualDensity.compact,
-                  ),
-                  IconButton(
-                    icon: Icon(
-                      Icons.close,
-                      size: 20,
-                      color: cs.onSurfaceVariant,
-                    ),
-                    onPressed: () => setState(() {
-                      _setSelectedPlace(null);
-                      _removePlaceMarker();
-                    }),
-                    visualDensity: VisualDensity.compact,
-                  ),
-                ],
-              ),
-
-              // 주소 + 전화
-              if (hasDetail || hasPhone) ...[
-                const SizedBox(height: 6),
-                if (hasDetail)
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.location_on_outlined,
-                        size: 14,
-                        color: cs.onSurfaceVariant,
-                      ),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Text(
-                          place.address,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: cs.onSurfaceVariant,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                if (hasPhone) ...[
-                  const SizedBox(height: 4),
-                  GestureDetector(
-                    onTap: () => launchUrl(Uri.parse('tel:${place.phone}')),
-                    child: Row(
-                      children: [
-                        Icon(Icons.phone_outlined, size: 14, color: cs.primary),
-                        const SizedBox(width: 4),
-                        Text(
-                          place.phone!,
-                          style: TextStyle(fontSize: 12, color: cs.primary),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ],
-
-              const SizedBox(height: 12),
-
-              // 액션 버튼
-              Row(
-                children: [
-                  _placeActionButton(
-                    icon: Icons.trip_origin,
-                    label: '출발',
-                    color: cs.primary,
-                    onTap: () {
-                      setState(() {
-                        _setSelectedPlace(null);
-                        _removePlaceMarker();
-                      });
-                      _startNavWithDeparture(
-                        place.name,
-                        lat: place.lat,
-                        lng: place.lng,
-                      );
-                    },
-                  ),
-                  const SizedBox(width: 8),
-                  _placeActionButton(
-                    icon: Icons.place,
-                    label: '도착',
-                    color: Colors.redAccent,
-                    onTap: () {
-                      setState(() {
-                        _setSelectedPlace(null);
-                        _removePlaceMarker();
-                      });
-                      _startNavWithArrival(
-                        place.name,
-                        lat: place.lat,
-                        lng: place.lng,
-                      );
-                    },
-                  ),
-                  const SizedBox(width: 8),
-                  _placeActionButton(
-                    icon: Icons.info_outline,
-                    label: '정보',
-                    color: cs.tertiary,
-                    onTap: () {
-                      if (hasUrl) _showPlaceWebView(place);
-                    },
-                  ),
-                ],
-              ),
-
-              // 하단 힌트
-              if (hasUrl)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: Center(
-                    child: Text(
-                      '탭하여 사진·리뷰·영업시간 보기',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: cs.onSurfaceVariant.withValues(alpha: 0.6),
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 
   void _showPlaceWebView(PlaceSearchResult place) {
     final url = place.placeUrl!.replaceFirst('http://', 'https://');
@@ -3029,47 +2817,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _placeActionButton({
-    required IconData icon,
-    required String label,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: color.withValues(alpha: 0.3), width: 0.8),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, size: 14, color: color),
-              const SizedBox(width: 4),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: color,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 
-  String _formatPlaceDistance(String distance) {
-    final m = int.tryParse(distance) ?? 0;
-    if (m >= 1000) return '${(m / 1000).toStringAsFixed(1)}km';
-    return '${m}m';
-  }
 
   /// AI가 보낸 역명으로 StationInfo 찾기
   /// "서울" → "서울역", "강남" → "강남" 등 유연하게 매칭
