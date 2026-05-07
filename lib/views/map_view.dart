@@ -3990,7 +3990,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         screenHeight * _routeSheetFraction.clamp(minSheetFraction, 0.85);
     final headerMaxHeight = max(
       96.0,
-      min(sheetHeight - 72.0, screenHeight * 0.42),
+      min(sheetHeight - 72.0, screenHeight * 0.50),
     );
     final handle = headerChildren.isNotEmpty
         ? headerChildren.first

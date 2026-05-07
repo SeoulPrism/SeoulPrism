@@ -1245,81 +1245,10 @@ class UnifiedSearchBarState extends State<UnifiedSearchBar>
                   ),
                 ],
               ),
-              if (_depStation != null && _arrStation != null) ...[
-                const SizedBox(height: AppSpacing.md),
-                _buildTypeTabs(),
-              ],
             ],
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildTypeTabs() {
-    return Row(
-      children: PathSearchType.values.map((type) {
-        final sel = _searchType == type;
-        final label = switch (type) {
-          PathSearchType.duration => '최소시간',
-          PathSearchType.distance => '최단거리',
-          PathSearchType.transfer => '최소환승',
-        };
-        final icon = switch (type) {
-          PathSearchType.duration => CupertinoIcons.clock,
-          PathSearchType.distance => CupertinoIcons.map,
-          PathSearchType.transfer => CupertinoIcons.arrow_swap,
-        };
-        return Expanded(
-          child: GestureDetector(
-            onTap: () {
-              setState(() => _searchType = type);
-              _findPath();
-            },
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              padding: const EdgeInsets.symmetric(vertical: 7),
-              margin: const EdgeInsets.symmetric(horizontal: 3),
-              decoration: BoxDecoration(
-                color: sel
-                    ? Theme.of(
-                        context,
-                      ).colorScheme.primary.withValues(alpha: 0.2)
-                    : Colors.transparent,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: sel
-                      ? Theme.of(context).colorScheme.primary
-                      : Colors.white12,
-                  width: sel ? 1.2 : 0.5,
-                ),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    icon,
-                    size: 13,
-                    color: sel
-                        ? Theme.of(context).colorScheme.primary
-                        : AppColors.textTertiary,
-                  ),
-                  const SizedBox(width: AppSpacing.xs),
-                  Text(
-                    label,
-                    style: AppTypography.bodySm.copyWith(
-                      fontWeight: sel ? FontWeight.bold : FontWeight.normal,
-                      color: sel
-                          ? Theme.of(context).colorScheme.primary
-                          : AppColors.textTertiary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      }).toList(),
     );
   }
 
