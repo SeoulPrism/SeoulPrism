@@ -7,7 +7,7 @@ import ActivityKit
 
   // 다이나믹 아일랜드/잠금화면 Live Activity 핸들러.
   // Dart 측 LiveActivityService 가 'seoul_prism/live_activity' MethodChannel 로 호출.
-  private var routeActivity: Any? = nil  // Activity<RouteActivityAttributes> — Widget Extension 추가 후 타입 활성화
+  private var routeActivity: Any?
 
   override func application(
     _ application: UIApplication,
@@ -48,18 +48,12 @@ import ActivityKit
     }
   }
 
-  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // 아래 함수들은 Widget Extension target 을 추가한 후 활성화.
-  // 그 전에는 LiveActivityService 호출이 silent no-op 으로 동작.
-  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
   @available(iOS 16.1, *)
   private func startActivity(args: [String: Any], result: @escaping FlutterResult) {
-    /*
-    // ── Widget Extension target 추가 후 주석 해제 ──
-    // RouteActivityAttributes / ContentState 는 Widget Extension 측에서 정의 필요.
-    let attributes = RouteActivityAttributes(destination: args["destination"] as? String ?? "")
-    let state = RouteActivityAttributes.ContentState(
+    let attributes = RouteLiveActivityAttributes(
+      destination: args["destination"] as? String ?? ""
+    )
+    let state = RouteLiveActivityAttributes.ContentState(
       headline: args["headline"] as? String ?? "",
       detail: args["detail"] as? String ?? "",
       etaMinutes: args["etaMinutes"] as? Int ?? 0,
@@ -67,7 +61,7 @@ import ActivityKit
       totalMinutes: args["totalMinutes"] as? Int ?? 0
     )
     do {
-      let activity = try Activity<RouteActivityAttributes>.request(
+      let activity = try Activity<RouteLiveActivityAttributes>.request(
         attributes: attributes,
         contentState: state,
         pushType: nil
@@ -77,18 +71,14 @@ import ActivityKit
     } catch {
       result(FlutterError(code: "start_failed", message: error.localizedDescription, details: nil))
     }
-    */
-    result(nil)
   }
 
   @available(iOS 16.1, *)
   private func updateActivity(args: [String: Any], result: @escaping FlutterResult) {
-    /*
-    // ── Widget Extension target 추가 후 주석 해제 ──
-    guard let activity = self.routeActivity as? Activity<RouteActivityAttributes> else {
+    guard let activity = self.routeActivity as? Activity<RouteLiveActivityAttributes> else {
       result(nil); return
     }
-    let state = RouteActivityAttributes.ContentState(
+    let state = RouteLiveActivityAttributes.ContentState(
       headline: args["headline"] as? String ?? "",
       detail: args["detail"] as? String ?? "",
       etaMinutes: args["etaMinutes"] as? Int ?? 0,
@@ -99,15 +89,11 @@ import ActivityKit
       await activity.update(using: state)
       result(nil)
     }
-    */
-    result(nil)
   }
 
   @available(iOS 16.1, *)
   private func stopActivity(args: [String: Any], result: @escaping FlutterResult) {
-    /*
-    // ── Widget Extension target 추가 후 주석 해제 ──
-    guard let activity = self.routeActivity as? Activity<RouteActivityAttributes> else {
+    guard let activity = self.routeActivity as? Activity<RouteLiveActivityAttributes> else {
       result(nil); return
     }
     Task {
@@ -115,7 +101,5 @@ import ActivityKit
       self.routeActivity = nil
       result(nil)
     }
-    */
-    result(nil)
   }
 }
