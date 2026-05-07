@@ -12,6 +12,7 @@ import 'adaptive/adaptive.dart';
 import 'search_bar/glass_search_field.dart';
 import 'search_bar/recent_routes_panel.dart';
 import 'search_bar/search_tiles.dart';
+import 'search_bar/search_dropdowns.dart';
 import '../data/seoul_subway_data.dart';
 import '../models/subway_models.dart';
 import '../models/bus_models.dart';
@@ -937,7 +938,15 @@ class UnifiedSearchBarState extends State<UnifiedSearchBar>
                   offset: Offset(0, -6 * (1 - _dropAnim.value)),
                   child: Opacity(opacity: _dropAnim.value, child: child),
                 ),
-                child: _buildCombinedDropdown(),
+                child: CombinedDropdown(
+                  stations: _searchResults,
+                  buses: _busResults,
+                  places: _placeResults,
+                  onStationSelect: _selectSearch,
+                  onBusSelect: _selectBus,
+                  onPlaceSelect: _selectPlace,
+                  radius: _kBarRadius,
+                ),
               ),
             )
           else if (_isFocused &&
@@ -971,7 +980,16 @@ class UnifiedSearchBarState extends State<UnifiedSearchBar>
                         _navPlaceResults.isNotEmpty))
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: _kHPadding),
-                    child: _buildNavCombinedDropdown(),
+                    child: NavCombinedDropdown(
+                      showCurrentLocation: _showCurrentLocationResult,
+                      stationResults: _navResults,
+                      placeResults: _navPlaceResults,
+                      onCurrentLocation: () =>
+                          _setCurrentLocationForField(_activeField),
+                      onStationSelect: _selectNav,
+                      onPlaceSelect: _selectNavPlace,
+                      radius: _kBarRadius,
+                    ),
                   )
                 else if (_pathResult == null &&
                     !_isPathLoading &&
@@ -1350,97 +1368,6 @@ class UnifiedSearchBarState extends State<UnifiedSearchBar>
     if (_depStation != null && _arrStation != null) _findPath();
   }
 
-  Widget _buildNavCombinedDropdown() {
-    final isM3 = Platform.isAndroid;
-    final currentLocationCount = _showCurrentLocationResult ? 1 : 0;
-    final totalCount =
-        currentLocationCount + _navResults.length + _navPlaceResults.length;
-
-    Widget buildList() {
-      return ListView.separated(
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-        shrinkWrap: true,
-        itemCount: totalCount,
-        separatorBuilder: (_, i) {
-          if (i == currentLocationCount + _navResults.length - 1 &&
-              _navPlaceResults.isNotEmpty) {
-            return Divider(
-              height: 16,
-              thickness: 0.5,
-              indent: 16,
-              endIndent: 16,
-              color: isM3
-                  ? Theme.of(context).colorScheme.outlineVariant
-                  : AppColors.divider,
-            );
-          }
-          return Divider(
-            height: 1,
-            indent: 48,
-            color: isM3
-                ? Theme.of(
-                    context,
-                  ).colorScheme.outlineVariant.withValues(alpha: 0.5)
-                : AppColors.divider,
-          );
-        },
-        itemBuilder: (_, i) {
-          if (_showCurrentLocationResult && i == 0) {
-            return CurrentLocationTile(
-              onTap: () => _setCurrentLocationForField(_activeField),
-            );
-          }
-          final stationIndex = i - currentLocationCount;
-          if (stationIndex < _navResults.length) {
-            return StationTile(
-              result: _navResults[stationIndex],
-              onSelect: _selectNav,
-            );
-          }
-          final place = _navPlaceResults[stationIndex - _navResults.length];
-          return PlaceTile(
-            place: place,
-            onTap: () => _selectNavPlace(place),
-          );
-        },
-      );
-    }
-
-    if (isM3) {
-      final cs = Theme.of(context).colorScheme;
-      return Material(
-        elevation: 3,
-        shadowColor: cs.shadow.withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(_kBarRadius),
-        color: cs.surfaceContainer,
-        surfaceTintColor: cs.surfaceTint,
-        clipBehavior: Clip.antiAlias,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxHeight: 280),
-          child: buildList(),
-        ),
-      );
-    }
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(_kBarRadius),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
-        child: Container(
-          constraints: const BoxConstraints(maxHeight: 280),
-          decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: AppColors.glassDropOpacity),
-            borderRadius: BorderRadius.circular(_kBarRadius),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.15),
-              width: 0.5,
-            ),
-          ),
-          child: buildList(),
-        ),
-      ),
-    );
-  }
 
 
   // ── 최근 검색 드롭다운 ──
@@ -1556,95 +1483,6 @@ class UnifiedSearchBarState extends State<UnifiedSearchBar>
   }
 
   // ── 통합 검색 드롭다운 (지하철 + 버스 + 장소) ──
-  Widget _buildCombinedDropdown() {
-    final isM3 = Platform.isAndroid;
-    final busCount = _busResults.take(5).length; // 버스는 최대 5개
-    final totalCount = _searchResults.length + busCount + _placeResults.length;
-
-    Widget buildList() {
-      return ListView.separated(
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-        shrinkWrap: true,
-        itemCount: totalCount,
-        separatorBuilder: (_, i) {
-          // 섹션 경계에 두꺼운 구분선
-          final stationEnd = _searchResults.length - 1;
-          final busEnd = _searchResults.length + busCount - 1;
-          if ((i == stationEnd && (busCount > 0 || _placeResults.isNotEmpty)) ||
-              (i == busEnd && _placeResults.isNotEmpty)) {
-            return Divider(
-              height: 16,
-              thickness: 0.5,
-              indent: 16,
-              endIndent: 16,
-              color: isM3
-                  ? Theme.of(context).colorScheme.outlineVariant
-                  : AppColors.divider,
-            );
-          }
-          return Divider(
-            height: 1,
-            indent: 48,
-            color: isM3
-                ? Theme.of(
-                    context,
-                  ).colorScheme.outlineVariant.withValues(alpha: 0.5)
-                : AppColors.divider,
-          );
-        },
-        itemBuilder: (_, i) {
-          if (i < _searchResults.length) {
-            return StationTile(
-              result: _searchResults[i],
-              onSelect: _selectSearch,
-            );
-          }
-          final busIdx = i - _searchResults.length;
-          if (busIdx < busCount) {
-            final route = _busResults[busIdx];
-            return BusTile(route: route, onTap: () => _selectBus(route));
-          }
-          final p = _placeResults[i - _searchResults.length - busCount];
-          return PlaceTile(place: p, onTap: () => _selectPlace(p));
-        },
-      );
-    }
-
-    if (isM3) {
-      final cs = Theme.of(context).colorScheme;
-      return Material(
-        elevation: 3,
-        shadowColor: cs.shadow.withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(_kBarRadius),
-        color: cs.surfaceContainer,
-        surfaceTintColor: cs.surfaceTint,
-        clipBehavior: Clip.antiAlias,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxHeight: 350),
-          child: buildList(),
-        ),
-      );
-    }
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(_kBarRadius),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
-        child: Container(
-          constraints: const BoxConstraints(maxHeight: 350),
-          decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: AppColors.glassDropOpacity),
-            borderRadius: BorderRadius.circular(_kBarRadius),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.15),
-              width: 0.5,
-            ),
-          ),
-          child: buildList(),
-        ),
-      ),
-    );
-  }
 
 
 
