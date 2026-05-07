@@ -68,12 +68,16 @@ class RecentRouteService {
   SupabaseClient get _sb => Supabase.instance.client;
   String? get _userId => _sb.auth.currentUser?.id;
 
+  // 테이블 누락/RLS 차단 등으로 한 번 실패하면 같은 세션에선 더 시도하지 않음 (로그 spam 차단).
+  // 핫 리로드/재시작 시 초기화되므로 SQL 으로 테이블 생성 후 다시 동작.
+  bool _supabaseDisabled = false;
+
   Future<void> load() async {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getStringList(_key) ?? [];
     _routes = raw.map((s) => RecentRoute.fromJson(jsonDecode(s))).toList();
 
-    if (_userId != null) {
+    if (_userId != null && !_supabaseDisabled) {
       try {
         final res = await _sb
             .from('route_history')
@@ -99,8 +103,9 @@ class RecentRouteService {
             .toList();
         await _saveLocal();
       } catch (e) {
-        // 테이블 없거나 RLS 막힘 → 로컬만 사용.
-        debugPrint('[RecentRoute] Supabase 동기화 실패: $e');
+        // 테이블 없거나 RLS 막힘 → 로컬만 사용. 다음 호출부터 비활성화.
+        _supabaseDisabled = true;
+        debugPrint('[RecentRoute] Supabase 비활성화 — 로컬 캐시만 사용: $e');
       }
     }
   }
@@ -147,7 +152,7 @@ class RecentRouteService {
     }
     await _saveLocal();
 
-    if (_userId != null) {
+    if (_userId != null && !_supabaseDisabled) {
       try {
         await _sb.from('route_history').upsert({
           'user_id': _userId,
@@ -161,7 +166,8 @@ class RecentRouteService {
           'last_used_at': newRecord.lastUsedAt.toIso8601String(),
         }, onConflict: 'user_id,departure,arrival');
       } catch (e) {
-        debugPrint('[RecentRoute] Supabase upsert 실패: $e');
+        _supabaseDisabled = true;
+        debugPrint('[RecentRoute] Supabase 비활성화 — 로컬 캐시만 사용: $e');
       }
     }
   }
@@ -171,7 +177,7 @@ class RecentRouteService {
       (r) => r.departure == departure && r.arrival == arrival,
     );
     await _saveLocal();
-    if (_userId != null) {
+    if (_userId != null && !_supabaseDisabled) {
       try {
         await _sb
             .from('route_history')
@@ -180,7 +186,7 @@ class RecentRouteService {
             .eq('departure', departure)
             .eq('arrival', arrival);
       } catch (e) {
-        debugPrint('[RecentRoute] Supabase 삭제 실패: $e');
+        _supabaseDisabled = true;
       }
     }
   }
@@ -188,11 +194,11 @@ class RecentRouteService {
   Future<void> clear() async {
     _routes.clear();
     await _saveLocal();
-    if (_userId != null) {
+    if (_userId != null && !_supabaseDisabled) {
       try {
         await _sb.from('route_history').delete().eq('user_id', _userId!);
       } catch (e) {
-        debugPrint('[RecentRoute] Supabase clear 실패: $e');
+        _supabaseDisabled = true;
       }
     }
   }
