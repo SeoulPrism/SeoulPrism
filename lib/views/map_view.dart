@@ -24,6 +24,7 @@ import '../widgets/search_bar.dart';
 import '../services/place_search_service.dart';
 import '../services/favorites_service.dart';
 import '../services/directions_service.dart';
+import '../services/live_activity_service.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 import '../services/visit_history_service.dart';
 import '../data/seoul_subway_data.dart';
@@ -610,6 +611,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _routeNavigationTimer?.cancel();
     _navLocationSub?.cancel();
     _navLocationSub = null;
+    LiveActivityService.instance.stop();
     _boardingArrivals = [];
     _segmentArrivals = {};
     _routeNavigationActive = false;
@@ -2022,14 +2024,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _updateAllSegmentArrivals(route);
     _arrivalRefreshTimer = Timer.periodic(
       const Duration(seconds: 15),
-      (_) => _updateAllSegmentArrivals(route),
+      (_) {
+        _updateAllSegmentArrivals(route);
+        _pushLiveActivityUpdate(); // 도착 정보 갱신마다 Live Activity 도 함께
+      },
     );
 
     // 길찾기 결과 표시되자마자 자동으로 위치 추적 시작 — 사용자가 "시작" 누르지 않아도 됨.
-    // 시트 fraction 은 그대로 유지 (사용자가 보고 있는 시트 흐름 방해 X).
     if (!_routeNavigationActive) {
       _startRouteNavigation(shrinkSheet: false);
     }
+    // 다이나믹 아일랜드/Live Activity 시작 (도착 정보가 채워지기 전이라도 헤드라인은 표시).
+    _pushLiveActivityUpdate(forceStart: true);
   }
 
   /// 모든 지하철/버스 구간의 도착 정보 갱신
@@ -2412,6 +2418,64 @@ class _DashboardScreenState extends State<DashboardScreen> {
     } else if (seg.mode == TransportMode.bus) {
       _updateBusSegmentArrival(idx, seg);
     }
+    _pushLiveActivityUpdate();
+  }
+
+  /// 활성 구간 정보를 다이나믹 아일랜드/잠금화면 Live Activity 로 push.
+  /// [forceStart] = true 면 새 Activity 시작 (아직 없을 때).
+  void _pushLiveActivityUpdate({bool forceStart = false}) {
+    final route = _routeResult;
+    if (route == null) return;
+    final idx = _activeNavigationSegmentIndex;
+    if (idx < 0 || idx >= route.segments.length) return;
+    final seg = route.segments[idx];
+    if (seg.isTransfer) return;
+
+    // 도착 메시지에서 ETA 분 추출 ("143번 5분", "곧 도착").
+    final arrivals = _segmentArrivals[idx];
+    int eta = 0;
+    String detail = '';
+    if (arrivals != null && arrivals.isNotEmpty) {
+      detail = arrivals.first;
+      final m = RegExp(r'(\d+)\s*분').firstMatch(detail);
+      if (m != null) {
+        eta = int.tryParse(m.group(1)!) ?? 0;
+      } else if (detail.contains('곧 도착')) {
+        eta = 0;
+      }
+    }
+
+    final headline = '${seg.lineName} → ${seg.stations.last}';
+    final remainingMin = (route.totalTimeSec / 60).ceil();
+    final color = seg.mode == TransportMode.subway
+        ? SubwayColors.lineColors[seg.lineId]
+        : (seg.mode == TransportMode.bus ? BusColors.trunk : null);
+    final hex = color == null ? null : _colorToHex(color);
+
+    if (forceStart) {
+      LiveActivityService.instance.start(
+        headline: headline,
+        detail: detail,
+        etaMinutes: eta,
+        lineColorHex: hex,
+        totalMinutes: remainingMin,
+        destination: route.arrival,
+      );
+    } else {
+      LiveActivityService.instance.update(
+        headline: headline,
+        detail: detail,
+        etaMinutes: eta,
+        lineColorHex: hex,
+        totalMinutes: remainingMin,
+        destination: route.arrival,
+      );
+    }
+  }
+
+  String _colorToHex(Color c) {
+    final argb = c.toARGB32();
+    return '#${argb.toRadixString(16).padLeft(8, '0').substring(2)}';
   }
 
   /// 위치 동기화 — 위치 스트림 콜백 또는 백업 폴링이 호출.
