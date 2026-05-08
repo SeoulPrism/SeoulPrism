@@ -3,7 +3,6 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
-import '../../../widgets/adaptive/adaptive.dart';
 
 /// 여행 (Day Plan) 바텀시트 패널.
 /// 현재는 비어있는 상태 + CTA — DayPlan 저장/생성 시스템은 후속 작업.
@@ -76,49 +75,55 @@ class TravelPanel extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Column(
               children: [
+                // 빈 상태 — 스크롤 가능 영역. 작은 화면에서도 CTA 와 절대 겹치지 않음.
                 Expanded(
-                  child: Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 64,
-                          height: 64,
-                          decoration: BoxDecoration(
-                            color: AppColors.accent.withValues(alpha: 0.14),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Icons.calendar_month_rounded,
-                            size: 32,
-                            color: AppColors.accent,
-                          ),
-                        ),
-                        const SizedBox(height: 18),
-                        Text(
-                          '서울 일정 만들기',
-                          style: AppTypography.titleMd.copyWith(
-                            color: txtPrimary,
-                            fontSize: 18,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                          child: Text(
-                            '하루 코스를 만들어 지도에 표시해 드려요.\n'
-                            '경복궁부터 한강 야경까지, 시간 흐름대로.',
-                            textAlign: TextAlign.center,
-                            style: AppTypography.bodySm.copyWith(
-                              color: txtMuted,
-                              height: 1.5,
+                  child: SingleChildScrollView(
+                    physics: const ClampingScrollPhysics(),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 56,
+                            height: 56,
+                            decoration: BoxDecoration(
+                              color: AppColors.accent.withValues(alpha: 0.14),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.calendar_month_rounded,
+                              size: 28,
+                              color: AppColors.accent,
                             ),
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 14),
+                          Text(
+                            '서울 일정 만들기',
+                            style: AppTypography.titleMd.copyWith(
+                              color: txtPrimary,
+                              fontSize: 17,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            child: Text(
+                              '하루 코스를 만들어 지도에 표시해 드려요.\n'
+                              '경복궁부터 한강 야경까지, 시간 흐름대로.',
+                              textAlign: TextAlign.center,
+                              style: AppTypography.bodySm.copyWith(
+                                color: txtMuted,
+                                height: 1.45,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
+                // CTA 들은 항상 하단 고정 — 위 영역이 좁아져도 버튼은 침범당하지 않음.
                 _Cta(
                   icon: Icons.auto_awesome,
                   label: 'AI 가 추천해줘요',
@@ -134,7 +139,7 @@ class TravelPanel extends StatelessWidget {
                   onTap: onUseSaved,
                   primary: false,
                 ),
-                SizedBox(height: MediaQuery.of(context).padding.bottom + 24),
+                SizedBox(height: MediaQuery.of(context).padding.bottom + 16),
               ],
             ),
           ),
