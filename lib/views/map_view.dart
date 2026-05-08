@@ -27,6 +27,7 @@ import '../widgets/search_bar.dart';
 import '../services/place_search_service.dart';
 import '../services/favorites_service.dart';
 import '../services/directions_service.dart';
+import '../services/saved_places_plan_builder.dart';
 import '../services/live_activity_service.dart';
 import '../services/incoming_url_service.dart';
 import 'map/widgets/departure_time_picker.dart';
@@ -39,6 +40,7 @@ import 'map/widgets/route_timeline.dart';
 import 'map/widgets/navigation_banner.dart';
 import 'map/widgets/saved_panel.dart';
 import 'map/widgets/settings_panel.dart';
+import 'map/widgets/travel_panel.dart';
 import 'map/widgets/info_bars.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 import '../services/visit_history_service.dart';
@@ -79,7 +81,8 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   IMapController? _mapController;
-  bool _settingsOpen = false;
+  bool _settingsOpen = false; // 더 이상 탭으로 진입 안 함 — ProfileView 의 톱니바퀴 아이콘으로만 진입.
+  bool _travelOpen = false;
   bool _aiOpen = false;
   bool _aiClosing = false;
   bool _recommendOpen = false;
@@ -728,6 +731,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
         setState(() {});
       }
     };
+
+    // 온보딩 / 설정에서 선택한 레이어 활성화 상태 적용 (성능 부담 큰 레이어 끄기 가능).
+    final s = SettingsService.instance;
+    _busController.toggleBuses(s.showBuses);
+    _busController.toggleRiverBus(s.showRiverBus);
+    _flightController.toggle(s.showFlights);
+
     // 맵 탭 시 키보드 내림 + 선택 해제
     controller.setOnAnyMapTap(() {
       FocusManager.instance.primaryFocus?.unfocus();
@@ -923,14 +933,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   opacity:
                       (_isNavMode ||
                           _isSearchFocused ||
-                          _settingsOpen)
+                          _settingsOpen ||
+                          _travelOpen)
                       ? 0.0
                       : 1.0,
                   child: IgnorePointer(
                     ignoring:
                         _isNavMode ||
                         _isSearchFocused ||
-                        _settingsOpen,
+                        _settingsOpen ||
+                        _travelOpen,
                     child: WeatherTimeWidget(
                       environment: _subwayController.environment,
                     ),
@@ -947,14 +959,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 opacity:
                     (_isNavMode ||
                         _isSearchFocused ||
-                        _settingsOpen)
+                        _settingsOpen ||
+                        _travelOpen)
                     ? 0.0
                     : 1.0,
                 child: IgnorePointer(
                   ignoring:
                       _isNavMode ||
                       _isSearchFocused ||
-                      _settingsOpen,
+                      _settingsOpen ||
+                      _travelOpen,
                   child: AnimatedSwitcher(
                     duration: const Duration(milliseconds: 300),
                     child: AdaptiveGlassIconButton(
@@ -1203,8 +1217,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
             // 경로 결과 바텀 패널 (설정 패널 스타일)
             _buildRouteResultOverlay(context, screenHeight),
 
-            // 설정 패널 오버레이 (바텀시트 스타일)
+            // 설정 패널 오버레이 — ProfileView 의 톱니바퀴에서만 진입.
             _buildSettingsOverlay(context, screenHeight, bottomInset),
+
+            // 여행 패널 오버레이 (탭 3)
+            _buildTravelOverlay(context, screenHeight),
 
             // 하루 플랜 오버레이 (지도 위 바텀 패널)
             _buildDayPlanOverlay(context, bottomInset),
@@ -1257,7 +1274,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void _delayShowButton() {
     // 패널 닫힌 후 0.5초 뒤에 버튼 표시
     Future.delayed(const Duration(milliseconds: 500), () {
-      if (mounted && !_settingsOpen && !_recommendOpen) {
+      if (mounted && !_settingsOpen && !_recommendOpen && !_travelOpen) {
         setState(() => _hideButtonForPanel = false);
       }
     });
@@ -2304,12 +2321,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   // ── 하단 탭바 (리퀴드 글라스) ──
   Widget _buildBottomTabBar() {
-    // 순서: 추천(0) | 저장(1) | 지도(2, 가운데) | 설정(3) | AI(4)
+    // 순서: 추천(0) | 저장(1) | 지도(2, 가운데) | 여행(3) | AI(4)
+    // 설정은 더 이상 탭에 없음 — ProfileView 의 톱니바퀴 아이콘에서 진입.
     final currentIndex = _recommendOpen
         ? 0
         : _savedOpen
         ? 1
-        : _settingsOpen
+        : _travelOpen
         ? 3
         : _aiOpen
         ? 4
@@ -2321,7 +2339,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         setState(() {
           if (index == 0) {
             // 추천
-            _settingsOpen = false;
+            _travelOpen = false;
             _savedOpen = false;
             _dismissAi();
             if (_recommendOpen) {
@@ -2333,7 +2351,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             }
           } else if (index == 1) {
             // 저장
-            _settingsOpen = false;
+            _travelOpen = false;
             _recommendOpen = false;
             _dismissAi();
             if (_savedOpen) {
@@ -2345,28 +2363,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
             }
           } else if (index == 2) {
             // 지도
-            final wasOpen = _settingsOpen || _recommendOpen || _savedOpen;
-            _settingsOpen = false;
+            final wasOpen = _travelOpen || _recommendOpen || _savedOpen;
+            _travelOpen = false;
             _recommendOpen = false;
             _savedOpen = false;
             _dismissAi();
             if (wasOpen) _delayShowButton();
           } else if (index == 3) {
-            // 설정
+            // 여행
             _recommendOpen = false;
             _savedOpen = false;
             _dismissAi();
-            if (_settingsOpen) {
-              _settingsOpen = false;
+            if (_travelOpen) {
+              _travelOpen = false;
               _delayShowButton();
             } else {
-              _settingsOpen = true;
+              _travelOpen = true;
               _hideButtonForPanel = true;
             }
           } else if (index == 4) {
             // AI
-            final wasOpen = _settingsOpen || _recommendOpen || _savedOpen;
-            _settingsOpen = false;
+            final wasOpen = _travelOpen || _recommendOpen || _savedOpen;
+            _travelOpen = false;
             _recommendOpen = false;
             _savedOpen = false;
             if (wasOpen) _delayShowButton();
@@ -2383,7 +2401,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         AdaptiveTabItem(label: '추천', icon: Icons.explore),
         AdaptiveTabItem(label: '저장', icon: Icons.bookmark),
         AdaptiveTabItem(label: '지도', icon: Icons.map),
-        AdaptiveTabItem(label: '설정', icon: Icons.settings),
+        AdaptiveTabItem(label: '여행', icon: Icons.calendar_month),
         AdaptiveTabItem(label: 'AI', icon: Icons.auto_awesome),
       ],
     );
@@ -3098,6 +3116,62 @@ class _DashboardScreenState extends State<DashboardScreen> {
       );
 
   // ── 설정 오버레이 패널 ──
+  /// 즐겨찾기 + 방문 기록 기반 DayPlan 자동 생성 → 지도 위 오버레이로 표시.
+  /// 마커만 표시 — 사용자가 stop 별 "길찾기" 버튼 누르면 본 앱 길찾기로 진입.
+  void _buildPlanFromSavedPlaces() {
+    final plans = SavedPlacesPlanBuilder.buildPlans();
+    if (plans.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '장소가 더 필요해요 — 즐겨찾기/방문 기록 ${SavedPlacesPlanBuilder.minPlaces}곳 이상이면 자동 생성돼요',
+          ),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
+    setState(() {
+      _travelOpen = false;
+      _dayPlans = plans;
+    });
+  }
+
+  // ── 여행 패널 오버레이 (바텀시트) ──
+  Widget _buildTravelOverlay(BuildContext context, double screenHeight) {
+    final panelHeight = screenHeight * 0.55;
+    return AnimatedPositioned(
+      duration: const Duration(milliseconds: 400),
+      curve: _travelOpen ? Curves.easeOutCubic : Curves.easeInCubic,
+      bottom: _travelOpen ? 0 : -panelHeight - 50,
+      left: 0,
+      right: 0,
+      height: panelHeight,
+      child: AnimatedOpacity(
+        duration: const Duration(milliseconds: 350),
+        opacity: _travelOpen ? 1.0 : 0.0,
+        child: GestureDetector(
+          onVerticalDragEnd: (details) {
+            if (details.velocity.pixelsPerSecond.dy > 200) {
+              setState(() => _travelOpen = false);
+            }
+          },
+          child: TravelPanel(
+            onUseAi: () {
+              setState(() {
+                _travelOpen = false;
+                _aiOpen = true;
+                _aiClosing = false;
+              });
+            },
+            onUseSaved: () => _buildPlanFromSavedPlaces(),
+            onClose: () => setState(() => _travelOpen = false),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildSettingsOverlay(
     BuildContext context,
     double screenHeight,
@@ -3259,6 +3333,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     plans: _dayPlans!,
                     mapController: _mapController,
                     onClose: () => setState(() => _dayPlans = null),
+                    onNavigateToStop: (name, lat, lng) {
+                      // 하루 플랜 닫고 본 앱 길찾기로 이동 (도착지 자동 채움 + 출발지=내 위치).
+                      setState(() => _dayPlans = null);
+                      _startNavWithArrival(name, lat: lat, lng: lng);
+                    },
                   )
                 : const SizedBox.shrink(),
           ),

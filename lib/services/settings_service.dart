@@ -39,6 +39,9 @@ class SettingsService {
   static const _kUseNaverApi = 'use_naver_api';
   static const _kThemeMode = 'theme_mode'; // 'system' | 'light' | 'dark'
   static const _kDebugLogs = 'debug_logs';
+  static const _kShowBuses = 'show_buses';
+  static const _kShowRiverBus = 'show_river_bus';
+  static const _kShowFlights = 'show_flights';
 
   // ── Getters ──
   bool get showRoutes => _prefs.getBool(_kShowRoutes) ?? true;
@@ -54,6 +57,9 @@ class SettingsService {
   bool get useNaverApi => _prefs.getBool(_kUseNaverApi) ?? true;
   String get themeMode => _prefs.getString(_kThemeMode) ?? 'dark';
   bool get debugLogs => _prefs.getBool(_kDebugLogs) ?? false;
+  bool get showBuses => _prefs.getBool(_kShowBuses) ?? true;
+  bool get showRiverBus => _prefs.getBool(_kShowRiverBus) ?? true;
+  bool get showFlights => _prefs.getBool(_kShowFlights) ?? true;
 
   Set<String>? get selectedLines {
     final val = _prefs.getString(_kSelectedLines);
@@ -76,6 +82,9 @@ class SettingsService {
     await _prefs.setBool(_kDebugLogs, v);
     DebugLog.enabled = v;
   }
+  Future<void> setShowBuses(bool v) => _prefs.setBool(_kShowBuses, v);
+  Future<void> setShowRiverBus(bool v) => _prefs.setBool(_kShowRiverBus, v);
+  Future<void> setShowFlights(bool v) => _prefs.setBool(_kShowFlights, v);
 
   Future<void> setSelectedLines(Set<String>? lines) async {
     if (lines == null) {

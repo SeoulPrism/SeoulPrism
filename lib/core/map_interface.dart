@@ -4,7 +4,17 @@ import '../models/subway_models.dart';
 enum MapType { mapbox }
 
 abstract class IMapController {
-  void moveTo(double lat, double lng, {double? zoom, double? pitch, double? bearing});
+  /// flyTo 기반 (포물선) — 멀리/가까이 갈 때 자연스러운 호 모션.
+  void moveTo(double lat, double lng, {double? zoom, double? pitch, double? bearing, int durationMs = 1500});
+  /// 직선 이동 (flyTo 의 포물선 없이) — 카메라가 위로 솟지 않고 평면으로 부드럽게.
+  void easeTo(
+    double lat,
+    double lng, {
+    double? zoom,
+    double? pitch,
+    double? bearing,
+    int durationMs = 1200,
+  }) {}
   void toggleLayer(String layerId, bool visible);
   void setPitch(double pitch);
   void setBearing(double bearing);
@@ -102,6 +112,10 @@ abstract class IMapController {
 
   /// 선택된 열차 따라가기 — 카메라 이동 (Mapbox only)
   void followTrain(double lat, double lng, double bearing) {}
+
+  /// follow 모드 진입 표시. 이후 followTrain 호출은 zoom/pitch 변경 없이
+  /// setCamera(center) 만 함 — 외부에서 미리 카메라를 원하는 zoom/pitch 로 맞춰놨을 때 사용.
+  void primeFollowMode() {}
 
   /// 열차 선택 해제 시 호출 — 맵 빈 곳 탭 (Mapbox only)
   void setOnMapTappedEmpty(VoidCallback? callback) {}

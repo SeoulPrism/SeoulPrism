@@ -40,6 +40,22 @@ class ApiKeys {
     'GEMINI_API_KEY',
     defaultValue: '',
   );
+  static const String tmapAppKey = String.fromEnvironment(
+    'TMAP_APP_KEY',
+    defaultValue: '',
+  );
+  static const String kakaoRestApiKey = String.fromEnvironment(
+    'KAKAO_REST_API_KEY',
+    defaultValue: '',
+  );
+  static const String openSkyClientId = String.fromEnvironment(
+    'OPENSKY_CLIENT_ID',
+    defaultValue: '',
+  );
+  static const String openSkyClientSecret = String.fromEnvironment(
+    'OPENSKY_CLIENT_SECRET',
+    defaultValue: '',
+  );
 }
 DART
 

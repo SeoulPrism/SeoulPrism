@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../main.dart';
+import '../services/onboarding_service.dart';
 import '../services/settings_service.dart';
 import '../services/favorites_service.dart';
 import '../services/recent_search_service.dart';
@@ -101,6 +102,163 @@ class _SettingsViewState extends State<SettingsView> {
                     setState(() {});
                   },
                 ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // Section 1.5: 실시간 시각화 — 차량/노선 표시
+            _SectionHeader(label: '실시간 시각화'),
+            AdaptiveSectionCard(
+              children: [
+                _SwitchItem(
+                  label: '지하철 노선',
+                  value: SettingsService.instance.showRoutes,
+                  onChanged: (v) {
+                    SettingsService.instance.setShowRoutes(v);
+                    setState(() {});
+                  },
+                ),
+                const _ItemDivider(),
+                _SwitchItem(
+                  label: '지하철 열차 위치',
+                  value: SettingsService.instance.showTrains,
+                  onChanged: (v) {
+                    SettingsService.instance.setShowTrains(v);
+                    setState(() {});
+                  },
+                ),
+                const _ItemDivider(),
+                _SwitchItem(
+                  label: '지하철 역',
+                  value: SettingsService.instance.showStations,
+                  onChanged: (v) {
+                    SettingsService.instance.setShowStations(v);
+                    setState(() {});
+                  },
+                ),
+                const _ItemDivider(),
+                _SwitchItem(
+                  label: '시내버스',
+                  value: SettingsService.instance.showBuses,
+                  onChanged: (v) {
+                    SettingsService.instance.setShowBuses(v);
+                    setState(() {});
+                  },
+                ),
+                const _ItemDivider(),
+                _SwitchItem(
+                  label: '한강버스',
+                  value: SettingsService.instance.showRiverBus,
+                  onChanged: (v) {
+                    SettingsService.instance.setShowRiverBus(v);
+                    setState(() {});
+                  },
+                ),
+                const _ItemDivider(),
+                _SwitchItem(
+                  label: '항공기',
+                  value: SettingsService.instance.showFlights,
+                  onChanged: (v) {
+                    SettingsService.instance.setShowFlights(v);
+                    setState(() {});
+                  },
+                ),
+              ],
+            ),
+            _RestartHint(),
+            const SizedBox(height: 16),
+
+            // Section 1.6: 데이터 소스 — 어떤 API 를 쓸 지
+            _SectionHeader(label: '데이터 소스'),
+            AdaptiveSectionCard(
+              children: [
+                _TrailingTextItem(
+                  label: '지하철 모드',
+                  trailing:
+                      '${SettingsService.instance.mode == 'live' ? '실시간' : '데모'} >',
+                  onTap: () => _showPicker(
+                    title: '지하철 모드',
+                    options: const ['실시간', '데모'],
+                    selected: SettingsService.instance.mode == 'live' ? '실시간' : '데모',
+                    onSelected: (v) {
+                      SettingsService.instance
+                          .setMode(v == '실시간' ? 'live' : 'demo');
+                      setState(() {});
+                    },
+                  ),
+                ),
+                const _ItemDivider(),
+                _SwitchItem(
+                  label: '서울시 공공 API (60s)',
+                  value: SettingsService.instance.useSeoulApi,
+                  onChanged: (v) {
+                    SettingsService.instance.setUseSeoulApi(v);
+                    setState(() {});
+                  },
+                ),
+                const _ItemDivider(),
+                _SwitchItem(
+                  label: '네이버 API (5s 단위 보정)',
+                  value: SettingsService.instance.useNaverApi,
+                  onChanged: (v) {
+                    SettingsService.instance.setUseNaverApi(v);
+                    setState(() {});
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // Section 1.7: 성능 — 품질 프리셋
+            _SectionHeader(label: '성능'),
+            AdaptiveSectionCard(
+              children: [
+                _TrailingTextItem(
+                  label: '품질 프리셋',
+                  trailing: '${_qualityLabel(SettingsService.instance.qualityPreset)} >',
+                  onTap: () => _showPicker(
+                    title: '품질 프리셋',
+                    options: const ['고품질', '부드러움', '배터리 절약'],
+                    selected: _qualityLabel(SettingsService.instance.qualityPreset),
+                    onSelected: (v) {
+                      SettingsService.instance
+                          .setQualityPreset(_qualityKey(v));
+                      setState(() {});
+                    },
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // Section 1.8: 라이팅
+            _SectionHeader(label: '라이팅'),
+            AdaptiveSectionCard(
+              children: [
+                _SwitchItem(
+                  label: '자동 (시간대 + 날씨)',
+                  value: SettingsService.instance.autoLighting,
+                  onChanged: (v) {
+                    SettingsService.instance.setAutoLighting(v);
+                    setState(() {});
+                  },
+                ),
+                if (!SettingsService.instance.autoLighting) ...[
+                  const _ItemDivider(),
+                  _TrailingTextItem(
+                    label: '라이트 프리셋',
+                    trailing: '${_lightLabel(SettingsService.instance.lightPreset)} >',
+                    onTap: () => _showPicker(
+                      title: '라이트 프리셋',
+                      options: const ['새벽', '낮', '저녁', '밤'],
+                      selected: _lightLabel(SettingsService.instance.lightPreset),
+                      onSelected: (v) {
+                        SettingsService.instance.setLightPreset(_lightKey(v));
+                        setState(() {});
+                      },
+                    ),
+                  ),
+                ],
               ],
             ),
             const SizedBox(height: 16),
@@ -258,10 +416,31 @@ class _SettingsViewState extends State<SettingsView> {
             ),
             const SizedBox(height: 16),
 
+            // Section 5.5: 개발자
+            _SectionHeader(label: '개발자'),
+            AdaptiveSectionCard(
+              children: [
+                _SwitchItem(
+                  label: '디버그 로그 출력',
+                  value: SettingsService.instance.debugLogs,
+                  onChanged: (v) {
+                    SettingsService.instance.setDebugLogs(v);
+                    setState(() {});
+                  },
+                ),
+                const _ItemDivider(),
+                _ChevronItem(
+                  label: '튜토리얼 다시 보기',
+                  onTap: () => _confirmResetTutorial(),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
             // Section 6: 앱 정보
             AdaptiveSectionCard(
               children: [
-                _InfoItem(label: '앱 버전', value: '1.0.0'),
+                _InfoItem(label: '앱 버전', value: '1.0.3'),
                 const _ItemDivider(),
                 _ChevronItem(
                   label: '개인정보처리방침',
@@ -277,7 +456,7 @@ class _SettingsViewState extends State<SettingsView> {
                     showLicensePage(
                       context: context,
                       applicationName: 'Seoul Vista',
-                      applicationVersion: '1.0.0',
+                      applicationVersion: '1.0.3',
                     );
                   },
                 ),
@@ -458,6 +637,87 @@ class _SettingsViewState extends State<SettingsView> {
       options: options,
       selected: selected,
       onSelected: onSelected,
+    );
+  }
+
+  // ── 품질 / 라이트 라벨 매핑 ──
+  static String _qualityLabel(String key) => switch (key) {
+        'high' => '고품질',
+        'medium' => '부드러움',
+        'low' => '배터리 절약',
+        _ => key,
+      };
+  static String _qualityKey(String label) => switch (label) {
+        '고품질' => 'high',
+        '부드러움' => 'medium',
+        '배터리 절약' => 'low',
+        _ => label,
+      };
+  static String _lightLabel(String key) => switch (key) {
+        'auto' => '자동',
+        'dawn' => '새벽',
+        'day' => '낮',
+        'dusk' => '저녁',
+        'night' => '밤',
+        _ => key,
+      };
+  static String _lightKey(String label) => switch (label) {
+        '자동' => 'auto',
+        '새벽' => 'dawn',
+        '낮' => 'day',
+        '저녁' => 'dusk',
+        '밤' => 'night',
+        _ => label,
+      };
+
+  void _confirmResetTutorial() {
+    showAdaptiveConfirmDialog(
+      context: context,
+      title: '튜토리얼 다시 보기',
+      content: '저장된 진행 상태를 지우고 다음 앱 실행 시 튜토리얼을 처음부터 보여드려요.',
+      confirmText: '다시 보기',
+      onConfirm: () => OnboardingService.instance.reset(),
+    );
+  }
+}
+
+// ── Section header (above each AdaptiveSectionCard) ──
+class _SectionHeader extends StatelessWidget {
+  final String label;
+  const _SectionHeader({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 6),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          color: cs.onSurfaceVariant,
+          letterSpacing: -0.1,
+        ),
+      ),
+    );
+  }
+}
+
+// ── 재시작 후 적용 안내 ──
+class _RestartHint extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 6, 20, 0),
+      child: Text(
+        '일부 변경은 앱 재시작 후 적용됩니다.',
+        style: TextStyle(
+          fontSize: 12,
+          color: cs.onSurfaceVariant.withValues(alpha: 0.7),
+        ),
+      ),
     );
   }
 }
