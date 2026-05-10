@@ -42,25 +42,38 @@ class _FriendGroupsViewState extends State<FriendGroupsView> {
             title: const Text('새 그룹'),
             content: Column(
               mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Text('이름',
+                    style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: Theme.of(ctx).colorScheme.onSurfaceVariant)),
+                const SizedBox(height: 6),
                 AdaptiveTextField(
                   controller: ctrl,
-                  placeholder: '그룹 이름',
+                  placeholder: '예: 가족, 회사, 동호회',
                   padding: const EdgeInsets.symmetric(
                       horizontal: 14, vertical: 12),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
+                Text('아이콘',
+                    style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: Theme.of(ctx).colorScheme.onSurfaceVariant)),
+                const SizedBox(height: 8),
                 Wrap(
-                  spacing: 8,
+                  spacing: 8, runSpacing: 8,
                   children: ['👥', '🎮', '🍻', '💼', '🏃', '🎓', '❤️', '✈️']
                       .map((e) => GestureDetector(
                             onTap: () => setSt(() => emoji = e),
                             child: CircleAvatar(
-                              radius: 18,
+                              radius: 20,
                               backgroundColor: emoji == e
                                   ? Theme.of(ctx).colorScheme.primary
                                   : Theme.of(ctx).colorScheme.surfaceContainerHighest,
-                              child: Text(e, style: const TextStyle(fontSize: 18)),
+                              child: Text(e, style: const TextStyle(fontSize: 20)),
                             ),
                           ))
                       .toList(),

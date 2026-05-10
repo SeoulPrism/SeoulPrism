@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../models/multiplayer_models.dart';
@@ -351,10 +352,15 @@ class _RoomViewState extends State<RoomView> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('방 이름',
+              const Text('방 이름 변경',
                   style: TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.w700)),
-              const SizedBox(height: 16),
+                      fontSize: 20, fontWeight: FontWeight.w800)),
+              const SizedBox(height: 4),
+              Text('친구방 멤버에게 표시되는 이름이에요',
+                  style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant)),
+              const SizedBox(height: 20),
               AdaptiveTextField(
                 controller: ctrl,
                 placeholder: '예: 광화문 모임',
@@ -386,12 +392,18 @@ class _RoomViewState extends State<RoomView> {
   Future<void> _shareInviteLink(Room room) async {
     final me = MultiplayerService.instance.myProfile?.nickname ?? '친구';
     final text =
-        '$me 님이 Seoul Live 친구방에 초대했어요!\n\n코드: ${room.inviteCode}\n\n'
-        '앱 설치 후 → com.seoul.prism://room/${room.inviteCode}\n'
-        '또는 친구방 → 코드 입력 → ${room.inviteCode}';
-    final uri = Uri.parse('sms:?body=${Uri.encodeComponent(text)}');
+        '$me 님이 Seoul Live 친구방에 초대했어요!\n\n코드: ${room.inviteCode}\n'
+        '바로 입장: com.seoul.prism://room/${room.inviteCode}';
+    final box = context.findRenderObject() as RenderBox?;
     try {
-      await launchUrl(uri);
+      await SharePlus.instance.share(
+        ShareParams(
+          text: text,
+          subject: 'Seoul Live 친구방 초대',
+          sharePositionOrigin:
+              box != null ? box.localToGlobal(Offset.zero) & box.size : null,
+        ),
+      );
     } catch (_) {
       await Clipboard.setData(ClipboardData(text: text));
       if (mounted) showAppSnackBar('초대 텍스트 복사됨');

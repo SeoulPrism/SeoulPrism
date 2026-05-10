@@ -108,8 +108,13 @@ class _GroupEditorViewState extends State<GroupEditorView> {
             children: [
               Text(title,
                   style: const TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.w700)),
-              const SizedBox(height: 16),
+                      fontSize: 20, fontWeight: FontWeight.w800)),
+              const SizedBox(height: 4),
+              Text('그룹별 가시성 / 채팅에 활용돼요',
+                  style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant)),
+              const SizedBox(height: 20),
               AdaptiveTextField(
                 controller: ctrl,
                 placeholder: '예: 가족, 회사, 동호회',

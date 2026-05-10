@@ -275,8 +275,9 @@ class _RootGateState extends State<_RootGate> {
 
   void _onLaunchLoadingComplete() {
     setState(() => _phase = _GatePhase.done);
-    // 기존 사용자 진입 — 새 버전 첫 실행이면 What's New 시트.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    // 새 버전 첫 실행이면 What's New. HomeView mapbox init 끝난 뒤 띄워야
+    // 메인 스레드 충돌로 freeze 안 됨 → 1.5s 지연.
+    Future.delayed(const Duration(milliseconds: 1500), () {
       if (!mounted) return;
       WhatsNewView.maybeShow(context);
     });
@@ -293,8 +294,8 @@ class _RootGateState extends State<_RootGate> {
 
   void _onFinishComplete() {
     setState(() => _phase = _GatePhase.done);
-    // 튜토리얼 끝나면 이어서 What's New (있으면).
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    // 튜토리얼 → 새 기능 안내 (있으면). HomeView 가 안정화될 때까지 약간 대기.
+    Future.delayed(const Duration(milliseconds: 1200), () {
       if (!mounted) return;
       WhatsNewView.maybeShow(context);
     });

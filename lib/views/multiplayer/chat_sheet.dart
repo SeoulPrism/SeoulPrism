@@ -330,10 +330,7 @@ class _ChatSheetState extends State<ChatSheet> {
           ),
           Expanded(
             child: messages.isEmpty
-                ? Center(
-                    child: Text('첫 메시지를 보내보세요',
-                        style: TextStyle(color: cs.onSurfaceVariant)),
-                  )
+                ? _ChatGreetingHero(roomName: svc.currentRoom?.name)
                 : ListView.builder(
                     controller: _scroll,
                     padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -918,6 +915,107 @@ class _ChatSheetState extends State<ChatSheet> {
           shape: BoxShape.circle, color: Color(0xFF000000 | v)),
       alignment: Alignment.center,
       child: Text(p.pinEmoji, style: const TextStyle(fontSize: 14)),
+    );
+  }
+}
+
+/// 디스코드식 인사 hero — 메시지 0개일 때만 표시.
+/// 손 흔들기 애니메이션 + 환영 메시지.
+class _ChatGreetingHero extends StatelessWidget {
+  final String? roomName;
+  const _ChatGreetingHero({required this.roomName});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(32, 24, 32, 24),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          const SizedBox(height: 24),
+          // 손 흔드는 emoji — flutter_animate 로 좌우 회전 반복.
+          TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0, end: 1),
+            duration: const Duration(milliseconds: 600),
+            curve: Curves.elasticOut,
+            builder: (_, t, child) => Transform.scale(
+              scale: 0.5 + 0.5 * t,
+              child: Opacity(opacity: t.clamp(0, 1), child: child),
+            ),
+            child: const _WavingHand(),
+          ),
+          const SizedBox(height: 28),
+          Text(
+            roomName != null ? '$roomName 방이 시작됐어요' : '친구방이 시작됐어요',
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w900,
+              color: cs.onSurface,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 12),
+          Text(
+            '여기서 친구들과 만나서 인사하고, 위치도 공유하고,\n같이 갈 곳도 정해보세요.',
+            style: TextStyle(
+              fontSize: 13,
+              height: 1.5,
+              color: cs.onSurfaceVariant,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _WavingHand extends StatefulWidget {
+  const _WavingHand();
+  @override
+  State<_WavingHand> createState() => _WavingHandState();
+}
+
+class _WavingHandState extends State<_WavingHand>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1100),
+  )..repeat(reverse: false);
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _ctrl,
+      builder: (_, _) {
+        // 0~0.6 구간 0→0.4 rad, 0.6~1 구간 holding 0
+        final t = _ctrl.value;
+        double angle;
+        if (t < 0.15) {
+          angle = (t / 0.15) * 0.6; // up
+        } else if (t < 0.30) {
+          angle = 0.6 - ((t - 0.15) / 0.15) * 1.2; // down
+        } else if (t < 0.45) {
+          angle = -0.6 + ((t - 0.30) / 0.15) * 1.2; // up
+        } else if (t < 0.60) {
+          angle = 0.6 - ((t - 0.45) / 0.15) * 0.6; // back to 0
+        } else {
+          angle = 0; // pause
+        }
+        return Transform.rotate(
+          angle: angle,
+          alignment: Alignment.bottomCenter,
+          child: const Text('👋', style: TextStyle(fontSize: 88)),
+        );
+      },
     );
   }
 }

@@ -186,12 +186,12 @@ class _WeeklyChart extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
           child: SizedBox(
-            height: 110,
+            height: 124,
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: days.map((d) {
                 final cnt = byDay[d] ?? 0;
-                final h = 80 * (cnt * scale).clamp(0.05, 1.0);
+                final h = 70 * (cnt * scale).clamp(0.05, 1.0);
                 final isToday = d.day == today.day &&
                     d.month == today.month &&
                     d.year == today.year;

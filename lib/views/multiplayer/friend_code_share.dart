@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../services/multiplayer_service.dart';
 import '../../widgets/adaptive/adaptive.dart';
@@ -96,16 +96,19 @@ class _FriendCodeShareSheetState extends State<FriendCodeShareSheet> {
 
   Future<void> _shareCode(String code, String nickname) async {
     final text =
-        '$nickname 님이 Seoul Live 친구 코드를 보냈어요!\n\n코드: $code\n\nSeoul Vista 앱에서 [프로필 → Seoul Live → 친구 → 코드 입력] 으로 추가하거나, QR 스캔으로 바로 추가할 수 있어요.\n\nseoulvista://friend/$code';
-    // sms: scheme 으로 공유 (추후 share_plus 도입 가능).
-    final uri = Uri.parse('sms:?body=${Uri.encodeComponent(text)}');
+        '$nickname 님이 Seoul Live 친구 코드를 보냈어요!\n\n코드: $code\n'
+        '바로 추가: com.seoul.prism://friend/$code';
+    final box = context.findRenderObject() as RenderBox?;
     try {
-      await launchUrl(uri);
+      await SharePlus.instance.share(ShareParams(
+        text: text,
+        subject: 'Seoul Live 친구 추가',
+        sharePositionOrigin:
+            box != null ? box.localToGlobal(Offset.zero) & box.size : null,
+      ));
     } catch (_) {
       await Clipboard.setData(ClipboardData(text: text));
-      if (mounted) {
-        showAppSnackBar('공유 텍스트를 복사했어요');
-      }
+      if (mounted) showAppSnackBar('공유 텍스트를 복사했어요');
     }
   }
 
