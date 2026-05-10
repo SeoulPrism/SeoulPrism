@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../models/multiplayer_models.dart';
 import '../../services/multiplayer_service.dart';
+import '../../services/spotify_service.dart';
 import '../../widgets/adaptive/adaptive.dart';
 import '../../widgets/app_snackbar.dart';
 import 'peer_profile_card.dart';
@@ -172,6 +173,30 @@ class _ChatSheetState extends State<ChatSheet> {
     if (mounted) showAppSnackBar('지도 앱을 열 수 없어요');
   }
 
+  Future<void> _shareSpotifyTrack() async {
+    final svc = SpotifyService.instance;
+    if (!svc.isConfigured) {
+      showAppSnackBar('Spotify 설정 필요 — 개발자가 SPOTIFY_CLIENT_ID 를 추가해야 해요');
+      return;
+    }
+    if (!svc.isConnected) {
+      try {
+        await svc.connect();
+        showAppSnackBar('Spotify 인증 후 다시 눌러주세요');
+      } catch (e) {
+        showAppSnackBar('Spotify 연결 실패: $e');
+      }
+      return;
+    }
+    final track = await svc.fetchCurrentlyPlaying();
+    if (track == null) {
+      if (mounted) showAppSnackBar('재생 중인 곡이 없어요');
+      return;
+    }
+    await MultiplayerService.instance.sendMessage(track.toChatBody(),
+        kind: 'spotify');
+  }
+
   Future<void> _shareMyLocation() async {
     try {
       final pos = await Geolocator.getCurrentPosition(
@@ -284,6 +309,11 @@ class _ChatSheetState extends State<ChatSheet> {
                 AdaptiveGlassIconButton(
                   icon: Icons.place_outlined,
                   onPressed: _shareMyLocation,
+                ),
+                const SizedBox(width: 4),
+                AdaptiveGlassIconButton(
+                  icon: Icons.music_note_rounded,
+                  onPressed: _shareSpotifyTrack,
                 ),
                 const SizedBox(width: 8),
                 Expanded(
@@ -414,6 +444,93 @@ class _ChatSheetState extends State<ChatSheet> {
     );
   }
 
+  Widget _spotifyCard(RoomMessage m, MultiplayerProfile? p, bool isMe) {
+    final cs = Theme.of(context).colorScheme;
+    final parts = m.body.split('|');
+    final name = parts.isNotEmpty ? parts[0] : '';
+    final artist = parts.length > 1 ? parts[1] : '';
+    final url = parts.length > 2 ? parts[2] : '';
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        mainAxisAlignment:
+            isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+        children: [
+          if (!isMe) ...[_miniAvatar(p), const SizedBox(width: 8)],
+          Flexible(
+            child: GestureDetector(
+              onTap: url.isEmpty
+                  ? null
+                  : () async {
+                      final u = Uri.tryParse(url);
+                      if (u != null) {
+                        await launchUrl(u, mode: LaunchMode.externalApplication);
+                      }
+                    },
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                constraints: const BoxConstraints(maxWidth: 260),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1DB954).withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                      color: const Color(0xFF1DB954).withValues(alpha: 0.5),
+                      width: 0.8),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 40, height: 40,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1DB954),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      alignment: Alignment.center,
+                      child: const Icon(Icons.music_note_rounded,
+                          color: Colors.white, size: 22),
+                    ),
+                    const SizedBox(width: 10),
+                    Flexible(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                  color: cs.onSurface)),
+                          const SizedBox(height: 2),
+                          Text(artist,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                  fontSize: 11,
+                                  color: cs.onSurfaceVariant)),
+                          if (url.isNotEmpty) ...[
+                            const SizedBox(height: 2),
+                            Text('Spotify 에서 듣기',
+                                style: TextStyle(
+                                    fontSize: 10,
+                                    color: const Color(0xFF1DB954),
+                                    fontWeight: FontWeight.w700)),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _loadMoreHeader(MultiplayerService svc) {
     final cs = Theme.of(context).colorScheme;
     if (svc.loadingMoreMessages) {
@@ -447,6 +564,7 @@ class _ChatSheetState extends State<ChatSheet> {
     final isMeetup = m.kind == 'meetup' || m.kind == 'system';
 
     if (m.kind == 'place') return _placeCard(m, p, isMe);
+    if (m.kind == 'spotify') return _spotifyCard(m, p, isMe);
 
     if (isMeetup) {
       return Padding(

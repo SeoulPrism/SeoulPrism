@@ -19,6 +19,7 @@ import 'services/recent_route_service.dart';
 import 'services/visit_history_service.dart';
 import 'services/multiplayer_service.dart';
 import 'services/notification_service.dart';
+import 'services/spotify_service.dart';
 import 'theme/app_theme.dart';
 import 'widgets/notification_banner_overlay.dart';
 import 'widgets/app_snackbar.dart';
@@ -100,6 +101,8 @@ Future<void> main() async {
     await MultiplayerService.instance.init();
     // 푸시 알림 — 권한/토큰 등록 (백그라운드 진행 OK).
     NotificationService.instance.init();
+    // Spotify (선택 기능). client_id 없으면 isConnected=false 로 idle.
+    SpotifyService.instance.init();
   }
 
   runApp(const SeoulPrismApp());

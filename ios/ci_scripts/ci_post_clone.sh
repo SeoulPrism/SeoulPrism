@@ -56,6 +56,12 @@ class ApiKeys {
     'OPENSKY_CLIENT_SECRET',
     defaultValue: '',
   );
+  static const String spotifyClientId = String.fromEnvironment(
+    'SPOTIFY_CLIENT_ID',
+    defaultValue: '',
+  );
+  static const String spotifyRedirectUri =
+      'com.seoul.prism://spotify-callback';
 }
 DART
 
