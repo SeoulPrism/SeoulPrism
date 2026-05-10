@@ -23,6 +23,9 @@ import 'views/onboarding/city_pulse_loading_view.dart';
 import 'views/onboarding/onboarding_view.dart';
 import 'views/onboarding/widgets/onboarding_map_background.dart';
 
+/// 어디서나 라우팅 가능한 글로벌 navigator (push 알림 deep-link 등).
+final rootNavigatorKey = GlobalKey<NavigatorState>();
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -109,7 +112,7 @@ class SeoulPrismApp extends StatefulWidget {
 }
 
 class _SeoulPrismAppState extends State<SeoulPrismApp> {
-  final _navigatorKey = GlobalKey<NavigatorState>();
+  GlobalKey<NavigatorState> get _navigatorKey => rootNavigatorKey;
   Key _appKey = UniqueKey();
   late ThemeMode _themeMode;
 

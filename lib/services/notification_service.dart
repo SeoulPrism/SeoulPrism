@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -6,6 +7,10 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../main.dart' show rootNavigatorKey;
+import '../views/multiplayer/friends_view.dart';
+import '../views/multiplayer/multiplayer_hub_view.dart';
 
 /// Seoul Live 푸시 / 인앱 알림 통합 서비스.
 ///
@@ -49,7 +54,17 @@ class NotificationService {
           requestSoundPermission: false,
         ),
       );
-      await _local.initialize(initSettings);
+      await _local.initialize(
+        initSettings,
+        onDidReceiveNotificationResponse: (resp) {
+          final payload = resp.payload;
+          if (payload == null || payload.isEmpty) return;
+          try {
+            final decoded = jsonDecode(payload);
+            if (decoded is Map) _routeFromData(Map<String, dynamic>.from(decoded));
+          } catch (_) {/* 옛 payload (kind 단일 string) 호환 — 무시 */}
+        },
+      );
       debugPrint('[Notif] local notif 초기화 OK');
     } catch (e) {
       debugPrint('[Notif] local notif 초기화 실패: $e');
@@ -248,13 +263,44 @@ class NotificationService {
             priority: Priority.high,
           ),
         ),
-        payload: msg.data['kind'] as String?,
+        // 탭 시 deep-link 라우팅에 쓰일 전체 data 를 JSON 으로 박아둠.
+        payload: jsonEncode(msg.data),
       );
     }
   }
 
   void _onMessageOpenedApp(RemoteMessage msg) {
     debugPrint('[Notif] 알림 탭으로 진입: ${msg.data}');
-    // TODO: kind 별 deep navigation (room_message → 룸 화면, friend_request → 친구 화면 등)
+    _routeFromData(Map<String, dynamic>.from(msg.data));
+  }
+
+  /// kind 별 deep navigation. nav 가 아직 없으면 한 프레임 뒤 재시도.
+  void _routeFromData(Map<String, dynamic> data) {
+    final kind = (data['kind'] as String?)?.trim();
+    if (kind == null || kind.isEmpty) return;
+    final nav = rootNavigatorKey.currentState;
+    if (nav == null) {
+      // 콜드 스타트 — 트리 빌드 전. 다음 프레임에 재시도.
+      WidgetsBinding.instance.addPostFrameCallback((_) => _routeFromData(data));
+      return;
+    }
+    debugPrint('[Notif] deep-link route: $kind data=$data');
+    switch (kind) {
+      case 'friend_request':
+      case 'friend_accept':
+      case 'friend_accepted':
+        nav.push(MaterialPageRoute(builder: (_) => const FriendsView()));
+        return;
+      case 'room_message':
+      case 'meetup_proposed':
+      case 'meetup_accepted':
+      case 'meetup_started':
+      case 'room_kicked':
+      case 'welcome':
+      default:
+        nav.push(
+            MaterialPageRoute(builder: (_) => const MultiplayerHubView()));
+        return;
+    }
   }
 }
