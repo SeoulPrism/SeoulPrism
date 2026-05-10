@@ -946,6 +946,7 @@ class _MapDisplaySettingsViewState extends State<MapDisplaySettingsView> {
       };
 }
 
+
 // ── Section header (above each AdaptiveSectionCard) ──
 class _SectionHeader extends StatelessWidget {
   final String label;
