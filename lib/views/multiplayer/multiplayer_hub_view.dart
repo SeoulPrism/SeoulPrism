@@ -4,6 +4,7 @@ import '../../models/multiplayer_models.dart';
 import '../../services/multiplayer_service.dart';
 import '../../widgets/adaptive/adaptive.dart';
 import 'activity_dashboard_view.dart';
+import 'dm_list_view.dart';
 import 'friend_code_share.dart';
 import 'friends_view.dart';
 import 'group_editor_view.dart';
@@ -201,6 +202,14 @@ class _MultiplayerHubViewState extends State<MultiplayerHubView> {
                   : null,
               onTap: () => Navigator.push(context,
                   MaterialPageRoute(builder: (_) => const FriendsView())),
+            ),
+            const _HubDivider(),
+            _HubItem(
+              icon: Icons.chat_bubble_outline_rounded,
+              title: 'DM',
+              subtitle: '친구와 1:1 대화',
+              onTap: () => Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const DmListView())),
             ),
             const _HubDivider(),
             _HubItem(

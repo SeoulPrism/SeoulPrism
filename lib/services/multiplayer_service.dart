@@ -1613,6 +1613,108 @@ class MultiplayerService with WidgetsBindingObserver {
 
   static final _mediaRand = Random.secure();
 
+  // ──────────────────────────────────────────────────────────────────
+  // 1:1 DM (B17)
+  // ──────────────────────────────────────────────────────────────────
+  Future<List<DmThreadSummary>> loadDmList() async {
+    if (myId == null) return [];
+    try {
+      final res = await _sb.rpc('my_dm_list');
+      return (res as List).map((r) {
+        final m = r as Map<String, dynamic>;
+        return DmThreadSummary(
+          threadId: m['thread_id'] as String,
+          otherUserId: m['other_user_id'] as String,
+          lastMessageAt: DateTime.parse(m['last_message_at'] as String),
+          lastBody: m['last_body'] as String?,
+          lastKind: m['last_kind'] as String?,
+          unreadCount: (m['unread_count'] as num?)?.toInt() ?? 0,
+        );
+      }).toList();
+    } catch (e) {
+      debugPrint('[Multi] loadDmList 실패: $e');
+      return [];
+    }
+  }
+
+  Future<String?> ensureDmThread(String otherUserId) async {
+    try {
+      final res = await _sb
+          .rpc('ensure_dm_thread', params: {'p_other': otherUserId});
+      return res as String?;
+    } catch (e) {
+      debugPrint('[Multi] ensureDmThread 실패: $e');
+      rethrow;
+    }
+  }
+
+  Future<List<DmMessage>> loadDmMessages(String threadId,
+      {int limit = 50}) async {
+    try {
+      final res = await _sb
+          .from('dm_messages')
+          .select()
+          .eq('thread_id', threadId)
+          .order('created_at', ascending: false)
+          .limit(limit);
+      return (res as List)
+          .map((r) => DmMessage.fromJson(r as Map<String, dynamic>))
+          .toList()
+          .reversed
+          .toList();
+    } catch (e) {
+      debugPrint('[Multi] loadDmMessages 실패: $e');
+      return [];
+    }
+  }
+
+  Future<void> sendDm(String threadId, String body,
+      {String kind = 'text'}) async {
+    if (myId == null) return;
+    final t = body.trim();
+    if (t.isEmpty || t.length > 2000) return;
+    try {
+      await _sb.from('dm_messages').insert({
+        'thread_id': threadId,
+        'sender_id': myId,
+        'body': t,
+        'kind': kind,
+      });
+    } catch (e) {
+      debugPrint('[Multi] sendDm 실패: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> markDmRead(String threadId) async {
+    try {
+      await _sb.rpc('mark_dm_read', params: {'p_thread': threadId});
+    } catch (_) {}
+  }
+
+  /// thread 의 새 메시지 realtime 구독. listener 가 새 메시지 받음.
+  RealtimeChannel subscribeDm(
+      String threadId, void Function(DmMessage) onNew) {
+    return _sb
+        .channel('dm_$threadId')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.insert,
+          schema: 'public',
+          table: 'dm_messages',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'thread_id',
+            value: threadId,
+          ),
+          callback: (payload) {
+            try {
+              onNew(DmMessage.fromJson(payload.newRecord));
+            } catch (_) {}
+          },
+        )
+        .subscribe();
+  }
+
   /// 음성/이미지 등 chat-media 업로드. localPath → public URL 반환.
   /// path = `<my_uid>/<ts>-<rand>.<ext>` 형식.
   Future<String?> uploadChatMedia(String localPath, {required String ext}) async {

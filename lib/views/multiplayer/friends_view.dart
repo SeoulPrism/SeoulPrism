@@ -4,6 +4,7 @@ import '../../models/multiplayer_models.dart';
 import '../../services/multiplayer_service.dart';
 import '../../widgets/adaptive/adaptive.dart';
 import '../../widgets/app_snackbar.dart';
+import 'dm_thread_view.dart';
 import 'friend_code_share.dart';
 import 'friend_groups_view.dart';
 import 'report_sheet.dart';
@@ -240,9 +241,21 @@ class _FriendsViewState extends State<FriendsView> {
                       return _PeerRow(
                         profile: p,
                         fallbackId: other,
-                        trailing: IconButton(
-                          icon: const Icon(Icons.more_horiz_rounded),
-                          onPressed: () => _showFriendMenu(other, p),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(
+                                  Icons.chat_bubble_outline_rounded,
+                                  size: 20),
+                              tooltip: 'DM',
+                              onPressed: () => _openDm(other),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.more_horiz_rounded),
+                              onPressed: () => _showFriendMenu(other, p),
+                            ),
+                          ],
                         ),
                       );
                     }),
@@ -308,6 +321,19 @@ class _FriendsViewState extends State<FriendsView> {
     } catch (e) {
       if (mounted) setState(() => _justRequestedIds.remove(p.userId));
       showAppSnackBar(e.toString().replaceFirst('Exception: ', ''));
+    }
+  }
+
+  Future<void> _openDm(String otherUserId) async {
+    try {
+      final tid =
+          await MultiplayerService.instance.ensureDmThread(otherUserId);
+      if (tid == null || !mounted) return;
+      Navigator.of(context).push(MaterialPageRoute(
+        builder: (_) => DmThreadView(threadId: tid, otherUserId: otherUserId),
+      ));
+    } catch (e) {
+      if (mounted) showAppSnackBar('DM 시작 실패: $e');
     }
   }
 

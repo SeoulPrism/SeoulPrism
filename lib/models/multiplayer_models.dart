@@ -217,6 +217,55 @@ enum BatteryMode {
 /// 신고 종류.
 enum ReportTargetType { user, message }
 
+/// 1:1 DM (Phase B17).
+class DmMessage {
+  final String id;
+  final String threadId;
+  final String senderId;
+  final String body;
+  final String kind;
+  final DateTime createdAt;
+  final bool readByRecipient;
+
+  const DmMessage({
+    required this.id,
+    required this.threadId,
+    required this.senderId,
+    required this.body,
+    required this.kind,
+    required this.createdAt,
+    required this.readByRecipient,
+  });
+
+  factory DmMessage.fromJson(Map<String, dynamic> j) => DmMessage(
+        id: j['id'] as String,
+        threadId: j['thread_id'] as String,
+        senderId: j['sender_id'] as String,
+        body: j['body'] as String,
+        kind: (j['kind'] as String?) ?? 'text',
+        createdAt: DateTime.parse(j['created_at'] as String),
+        readByRecipient: (j['read_by_recipient'] as bool?) ?? false,
+      );
+}
+
+class DmThreadSummary {
+  final String threadId;
+  final String otherUserId;
+  final DateTime lastMessageAt;
+  final String? lastBody;
+  final String? lastKind;
+  final int unreadCount;
+
+  const DmThreadSummary({
+    required this.threadId,
+    required this.otherUserId,
+    required this.lastMessageAt,
+    required this.lastBody,
+    required this.lastKind,
+    required this.unreadCount,
+  });
+}
+
 /// 게이미피케이션 점수/뱃지 (Phase B7).
 class UserScore {
   final String userId;
