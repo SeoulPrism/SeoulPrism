@@ -431,6 +431,34 @@ class MultiplayerService with WidgetsBindingObserver {
     }
   }
 
+  /// 친구 추천 — 친구의 친구 (mutual count 내림차순). 차단/이미친구/요청중 제외.
+  Future<List<({MultiplayerProfile profile, int mutualCount})>>
+      loadSuggestedFriends({int limit = 10}) async {
+    if (myId == null) return [];
+    try {
+      final res =
+          await _sb.rpc('suggested_friends', params: {'p_limit': limit});
+      return (res as List).map((r) {
+        final m = r as Map<String, dynamic>;
+        return (
+          profile: MultiplayerProfile(
+            userId: m['user_id'] as String,
+            nickname: m['nickname'] as String,
+            pinColor: (m['pin_color'] as String?) ?? '#7C5CFF',
+            pinEmoji: (m['pin_emoji'] as String?) ?? '📍',
+            visibility: 'friends',
+            birthYear: 2000,
+            friendCode: m['friend_code'] as String?,
+          ),
+          mutualCount: (m['mutual_count'] as num).toInt(),
+        );
+      }).where((r) => !isBlocked(r.profile.userId)).toList();
+    } catch (e) {
+      debugPrint('[Multi] loadSuggestedFriends 실패: $e');
+      return [];
+    }
+  }
+
   /// G11: 친구 코드로 정확 매치 검색.
   Future<MultiplayerProfile?> searchByFriendCode(String code) async {
     final upper = code.toUpperCase().trim();

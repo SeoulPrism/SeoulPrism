@@ -218,6 +218,7 @@ class _FriendsViewState extends State<FriendsView> {
             ],
 
             const SizedBox(height: 24),
+            _SuggestedFriendsSection(),
             _SectionLabel(text: '내 친구 (${accepted.length})'),
             if (accepted.isEmpty)
               Padding(
@@ -444,6 +445,124 @@ class _RowDivider extends StatelessWidget {
       padding: const EdgeInsets.only(left: 60),
       child: Divider(
           height: 0.5, thickness: 0.5, color: cs.outlineVariant.withValues(alpha: 0.5)),
+    );
+  }
+}
+
+/// 친구 추천 — 친구의 친구 mutual count 순. 처음엔 lazy load.
+class _SuggestedFriendsSection extends StatefulWidget {
+  @override
+  State<_SuggestedFriendsSection> createState() =>
+      _SuggestedFriendsSectionState();
+}
+
+class _SuggestedFriendsSectionState extends State<_SuggestedFriendsSection> {
+  List<({MultiplayerProfile profile, int mutualCount})>? _items;
+  bool _loading = false;
+  final Set<String> _busy = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    setState(() => _loading = true);
+    final res =
+        await MultiplayerService.instance.loadSuggestedFriends(limit: 8);
+    if (!mounted) return;
+    setState(() {
+      _items = res;
+      _loading = false;
+    });
+  }
+
+  Future<void> _add(MultiplayerProfile p) async {
+    setState(() => _busy.add(p.userId));
+    try {
+      await MultiplayerService.instance.sendFriendRequest(p.userId);
+      if (mounted) showAppSnackBar('${p.nickname} 님에게 친구 신청 보냈어요');
+    } catch (e) {
+      if (mounted) showAppSnackBar('실패: $e');
+    } finally {
+      if (mounted) setState(() => _busy.remove(p.userId));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final items = _items;
+    if (items == null && _loading) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 12),
+        child: Center(child: SizedBox(
+          width: 18, height: 18,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        )),
+      );
+    }
+    if (items == null || items.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _SectionLabel(text: '추천 친구 (친구의 친구)'),
+        AdaptiveSectionCard(
+          children: [
+            for (var i = 0; i < items.length; i++) ...[
+              if (i > 0) const _RowDivider(),
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 14, vertical: 10),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 36, height: 36,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Color(int.parse(
+                            'FF${items[i].profile.pinColor.substring(1)}',
+                            radix: 16)),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(items[i].profile.pinEmoji,
+                          style: const TextStyle(fontSize: 16)),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(items[i].profile.nickname,
+                              style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700)),
+                          const SizedBox(height: 2),
+                          Text('공통 친구 ${items[i].mutualCount}명',
+                              style: TextStyle(
+                                  fontSize: 11,
+                                  color: cs.onSurfaceVariant)),
+                        ],
+                      ),
+                    ),
+                    _busy.contains(items[i].profile.userId)
+                        ? const SizedBox(
+                            width: 24, height: 24,
+                            child: CircularProgressIndicator(strokeWidth: 2))
+                        : TextButton.icon(
+                            icon: const Icon(Icons.person_add_alt_1, size: 18),
+                            label: const Text('추가'),
+                            onPressed: () => _add(items[i].profile),
+                          ),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
+        const SizedBox(height: 24),
+      ],
     );
   }
 }
