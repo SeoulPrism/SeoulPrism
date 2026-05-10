@@ -17,7 +17,17 @@ class MultiplayerProfileEditSheet extends StatefulWidget {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (_) => const MultiplayerProfileEditSheet(),
+      // 화면 70% 시작 / 위로 드래그하면 95% 까지 / 아래로 50% 까지.
+      builder: (_) => DraggableScrollableSheet(
+        initialChildSize: 0.7,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        expand: false,
+        builder: (_, scroll) => SingleChildScrollView(
+          controller: scroll,
+          child: const MultiplayerProfileEditSheet(),
+        ),
+      ),
     );
   }
 
@@ -122,10 +132,9 @@ class _MultiplayerProfileEditSheetState
 
     return Padding(
       padding: EdgeInsets.fromLTRB(20, 4, 20, bottomInset + 24),
-      child: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
           children: [
             Text('프로필 설정',
                 style: TextStyle(
@@ -262,8 +271,7 @@ class _MultiplayerProfileEditSheetState
             ),
           ],
         ),
-      ),
-    );
+      );
   }
 
   Future<bool> _confirmPublic() async {

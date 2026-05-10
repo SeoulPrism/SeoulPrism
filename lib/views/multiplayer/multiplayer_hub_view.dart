@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../../models/multiplayer_models.dart';
 import '../../services/multiplayer_service.dart';
+import '../../services/spotify_service.dart';
 import '../../widgets/adaptive/adaptive.dart';
+import '../../widgets/app_snackbar.dart';
 import 'activity_dashboard_view.dart';
 import 'dm_list_view.dart';
 import 'friend_code_share.dart';
@@ -226,6 +228,37 @@ class _MultiplayerHubViewState extends State<MultiplayerHubView> {
               subtitle: '${svc.friendGroups.length}개 그룹',
               onTap: () => Navigator.push(context,
                   MaterialPageRoute(builder: (_) => const GroupEditorView())),
+            ),
+            const _HubDivider(),
+            _HubItem(
+              icon: Icons.music_note_rounded,
+              title: 'Spotify',
+              subtitle: SpotifyService.instance.isConnected
+                  ? '연결됨 — 채팅에서 🎵 로 곡 공유'
+                  : 'Spotify 와 연결 — 친구방 채팅에 듣는 곡 공유',
+              badge: SpotifyService.instance.isConnected ? '✓' : null,
+              onTap: () async {
+                final spotify = SpotifyService.instance;
+                if (!spotify.isConfigured) {
+                  showAppSnackBar(
+                      'Spotify 가 아직 설정 안 됐어요 (개발자가 SPOTIFY_CLIENT_ID 추가 필요)');
+                  return;
+                }
+                if (spotify.isConnected) {
+                  final track = await spotify.fetchCurrentlyPlaying();
+                  if (!mounted) return;
+                  showAppSnackBar(track == null
+                      ? '재생 중인 곡이 없어요'
+                      : '🎵 ${track.name} — ${track.artist}');
+                  return;
+                }
+                try {
+                  await spotify.connect();
+                  if (mounted) showAppSnackBar('Spotify 인증 후 다시 눌러주세요');
+                } catch (e) {
+                  if (mounted) showAppSnackBar('Spotify 연결 실패: $e');
+                }
+              },
             ),
           ],
         ),

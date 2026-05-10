@@ -212,35 +212,36 @@ class _FriendCodeShareSheetState extends State<FriendCodeShareSheet> {
             const SizedBox(height: 24),
 
             // 친구 코드 입력.
-            Padding(
-              padding: const EdgeInsets.only(left: 4, bottom: 8),
-              child: Text('친구 코드로 친구 추가',
-                  style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: cs.onSurfaceVariant)),
+            Text('친구 코드로 친구 추가',
+                style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: cs.onSurface)),
+            const SizedBox(height: 4),
+            Text('받은 8자리 코드를 입력하거나 QR 을 스캔하세요',
+                style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+            const SizedBox(height: 12),
+            AdaptiveTextField(
+              controller: _codeCtrl,
+              placeholder: '예: ABC12345',
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 16, vertical: 14),
             ),
+            const SizedBox(height: 10),
             Row(
               children: [
                 Expanded(
-                  child: AdaptiveTextField(
-                    controller: _codeCtrl,
-                    placeholder: '8자리 코드',
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 12),
+                  child: AdaptiveGlassButton(
+                    label: _busy ? '...' : '친구 신청 보내기',
+                    onPressed: _busy ? null : _addByCode,
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 10),
                 AdaptiveGlassIconButton(
                   icon: Icons.qr_code_scanner_rounded,
                   onPressed: _busy ? null : _scanQr,
                 ),
               ],
-            ),
-            const SizedBox(height: 8),
-            AdaptiveGlassButton(
-              label: _busy ? '...' : '친구 신청 보내기',
-              onPressed: _busy ? null : _addByCode,
             ),
 
             if (_error != null) ...[

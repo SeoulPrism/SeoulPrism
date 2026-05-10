@@ -9,8 +9,11 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../main.dart' show rootNavigatorKey;
+import '../views/multiplayer/chat_sheet.dart';
 import '../views/multiplayer/friends_view.dart';
 import '../views/multiplayer/multiplayer_hub_view.dart';
+import '../views/multiplayer/room_view.dart';
+import 'multiplayer_service.dart';
 
 /// Seoul Live 푸시 / 인앱 알림 통합 서비스.
 ///
@@ -292,9 +295,27 @@ class NotificationService {
         nav.push(MaterialPageRoute(builder: (_) => const FriendsView()));
         return;
       case 'room_message':
+      case 'meetup':
       case 'meetup_proposed':
       case 'meetup_accepted':
       case 'meetup_started':
+        // 채팅 메시지/만남 — 현재 방이 있으면 RoomView 후 ChatSheet 까지.
+        nav.push(MaterialPageRoute(
+          builder: (_) => const MultiplayerHubView(),
+        ));
+        if (MultiplayerService.instance.currentRoom != null) {
+          // hub 마운트 후 RoomView 마운트 후 ChatSheet 마운트.
+          Future.delayed(const Duration(milliseconds: 250), () {
+            final n = rootNavigatorKey.currentState;
+            if (n == null) return;
+            n.push(MaterialPageRoute(builder: (_) => const RoomView()));
+            Future.delayed(const Duration(milliseconds: 250), () {
+              final n2 = rootNavigatorKey.currentState;
+              if (n2 != null) ChatSheet.show(n2.context);
+            });
+          });
+        }
+        return;
       case 'room_kicked':
       case 'welcome':
       default:

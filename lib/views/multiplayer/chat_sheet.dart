@@ -17,22 +17,11 @@ import 'report_sheet.dart';
 class ChatSheet extends StatefulWidget {
   const ChatSheet({super.key});
 
+  /// 풀스크린 채팅 페이지로 push (DM 과 동일 패턴).
   static Future<void> show(BuildContext context) {
-    return showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (_) => DraggableScrollableSheet(
-        initialChildSize: 0.75,
-        minChildSize: 0.4,
-        maxChildSize: 0.95,
-        expand: false,
-        builder: (_, scroll) => const ChatSheet(),
-      ),
-    );
+    return Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => const ChatSheet(),
+    ));
   }
 
   @override
@@ -289,44 +278,29 @@ class _ChatSheetState extends State<ChatSheet> {
     final cs = Theme.of(context).colorScheme;
     final svc = MultiplayerService.instance;
     final messages = svc.messages;
+    final roomName = svc.currentRoom?.name ?? '친구방';
+    final memberCount = svc.currentRoomMembers.length;
 
-    return Padding(
-      padding:
-          EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-      child: Column(
+    return Scaffold(
+      backgroundColor: cs.surface,
+      appBar: AdaptiveAppBar(
+        title: '$roomName ($memberCount)',
+      ),
+      body: SafeArea(
+        top: false,
+        child: Column(
         children: [
-          Container(
-            margin: const EdgeInsets.only(top: 8),
-            width: 36,
-            height: 4,
-            decoration: BoxDecoration(
-              color: cs.outlineVariant,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          const SizedBox(height: 8),
+          // (구) 드래그 핸들 제거 — 풀스크린 페이지로 전환됨.
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: Row(
               children: [
-                Text('${svc.currentRoom?.name ?? '친구방'} 채팅',
-                    style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: cs.onSurface)),
-                const Spacer(),
-                Text('${svc.currentRoomMembers.length}명',
+                Text('$memberCount 명 참여 중',
                     style:
                         TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+                const Spacer(),
               ],
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Divider(
-                height: 0.5,
-                thickness: 0.5,
-                color: cs.outlineVariant.withValues(alpha: 0.5)),
           ),
           Expanded(
             child: messages.isEmpty
@@ -434,6 +408,7 @@ class _ChatSheetState extends State<ChatSheet> {
             ),
           ),
         ],
+      ),
       ),
     );
   }

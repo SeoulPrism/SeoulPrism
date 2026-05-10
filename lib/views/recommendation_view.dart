@@ -3,8 +3,10 @@ import 'dart:ui';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:url_launcher/url_launcher.dart';
 import '../core/api_keys.dart';
 import '../services/recommendation_service.dart';
+import '../services/seoul_tourism_service.dart';
 
 /// 추천 패널 — 아래에서 위로 슬라이드업 (설정 패널 스타일)
 /// 네이버 지도 발견 탭 참고: 주변 인기 장소 + 전국 트렌드
@@ -20,12 +22,13 @@ class RecommendationPanel extends StatefulWidget {
 class _RecommendationPanelState extends State<RecommendationPanel>
     with SingleTickerProviderStateMixin {
   final _service = RecommendationService.instance;
+  final _tourism = SeoulTourismService.instance;
 
   List<RecommendedPlace> _nearbyPlaces = [];
-  List<TrendItem> _trends = [];
+  List<CulturalEvent> _events = [];
   bool _loadingNearby = true;
-  bool _loadingTrends = true;
-  int _selectedTab = 0; // 0: 주변 인기, 1: 전국 트렌드
+  bool _loadingEvents = true;
+  int _selectedTab = 0; // 0: 주변 인기, 1: 서울 이벤트
   String _currentArea = ''; // 현재 지역명 (예: 영등포구)
 
   @override
@@ -37,7 +40,7 @@ class _RecommendationPanelState extends State<RecommendationPanel>
 
   Future<void> _loadData() async {
     _loadNearby();
-    _loadTrends();
+    _loadEvents();
   }
 
   Future<void> _loadCurrentArea() async {
@@ -88,14 +91,14 @@ class _RecommendationPanelState extends State<RecommendationPanel>
     }
   }
 
-  Future<void> _loadTrends() async {
+  Future<void> _loadEvents({bool force = false}) async {
     if (!mounted) return;
-    setState(() => _loadingTrends = true);
-    final trends = await _service.getNationalTrends();
+    setState(() => _loadingEvents = true);
+    final events = await _tourism.getEvents(limit: 30, forceRefresh: force);
     if (mounted) {
       setState(() {
-        _trends = trends;
-        _loadingTrends = false;
+        _events = events;
+        _loadingEvents = false;
       });
     }
   }
@@ -128,7 +131,7 @@ class _RecommendationPanelState extends State<RecommendationPanel>
         Expanded(
           child: _selectedTab == 0
               ? _buildNearbyList(cs)
-              : _buildTrendsList(cs),
+              : _buildEventsList(cs),
         ),
       ],
     );
@@ -240,7 +243,8 @@ class _RecommendationPanelState extends State<RecommendationPanel>
           IconButton(
             icon: Icon(Icons.refresh, color: _panelTextSecondary, size: 20),
             onPressed: () {
-              _loadData();
+              _loadNearby();
+              _loadEvents(force: true);
               _loadCurrentArea();
             },
             tooltip: '새로고침',
@@ -268,7 +272,7 @@ class _RecommendationPanelState extends State<RecommendationPanel>
         child: Row(
           children: [
             _buildTabButton('주변 인기 TOP 10', 0, cs),
-            _buildTabButton('전국 트렌드', 1, cs),
+            _buildTabButton('서울 이벤트', 1, cs),
           ],
         ),
       ),
@@ -391,98 +395,208 @@ class _RecommendationPanelState extends State<RecommendationPanel>
     );
   }
 
-  Widget _buildTrendsList(ColorScheme cs) {
-    if (_loadingTrends) {
+  Widget _buildEventsList(ColorScheme cs) {
+    if (_loadingEvents) {
       return Center(child: CircularProgressIndicator(color: _panelTextSecondary));
+    }
+    if (_events.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Text(
+            '문화행사 정보를 불러오지 못했어요.\n잠시 후 다시 시도해 주세요.',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 13, color: _panelTextSecondary, height: 1.5),
+          ),
+        ),
+      );
     }
 
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(24, 4, 24, 20),
-      itemCount: _trends.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 8),
+      itemCount: _events.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 10),
       itemBuilder: (context, index) {
-        final trend = _trends[index];
-        return _buildTrendItem(trend, cs);
+        return _buildEventItem(_events[index], cs);
       },
     );
   }
 
-  Widget _buildTrendItem(TrendItem item, ColorScheme cs) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: _panelTextPrimary.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Row(
-        children: [
-          Column(
-            children: [
-              _buildRankBadge(item.rank, cs),
-              const SizedBox(height: 3),
-              _buildTrendIcon(item.trend),
-            ],
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        item.name,
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          color: _panelTextPrimary,
+  Widget _buildEventItem(CulturalEvent event, ColorScheme cs) {
+    final shortCategory = _shortCategory(event.category);
+    return InkWell(
+      onTap: () => _openEventLink(event),
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: _panelTextPrimary.withValues(alpha: 0.05),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildEventThumbnail(event, cs),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          event.title,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: _panelTextPrimary,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                    ),
-                    _buildCategoryChip(item.category, cs),
-                  ],
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  item.description,
-                  style: TextStyle(fontSize: 11, color: _panelTextSecondary),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 6),
-                Row(
-                  children: [
-                    Icon(Icons.location_on_outlined, size: 12, color: cs.primary),
-                    const SizedBox(width: 2),
-                    Text(
-                      item.region,
-                      style: TextStyle(fontSize: 10, color: cs.primary),
-                    ),
-                    const SizedBox(width: 10),
-                    Icon(Icons.star_rounded, size: 13, color: Colors.amber.shade600),
-                    const SizedBox(width: 2),
-                    Text(
-                      item.rating.toStringAsFixed(1),
-                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: _panelTextPrimary),
-                    ),
-                    if (item.searchCount > 0) ...[
-                      const SizedBox(width: 10),
-                      Icon(Icons.search, size: 11, color: _panelTextMuted),
-                      const SizedBox(width: 2),
-                      Text(
-                        _formatCount(item.searchCount),
-                        style: TextStyle(fontSize: 10, color: _panelTextMuted),
-                      ),
+                      const SizedBox(width: 6),
+                      _buildCategoryChip(shortCategory, cs),
                     ],
-                  ],
-                ),
-              ],
+                  ),
+                  const SizedBox(height: 4),
+                  if (event.place.isNotEmpty)
+                    Row(
+                      children: [
+                        Icon(Icons.location_on_outlined, size: 12, color: cs.primary),
+                        const SizedBox(width: 2),
+                        Expanded(
+                          child: Text(
+                            event.guName.isNotEmpty
+                                ? '${event.guName} · ${event.place}'
+                                : event.place,
+                            style: TextStyle(fontSize: 11, color: _panelTextSecondary),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      if (event.isOngoing)
+                        _buildStatusBadge('진행 중', Colors.green)
+                      else if (event.startDate != null &&
+                          event.startDate!.isAfter(DateTime.now()))
+                        _buildStatusBadge('예정', Colors.blue),
+                      if (event.shortDate.isNotEmpty) ...[
+                        const SizedBox(width: 6),
+                        Icon(Icons.calendar_today_outlined,
+                            size: 11, color: _panelTextMuted),
+                        const SizedBox(width: 3),
+                        Text(
+                          event.shortDate,
+                          style: TextStyle(fontSize: 10, color: _panelTextMuted),
+                        ),
+                      ],
+                      const SizedBox(width: 8),
+                      if (event.isFree)
+                        _buildStatusBadge('무료', Colors.teal)
+                      else
+                        _buildStatusBadge('유료', Colors.deepOrange),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
+  }
+
+  Widget _buildEventThumbnail(CulturalEvent event, ColorScheme cs) {
+    final color = _categoryColor(_shortCategory(event.category));
+    final placeholder = Container(
+      width: 64,
+      height: 64,
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.18),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Icon(
+        _categoryIcon(event.category),
+        size: 28,
+        color: color,
+      ),
+    );
+    final url = event.imageUrl;
+    if (url == null || !url.startsWith('http')) return placeholder;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(10),
+      child: Image.network(
+        url,
+        width: 64,
+        height: 64,
+        fit: BoxFit.cover,
+        loadingBuilder: (ctx, child, prog) =>
+            prog == null ? child : placeholder,
+        errorBuilder: (_, __, ___) => placeholder,
+      ),
+    );
+  }
+
+  Widget _buildStatusBadge(String label, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: color.withValues(alpha: 0.3), width: 0.5),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+            fontSize: 9, fontWeight: FontWeight.w700, color: color),
+      ),
+    );
+  }
+
+  Future<void> _openEventLink(CulturalEvent event) async {
+    final raw = event.homepageUrl ?? event.orgLink;
+    if (raw == null) return;
+    final uri = Uri.tryParse(raw);
+    if (uri == null) return;
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  /// CODENAME 을 짧은 카테고리로 매핑.
+  String _shortCategory(String codename) {
+    if (codename.contains('전시') || codename.contains('미술')) return '문화';
+    if (codename.contains('축제')) return '축제';
+    if (codename.contains('콘서트') ||
+        codename.contains('클래식') ||
+        codename.contains('국악') ||
+        codename.contains('대중')) return '문화';
+    if (codename.contains('연극') || codename.contains('뮤지컬')) return '문화';
+    if (codename.contains('영화')) return '문화';
+    if (codename.contains('교육') || codename.contains('체험')) return '문화';
+    return '문화';
+  }
+
+  IconData _categoryIcon(String codename) {
+    if (codename.contains('전시') || codename.contains('미술')) {
+      return Icons.palette_rounded;
+    }
+    if (codename.contains('축제')) return Icons.celebration_rounded;
+    if (codename.contains('영화')) return Icons.movie_rounded;
+    if (codename.contains('연극') || codename.contains('뮤지컬')) {
+      return Icons.theater_comedy_rounded;
+    }
+    if (codename.contains('콘서트') ||
+        codename.contains('클래식') ||
+        codename.contains('국악') ||
+        codename.contains('대중')) return Icons.music_note_rounded;
+    return Icons.event_rounded;
   }
 
   Widget _buildRankBadge(int rank, ColorScheme cs) {
@@ -511,26 +625,6 @@ class _RecommendationPanelState extends State<RecommendationPanel>
         ),
       ),
     );
-  }
-
-  Widget _buildTrendIcon(String trend) {
-    switch (trend) {
-      case 'up':
-        return const Icon(Icons.trending_up, size: 14, color: Colors.redAccent);
-      case 'down':
-        return const Icon(Icons.trending_down, size: 14, color: Colors.blueAccent);
-      case 'new':
-        return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 1),
-          decoration: BoxDecoration(
-            color: Colors.orangeAccent.withValues(alpha: 0.2),
-            borderRadius: BorderRadius.circular(3),
-          ),
-          child: const Text('N', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.orangeAccent)),
-        );
-      default:
-        return const Icon(Icons.trending_flat, size: 14, color: Colors.grey);
-    }
   }
 
   Widget _buildCongestionBadge(String level, ColorScheme _) {
@@ -597,11 +691,5 @@ class _RecommendationPanelState extends State<RecommendationPanel>
   String _formatDistance(int meters) {
     if (meters >= 1000) return '${(meters / 1000).toStringAsFixed(1)}km';
     return '${meters}m';
-  }
-
-  String _formatCount(int count) {
-    if (count >= 10000) return '${(count / 10000).toStringAsFixed(1)}만';
-    if (count >= 1000) return '${(count / 1000).toStringAsFixed(1)}천';
-    return '$count';
   }
 }
