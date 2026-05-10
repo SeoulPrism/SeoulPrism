@@ -82,8 +82,9 @@ class _AdminMonitorViewState extends State<AdminMonitorView>
       appBar: AdaptiveAppBar(
         title: '운영 모니터',
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh_rounded),
+          AdaptiveAppBarAction(
+            icon: Icons.refresh_rounded,
+            tooltip: '새로고침',
             onPressed: _loading ? null : _refresh,
           ),
           const SizedBox(width: 4),

@@ -108,15 +108,15 @@ class _FriendsViewState extends State<FriendsView> {
       appBar: AdaptiveAppBar(
         title: '친구',
         actions: [
-          IconButton(
-            icon: const Icon(Icons.group_outlined),
+          AdaptiveAppBarAction(
+            icon: Icons.group_outlined,
             tooltip: '친구 그룹',
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => const FriendGroupsView()),
             ),
           ),
-          IconButton(
-            icon: const Icon(Icons.qr_code_rounded),
+          AdaptiveAppBarAction(
+            icon: Icons.qr_code_rounded,
             tooltip: '친구 코드',
             onPressed: () => FriendCodeShareSheet.show(context),
           ),

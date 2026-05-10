@@ -197,8 +197,9 @@ class _FriendGroupsViewState extends State<FriendGroupsView> {
       appBar: AdaptiveAppBar(
         title: '친구 그룹',
         actions: [
-          IconButton(
-            icon: const Icon(Icons.add_rounded),
+          AdaptiveAppBarAction(
+            icon: Icons.add_rounded,
+            tooltip: '새 그룹',
             onPressed: _createGroup,
           ),
           const SizedBox(width: 4),

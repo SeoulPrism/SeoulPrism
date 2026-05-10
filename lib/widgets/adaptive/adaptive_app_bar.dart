@@ -2,6 +2,42 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'adaptive_glass_button.dart';
 
+/// AppBar action 으로 쓰는 어댑티브 아이콘 버튼.
+/// iOS = 리퀴드 글래스, Android = M3 IconButton.
+class AdaptiveAppBarAction extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback? onPressed;
+  final String? tooltip;
+
+  const AdaptiveAppBarAction({
+    super.key,
+    required this.icon,
+    this.onPressed,
+    this.tooltip,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (Platform.isIOS) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        child: Center(
+          child: AdaptiveGlassIconButton(
+            icon: icon,
+            onPressed: onPressed,
+            iconSize: 18,
+          ),
+        ),
+      );
+    }
+    return IconButton(
+      icon: Icon(icon),
+      tooltip: tooltip,
+      onPressed: onPressed,
+    );
+  }
+}
+
 /// 표준 어댑티브 AppBar:
 /// - iOS: 투명 배경 + AdaptiveGlassIconButton 백버튼 (settings_view 패턴 재사용)
 /// - Android: 투명 + Material AppBar 기본 백 화살표

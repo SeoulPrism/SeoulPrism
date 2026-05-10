@@ -54,8 +54,9 @@ class _MultiplayerHubViewState extends State<MultiplayerHubView> {
         title: 'Seoul Live',
         actions: [
           if (hasProfile)
-            IconButton(
-              icon: const Icon(Icons.settings_outlined),
+            AdaptiveAppBarAction(
+              icon: Icons.settings_outlined,
+              tooltip: '설정',
               onPressed: () => Navigator.push(
                 context,
                 MaterialPageRoute(

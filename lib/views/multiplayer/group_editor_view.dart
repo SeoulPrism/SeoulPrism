@@ -52,8 +52,9 @@ class _GroupEditorViewState extends State<GroupEditorView> {
       appBar: AdaptiveAppBar(
         title: '친구 그룹',
         actions: [
-          IconButton(
-            icon: const Icon(Icons.add_rounded),
+          AdaptiveAppBarAction(
+            icon: Icons.add_rounded,
+            tooltip: '새 그룹',
             onPressed: _newGroup,
           ),
           const SizedBox(width: 4),
