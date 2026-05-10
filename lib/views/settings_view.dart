@@ -87,6 +87,163 @@ class _SettingsViewState extends State<SettingsView> {
             ),
             const SizedBox(height: 16),
 
+            // Section 1.5: 실시간 시각화 — 차량/노선 표시
+            _SectionHeader(label: '실시간 시각화'),
+            AdaptiveSectionCard(
+              children: [
+                _SwitchItem(
+                  label: '지하철 노선',
+                  value: SettingsService.instance.showRoutes,
+                  onChanged: (v) {
+                    SettingsService.instance.setShowRoutes(v);
+                    setState(() {});
+                  },
+                ),
+                const _ItemDivider(),
+                _SwitchItem(
+                  label: '지하철 열차 위치',
+                  value: SettingsService.instance.showTrains,
+                  onChanged: (v) {
+                    SettingsService.instance.setShowTrains(v);
+                    setState(() {});
+                  },
+                ),
+                const _ItemDivider(),
+                _SwitchItem(
+                  label: '지하철 역',
+                  value: SettingsService.instance.showStations,
+                  onChanged: (v) {
+                    SettingsService.instance.setShowStations(v);
+                    setState(() {});
+                  },
+                ),
+                const _ItemDivider(),
+                _SwitchItem(
+                  label: '시내버스',
+                  value: SettingsService.instance.showBuses,
+                  onChanged: (v) {
+                    SettingsService.instance.setShowBuses(v);
+                    setState(() {});
+                  },
+                ),
+                const _ItemDivider(),
+                _SwitchItem(
+                  label: '한강버스',
+                  value: SettingsService.instance.showRiverBus,
+                  onChanged: (v) {
+                    SettingsService.instance.setShowRiverBus(v);
+                    setState(() {});
+                  },
+                ),
+                const _ItemDivider(),
+                _SwitchItem(
+                  label: '항공기',
+                  value: SettingsService.instance.showFlights,
+                  onChanged: (v) {
+                    SettingsService.instance.setShowFlights(v);
+                    setState(() {});
+                  },
+                ),
+              ],
+            ),
+            _RestartHint(),
+            const SizedBox(height: 16),
+
+            // Section 1.6: 데이터 소스 — 어떤 API 를 쓸 지
+            _SectionHeader(label: '데이터 소스'),
+            AdaptiveSectionCard(
+              children: [
+                _TrailingTextItem(
+                  label: '지하철 모드',
+                  trailing:
+                      '${SettingsService.instance.mode == 'live' ? '실시간' : '데모'} >',
+                  onTap: () => _showPicker(
+                    title: '지하철 모드',
+                    options: const ['실시간', '데모'],
+                    selected: SettingsService.instance.mode == 'live' ? '실시간' : '데모',
+                    onSelected: (v) {
+                      SettingsService.instance
+                          .setMode(v == '실시간' ? 'live' : 'demo');
+                      setState(() {});
+                    },
+                  ),
+                ),
+                const _ItemDivider(),
+                _SwitchItem(
+                  label: '서울시 공공 API (60s)',
+                  value: SettingsService.instance.useSeoulApi,
+                  onChanged: (v) {
+                    SettingsService.instance.setUseSeoulApi(v);
+                    setState(() {});
+                  },
+                ),
+                const _ItemDivider(),
+                _SwitchItem(
+                  label: '네이버 API (5s 단위 보정)',
+                  value: SettingsService.instance.useNaverApi,
+                  onChanged: (v) {
+                    SettingsService.instance.setUseNaverApi(v);
+                    setState(() {});
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // Section 1.7: 성능 — 품질 프리셋
+            _SectionHeader(label: '성능'),
+            AdaptiveSectionCard(
+              children: [
+                _TrailingTextItem(
+                  label: '품질 프리셋',
+                  trailing: '${_qualityLabel(SettingsService.instance.qualityPreset)} >',
+                  onTap: () => _showPicker(
+                    title: '품질 프리셋',
+                    options: const ['고품질', '부드러움', '배터리 절약'],
+                    selected: _qualityLabel(SettingsService.instance.qualityPreset),
+                    onSelected: (v) {
+                      SettingsService.instance
+                          .setQualityPreset(_qualityKey(v));
+                      setState(() {});
+                    },
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // Section 1.8: 라이팅
+            _SectionHeader(label: '라이팅'),
+            AdaptiveSectionCard(
+              children: [
+                _SwitchItem(
+                  label: '자동 (시간대 + 날씨)',
+                  value: SettingsService.instance.autoLighting,
+                  onChanged: (v) {
+                    SettingsService.instance.setAutoLighting(v);
+                    setState(() {});
+                  },
+                ),
+                if (!SettingsService.instance.autoLighting) ...[
+                  const _ItemDivider(),
+                  _TrailingTextItem(
+                    label: '라이트 프리셋',
+                    trailing: '${_lightLabel(SettingsService.instance.lightPreset)} >',
+                    onTap: () => _showPicker(
+                      title: '라이트 프리셋',
+                      options: const ['새벽', '낮', '저녁', '밤'],
+                      selected: _lightLabel(SettingsService.instance.lightPreset),
+                      onSelected: (v) {
+                        SettingsService.instance.setLightPreset(_lightKey(v));
+                        setState(() {});
+                      },
+                    ),
+                  ),
+                ],
+              ],
+            ),
+            const SizedBox(height: 16),
+
             // Section 2: 데이터 관리
             AdaptiveSectionCard(
               children: [
