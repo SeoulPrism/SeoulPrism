@@ -293,8 +293,11 @@ class _RootGateState extends State<_RootGate> {
 
   void _onFinishComplete() {
     setState(() => _phase = _GatePhase.done);
-    // 신규 사용자 — 튜토리얼 다 봤으니 What's New 시트는 스킵하고 본 것으로 표시.
-    OnboardingService.instance.markWhatsNewSeen(kAppVersion);
+    // 튜토리얼 끝나면 이어서 What's New (있으면).
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      WhatsNewView.maybeShow(context);
+    });
   }
 
   @override
