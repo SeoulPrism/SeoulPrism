@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 
 import '../../models/multiplayer_models.dart';
 import '../../services/multiplayer_service.dart';
 import '../../widgets/adaptive/adaptive.dart';
+import '../../widgets/app_snackbar.dart';
 import 'peer_profile_card.dart';
 import 'report_sheet.dart';
 
@@ -103,6 +105,25 @@ class _ChatSheetState extends State<ChatSheet> {
     await MultiplayerService.instance.sendMessage(text, kind: kind);
   }
 
+  Future<void> _shareMyLocation() async {
+    try {
+      final pos = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 10),
+        ),
+      );
+      await MultiplayerService.instance.sharePlaceToRoom(
+        name: '내 위치',
+        lat: pos.latitude,
+        lng: pos.longitude,
+      );
+    } catch (_) {
+      if (!mounted) return;
+      showAppSnackBar('위치를 가져올 수 없어요');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
@@ -193,6 +214,11 @@ class _ChatSheetState extends State<ChatSheet> {
             padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
             child: Row(
               children: [
+                AdaptiveGlassIconButton(
+                  icon: Icons.place_outlined,
+                  onPressed: _shareMyLocation,
+                ),
+                const SizedBox(width: 8),
                 Expanded(
                   child: AdaptiveTextField(
                     controller: _ctrl,
@@ -208,6 +234,94 @@ class _ChatSheetState extends State<ChatSheet> {
                   onPressed: _send,
                 ),
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _placeCard(RoomMessage m, MultiplayerProfile? p, bool isMe) {
+    final cs = Theme.of(context).colorScheme;
+    final parts = m.body.split('|');
+    if (parts.length < 3) {
+      // 형식 깨진 메시지 — 그냥 텍스트로 fallback.
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Text(m.body,
+            style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
+      );
+    }
+    final name = parts[0];
+    final lat = double.tryParse(parts[1]);
+    final lng = double.tryParse(parts[2]);
+    if (lat == null || lng == null) {
+      return const SizedBox.shrink();
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        mainAxisAlignment:
+            isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+        children: [
+          if (!isMe) ...[_miniAvatar(p), const SizedBox(width: 8)],
+          Flexible(
+            child: GestureDetector(
+              onTap: () {
+                MultiplayerService.instance
+                    .requestMapJump(lat: lat, lng: lng, name: name);
+                Navigator.of(context).popUntil((r) => r.isFirst);
+              },
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                constraints: const BoxConstraints(maxWidth: 260),
+                decoration: BoxDecoration(
+                  color: isMe ? cs.primaryContainer : cs.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                      color: cs.outlineVariant.withValues(alpha: 0.4),
+                      width: 0.5),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 40, height: 40,
+                      decoration: BoxDecoration(
+                        color: cs.primary.withValues(alpha: 0.15),
+                        shape: BoxShape.circle,
+                      ),
+                      alignment: Alignment.center,
+                      child: Icon(Icons.place_rounded,
+                          color: cs.primary, size: 22),
+                    ),
+                    const SizedBox(width: 10),
+                    Flexible(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                  color: isMe
+                                      ? cs.onPrimaryContainer
+                                      : cs.onSurface)),
+                          const SizedBox(height: 2),
+                          Text('탭해서 지도에서 보기',
+                              style: TextStyle(
+                                  fontSize: 11,
+                                  color: cs.onSurfaceVariant)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
         ],
@@ -246,6 +360,8 @@ class _ChatSheetState extends State<ChatSheet> {
     final isMe = m.userId == svc.myId;
     final p = svc.peerProfile(m.userId);
     final isMeetup = m.kind == 'meetup' || m.kind == 'system';
+
+    if (m.kind == 'place') return _placeCard(m, p, isMe);
 
     if (isMeetup) {
       return Padding(

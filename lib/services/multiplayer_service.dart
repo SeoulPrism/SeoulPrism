@@ -53,6 +53,14 @@ class MultiplayerService with WidgetsBindingObserver {
   bool get loadingMoreMessages => _loadingMoreMessages;
   bool get hasMoreMessages => _hasMoreMessages;
 
+  /// 채팅에서 공유된 장소 카드 탭 → 맵 점프 요청. map_view 가 listen.
+  /// 페이로드: {lat, lng, name?}.
+  final ValueNotifier<Map<String, dynamic>?> pendingMapJump =
+      ValueNotifier(null);
+  void requestMapJump({required double lat, required double lng, String? name}) {
+    pendingMapJump.value = {'lat': lat, 'lng': lng, if (name != null) 'name': name};
+  }
+
   final Set<String> _blockedUserIds = {};
   bool isBlocked(String userId) => _blockedUserIds.contains(userId);
 
@@ -1242,6 +1250,17 @@ class MultiplayerService with WidgetsBindingObserver {
     } on PostgrestException catch (e) {
       throw _mapError(e);
     }
+  }
+
+  /// 친구방에 장소 카드 공유. body 는 `<name>|<lat>|<lng>` 형식 (parse 는 chat 측).
+  Future<void> sharePlaceToRoom({
+    required String name,
+    required double lat,
+    required double lng,
+  }) async {
+    final cleaned = name.trim().replaceAll('|', ' ');
+    final body = '$cleaned|${lat.toStringAsFixed(6)}|${lng.toStringAsFixed(6)}';
+    await sendMessage(body, kind: 'place');
   }
 
   /// G13: 채팅 화면 열렸을 때 호출 → 미확인 0 + 서버 last_read_at 갱신.

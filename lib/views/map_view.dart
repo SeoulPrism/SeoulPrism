@@ -241,6 +241,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     MultiplayerService.instance.addListener(_onMultiplayerChanged);
     // 위치 권한 거부 시 사용자에게 안내 (1회).
     MultiplayerService.instance.addLocationDeniedListener(_onLocationDenied);
+    // 친구방 채팅에서 공유된 장소 카드 탭 → 맵 점프.
+    MultiplayerService.instance.pendingMapJump.addListener(_onMapJumpRequested);
     // 처음 진입 시 이미 활성 + 튜토리얼 미시청이면 다음 frame 에 인트로 시작.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -317,6 +319,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _flightController.dispose();
     MultiplayerService.instance.removeListener(_onMultiplayerChanged);
     MultiplayerService.instance.removeLocationDeniedListener(_onLocationDenied);
+    MultiplayerService.instance.pendingMapJump
+        .removeListener(_onMapJumpRequested);
     _peerPinRenderer?.detach();
     super.dispose();
   }
@@ -324,6 +328,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void _onLocationDenied() {
     if (!mounted) return;
     showAppSnackBar('위치 권한이 없어서 친구가 내 핀을 못 봐요. 설정 → 위치 에서 허용해주세요.');
+  }
+
+  void _onMapJumpRequested() {
+    if (!mounted) return;
+    final payload = MultiplayerService.instance.pendingMapJump.value;
+    if (payload == null) return;
+    final lat = payload['lat'] as double?;
+    final lng = payload['lng'] as double?;
+    if (lat == null || lng == null) return;
+    _mapController?.moveTo(lat, lng, zoom: 16.5, pitch: 50.0);
+    final name = payload['name'] as String?;
+    if (name != null) showAppSnackBar('지도에서 "$name" 보기');
+    // 일회성 — 즉시 비움 (다음 호출이 같은 좌표여도 트리거되도록).
+    MultiplayerService.instance.pendingMapJump.value = null;
   }
 
   // ── 경로 지도 표시 ──
