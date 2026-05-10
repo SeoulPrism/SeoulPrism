@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 import '../services/onboarding_service.dart';
 import '../widgets/adaptive/adaptive.dart';
@@ -131,7 +132,12 @@ class _WhatsNewViewState extends State<WhatsNewView> {
               controller: _pageCtrl,
               onPageChanged: (i) => setState(() => _index = i),
               itemCount: _pages.length,
-              itemBuilder: (_, i) => _PageContent(page: _pages[i]),
+              itemBuilder: (_, i) => _PageContent(
+                // 같은 페이지로 돌아와도 애니메이션 재생되도록 currentIndex 포함.
+                key: ValueKey('wn_$i${_index == i ? '_active' : ''}'),
+                page: _pages[i],
+                isActive: i == _index,
+              ),
             ),
             // skip 우측 상단.
             Positioned(
@@ -158,9 +164,10 @@ class _WhatsNewViewState extends State<WhatsNewView> {
                     children: List.generate(_pages.length, (i) {
                       final on = i == _index;
                       return AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
+                        duration: const Duration(milliseconds: 240),
+                        curve: Curves.easeOutCubic,
                         margin: const EdgeInsets.symmetric(horizontal: 3),
-                        width: on ? 22 : 6,
+                        width: on ? 24 : 6,
                         height: 6,
                         decoration: BoxDecoration(
                           color: on
@@ -179,7 +186,16 @@ class _WhatsNewViewState extends State<WhatsNewView> {
                       label: isLast ? '시작하기' : '다음',
                       onPressed: _next,
                     ),
-                  ),
+                  )
+                      .animate(key: ValueKey('btn_$_index'))
+                      .slideY(
+                        begin: 0.6,
+                        end: 0,
+                        duration: 420.ms,
+                        curve: Curves.easeOutCubic,
+                        delay: 460.ms,
+                      )
+                      .fadeIn(duration: 320.ms, delay: 460.ms),
                 ],
               ),
             ),
@@ -192,65 +208,151 @@ class _WhatsNewViewState extends State<WhatsNewView> {
 
 class _PageContent extends StatelessWidget {
   final _WnPage page;
-  const _PageContent({required this.page});
+  final bool isActive;
+  const _PageContent({super.key, required this.page, required this.isActive});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: page.gradient
-              .map((c) => c.withValues(alpha: 0.18))
-              .toList(),
-        ),
-      ),
-      padding: const EdgeInsets.fromLTRB(32, 80, 32, 200),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 큰 emoji 원형 글로우.
-          Center(
-            child: Container(
-              width: 140, height: 140,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: page.gradient,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: page.gradient.first.withValues(alpha: 0.45),
-                    blurRadius: 50,
-                    spreadRadius: 4,
-                  ),
-                ],
+    return Stack(
+      children: [
+        // 배경 — 그라데이션 + 은은한 펄스 (loop).
+        Positioned.fill(
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 600),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: page.gradient
+                    .map((c) => c.withValues(alpha: 0.22))
+                    .toList(),
               ),
-              alignment: Alignment.center,
-              child: Text(page.emoji,
-                  style: const TextStyle(fontSize: 72)),
             ),
           ),
-          const SizedBox(height: 48),
-          Text(page.title,
-              style: const TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.w900,
-                color: Colors.white,
-                height: 1.2,
-              )),
-          const SizedBox(height: 16),
-          Text(page.body,
-              style: TextStyle(
-                fontSize: 15,
-                height: 1.55,
-                color: Colors.white.withValues(alpha: 0.85),
-              )),
-        ],
-      ),
+        ),
+        // 좌상 / 우하 발광 blob — 천천히 이동.
+        _BackgroundBlob(
+          color: page.gradient.first,
+          alignment: const Alignment(-0.7, -0.6),
+        ),
+        _BackgroundBlob(
+          color: page.gradient.last,
+          alignment: const Alignment(0.8, 0.7),
+        ),
+        // 본문.
+        Padding(
+          padding: const EdgeInsets.fromLTRB(32, 80, 32, 200),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 큰 emoji 원형 글로우.
+              Center(
+                child: Container(
+                  width: 140, height: 140,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: page.gradient,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: page.gradient.first.withValues(alpha: 0.55),
+                        blurRadius: 60,
+                        spreadRadius: 6,
+                      ),
+                    ],
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(page.emoji,
+                      style: const TextStyle(fontSize: 72)),
+                )
+                    .animate(target: isActive ? 1 : 0)
+                    .scale(
+                      begin: const Offset(0.6, 0.6),
+                      end: const Offset(1, 1),
+                      duration: 520.ms,
+                      curve: Curves.easeOutBack,
+                    )
+                    .fadeIn(duration: 320.ms)
+                    .then()
+                    .shimmer(
+                      duration: 1200.ms,
+                      color: Colors.white.withValues(alpha: 0.4),
+                    ),
+              ),
+              const SizedBox(height: 48),
+              Text(page.title,
+                      style: const TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                        height: 1.2,
+                      ))
+                  .animate(target: isActive ? 1 : 0)
+                  .slideY(
+                    begin: 0.4,
+                    end: 0,
+                    duration: 500.ms,
+                    curve: Curves.easeOutCubic,
+                    delay: 180.ms,
+                  )
+                  .fadeIn(duration: 400.ms, delay: 180.ms),
+              const SizedBox(height: 16),
+              Text(page.body,
+                      style: TextStyle(
+                        fontSize: 15,
+                        height: 1.55,
+                        color: Colors.white.withValues(alpha: 0.85),
+                      ))
+                  .animate(target: isActive ? 1 : 0)
+                  .slideY(
+                    begin: 0.5,
+                    end: 0,
+                    duration: 500.ms,
+                    curve: Curves.easeOutCubic,
+                    delay: 320.ms,
+                  )
+                  .fadeIn(duration: 400.ms, delay: 320.ms),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// 배경 발광 blob — slow-pulse 로 화면에 생동감.
+class _BackgroundBlob extends StatelessWidget {
+  final Color color;
+  final Alignment alignment;
+  const _BackgroundBlob({required this.color, required this.alignment});
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: alignment,
+      child: Container(
+        width: 280,
+        height: 280,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: RadialGradient(
+            colors: [
+              color.withValues(alpha: 0.35),
+              color.withValues(alpha: 0.0),
+            ],
+          ),
+        ),
+      )
+          .animate(onPlay: (c) => c.repeat(reverse: true))
+          .scale(
+            begin: const Offset(0.85, 0.85),
+            end: const Offset(1.15, 1.15),
+            duration: 4500.ms,
+            curve: Curves.easeInOut,
+          ),
     );
   }
 }
