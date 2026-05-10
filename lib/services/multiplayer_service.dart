@@ -541,11 +541,36 @@ class MultiplayerService with WidgetsBindingObserver {
   Future<void> blockUser(String userId) async {
     if (myId == null || userId == myId) return;
     await _sb.from('blocks').upsert({'blocker_id': myId, 'blocked_id': userId});
-    // 친구 끊기 + 차단된 사용자는 trigger 가 알아서 공통 룸에서 강퇴.
     await removeFriend(userId);
     await _loadBlocks();
-    // 같은 룸이라면 멤버 새로고침 (강퇴된 모습 반영).
     await _refreshRoomMembers();
+    // #18 차단된 사용자의 기존 메시지도 클라 캐시에서 즉시 제거.
+    _messages.removeWhere((m) => m.userId == userId);
+    // peer 핀도 즉시 제거.
+    _peerLocations.remove(userId);
+    _worldPeerLocations.remove(userId);
+    _notify();
+  }
+
+  /// #19 친구 신청 cooldown 조회 — 검색 결과 UI 에서 "재신청 가능: ~까지" 표시용.
+  Future<DateTime?> friendRequestCooldownUntil(String otherUserId) async {
+    if (myId == null) return null;
+    final a = myId!.compareTo(otherUserId) < 0 ? myId! : otherUserId;
+    final b = myId!.compareTo(otherUserId) < 0 ? otherUserId : myId!;
+    try {
+      final res = await _sb
+          .from('friend_request_cooldowns')
+          .select('expires_at')
+          .eq('user_a', a)
+          .eq('user_b', b)
+          .maybeSingle();
+      if (res == null) return null;
+      final until = DateTime.parse(res['expires_at'] as String);
+      if (until.isBefore(DateTime.now())) return null;
+      return until;
+    } catch (_) {
+      return null;
+    }
   }
 
   Future<void> unblockUser(String userId) async {
@@ -960,20 +985,28 @@ class MultiplayerService with WidgetsBindingObserver {
         }
       }
       _lastBroadcasted = pos;
-      final payload = {
+      // 룸 멤버에겐 정확한 위치, world peers 에겐 ~50m grid 로 라운딩 (스토킹 방지).
+      final exactPayload = {
         'user_id': myId,
         'lat': pos.latitude,
         'lng': pos.longitude,
         'heading': pos.heading,
         'ts': DateTime.now().millisecondsSinceEpoch,
       };
-      // 룸 채널 (입장 중) — friends/public 모두 송신.
       if (_presenceChannel != null) {
-        await _presenceChannel!.track(payload);
+        await _presenceChannel!.track(exactPayload);
       }
-      // 세계 채널 — public 만 송신.
       if (_worldChannel != null && _myProfile?.visibility == 'public') {
-        await _worldChannel!.track(payload);
+        // 0.0005도 ≈ 55m 그리드.
+        final fuzzedPayload = Map<String, dynamic>.from(exactPayload);
+        fuzzedPayload['lat'] = (pos.latitude * 2000).round() / 2000;
+        fuzzedPayload['lng'] = (pos.longitude * 2000).round() / 2000;
+        // heading 도 16방위로 라운딩 (정확한 향 노출 X).
+        if (pos.heading > 0) {
+          fuzzedPayload['heading'] =
+              ((pos.heading / 22.5).round() * 22.5);
+        }
+        await _worldChannel!.track(fuzzedPayload);
       }
     } catch (e) {
       debugPrint('[Multi] broadcastOnce 실패: $e');
