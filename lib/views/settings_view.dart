@@ -11,6 +11,7 @@ import '../services/favorites_service.dart';
 import '../services/recent_search_service.dart';
 import '../services/visit_history_service.dart';
 import '../widgets/adaptive/adaptive.dart';
+import '../widgets/app_snackbar.dart';
 import 'auth_view.dart';
 import 'whats_new_sheet.dart';
 
@@ -453,7 +454,11 @@ class _SettingsViewState extends State<SettingsView> {
                 const _ItemDivider(),
                 _ChevronItem(
                   label: '새 기능 다시 보기',
-                  onTap: () => WhatsNewView.maybeShow(context, forceShow: true),
+                  onTap: () async {
+                    await OnboardingService.instance.resetWhatsNew();
+                    if (!mounted) return;
+                    showAppSnackBar('다음 앱 실행 시 새 기능 안내가 다시 나와요');
+                  },
                 ),
               ],
             ),

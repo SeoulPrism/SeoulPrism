@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../models/multiplayer_models.dart';
 import '../../services/multiplayer_service.dart';
+import '../../services/onboarding_service.dart';
 import '../../widgets/adaptive/adaptive.dart';
 import 'admin_monitor_view.dart';
 import 'blocked_users_view.dart';
@@ -138,7 +139,11 @@ class _MultiplayerSettingsViewState extends State<MultiplayerSettingsView> {
                   icon: Icons.new_releases_outlined,
                   label: '새 기능 다시 보기',
                   hint: 'v$kAppVersion 업데이트 내역',
-                  onTap: () => WhatsNewView.maybeShow(context, forceShow: true),
+                  onTap: () async {
+                    await OnboardingService.instance.resetWhatsNew();
+                    if (!mounted) return;
+                    showAppSnackBar('다음 앱 실행 시 새 기능 안내가 다시 나와요');
+                  },
                 ),
               ]),
             ]),

@@ -44,4 +44,7 @@ class OnboardingService {
 
   Future<void> markWhatsNewSeen(String version) =>
       _prefs.setString(_kLastWhatsNew, version);
+
+  /// '새 기능 다시 보기' — 다음 실행 시 자동 표시되도록 초기화.
+  Future<void> resetWhatsNew() => _prefs.remove(_kLastWhatsNew);
 }
