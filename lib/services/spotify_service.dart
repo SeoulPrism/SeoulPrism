@@ -6,6 +6,7 @@ import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../core/api_keys.dart';
@@ -45,6 +46,8 @@ class SpotifyService extends ChangeNotifier {
   bool get isConnected => _accessToken != null;
   bool get isConfigured => ApiKeys.spotifyClientId.isNotEmpty;
 
+  Timer? _pollTimer;
+
   /// 부팅 시 호출 — 저장된 토큰 로드. AppLinks 는 DeepLinkRouter 가 처리.
   Future<void> init() async {
     try {
@@ -60,7 +63,21 @@ class SpotifyService extends ChangeNotifier {
       // 만료 임박이면 refresh 시도, 그 다음 currently playing 갱신.
       await _maybeRefresh();
       await fetchCurrentlyPlaying();
+      _startPolling();
     }
+  }
+
+  /// 30초 주기 곡 폴링. 변경 시 profiles.current_track 자동 sync.
+  void _startPolling() {
+    _pollTimer?.cancel();
+    _pollTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      fetchCurrentlyPlaying();
+    });
+  }
+
+  void _stopPolling() {
+    _pollTimer?.cancel();
+    _pollTimer = null;
   }
 
   /// DeepLinkRouter 가 com.seoul.prism://spotify-callback 받으면 호출.
@@ -89,6 +106,7 @@ class SpotifyService extends ChangeNotifier {
   }
 
   Future<void> disconnect() async {
+    _stopPolling();
     _accessToken = null;
     _refreshToken = null;
     _expiresAt = null;
@@ -96,6 +114,7 @@ class SpotifyService extends ChangeNotifier {
     await _storage.delete(key: _kAccessKey);
     await _storage.delete(key: _kRefreshKey);
     await _storage.delete(key: _kExpiresKey);
+    await _syncTrackToProfile(null);
     notifyListeners();
   }
 
@@ -139,6 +158,7 @@ class SpotifyService extends ChangeNotifier {
         expiresIn: (body['expires_in'] as num).toInt(),
       );
       await fetchCurrentlyPlaying();
+      _startPolling();
     } catch (e) {
       debugPrint('[Spotify] token exchange 에러: $e');
     }
@@ -209,6 +229,7 @@ class SpotifyService extends ChangeNotifier {
       }
       final body = jsonDecode(res.body) as Map<String, dynamic>;
       final item = body['item'] as Map<String, dynamic>?;
+      final prevName = _currentTrack?.name;
       if (item == null) {
         _currentTrack = null;
       } else {
@@ -228,11 +249,39 @@ class SpotifyService extends ChangeNotifier {
           externalUrl: ((item['external_urls'] as Map?)?['spotify']) as String?,
         );
       }
+      // 곡이 변했으면 profiles.current_track 동기화 → realtime 으로 친구에게 전파.
+      if (prevName != _currentTrack?.name) {
+        _syncTrackToProfile(_currentTrack);
+      }
       notifyListeners();
       return _currentTrack;
     } catch (e) {
       debugPrint('[Spotify] currently-playing 에러: $e');
       return _currentTrack;
+    }
+  }
+
+  /// profiles.current_track 에 현재 곡 sync (없으면 null). 친구가 realtime 으로 받음.
+  Future<void> _syncTrackToProfile(SpotifyTrack? t) async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) return;
+    try {
+      await Supabase.instance.client
+          .from('profiles')
+          .update({
+            'current_track': t == null
+                ? null
+                : {
+                    'name': t.name,
+                    'artist': t.artist,
+                    'album_image_url': t.albumImageUrl,
+                    'external_url': t.externalUrl,
+                    'updated_at': DateTime.now().toIso8601String(),
+                  }
+          })
+          .eq('user_id', user.id);
+    } catch (e) {
+      debugPrint('[Spotify] profile sync 실패: $e');
     }
   }
 

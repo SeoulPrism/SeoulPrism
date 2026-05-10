@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../models/multiplayer_models.dart';
 import '../../services/multiplayer_service.dart';
@@ -158,6 +159,11 @@ class _BodyState extends State<_Body> {
                     color: cs.onSurfaceVariant.withValues(alpha: 0.6))),
           ],
 
+          if (p.currentTrack != null) ...[
+            const SizedBox(height: 16),
+            _NowPlayingChip(track: p.currentTrack!),
+          ],
+
           const SizedBox(height: 24),
 
           if (isMe)
@@ -259,3 +265,68 @@ class _BodyState extends State<_Body> {
 }
 
 enum _FriendState { none, requested, incoming, friend }
+
+/// Spotify "지금 듣는 곡" chip — peer profile card 안에 표시.
+class _NowPlayingChip extends StatelessWidget {
+  final PeerTrack track;
+  const _NowPlayingChip({required this.track});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: track.externalUrl == null
+          ? null
+          : () => launchUrl(Uri.parse(track.externalUrl!),
+              mode: LaunchMode.externalApplication),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1DB954).withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+              color: const Color(0xFF1DB954).withValues(alpha: 0.5),
+              width: 0.8),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: track.albumImageUrl != null
+                  ? Image.network(track.albumImageUrl!,
+                      width: 28, height: 28, fit: BoxFit.cover)
+                  : Container(
+                      width: 28, height: 28,
+                      color: const Color(0xFF1DB954),
+                      alignment: Alignment.center,
+                      child: const Icon(Icons.music_note_rounded,
+                          size: 14, color: Colors.white)),
+            ),
+            const SizedBox(width: 8),
+            Flexible(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('🎵 ${track.name}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                          fontSize: 12, fontWeight: FontWeight.w800)),
+                  Text(track.artist,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                          fontSize: 10,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurfaceVariant)),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

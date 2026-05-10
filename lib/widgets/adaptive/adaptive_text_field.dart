@@ -38,17 +38,26 @@ class AdaptiveTextField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (Platform.isIOS) {
+      // 테마 기반 색 — 라이트 모드 백색 텍스트는 안 보임 (예전 하드코딩 버그).
+      final cs = Theme.of(context).colorScheme;
+      final isDark = Theme.of(context).brightness == Brightness.dark;
       final field = CupertinoTextField(
         controller: controller,
         focusNode: focusNode,
         placeholder: placeholder,
         placeholderStyle: placeholderStyle ??
-            const TextStyle(color: Color(0xFF8E8E93), fontSize: 14),
-        style: style ?? const TextStyle(color: Colors.white, fontSize: 15),
+            TextStyle(
+              color: isDark
+                  ? const Color(0xFF8E8E93)
+                  : const Color(0xFF6B7280),
+              fontSize: 14,
+            ),
+        style: style ??
+            TextStyle(color: cs.onSurface, fontSize: 15),
         // glass=true 일 때 내부 데코는 투명 (글라스가 배경 담당).
         decoration: glass ? const BoxDecoration() : decoration,
         padding: padding,
-        cursorColor: const Color(0xFF7C5CFF),
+        cursorColor: cs.primary,
         onChanged: onChanged,
         onSubmitted: onSubmitted,
       );

@@ -132,6 +132,52 @@ class MultiplayerService with WidgetsBindingObserver {
   final List<void Function(String peerUserId, bool started)> _meetupListeners = [];
   void addMeetupListener(void Function(String, bool) l) => _meetupListeners.add(l);
 
+  /// peer 가 새 곡을 시작했을 때 알림. (peerUserId, trackName, artist).
+  final List<void Function(String userId, String track, String artist)>
+      _peerTrackListeners = [];
+  void addPeerTrackListener(
+          void Function(String, String, String) l) =>
+      _peerTrackListeners.add(l);
+  void removePeerTrackListener(
+          void Function(String, String, String) l) =>
+      _peerTrackListeners.remove(l);
+
+  RealtimeChannel? _profilesChannel;
+
+  /// 친구방 입장 시 호출 — 같은 방 멤버들의 profile 변경 (특히 current_track) 구독.
+  void _subscribeFriendProfiles() {
+    if (myId == null) return;
+    _profilesChannel?.unsubscribe();
+    _profilesChannel = _sb
+        .channel('profiles_friends_$myId')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.update,
+          schema: 'public',
+          table: 'profiles',
+          callback: (payload) async {
+            try {
+              final updated = MultiplayerProfile.fromJson(payload.newRecord);
+              final prev = _peerProfiles[updated.userId];
+              _peerProfiles[updated.userId] = updated;
+              // 곡 변경 감지 → 리스너 호출.
+              final newName = updated.currentTrack?.name;
+              final oldName = prev?.currentTrack?.name;
+              if (newName != null && newName != oldName &&
+                  updated.userId != myId) {
+                for (final l in List.of(_peerTrackListeners)) {
+                  try {
+                    l(updated.userId, newName,
+                        updated.currentTrack?.artist ?? '');
+                  } catch (_) {}
+                }
+              }
+              _notify();
+            } catch (_) {}
+          },
+        )
+        .subscribe();
+  }
+
   /// B7 게이미피케이션 — 내 점수/뱃지.
   UserScore? _myScore;
   UserScore? get myScore => _myScore;
@@ -247,6 +293,7 @@ class MultiplayerService with WidgetsBindingObserver {
       await _messagesChannel?.unsubscribe();
       await _membersChannel?.unsubscribe();
       await _roomMetaChannel?.unsubscribe();
+      await _profilesChannel?.unsubscribe();
       await _friendsChannel?.unsubscribe();
       await _worldChannel?.unsubscribe();
       await _scoreChannel?.unsubscribe();
@@ -255,6 +302,7 @@ class MultiplayerService with WidgetsBindingObserver {
     _messagesChannel = null;
     _membersChannel = null;
     _roomMetaChannel = null;
+    _profilesChannel = null;
     _friendsChannel = null;
     _worldChannel = null;
     _scoreChannel = null;
@@ -1113,6 +1161,7 @@ class MultiplayerService with WidgetsBindingObserver {
     _subscribeRoomMembers();
     _subscribeRoomMessages();
     _subscribeRoomMeta();
+    _subscribeFriendProfiles();
     _startPresence();
     _startLocationBroadcast();
     logActivity('room_joined', payload: {'room_id': room.id, 'code': room.inviteCode});
@@ -1128,10 +1177,12 @@ class MultiplayerService with WidgetsBindingObserver {
     await _messagesChannel?.unsubscribe();
     await _membersChannel?.unsubscribe();
     await _roomMetaChannel?.unsubscribe();
+    await _profilesChannel?.unsubscribe();
     _presenceChannel = null;
     _messagesChannel = null;
     _membersChannel = null;
     _roomMetaChannel = null;
+    _profilesChannel = null;
     try {
       await _sb
           .from('room_members')

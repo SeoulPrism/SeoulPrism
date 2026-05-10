@@ -8,6 +8,7 @@ class MultiplayerProfile {
   final String visibility; // 'friends' | 'ghost' (Phase B 까지 'public' 비활성)
   final int birthYear;
   final String? friendCode; // 8자리, 평생.
+  final PeerTrack? currentTrack; // Spotify 듣는 곡 (B26).
 
   const MultiplayerProfile({
     required this.userId,
@@ -17,6 +18,7 @@ class MultiplayerProfile {
     required this.visibility,
     required this.birthYear,
     this.friendCode,
+    this.currentTrack,
   });
 
   factory MultiplayerProfile.fromJson(Map<String, dynamic> j) => MultiplayerProfile(
@@ -27,6 +29,7 @@ class MultiplayerProfile {
         visibility: (j['visibility'] as String?) ?? 'ghost',
         birthYear: (j['birth_year'] as num).toInt(),
         friendCode: j['friend_code'] as String?,
+        currentTrack: PeerTrack.tryFromJson(j['current_track']),
       );
 
   Map<String, dynamic> toUpsert() => {
@@ -37,6 +40,31 @@ class MultiplayerProfile {
         'visibility': visibility,
         'birth_year': birthYear,
       };
+}
+
+/// 친구가 지금 듣는 곡 (profiles.current_track jsonb 미러).
+class PeerTrack {
+  final String name;
+  final String artist;
+  final String? albumImageUrl;
+  final String? externalUrl;
+  const PeerTrack({
+    required this.name,
+    required this.artist,
+    this.albumImageUrl,
+    this.externalUrl,
+  });
+  static PeerTrack? tryFromJson(dynamic j) {
+    if (j is! Map) return null;
+    final name = j['name'] as String?;
+    if (name == null || name.isEmpty) return null;
+    return PeerTrack(
+      name: name,
+      artist: (j['artist'] as String?) ?? '',
+      albumImageUrl: j['album_image_url'] as String?,
+      externalUrl: j['external_url'] as String?,
+    );
+  }
 }
 
 class Friendship {

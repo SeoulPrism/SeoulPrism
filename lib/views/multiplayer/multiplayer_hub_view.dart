@@ -14,6 +14,7 @@ import 'login_required_gate.dart';
 import 'multiplayer_settings_view.dart';
 import 'profile_edit_sheet.dart';
 import 'room_view.dart';
+import 'spotify_view.dart';
 
 /// Seoul Live 진입점.
 /// 만남 햅틱+스낵바 / 시스템 메시지 송신을 여기서 처리.
@@ -234,31 +235,12 @@ class _MultiplayerHubViewState extends State<MultiplayerHubView> {
               icon: Icons.music_note_rounded,
               title: 'Spotify',
               subtitle: SpotifyService.instance.isConnected
-                  ? '연결됨 — 채팅에서 🎵 로 곡 공유'
-                  : 'Spotify 와 연결 — 친구방 채팅에 듣는 곡 공유',
+                  ? (SpotifyService.instance.currentTrack?.name ??
+                      '연결됨 — 재생 없음')
+                  : '듣는 곡을 친구에게 공유',
               badge: SpotifyService.instance.isConnected ? '✓' : null,
-              onTap: () async {
-                final spotify = SpotifyService.instance;
-                if (!spotify.isConfigured) {
-                  showAppSnackBar(
-                      'Spotify 가 아직 설정 안 됐어요 (개발자가 SPOTIFY_CLIENT_ID 추가 필요)');
-                  return;
-                }
-                if (spotify.isConnected) {
-                  final track = await spotify.fetchCurrentlyPlaying();
-                  if (!mounted) return;
-                  showAppSnackBar(track == null
-                      ? '재생 중인 곡이 없어요'
-                      : '🎵 ${track.name} — ${track.artist}');
-                  return;
-                }
-                try {
-                  await spotify.connect();
-                  if (mounted) showAppSnackBar('Spotify 인증 후 다시 눌러주세요');
-                } catch (e) {
-                  if (mounted) showAppSnackBar('Spotify 연결 실패: $e');
-                }
-              },
+              onTap: () => Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const SpotifyView())),
             ),
           ],
         ),

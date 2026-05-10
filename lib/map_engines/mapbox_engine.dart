@@ -1,6 +1,7 @@
 import '../core/debug_log.dart';
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io' show Platform;
 import 'dart:math';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
@@ -3161,27 +3162,40 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
   void _onMapCreated(MapboxMap mapboxMap) {
     _mapboxMap = mapboxMap;
 
+    // Mapbox ornament margin은 iOS=points, Android=physical pixels 라는 단위
+    // 차이가 있어서 동일 값이면 Android 에서 훨씬 위로 붙어 우상단 위성 토글
+    // 버튼과 겹친다. Android 에서는 dpr 로 스케일하고 status bar inset 도 더해
+    // iOS 와 같은 시각적 위치로 맞춘다.
+    final mq = MediaQuery.maybeOf(context);
+    final dpr = mq?.devicePixelRatio ?? 1.0;
+    final topInset = mq?.padding.top ?? 0.0;
+    final isAndroid = Platform.isAndroid;
+    final compassTop = isAndroid ? (120 + topInset) * dpr : 120.0;
+    final sideMargin = isAndroid ? 16.0 * dpr : 16.0;
+    final bottomMargin = isAndroid ? 90.0 * dpr : 90.0;
+    final logoSide = isAndroid ? 8.0 * dpr : 8.0;
+
     // 나침반: 우상단, 검색바 아래로 여유있게
     mapboxMap.compass.updateSettings(
       CompassSettings(
         position: OrnamentPosition.TOP_RIGHT,
-        marginTop: 120,
-        marginRight: 16,
+        marginTop: compassTop,
+        marginRight: sideMargin,
       ),
     );
     // 로고: 좌하단, 어트리뷰션: 우하단 (탭바 위)
     mapboxMap.logo.updateSettings(
       LogoSettings(
         position: OrnamentPosition.BOTTOM_LEFT,
-        marginBottom: 90,
-        marginLeft: 8,
+        marginBottom: bottomMargin,
+        marginLeft: logoSide,
       ),
     );
     mapboxMap.attribution.updateSettings(
       AttributionSettings(
         position: OrnamentPosition.BOTTOM_RIGHT,
-        marginBottom: 90,
-        marginRight: 8,
+        marginBottom: bottomMargin,
+        marginRight: logoSide,
       ),
     );
     // 스케일바 숨김
