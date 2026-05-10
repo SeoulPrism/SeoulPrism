@@ -48,6 +48,11 @@ class MultiplayerService with WidgetsBindingObserver {
   final List<RoomMessage> _messages = [];
   List<RoomMessage> get messages => List.unmodifiable(_messages);
 
+  bool _loadingMoreMessages = false;
+  bool _hasMoreMessages = true;
+  bool get loadingMoreMessages => _loadingMoreMessages;
+  bool get hasMoreMessages => _hasMoreMessages;
+
   final Set<String> _blockedUserIds = {};
   bool isBlocked(String userId) => _blockedUserIds.contains(userId);
 
@@ -780,6 +785,7 @@ class MultiplayerService with WidgetsBindingObserver {
     _peerLocations.clear();
     _activeMeetups.clear();
     _messages.clear();
+    _hasMoreMessages = true;
     _unreadCounts[room.id] = 0;
 
     await _refreshRoomMembers();
@@ -1121,6 +1127,8 @@ class MultiplayerService with WidgetsBindingObserver {
   // ──────────────────────────────────────────────────────────────────
   // 채팅
   // ──────────────────────────────────────────────────────────────────
+  static const int _kMessagesPageSize = 30;
+
   Future<void> _loadInitialMessages() async {
     if (_currentRoom == null) return;
     try {
@@ -1129,16 +1137,49 @@ class MultiplayerService with WidgetsBindingObserver {
           .select()
           .eq('room_id', _currentRoom!.id)
           .order('created_at', ascending: false)
-          .limit(50);
+          .limit(_kMessagesPageSize);
+      final list = (res as List)
+          .map((r) => RoomMessage.fromJson(r as Map<String, dynamic>))
+          .toList();
       _messages
         ..clear()
-        ..addAll((res as List)
-            .map((r) => RoomMessage.fromJson(r as Map<String, dynamic>))
-            .toList()
-            .reversed);
+        ..addAll(list.reversed);
+      _hasMoreMessages = list.length >= _kMessagesPageSize;
       _notify();
     } catch (e) {
       debugPrint('[Multi] _loadInitialMessages 실패: $e');
+    }
+  }
+
+  /// 위로 스크롤 시 호출 — 가장 오래된 메시지 이전 [_kMessagesPageSize] 개 더 로드.
+  Future<void> loadMoreMessages() async {
+    if (_currentRoom == null) return;
+    if (_loadingMoreMessages || !_hasMoreMessages) return;
+    if (_messages.isEmpty) return;
+    _loadingMoreMessages = true;
+    _notify();
+    try {
+      final oldest = _messages.first.createdAt;
+      final res = await _sb
+          .from('room_messages')
+          .select()
+          .eq('room_id', _currentRoom!.id)
+          .lt('created_at', oldest.toIso8601String())
+          .order('created_at', ascending: false)
+          .limit(_kMessagesPageSize);
+      final older = (res as List)
+          .map((r) => RoomMessage.fromJson(r as Map<String, dynamic>))
+          .where((m) => !isBlocked(m.userId))
+          .toList()
+          .reversed
+          .toList();
+      _messages.insertAll(0, older);
+      if (older.length < _kMessagesPageSize) _hasMoreMessages = false;
+    } catch (e) {
+      debugPrint('[Multi] loadMoreMessages 실패: $e');
+    } finally {
+      _loadingMoreMessages = false;
+      _notify();
     }
   }
 
@@ -1159,9 +1200,6 @@ class MultiplayerService with WidgetsBindingObserver {
             final m = RoomMessage.fromJson(payload.newRecord);
             if (isBlocked(m.userId)) return;
             _messages.add(m);
-            if (_messages.length > 50) {
-              _messages.removeRange(0, _messages.length - 50);
-            }
             // G13: 내가 안 보낸 메시지면 unread 카운트 증가.
             if (m.userId != myId) {
               _unreadCounts[m.roomId] = (_unreadCounts[m.roomId] ?? 0) + 1;

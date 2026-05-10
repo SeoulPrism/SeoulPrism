@@ -43,12 +43,14 @@ class _ChatSheetState extends State<ChatSheet> {
     MultiplayerService.instance.addListener(_onChanged);
     // G13: 채팅 열림 → 미확인 0.
     MultiplayerService.instance.markCurrentRoomRead();
+    _scroll.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
   }
 
   @override
   void dispose() {
     MultiplayerService.instance.removeListener(_onChanged);
+    _scroll.removeListener(_onScroll);
     _ctrl.dispose();
     _scroll.dispose();
     super.dispose();
@@ -57,12 +59,41 @@ class _ChatSheetState extends State<ChatSheet> {
   void _onChanged() {
     if (!mounted) return;
     setState(() {});
-    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+    // 새 realtime 메시지가 도착해도 사용자가 위에서 옛 메시지 보고 있으면
+    // 강제로 바닥으로 끌어내리지 않음.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scroll.hasClients) return;
+      final pos = _scroll.position;
+      if (pos.pixels >= pos.maxScrollExtent - 80) {
+        _scroll.jumpTo(pos.maxScrollExtent);
+      }
+    });
   }
 
   void _scrollToBottom() {
     if (!_scroll.hasClients) return;
     _scroll.jumpTo(_scroll.position.maxScrollExtent);
+  }
+
+  void _onScroll() {
+    if (!_scroll.hasClients) return;
+    if (_scroll.position.pixels < 60) {
+      _maybeLoadMore();
+    }
+  }
+
+  Future<void> _maybeLoadMore() async {
+    final svc = MultiplayerService.instance;
+    if (!svc.hasMoreMessages || svc.loadingMoreMessages) return;
+    final oldMax = _scroll.position.maxScrollExtent;
+    final oldPx = _scroll.position.pixels;
+    await svc.loadMoreMessages();
+    // 옛 메시지가 위쪽에 prepend 됐으니 사용자가 보던 위치를 유지.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scroll.hasClients) return;
+      final delta = _scroll.position.maxScrollExtent - oldMax;
+      if (delta > 0) _scroll.jumpTo(oldPx + delta);
+    });
   }
 
   Future<void> _send({String? body, String kind = 'text'}) async {
@@ -125,8 +156,12 @@ class _ChatSheetState extends State<ChatSheet> {
                 : ListView.builder(
                     controller: _scroll,
                     padding: const EdgeInsets.symmetric(horizontal: 12),
-                    itemCount: messages.length,
-                    itemBuilder: (_, i) => _bubble(messages[i]),
+                    // index 0 = 더 불러오기 인디케이터, 그 외는 메시지.
+                    itemCount: messages.length + 1,
+                    itemBuilder: (_, i) {
+                      if (i == 0) return _loadMoreHeader(svc);
+                      return _bubble(messages[i - 1]);
+                    },
                   ),
           ),
           SizedBox(
@@ -178,6 +213,31 @@ class _ChatSheetState extends State<ChatSheet> {
         ],
       ),
     );
+  }
+
+  Widget _loadMoreHeader(MultiplayerService svc) {
+    final cs = Theme.of(context).colorScheme;
+    if (svc.loadingMoreMessages) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 12),
+        child: Center(
+          child: SizedBox(
+            width: 18, height: 18,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        ),
+      );
+    }
+    if (!svc.hasMoreMessages) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Center(
+          child: Text('대화 시작',
+              style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+        ),
+      );
+    }
+    return const SizedBox(height: 8);
   }
 
   Widget _bubble(RoomMessage m) {
