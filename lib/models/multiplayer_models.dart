@@ -216,3 +216,75 @@ enum BatteryMode {
 
 /// 신고 종류.
 enum ReportTargetType { user, message }
+
+/// 게이미피케이션 점수/뱃지 (Phase B7).
+class UserScore {
+  final String userId;
+  final int totalPoints;
+  final int meetupCount;
+  final int friendCount;
+  final int roomsJoined;
+  final int currentStreakDays;
+  final int longestStreakDays;
+  final List<String> badges;
+
+  const UserScore({
+    required this.userId,
+    required this.totalPoints,
+    required this.meetupCount,
+    required this.friendCount,
+    required this.roomsJoined,
+    required this.currentStreakDays,
+    required this.longestStreakDays,
+    required this.badges,
+  });
+
+  factory UserScore.fromJson(Map<String, dynamic> j) => UserScore(
+        userId: j['user_id'] as String,
+        totalPoints: (j['total_points'] as num?)?.toInt() ?? 0,
+        meetupCount: (j['meetup_count'] as num?)?.toInt() ?? 0,
+        friendCount: (j['friend_count'] as num?)?.toInt() ?? 0,
+        roomsJoined: (j['rooms_joined'] as num?)?.toInt() ?? 0,
+        currentStreakDays: (j['current_streak_days'] as num?)?.toInt() ?? 0,
+        longestStreakDays: (j['longest_streak_days'] as num?)?.toInt() ?? 0,
+        badges: ((j['badges'] as List?) ?? const [])
+            .map((e) => e.toString())
+            .toList(),
+      );
+
+  static const empty = UserScore(
+    userId: '',
+    totalPoints: 0,
+    meetupCount: 0,
+    friendCount: 0,
+    roomsJoined: 0,
+    currentStreakDays: 0,
+    longestStreakDays: 0,
+    badges: [],
+  );
+}
+
+/// 뱃지 메타 — 코드 → 이모지 + 한글 라벨.
+class BadgeMeta {
+  final String code;
+  final String emoji;
+  final String label;
+  const BadgeMeta(this.code, this.emoji, this.label);
+
+  static const all = <BadgeMeta>[
+    BadgeMeta('first_friend', '🤝', '첫 친구'),
+    BadgeMeta('ten_friends', '🫂', '친구 10명'),
+    BadgeMeta('first_meetup', '🎉', '첫 만남'),
+    BadgeMeta('ten_meetups', '🥳', '만남 10회'),
+    BadgeMeta('fifty_meetups', '🏆', '만남 50회'),
+    BadgeMeta('streak_7', '🔥', '7일 연속'),
+    BadgeMeta('night_owl', '🌙', '심야 만남'),
+  ];
+
+  static BadgeMeta? lookup(String code) {
+    for (final b in all) {
+      if (b.code == code) return b;
+    }
+    return null;
+  }
+}

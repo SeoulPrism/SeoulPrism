@@ -132,6 +132,11 @@ class MultiplayerService with WidgetsBindingObserver {
   final List<void Function(String peerUserId, bool started)> _meetupListeners = [];
   void addMeetupListener(void Function(String, bool) l) => _meetupListeners.add(l);
 
+  /// B7 게이미피케이션 — 내 점수/뱃지.
+  UserScore? _myScore;
+  UserScore? get myScore => _myScore;
+  RealtimeChannel? _scoreChannel;
+
   /// 최근 만남 기록 (in-memory, 최대 20개). 앱 재시작 시 사라짐.
   final List<({String userId, DateTime at})> _meetupHistory = [];
   List<({String userId, DateTime at})> get meetupHistory =>
@@ -192,6 +197,8 @@ class MultiplayerService with WidgetsBindingObserver {
     await _loadFriendships();
     await _loadBlocks();
     await _loadFriendGroups();
+    await _loadMyScore();
+    _subscribeMyScore();
     _subscribeFriendshipUpdates();
     _startStaleTick();
     _syncWorldChannel();
@@ -235,6 +242,7 @@ class MultiplayerService with WidgetsBindingObserver {
       await _roomMetaChannel?.unsubscribe();
       await _friendsChannel?.unsubscribe();
       await _worldChannel?.unsubscribe();
+      await _scoreChannel?.unsubscribe();
     } catch (_) {}
     _presenceChannel = null;
     _messagesChannel = null;
@@ -242,6 +250,8 @@ class MultiplayerService with WidgetsBindingObserver {
     _roomMetaChannel = null;
     _friendsChannel = null;
     _worldChannel = null;
+    _scoreChannel = null;
+    _myScore = null;
     _worldPeerLocations.clear();
 
     _myProfile = null;
@@ -630,6 +640,57 @@ class MultiplayerService with WidgetsBindingObserver {
   // ──────────────────────────────────────────────────────────────────
   // 친구 그룹 (G21)
   // ──────────────────────────────────────────────────────────────────
+  // ──────────────────────────────────────────────────────────────────
+  // 게이미피케이션 (B7)
+  // ──────────────────────────────────────────────────────────────────
+  Future<void> _loadMyScore() async {
+    if (myId == null) return;
+    try {
+      final res = await _sb
+          .from('user_scores')
+          .select()
+          .eq('user_id', myId!)
+          .maybeSingle();
+      if (res != null) {
+        _myScore = UserScore.fromJson(res);
+      } else {
+        _myScore = const UserScore(
+          userId: '', totalPoints: 0, meetupCount: 0,
+          friendCount: 0, roomsJoined: 0,
+          currentStreakDays: 0, longestStreakDays: 0, badges: [],
+        );
+      }
+      _notify();
+    } catch (e) {
+      debugPrint('[Multi] _loadMyScore 실패: $e');
+    }
+  }
+
+  void _subscribeMyScore() {
+    if (myId == null) return;
+    _scoreChannel = _sb
+        .channel('user_scores_$myId')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'user_scores',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'user_id',
+            value: myId!,
+          ),
+          callback: (payload) {
+            if (payload.newRecord.isNotEmpty) {
+              try {
+                _myScore = UserScore.fromJson(payload.newRecord);
+                _notify();
+              } catch (_) {}
+            }
+          },
+        )
+        .subscribe();
+  }
+
   Future<void> _loadFriendGroups() async {
     if (myId == null) return;
     try {

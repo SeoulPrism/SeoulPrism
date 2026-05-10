@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../models/multiplayer_models.dart';
 import '../../services/multiplayer_service.dart';
 import '../../widgets/adaptive/adaptive.dart';
 import 'friend_code_share.dart';
@@ -162,6 +163,10 @@ class _MultiplayerHubViewState extends State<MultiplayerHubView> {
             ),
           ],
         ),
+        if (svc.myScore != null) ...[
+          const SizedBox(height: 16),
+          _ScoreCard(score: svc.myScore!),
+        ],
         if (svc.meetupHistory.isNotEmpty) ...[
           const SizedBox(height: 16),
           _MeetupHistorySection(history: svc.meetupHistory),
@@ -359,6 +364,120 @@ class _HubDivider extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Divider(
           height: 0.5, thickness: 0.5, color: cs.outlineVariant.withValues(alpha: 0.5)),
+    );
+  }
+}
+
+class _ScoreCard extends StatelessWidget {
+  final UserScore score;
+  const _ScoreCard({required this.score});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return AdaptiveSectionCard(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+          child: Row(
+            children: [
+              Icon(Icons.emoji_events_rounded, size: 20, color: cs.primary),
+              const SizedBox(width: 6),
+              const Text('내 활동',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800)),
+              const Spacer(),
+              Text('${score.totalPoints}p',
+                  style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w900,
+                      color: cs.primary)),
+            ],
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _Stat(label: '만남', value: score.meetupCount.toString()),
+              _Stat(label: '친구', value: score.friendCount.toString()),
+              _Stat(
+                  label: '연속',
+                  value: '${score.currentStreakDays}일',
+                  hint: score.longestStreakDays > score.currentStreakDays
+                      ? '최고 ${score.longestStreakDays}'
+                      : null),
+            ],
+          ),
+        ),
+        if (score.badges.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 0, 12, 14),
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: score.badges
+                  .map((c) {
+                    final m = BadgeMeta.lookup(c);
+                    if (m == null) return const SizedBox.shrink();
+                    return Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: cs.primaryContainer,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(m.emoji,
+                              style: const TextStyle(fontSize: 14)),
+                          const SizedBox(width: 4),
+                          Text(m.label,
+                              style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  color: cs.onPrimaryContainer)),
+                        ],
+                      ),
+                    );
+                  })
+                  .toList(),
+            ),
+          ),
+        ] else ...[
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+            child: Text('첫 친구나 첫 만남으로 뱃지를 모아보세요',
+                style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _Stat extends StatelessWidget {
+  final String label;
+  final String value;
+  final String? hint;
+  const _Stat({required this.label, required this.value, this.hint});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Column(
+      children: [
+        Text(value,
+            style:
+                const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+        Text(label,
+            style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+        if (hint != null)
+          Text(hint!,
+              style: TextStyle(fontSize: 9, color: cs.onSurfaceVariant)),
+      ],
     );
   }
 }
