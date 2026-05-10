@@ -5,6 +5,7 @@ import '../../services/multiplayer_service.dart';
 import '../../widgets/adaptive/adaptive.dart';
 import '../../widgets/app_snackbar.dart';
 import 'friend_code_share.dart';
+import 'friend_groups_view.dart';
 import 'report_sheet.dart';
 
 class FriendsView extends StatefulWidget {
@@ -106,6 +107,13 @@ class _FriendsViewState extends State<FriendsView> {
       appBar: AdaptiveAppBar(
         title: '친구',
         actions: [
+          IconButton(
+            icon: const Icon(Icons.group_outlined),
+            tooltip: '친구 그룹',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const FriendGroupsView()),
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.qr_code_rounded),
             tooltip: '친구 코드',
