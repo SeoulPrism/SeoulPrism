@@ -144,6 +144,7 @@ class MultiplayerService with WidgetsBindingObserver {
   void _recordMeetup(String userId) {
     _meetupHistory.insert(0, (userId: userId, at: DateTime.now()));
     if (_meetupHistory.length > 20) _meetupHistory.removeLast();
+    logActivity('meetup', payload: {'peer': userId});
     _notify();
   }
   void removeMeetupListener(void Function(String, bool) l) =>
@@ -641,6 +642,69 @@ class MultiplayerService with WidgetsBindingObserver {
   // 친구 그룹 (G21)
   // ──────────────────────────────────────────────────────────────────
   // ──────────────────────────────────────────────────────────────────
+  // 활동 로그 (B8)
+  // ──────────────────────────────────────────────────────────────────
+  /// fire-and-forget 활동 기록.
+  void logActivity(String kind, {Map<String, dynamic> payload = const {}}) {
+    if (myId == null) return;
+    _sb.from('activity_log').insert({
+      'user_id': myId,
+      'kind': kind,
+      'payload': payload,
+    }).then((_) {}, onError: (e) {
+      debugPrint('[Multi] logActivity 실패 ($kind): $e');
+    });
+  }
+
+  /// 최근 7일 (또는 days 일) 활동을 kind 별/일자별 카운트로 반환.
+  Future<List<({DateTime day, String kind, int cnt})>>
+      loadActivitySummary({int days = 7}) async {
+    if (myId == null) return [];
+    try {
+      final res = await _sb.rpc(
+        'activity_weekly_summary',
+        params: {'p_days': days},
+      );
+      return (res as List).map((r) {
+        final m = r as Map<String, dynamic>;
+        return (
+          day: DateTime.parse(m['day'] as String),
+          kind: m['kind'] as String,
+          cnt: (m['cnt'] as num).toInt(),
+        );
+      }).toList();
+    } catch (e) {
+      debugPrint('[Multi] loadActivitySummary 실패: $e');
+      return [];
+    }
+  }
+
+  /// 최근 활동 로우 N개.
+  Future<List<({DateTime at, String kind, Map<String, dynamic> payload})>>
+      loadRecentActivities({int limit = 20}) async {
+    if (myId == null) return [];
+    try {
+      final res = await _sb
+          .from('activity_log')
+          .select()
+          .eq('user_id', myId!)
+          .order('created_at', ascending: false)
+          .limit(limit);
+      return (res as List).map((r) {
+        final m = r as Map<String, dynamic>;
+        return (
+          at: DateTime.parse(m['created_at'] as String),
+          kind: m['kind'] as String,
+          payload: (m['payload'] as Map?)?.cast<String, dynamic>() ?? {},
+        );
+      }).toList();
+    } catch (e) {
+      debugPrint('[Multi] loadRecentActivities 실패: $e');
+      return [];
+    }
+  }
+
+  // ──────────────────────────────────────────────────────────────────
   // 게이미피케이션 (B7)
   // ──────────────────────────────────────────────────────────────────
   Future<void> _loadMyScore() async {
@@ -878,6 +942,7 @@ class MultiplayerService with WidgetsBindingObserver {
     _subscribeRoomMeta();
     _startPresence();
     _startLocationBroadcast();
+    logActivity('room_joined', payload: {'room_id': room.id, 'code': room.inviteCode});
     _notify();
     debugPrint('[Multi] enterRoom ${room.inviteCode} (${_currentRoomMembers.length}명)');
   }
@@ -1354,6 +1419,8 @@ class MultiplayerService with WidgetsBindingObserver {
         'p_lat': lat,
         'p_lng': lng,
       });
+      logActivity('destination_set',
+          payload: {'name': name, 'lat': lat, 'lng': lng});
       // realtime 으로도 오지만 즉시 반영해서 UI 가 안 끌리게.
       _currentRoom = Room(
         id: _currentRoom!.id,
@@ -1413,6 +1480,7 @@ class MultiplayerService with WidgetsBindingObserver {
     final cleaned = name.trim().replaceAll('|', ' ');
     final body = '$cleaned|${lat.toStringAsFixed(6)}|${lng.toStringAsFixed(6)}';
     await sendMessage(body, kind: 'place');
+    logActivity('place_shared', payload: {'name': cleaned, 'lat': lat, 'lng': lng});
   }
 
   /// G13: 채팅 화면 열렸을 때 호출 → 미확인 0 + 서버 last_read_at 갱신.

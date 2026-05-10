@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../models/multiplayer_models.dart';
 import '../../services/multiplayer_service.dart';
 import '../../widgets/adaptive/adaptive.dart';
+import 'activity_dashboard_view.dart';
 import 'friend_code_share.dart';
 import 'friends_view.dart';
 import 'group_editor_view.dart';
@@ -165,7 +166,11 @@ class _MultiplayerHubViewState extends State<MultiplayerHubView> {
         ),
         if (svc.myScore != null) ...[
           const SizedBox(height: 16),
-          _ScoreCard(score: svc.myScore!),
+          GestureDetector(
+            onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) => const ActivityDashboardView())),
+            child: _ScoreCard(score: svc.myScore!),
+          ),
         ],
         if (svc.meetupHistory.isNotEmpty) ...[
           const SizedBox(height: 16),
