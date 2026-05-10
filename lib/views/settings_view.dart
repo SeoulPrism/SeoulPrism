@@ -12,6 +12,7 @@ import '../services/recent_search_service.dart';
 import '../services/visit_history_service.dart';
 import '../widgets/adaptive/adaptive.dart';
 import 'auth_view.dart';
+import 'whats_new_sheet.dart';
 
 class SettingsView extends StatefulWidget {
   const SettingsView({super.key});
@@ -449,6 +450,11 @@ class _SettingsViewState extends State<SettingsView> {
                   label: '튜토리얼 다시 보기',
                   onTap: () => _confirmResetTutorial(),
                 ),
+                const _ItemDivider(),
+                _ChevronItem(
+                  label: '새 기능 다시 보기',
+                  onTap: () => WhatsNewView.maybeShow(context, forceShow: true),
+                ),
               ],
             ),
             const SizedBox(height: 16),
@@ -456,7 +462,7 @@ class _SettingsViewState extends State<SettingsView> {
             // Section 6: 앱 정보
             AdaptiveSectionCard(
               children: [
-                _InfoItem(label: '앱 버전', value: '1.0.3'),
+                _InfoItem(label: '앱 버전', value: 'v$kAppVersion'),
                 const _ItemDivider(),
                 _ChevronItem(
                   label: '개인정보처리방침',
