@@ -235,12 +235,14 @@ abstract class IMapController {
   Future<void> updateBusPositions3D(List<BusRenderData> buses) async {}
 
   // ── 멀티플레이어 peer 핀 (지하철 마커와 충돌 회피용 별도 매니저) ──
-  /// peer 핀 추가/갱신 — 같은 id 호출 시 위치만 이동.
+  /// peer 핀 추가/갱신 — 같은 id 호출 시 위치/색/라벨만 이동.
+  /// [label] 이 주어지면 핀 위에 닉네임 텍스트 표시.
   Future<void> upsertPeerPin(
     String id,
     double lat,
     double lng, {
     required Color color,
+    String? label,
   }) async {}
 
   /// peer 핀 제거.

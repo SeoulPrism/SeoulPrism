@@ -42,7 +42,9 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
   PointAnnotationManager? _pointAnnotationManager;
   CircleAnnotationManager? _circleAnnotationManager;
   CircleAnnotationManager? _peerCircleManager;
+  PointAnnotationManager? _peerLabelManager; // 닉네임 텍스트 라벨 전용.
   final Map<String, CircleAnnotation> _peerAnnotations = {};
+  final Map<String, PointAnnotation> _peerLabels = {};
   PolylineAnnotationManager? _polylineAnnotationManager;
   bool _disposed = false;
   // 채널 에러 발생한 소스: 스타일 재생성 전까지 호출 스킵 (로그 폭주 방지)
@@ -694,6 +696,7 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
     double lat,
     double lng, {
     required Color color,
+    String? label,
   }) async {
     final manager = _peerCircleManager;
     if (manager == null) return;
@@ -706,21 +709,64 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
       } catch (_) {
         // 갱신 실패 시 재생성.
         _peerAnnotations.remove(id);
-        await upsertPeerPin(id, lat, lng, color: color);
+        await upsertPeerPin(id, lat, lng, color: color, label: label);
+        return;
+      }
+    } else {
+      final ann = await manager.create(
+        CircleAnnotationOptions(
+          geometry: Point(coordinates: Position(lng, lat)),
+          circleColor: color.toARGB32(),
+          circleRadius: 14.0, // 탭 영역 확보 + 가시성.
+          circleStrokeColor: Colors.white.toARGB32(),
+          circleStrokeWidth: 4.0,
+          circleSortKey: 100, // 다른 마커보다 위.
+        ),
+      );
+      _peerAnnotations[id] = ann;
+    }
+
+    await _upsertPeerLabel(id, lat, lng, label);
+  }
+
+  Future<void> _upsertPeerLabel(
+      String id, double lat, double lng, String? label) async {
+    final lblMgr = _peerLabelManager;
+    if (lblMgr == null) return;
+    final text = label?.trim() ?? '';
+    final existing = _peerLabels[id];
+    if (text.isEmpty) {
+      if (existing != null) {
+        _peerLabels.remove(id);
+        try { await lblMgr.delete(existing); } catch (_) {}
       }
       return;
     }
-    final ann = await manager.create(
-      CircleAnnotationOptions(
+    if (existing != null) {
+      existing.geometry = Point(coordinates: Position(lng, lat));
+      existing.textField = text;
+      try {
+        await lblMgr.update(existing);
+        return;
+      } catch (_) {
+        _peerLabels.remove(id);
+        try { await lblMgr.delete(existing); } catch (_) {}
+      }
+    }
+    final ann = await lblMgr.create(
+      PointAnnotationOptions(
         geometry: Point(coordinates: Position(lng, lat)),
-        circleColor: color.toARGB32(),
-        circleRadius: 14.0, // 탭 영역 확보 + 가시성.
-        circleStrokeColor: Colors.white.toARGB32(),
-        circleStrokeWidth: 4.0,
-        circleSortKey: 100, // 다른 마커보다 위.
+        textField: text,
+        textSize: 11.0,
+        textColor: Colors.white.toARGB32(),
+        textHaloColor: const Color(0xCC000000).toARGB32(),
+        textHaloWidth: 1.5,
+        textOffset: [0.0, -2.2], // 핀 바로 위로.
+        textAnchor: TextAnchor.BOTTOM,
+        symbolSortKey: 110,
       ),
     );
-    _peerAnnotations[id] = ann;
+    _peerLabels[id] = ann;
   }
 
   @override
@@ -728,6 +774,10 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
     final ann = _peerAnnotations.remove(id);
     if (ann != null) {
       _peerCircleManager?.delete(ann);
+    }
+    final lbl = _peerLabels.remove(id);
+    if (lbl != null) {
+      _peerLabelManager?.delete(lbl);
     }
   }
 
@@ -737,6 +787,10 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
       _peerCircleManager?.delete(ann);
     }
     _peerAnnotations.clear();
+    for (final lbl in _peerLabels.values) {
+      _peerLabelManager?.delete(lbl);
+    }
+    _peerLabels.clear();
   }
 
   void Function(String userId)? _onPeerPinTapped;
@@ -3217,6 +3271,11 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
     mapboxMap.annotations.createCircleAnnotationManager().then((manager) {
       _peerCircleManager = manager;
       manager.addOnCircleAnnotationClickListener(_PeerPinClickListener(this));
+    });
+
+    // peer 닉네임 텍스트 라벨 전용 — 핀 위에 떠 있는 작은 글씨.
+    mapboxMap.annotations.createPointAnnotationManager().then((manager) {
+      _peerLabelManager = manager;
     });
 
     mapboxMap.annotations.createPolylineAnnotationManager().then((manager) {

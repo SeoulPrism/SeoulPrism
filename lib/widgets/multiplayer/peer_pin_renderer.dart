@@ -59,7 +59,7 @@ class PeerPinRenderer {
         color = const Color(0xFF999999);
       }
       map.upsertPeerPin(entry.key, entry.value.lat, entry.value.lng,
-          color: color);
+          color: color, label: profile?.nickname);
     }
 
     _renderedIds
