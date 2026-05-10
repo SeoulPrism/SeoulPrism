@@ -199,6 +199,7 @@ class MultiplayerService with WidgetsBindingObserver {
     await _loadBlocks();
     await _loadFriendGroups();
     await loadMyVisibleGroups();
+    await loadNotifPrefs();
     await _loadMyScore();
     _subscribeMyScore();
     _subscribeFriendshipUpdates();
@@ -644,6 +645,53 @@ class MultiplayerService with WidgetsBindingObserver {
   // ──────────────────────────────────────────────────────────────────
   // 친구 그룹 (G21)
   // ──────────────────────────────────────────────────────────────────
+  // ──────────────────────────────────────────────────────────────────
+  // 알림 prefs (B12)
+  // ──────────────────────────────────────────────────────────────────
+  static const _kNotifKinds = [
+    'friend_request', 'friend_accept', 'room_message',
+    'meetup', 'destination', 'welcome',
+  ];
+  Map<String, bool> _notifPrefs = {for (final k in _kNotifKinds) k: true};
+  Map<String, bool> get notifPrefs => Map.unmodifiable(_notifPrefs);
+  static List<String> get notifPrefKinds => _kNotifKinds;
+
+  Future<void> loadNotifPrefs() async {
+    if (myId == null) return;
+    try {
+      final res = await _sb
+          .from('user_notification_prefs')
+          .select()
+          .eq('user_id', myId!)
+          .maybeSingle();
+      if (res != null) {
+        _notifPrefs = {for (final k in _kNotifKinds) k: res[k] as bool? ?? true};
+      } else {
+        _notifPrefs = {for (final k in _kNotifKinds) k: true};
+      }
+      _notify();
+    } catch (e) {
+      debugPrint('[Multi] loadNotifPrefs 실패: $e');
+    }
+  }
+
+  Future<void> setNotifPref(String kind, bool enabled) async {
+    if (myId == null) return;
+    if (!_kNotifKinds.contains(kind)) return;
+    _notifPrefs[kind] = enabled;
+    _notify();
+    try {
+      await _sb.from('user_notification_prefs').upsert({
+        'user_id': myId,
+        kind: enabled,
+        'updated_at': DateTime.now().toIso8601String(),
+      });
+    } catch (e) {
+      debugPrint('[Multi] setNotifPref 실패: $e');
+      rethrow;
+    }
+  }
+
   // ──────────────────────────────────────────────────────────────────
   // 그룹별 visibility (B9)
   // ──────────────────────────────────────────────────────────────────

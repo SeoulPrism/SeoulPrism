@@ -85,6 +85,41 @@ class _MultiplayerSettingsViewState extends State<MultiplayerSettingsView> {
               ]),
             ]),
 
+            // 알림 종류별 toggle (B12).
+            _Section(label: '알림', children: [
+              AdaptiveSectionCard(
+                children: [
+                  for (var i = 0;
+                      i < MultiplayerService.notifPrefKinds.length;
+                      i++) ...[
+                    if (i > 0) const _Divider(),
+                    Builder(builder: (_) {
+                      final k = MultiplayerService.notifPrefKinds[i];
+                      return _SwitchRow(
+                        icon: _notifIcon(k),
+                        label: _notifLabel(k),
+                        value: svc.notifPrefs[k] ?? true,
+                        onChanged: (v) async {
+                          try {
+                            await svc.setNotifPref(k, v);
+                          } catch (e) {
+                            if (mounted) showAppSnackBar('실패: $e');
+                          }
+                        },
+                      );
+                    }),
+                  ],
+                ],
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(8, 6, 8, 0),
+                child: Text(
+                  '시스템 알림 권한과 별개 — 여기서 끄면 푸시는 보내지지만 무음 처리.',
+                  style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant),
+                ),
+              ),
+            ]),
+
             // 튜토리얼.
             _Section(label: '튜토리얼', children: [
               AdaptiveSectionCard(children: [
@@ -223,6 +258,26 @@ class _MultiplayerSettingsViewState extends State<MultiplayerSettingsView> {
       },
     );
   }
+
+  String _notifLabel(String k) => switch (k) {
+        'friend_request' => '친구 신청',
+        'friend_accept' => '친구 수락',
+        'room_message' => '채팅 메시지',
+        'meetup' => '만남 감지',
+        'destination' => '목적지 변경',
+        'welcome' => '환영',
+        _ => k,
+      };
+
+  IconData _notifIcon(String k) => switch (k) {
+        'friend_request' => Icons.person_add_alt_1_rounded,
+        'friend_accept' => Icons.handshake_outlined,
+        'room_message' => Icons.chat_bubble_outline_rounded,
+        'meetup' => Icons.celebration_outlined,
+        'destination' => Icons.flag_outlined,
+        'welcome' => Icons.waving_hand_outlined,
+        _ => Icons.notifications_outlined,
+      };
 }
 
 // ─── Reusable rows ────────────────────────────────────────────
