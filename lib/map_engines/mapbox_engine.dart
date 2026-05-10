@@ -141,6 +141,7 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
   static const _locationPulseLayerId = 'user-location-pulse-layer';
   static const _locationHeadLayerId = 'user-location-head-layer';
   bool _locationEnabled = false;
+  bool _locationLayersReady = false; // _initLocationLayers 성공 여부.
   bool _locationFailed = false; // 플러그인 미등록 시 재시도 방지
   geo.Position? _currentPosition;
   StreamSubscription<geo.Position>? _positionSubscription;
@@ -2386,10 +2387,14 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
 
   @override
   Future<void> setUserLocation(double lat, double lng) async {
-    if (_mapboxMap == null) return;
-    // 레이어가 아직 없으면 (enableLocationPuck 가 실패했거나 호출 전) 먼저 생성.
-    if (!_locationEnabled) {
-      _locationEnabled = true;
+    if (_mapboxMap == null) {
+      debugPrint('[MapboxEngine] setUserLocation: map==null');
+      return;
+    }
+    // _locationEnabled 가 true 더라도 layers 가 아직 안 만들어졌을 수 있음
+    // (enableLocationPuck 가 await getCurrentPosition 중일 때).
+    if (!_locationLayersReady) {
+      debugPrint('[MapboxEngine] setUserLocation: layers 없음 → init 시도');
       await _initLocationLayers();
     }
     final pos = geo.Position(
@@ -2406,90 +2411,110 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
     );
     _currentPosition = pos;
     await _updateLocationAvatar(pos);
+    debugPrint('[MapboxEngine] setUserLocation 완료 ($lat,$lng) layersReady=$_locationLayersReady');
   }
 
   Future<void> _initLocationLayers() async {
     if (_mapboxMap == null) return;
+    if (_locationLayersReady) return; // idempotent.
     final style = _mapboxMap!.style;
     const emptyGeoJson = '{"type":"FeatureCollection","features":[]}';
 
+    // iOS 에서 source/layer 가 이미 존재하면 add* 가 throw → 존재 확인 후 add.
+    Future<bool> srcExists(String id) async {
+      try {
+        return await style.styleSourceExists(id);
+      } catch (_) {
+        return false;
+      }
+    }
+    Future<bool> lyrExists(String id) async {
+      try {
+        return await style.styleLayerExists(id);
+      } catch (_) {
+        return false;
+      }
+    }
+
     try {
-      // 펄스 링 (CircleLayer — 발광 효과)
-      await style.addSource(
-        GeoJsonSource(id: _locationPulseSourceId, data: emptyGeoJson),
-      );
-      await style.addLayer(
-        CircleLayer(
-          id: _locationPulseLayerId,
-          sourceId: _locationPulseSourceId,
-          circleColor: const Color(0xFF4A90D9).toARGB32(),
-          circleRadiusExpression: [
-            'interpolate',
-            ['linear'],
-            ['zoom'],
-            10,
-            20.0,
-            14,
-            40.0,
-            17,
-            60.0,
-          ],
-          circleBlur: 0.7,
-          circleOpacity: 0.3,
-          circlePitchAlignment: CirclePitchAlignment.MAP,
-          circleEmissiveStrength: 1.0,
-        ),
-      );
+      if (!await srcExists(_locationPulseSourceId)) {
+        await style.addSource(
+          GeoJsonSource(id: _locationPulseSourceId, data: emptyGeoJson),
+        );
+      }
+      if (!await lyrExists(_locationPulseLayerId)) {
+        await style.addLayer(
+          CircleLayer(
+            id: _locationPulseLayerId,
+            sourceId: _locationPulseSourceId,
+            circleColor: const Color(0xFF4A90D9).toARGB32(),
+            circleRadiusExpression: [
+              'interpolate',
+              ['linear'],
+              ['zoom'],
+              10, 20.0,
+              14, 40.0,
+              17, 60.0,
+            ],
+            circleBlur: 0.7,
+            circleOpacity: 0.3,
+            circlePitchAlignment: CirclePitchAlignment.MAP,
+            circleEmissiveStrength: 1.0,
+          ),
+        );
+      }
 
-      // 사람 몸체 (FillExtrusionLayer — 3D 원기둥형)
-      await style.addSource(
-        GeoJsonSource(id: _locationSourceId, data: emptyGeoJson),
-      );
-      await style.addLayer(
-        FillExtrusionLayer(
-          id: _locationBodyLayerId,
-          sourceId: _locationSourceId,
-          fillExtrusionColorExpression: [
-            'to-color',
-            ['get', 'color'],
-          ],
-          fillExtrusionBaseExpression: ['get', 'base'],
-          fillExtrusionHeightExpression: ['get', 'top'],
-          fillExtrusionOpacity: 0.92,
-          fillExtrusionVerticalGradient: true,
-          fillExtrusionEmissiveStrength: 1.0,
-        ),
-      );
+      if (!await srcExists(_locationSourceId)) {
+        await style.addSource(
+          GeoJsonSource(id: _locationSourceId, data: emptyGeoJson),
+        );
+      }
+      if (!await lyrExists(_locationBodyLayerId)) {
+        await style.addLayer(
+          FillExtrusionLayer(
+            id: _locationBodyLayerId,
+            sourceId: _locationSourceId,
+            fillExtrusionColorExpression: [
+              'to-color',
+              ['get', 'color'],
+            ],
+            fillExtrusionBaseExpression: ['get', 'base'],
+            fillExtrusionHeightExpression: ['get', 'top'],
+            fillExtrusionOpacity: 0.92,
+            fillExtrusionVerticalGradient: true,
+            fillExtrusionEmissiveStrength: 1.0,
+          ),
+        );
+      }
 
-      // 머리 (CircleLayer — 3D 기둥 위에 떠있는 원)
-      await style.addLayer(
-        CircleLayer(
-          id: _locationHeadLayerId,
-          sourceId: _locationPulseSourceId, // 같은 Point 소스 재사용
-          circleColor: const Color(0xFFFFD7A8).toARGB32(), // 피부색
-          circleRadiusExpression: [
-            'interpolate',
-            ['linear'],
-            ['zoom'],
-            10,
-            4.0,
-            14,
-            8.0,
-            17,
-            14.0,
-          ],
-          circleStrokeColor: const Color(0xFF4A90D9).toARGB32(),
-          circleStrokeWidth: 2.0,
-          circleOpacity: 1.0,
-          circlePitchAlignment: CirclePitchAlignment.MAP,
-          circleSortKey: 100,
-          circleEmissiveStrength: 1.0,
-        ),
-      );
+      if (!await lyrExists(_locationHeadLayerId)) {
+        await style.addLayer(
+          CircleLayer(
+            id: _locationHeadLayerId,
+            sourceId: _locationPulseSourceId,
+            circleColor: const Color(0xFFFFD7A8).toARGB32(),
+            circleRadiusExpression: [
+              'interpolate',
+              ['linear'],
+              ['zoom'],
+              10, 4.0,
+              14, 8.0,
+              17, 14.0,
+            ],
+            circleStrokeColor: const Color(0xFF4A90D9).toARGB32(),
+            circleStrokeWidth: 2.0,
+            circleOpacity: 1.0,
+            circlePitchAlignment: CirclePitchAlignment.MAP,
+            circleSortKey: 100,
+            circleEmissiveStrength: 1.0,
+          ),
+        );
+      }
 
-      DebugLog.log('[MapboxEngine] ✅ 3D 위치 아바타 레이어 생성 완료');
+      _locationLayersReady = true;
+      debugPrint('[MapboxEngine] ✅ 3D 위치 아바타 레이어 생성 완료');
     } catch (e) {
-      DebugLog.log('[MapboxEngine] ❌ 위치 레이어 초기화 실패: $e');
+      debugPrint('[MapboxEngine] ❌ 위치 레이어 초기화 실패: $e');
     }
   }
 
