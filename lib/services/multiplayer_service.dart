@@ -108,6 +108,7 @@ class MultiplayerService with WidgetsBindingObserver {
   RealtimeChannel? _presenceChannel;
   RealtimeChannel? _messagesChannel;
   RealtimeChannel? _membersChannel;
+  RealtimeChannel? _roomMetaChannel; // rooms 테이블 자체의 update (목적지 등).
   RealtimeChannel? _friendsChannel;
   /// 전 세계 공개 사용자 채널 (visibility=public).
   RealtimeChannel? _worldChannel;
@@ -231,12 +232,14 @@ class MultiplayerService with WidgetsBindingObserver {
       await _presenceChannel?.unsubscribe();
       await _messagesChannel?.unsubscribe();
       await _membersChannel?.unsubscribe();
+      await _roomMetaChannel?.unsubscribe();
       await _friendsChannel?.unsubscribe();
       await _worldChannel?.unsubscribe();
     } catch (_) {}
     _presenceChannel = null;
     _messagesChannel = null;
     _membersChannel = null;
+    _roomMetaChannel = null;
     _friendsChannel = null;
     _worldChannel = null;
     _worldPeerLocations.clear();
@@ -793,6 +796,7 @@ class MultiplayerService with WidgetsBindingObserver {
         await _presenceChannel?.unsubscribe();
         await _messagesChannel?.unsubscribe();
         await _membersChannel?.unsubscribe();
+        await _roomMetaChannel?.unsubscribe();
       } catch (_) {}
       _presenceChannel = null;
       _messagesChannel = null;
@@ -810,6 +814,7 @@ class MultiplayerService with WidgetsBindingObserver {
     await _loadInitialMessages();
     _subscribeRoomMembers();
     _subscribeRoomMessages();
+    _subscribeRoomMeta();
     _startPresence();
     _startLocationBroadcast();
     _notify();
@@ -823,9 +828,11 @@ class MultiplayerService with WidgetsBindingObserver {
     await _presenceChannel?.unsubscribe();
     await _messagesChannel?.unsubscribe();
     await _membersChannel?.unsubscribe();
+    await _roomMetaChannel?.unsubscribe();
     _presenceChannel = null;
     _messagesChannel = null;
     _membersChannel = null;
+    _roomMetaChannel = null;
     try {
       await _sb
           .from('room_members')
@@ -1245,6 +1252,79 @@ class MultiplayerService with WidgetsBindingObserver {
           callback: (_) => _refreshRoomMembers(),
         )
         .subscribe();
+  }
+
+  /// rooms 테이블 자체 (목적지 등 메타) update 구독.
+  void _subscribeRoomMeta() {
+    if (_currentRoom == null) return;
+    _roomMetaChannel = _sb
+        .channel('room_meta_${_currentRoom!.id}')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.update,
+          schema: 'public',
+          table: 'rooms',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'id',
+            value: _currentRoom!.id,
+          ),
+          callback: (payload) {
+            try {
+              _currentRoom = Room.fromJson(payload.newRecord);
+              _notify();
+            } catch (e) {
+              debugPrint('[Multi] room meta update parse fail: $e');
+            }
+          },
+        )
+        .subscribe();
+  }
+
+  Future<void> setRoomDestination({
+    required String name,
+    required double lat,
+    required double lng,
+  }) async {
+    if (_currentRoom == null) return;
+    try {
+      await _sb.rpc('set_room_destination', params: {
+        'p_room_id': _currentRoom!.id,
+        'p_name': name,
+        'p_lat': lat,
+        'p_lng': lng,
+      });
+      // realtime 으로도 오지만 즉시 반영해서 UI 가 안 끌리게.
+      _currentRoom = Room(
+        id: _currentRoom!.id,
+        inviteCode: _currentRoom!.inviteCode,
+        ownerId: _currentRoom!.ownerId,
+        name: _currentRoom!.name,
+        expiresAt: _currentRoom!.expiresAt,
+        destName: name, destLat: lat, destLng: lng, destSetBy: myId,
+      );
+      _notify();
+    } catch (e) {
+      debugPrint('[Multi] setRoomDestination 실패: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> clearRoomDestination() async {
+    if (_currentRoom == null) return;
+    try {
+      await _sb.rpc('clear_room_destination',
+          params: {'p_room_id': _currentRoom!.id});
+      _currentRoom = Room(
+        id: _currentRoom!.id,
+        inviteCode: _currentRoom!.inviteCode,
+        ownerId: _currentRoom!.ownerId,
+        name: _currentRoom!.name,
+        expiresAt: _currentRoom!.expiresAt,
+      );
+      _notify();
+    } catch (e) {
+      debugPrint('[Multi] clearRoomDestination 실패: $e');
+    }
   }
 
   Future<void> sendMessage(String body, {String kind = 'text'}) async {

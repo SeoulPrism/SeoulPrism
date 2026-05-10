@@ -139,6 +139,17 @@ class _ChatSheetState extends State<ChatSheet> {
     );
   }
 
+  Future<void> _setRoomDestination(String name, double lat, double lng) async {
+    try {
+      await MultiplayerService.instance.setRoomDestination(
+        name: name, lat: lat, lng: lng,
+      );
+      if (mounted) showAppSnackBar('🎯 방 목적지로 설정됨');
+    } catch (e) {
+      if (mounted) showAppSnackBar('실패: $e');
+    }
+  }
+
   Future<void> _openExternalDirections(
       String name, double lat, double lng) async {
     // iOS: Apple Maps 우선, 없으면 Google Maps
@@ -387,6 +398,12 @@ class _ChatSheetState extends State<ChatSheet> {
                         ),
                       ),
                     ],
+                  ),
+                  const SizedBox(height: 6),
+                  _placeAction(
+                    icon: Icons.flag_rounded,
+                    label: '🎯 방 목적지로',
+                    onTap: () => _setRoomDestination(name, lat, lng),
                   ),
                 ],
               ),

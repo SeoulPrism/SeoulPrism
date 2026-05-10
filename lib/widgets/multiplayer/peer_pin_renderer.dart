@@ -30,6 +30,8 @@ class PeerPinRenderer {
     debugPrint('[PinRenderer] detached');
   }
 
+  static const _kDestId = '__room_destination__';
+
   void _sync() {
     final peers = _svc.peerLocations;
     // G9: 60초 이상 stale → 사실상 오프라인 → 제거.
@@ -38,12 +40,15 @@ class PeerPinRenderer {
         if (!e.value.isOffline) e.key: e.value
     };
     final newIds = visiblePeers.keys.toSet();
+    final room = _svc.currentRoom;
+    if (room != null && room.hasDestination) newIds.add(_kDestId);
+
     if (newIds.length != _renderedIds.length || newIds.isNotEmpty) {
       debugPrint('[PinRenderer] sync — peers=${peers.length} '
           'visible=${visiblePeers.length} rendered=${_renderedIds.length}');
     }
 
-    // 1. 사라진/오프라인 peer 제거.
+    // 1. 사라진/오프라인 peer + 해제된 destination 제거.
     for (final id in _renderedIds.difference(newIds)) {
       map.removePeerPin(id);
     }
@@ -60,6 +65,17 @@ class PeerPinRenderer {
       }
       map.upsertPeerPin(entry.key, entry.value.lat, entry.value.lng,
           color: color, label: profile?.nickname);
+    }
+
+    // 3. 방 목적지 pin (peer 들과 별도 색).
+    if (room != null && room.hasDestination) {
+      map.upsertPeerPin(
+        _kDestId,
+        room.destLat!,
+        room.destLng!,
+        color: const Color(0xFFFF7A00),
+        label: '🎯 ${room.destName ?? '목적지'}',
+      );
     }
 
     _renderedIds

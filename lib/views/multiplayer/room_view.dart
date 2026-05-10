@@ -259,6 +259,10 @@ class _RoomViewState extends State<RoomView> {
             ),
           ],
         ),
+        if (room.hasDestination) ...[
+          const SizedBox(height: 16),
+          _DestinationBanner(room: room),
+        ],
         const SizedBox(height: 20),
 
         Padding(
@@ -502,6 +506,75 @@ class _MemberDivider extends StatelessWidget {
       padding: const EdgeInsets.only(left: 58),
       child: Divider(
           height: 0.5, thickness: 0.5, color: cs.outlineVariant.withValues(alpha: 0.5)),
+    );
+  }
+}
+
+/// 방 공통 목적지 배너 — 누구든 해제 가능 (프로토타입; 추후 권한 체크 가능).
+class _DestinationBanner extends StatelessWidget {
+  final Room room;
+  const _DestinationBanner({required this.room});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final svc = MultiplayerService.instance;
+    final setBy = room.destSetBy != null
+        ? svc.peerProfile(room.destSetBy!)?.nickname ?? '누군가'
+        : '누군가';
+    return AdaptiveSurfaceCard(
+      borderRadius: 14,
+      padding: const EdgeInsets.fromLTRB(14, 12, 8, 12),
+      child: Row(
+        children: [
+          Container(
+            width: 40, height: 40,
+            decoration: BoxDecoration(
+              color: cs.primary.withValues(alpha: 0.15),
+              shape: BoxShape.circle,
+            ),
+            alignment: Alignment.center,
+            child: Icon(Icons.flag_rounded, color: cs.primary, size: 22),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('🎯 같이 가기 — ${room.destName ?? '목적지'}',
+                    style: const TextStyle(
+                        fontSize: 14, fontWeight: FontWeight.w700)),
+                const SizedBox(height: 2),
+                Text('$setBy 님이 설정',
+                    style: TextStyle(
+                        fontSize: 11, color: cs.onSurfaceVariant)),
+              ],
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.map_outlined, size: 20),
+            tooltip: '지도에서 보기',
+            onPressed: () {
+              if (room.destLat == null || room.destLng == null) return;
+              svc.requestMapJump(
+                lat: room.destLat!,
+                lng: room.destLng!,
+                name: room.destName,
+              );
+              Navigator.of(context).popUntil((r) => r.isFirst);
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.close_rounded, size: 20),
+            tooltip: '목적지 해제',
+            onPressed: () async {
+              try {
+                await svc.clearRoomDestination();
+              } catch (_) {}
+            },
+          ),
+        ],
+      ),
     );
   }
 }

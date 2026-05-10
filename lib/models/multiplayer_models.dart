@@ -70,6 +70,11 @@ class Room {
   final String ownerId;
   final String? name;
   final DateTime expiresAt;
+  /// 방 공통 목적지 (Phase B6 같이 가기). null = 미설정.
+  final String? destName;
+  final double? destLat;
+  final double? destLng;
+  final String? destSetBy;
 
   const Room({
     required this.id,
@@ -77,7 +82,13 @@ class Room {
     required this.ownerId,
     required this.name,
     required this.expiresAt,
+    this.destName,
+    this.destLat,
+    this.destLng,
+    this.destSetBy,
   });
+
+  bool get hasDestination => destLat != null && destLng != null;
 
   factory Room.fromJson(Map<String, dynamic> j) => Room(
         id: j['id'] as String,
@@ -85,6 +96,10 @@ class Room {
         ownerId: j['owner_id'] as String,
         name: j['name'] as String?,
         expiresAt: DateTime.parse(j['expires_at'] as String),
+        destName: j['dest_name'] as String?,
+        destLat: (j['dest_lat'] as num?)?.toDouble(),
+        destLng: (j['dest_lng'] as num?)?.toDouble(),
+        destSetBy: j['dest_set_by'] as String?,
       );
 }
 
