@@ -123,12 +123,18 @@ class _WhatsNewViewState extends State<WhatsNewView> {
   @override
   Widget build(BuildContext context) {
     final isLast = _index == _pages.length - 1;
+    final topPad = MediaQuery.of(context).padding.top;
+    final bottomPad = MediaQuery.of(context).padding.bottom;
     return Scaffold(
+      // 노치 / 홈인디케이터 영역까지 그라데이션이 채워지도록 SafeArea 제거.
       backgroundColor: const Color(0xFF0E1018),
-      body: SafeArea(
-        child: Stack(
-          children: [
-            PageView.builder(
+      extendBody: true,
+      extendBodyBehindAppBar: true,
+      body: Stack(
+        children: [
+          // 페이지가 화면 전체 (노치/홈 영역 포함) 채우도록.
+          Positioned.fill(
+            child: PageView.builder(
               controller: _pageCtrl,
               onPageChanged: (i) => setState(() => _index = i),
               itemCount: _pages.length,
@@ -137,26 +143,29 @@ class _WhatsNewViewState extends State<WhatsNewView> {
                 key: ValueKey('wn_$i${_index == i ? '_active' : ''}'),
                 page: _pages[i],
                 isActive: i == _index,
+                topPadding: topPad,
+                bottomPadding: bottomPad,
               ),
             ),
-            // skip 우측 상단.
-            Positioned(
-              top: 8,
-              right: 8,
-              child: TextButton(
-                onPressed: _skip,
-                style: TextButton.styleFrom(
-                  foregroundColor: Colors.white.withValues(alpha: 0.6),
-                ),
-                child: Text(isLast ? '닫기' : '건너뛰기',
-                    style: const TextStyle(fontWeight: FontWeight.w600)),
+          ),
+          // skip 우측 상단 (status bar 아래로).
+          Positioned(
+            top: topPad + 4,
+            right: 8,
+            child: TextButton(
+              onPressed: _skip,
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.white.withValues(alpha: 0.7),
               ),
+              child: Text(isLast ? '닫기' : '건너뛰기',
+                  style: const TextStyle(fontWeight: FontWeight.w600)),
             ),
-            // 페이지 indicator + 다음 버튼.
-            Positioned(
-              left: 24,
-              right: 24,
-              bottom: 32,
+          ),
+          // 페이지 indicator + 다음 버튼.
+          Positioned(
+            left: 24,
+            right: 24,
+            bottom: bottomPad + 24,
               child: Column(
                 children: [
                   Row(
@@ -196,11 +205,10 @@ class _WhatsNewViewState extends State<WhatsNewView> {
                         delay: 460.ms,
                       )
                       .fadeIn(duration: 320.ms, delay: 460.ms),
-                ],
-              ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -209,7 +217,15 @@ class _WhatsNewViewState extends State<WhatsNewView> {
 class _PageContent extends StatelessWidget {
   final _WnPage page;
   final bool isActive;
-  const _PageContent({super.key, required this.page, required this.isActive});
+  final double topPadding;
+  final double bottomPadding;
+  const _PageContent({
+    super.key,
+    required this.page,
+    required this.isActive,
+    this.topPadding = 0,
+    this.bottomPadding = 0,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -239,9 +255,9 @@ class _PageContent extends StatelessWidget {
           color: page.gradient.last,
           alignment: const Alignment(0.8, 0.7),
         ),
-        // 본문.
+        // 본문 — safe inset 만큼 padding 추가.
         Padding(
-          padding: const EdgeInsets.fromLTRB(32, 80, 32, 200),
+          padding: EdgeInsets.fromLTRB(32, 80 + topPadding, 32, 200 + bottomPadding),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
