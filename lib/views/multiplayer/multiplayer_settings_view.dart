@@ -6,6 +6,7 @@ import '../../widgets/adaptive/adaptive.dart';
 import 'admin_monitor_view.dart';
 import 'blocked_users_view.dart';
 import '../../widgets/app_snackbar.dart';
+import '../whats_new_sheet.dart';
 
 /// Seoul Live 설정/탈퇴/배터리/튜토리얼/동의관리.
 class MultiplayerSettingsView extends StatefulWidget {
@@ -131,6 +132,13 @@ class _MultiplayerSettingsViewState extends State<MultiplayerSettingsView> {
                     if (!mounted) return;
                     showAppSnackBar('다음 진입 시 튜토리얼이 다시 나와요');
                   },
+                ),
+                const _Divider(),
+                _ChevronRow(
+                  icon: Icons.new_releases_outlined,
+                  label: '새 기능 다시 보기',
+                  hint: 'v$kAppVersion 업데이트 내역',
+                  onTap: () => WhatsNewSheet.maybeShow(context, forceShow: true),
                 ),
               ]),
             ]),

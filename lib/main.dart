@@ -28,6 +28,7 @@ import 'views/home_view.dart';
 import 'views/onboarding/city_pulse_loading_view.dart';
 import 'views/onboarding/onboarding_view.dart';
 import 'views/onboarding/widgets/onboarding_map_background.dart';
+import 'views/whats_new_sheet.dart';
 
 /// 어디서나 라우팅 가능한 글로벌 navigator (push 알림 deep-link 등).
 final rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -273,6 +274,11 @@ class _RootGateState extends State<_RootGate> {
 
   void _onLaunchLoadingComplete() {
     setState(() => _phase = _GatePhase.done);
+    // 기존 사용자 진입 — 새 버전 첫 실행이면 What's New 시트.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      WhatsNewSheet.maybeShow(context);
+    });
   }
 
   /// tutorialLoading 시퀀스 끝나면 OnboardingView 만 노출 (LaunchLoadingView 제거).
@@ -286,6 +292,8 @@ class _RootGateState extends State<_RootGate> {
 
   void _onFinishComplete() {
     setState(() => _phase = _GatePhase.done);
+    // 신규 사용자 — 튜토리얼 다 봤으니 What's New 시트는 스킵하고 본 것으로 표시.
+    OnboardingService.instance.markWhatsNewSeen(kAppVersion);
   }
 
   @override

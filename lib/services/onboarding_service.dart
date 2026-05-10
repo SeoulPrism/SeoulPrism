@@ -18,6 +18,7 @@ class OnboardingService {
   static OnboardingService get instance => _instance!;
 
   static const _kSeenPages = 'onboarding_seen_pages';
+  static const _kLastWhatsNew = 'whats_new_last_seen_version';
 
   Set<String> get seenPages {
     final list = _prefs.getStringList(_kSeenPages) ?? const [];
@@ -37,4 +38,10 @@ class OnboardingService {
 
   /// 디버그/설정에서 "튜토리얼 다시 보기" 용.
   Future<void> reset() => _prefs.remove(_kSeenPages);
+
+  /// What's New 시트 — 마지막으로 본 앱 버전.
+  String? get lastSeenWhatsNewVersion => _prefs.getString(_kLastWhatsNew);
+
+  Future<void> markWhatsNewSeen(String version) =>
+      _prefs.setString(_kLastWhatsNew, version);
 }
