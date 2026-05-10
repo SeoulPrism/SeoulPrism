@@ -69,10 +69,17 @@ Future<void> main() async {
     };
   }
 
-  // Supabase 초기화
+  // Supabase 초기화. authFlowType=implicit 로 두는 이유:
+  //  - 우리 OAuth 는 Google/Apple Native SDK 로 별도 처리 (Supabase OAuth 미사용)
+  //  - 기본 PKCE 면 supabase_flutter 가 "code" param 있는 모든 deep link 를
+  //    auth callback 으로 오인 → Spotify callback (com.seoul.prism://spotify-callback?code=...)
+  //    까지 가로채서 "Code verifier could not be found" 에러 발생.
   await Supabase.initialize(
     url: ApiKeys.supabaseUrl,
     anonKey: ApiKeys.supabaseAnonKey,
+    authOptions: const FlutterAuthClientOptions(
+      authFlowType: AuthFlowType.implicit,
+    ),
   );
 
   // 게스트 모드: 사용자 입력 없이 자동 익명 로그인 → user_id 확보.
