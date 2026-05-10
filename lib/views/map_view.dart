@@ -1129,8 +1129,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           ),
                         );
                         debugPrint('[Loc] 위치 fix: ${pos.latitude},${pos.longitude}');
+                        // 아바타 위치도 카메라와 함께 갱신 (스트림 distanceFilter 5m 로 인해
+                        // 카메라만 이동하고 아바타는 옛 자리에 남아있는 현상 방지).
+                        await _mapController?.setUserLocation(
+                            pos.latitude, pos.longitude);
                         _mapController?.moveTo(pos.latitude, pos.longitude,
-                            zoom: 16.0);
+                            zoom: 16.0, pitch: 50.0);
                         showAppSnackBar('내 위치로 이동했어요');
                       } catch (e) {
                         debugPrint('[Loc] 실패: $e');

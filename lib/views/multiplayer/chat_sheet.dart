@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../models/multiplayer_models.dart';
 import '../../services/multiplayer_service.dart';
 import '../../widgets/adaptive/adaptive.dart';
+import 'peer_profile_card.dart';
 import 'report_sheet.dart';
 
 class ChatSheet extends StatefulWidget {
@@ -228,9 +229,15 @@ class _ChatSheetState extends State<ChatSheet> {
                   if (!isMe)
                     Padding(
                       padding: const EdgeInsets.only(left: 4, bottom: 2),
-                      child: Text(p?.nickname ?? '',
-                          style: TextStyle(
-                              fontSize: 11, color: cs.onSurfaceVariant)),
+                      // #8 닉네임 탭 → peer 프로필 카드 (친구 신청 가능).
+                      child: GestureDetector(
+                        onTap: () => PeerProfileCard.show(context, m.userId),
+                        child: Text(p?.nickname ?? '',
+                            style: TextStyle(
+                                fontSize: 11,
+                                color: cs.primary,
+                                fontWeight: FontWeight.w600)),
+                      ),
                     ),
                   Container(
                     padding: isEmojiOnly

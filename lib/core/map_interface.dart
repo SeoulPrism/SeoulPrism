@@ -141,6 +141,10 @@ abstract class IMapController {
   /// 현재 위치로 카메라 이동
   Future<void> moveToCurrentLocation() async {}
 
+  /// 외부에서 받은 GPS fix 로 사용자 아바타 위치를 즉시 갱신.
+  /// distanceFilter 로 사라진 듯 보이거나 카메라/아바타가 어긋날 때 호출.
+  Future<void> setUserLocation(double lat, double lng) async {}
+
   /// 위성지도 레이어 토글
   void setSatelliteVisible(bool visible) {}
 

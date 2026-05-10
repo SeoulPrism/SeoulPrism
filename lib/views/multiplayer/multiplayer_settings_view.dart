@@ -51,7 +51,9 @@ class _MultiplayerSettingsViewState extends State<MultiplayerSettingsView> {
                 _SwitchRow(
                   icon: Icons.pause_circle_filled_rounded,
                   label: 'Seoul Live 일시정지',
-                  hint: '데이터는 유지하고, 위치 송신/만남 알림만 멈춰요',
+                  hint: '✓ 채팅 / 친구방 입장 / 친구 신청 — 가능\n'
+                      '✗ 위치 송신 / 만남 알림 / 핀 표시 — 차단\n'
+                      '데이터는 그대로 유지',
                   value: svc.seoulLivePaused,
                   onChanged: svc.setSeoulLivePaused,
                 ),

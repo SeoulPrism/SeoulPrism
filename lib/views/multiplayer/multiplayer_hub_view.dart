@@ -129,6 +129,38 @@ class _MultiplayerHubViewState extends State<MultiplayerHubView> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
       children: [
+        // #11 일시정지 중 — 상단에 명확한 배지.
+        if (svc.seoulLivePaused) ...[
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.tertiaryContainer,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.pause_circle_filled_rounded,
+                    size: 18,
+                    color: Theme.of(context).colorScheme.onTertiaryContainer),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Seoul Live 일시정지 중 — 위치/알림 차단, 채팅은 가능',
+                    style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Theme.of(context).colorScheme.onTertiaryContainer),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => svc.setSeoulLivePaused(false),
+                  child: const Text('재개'),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
         AdaptiveSectionCard(
           children: [
             _ProfileSummary(

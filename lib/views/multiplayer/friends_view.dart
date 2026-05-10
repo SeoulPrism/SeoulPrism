@@ -40,6 +40,9 @@ class _FriendsViewState extends State<FriendsView> {
     if (mounted) setState(() {});
   }
 
+  /// userId → cooldown 만료 시각 (없으면 null).
+  final Map<String, DateTime?> _cooldowns = {};
+
   Future<void> _runSearch(String q) async {
     final query = q.trim();
     if (query.isEmpty) {
@@ -56,8 +59,18 @@ class _FriendsViewState extends State<FriendsView> {
     });
     final res = await MultiplayerService.instance.searchByNickname(query);
     if (!mounted) return;
+    // 각 결과의 cooldown 일괄 조회 (병렬).
+    final cooldownEntries = await Future.wait(res.map((p) async {
+      final t = await MultiplayerService.instance
+          .friendRequestCooldownUntil(p.userId);
+      return MapEntry(p.userId, t);
+    }));
+    if (!mounted) return;
     setState(() {
       _searchResults = res;
+      _cooldowns
+        ..clear()
+        ..addEntries(cooldownEntries);
       _searching = false;
       _searchedOnce = true;
     });
@@ -236,6 +249,20 @@ class _FriendsViewState extends State<FriendsView> {
   Widget _buildSearchTrailing(MultiplayerProfile p) {
     final cs = Theme.of(context).colorScheme;
     final state = _stateFor(p.userId);
+    // #19 cooldown 이 있고 친구 아님 — "N일 후 재신청" 표시 (신청 버튼 비활성).
+    final cooldown = _cooldowns[p.userId];
+    if (state == _FriendState.none && cooldown != null) {
+      final hoursLeft = cooldown.difference(DateTime.now()).inHours;
+      final daysLeft = (hoursLeft / 24).ceil();
+      return Tooltip(
+        message: '거절당한 신청은 7일 후 다시 보낼 수 있어요',
+        child: Text(
+          daysLeft >= 1 ? '$daysLeft일 후 재신청' : '$hoursLeft시간 후',
+          style: TextStyle(
+              fontSize: 11, color: cs.onSurfaceVariant.withValues(alpha: 0.7)),
+        ),
+      );
+    }
     return switch (state) {
       _FriendState.friend => Text('친구',
           style: TextStyle(
@@ -266,7 +293,9 @@ class _FriendsViewState extends State<FriendsView> {
     setState(() => _justRequestedIds.add(p.userId));
     try {
       await MultiplayerService.instance.sendFriendRequest(p.userId);
-      showAppSnackBar('${p.nickname} 님에게 친구 신청을 보냈어요');
+      showAppSnackBar(
+          '${p.nickname} 님에게 친구 신청 — 수락하면 푸시 알림이 와요',
+          duration: const Duration(seconds: 4));
     } catch (e) {
       if (mounted) setState(() => _justRequestedIds.remove(p.userId));
       showAppSnackBar(e.toString().replaceFirst('Exception: ', ''));
