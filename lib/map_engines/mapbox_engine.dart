@@ -2384,6 +2384,30 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
     }
   }
 
+  @override
+  Future<void> setUserLocation(double lat, double lng) async {
+    if (_mapboxMap == null) return;
+    // 레이어가 아직 없으면 (enableLocationPuck 가 실패했거나 호출 전) 먼저 생성.
+    if (!_locationEnabled) {
+      _locationEnabled = true;
+      await _initLocationLayers();
+    }
+    final pos = geo.Position(
+      latitude: lat,
+      longitude: lng,
+      timestamp: DateTime.now(),
+      accuracy: 10.0,
+      altitude: 0.0,
+      altitudeAccuracy: 0.0,
+      heading: 0.0,
+      headingAccuracy: 0.0,
+      speed: 0.0,
+      speedAccuracy: 0.0,
+    );
+    _currentPosition = pos;
+    await _updateLocationAvatar(pos);
+  }
+
   Future<void> _initLocationLayers() async {
     if (_mapboxMap == null) return;
     final style = _mapboxMap!.style;
