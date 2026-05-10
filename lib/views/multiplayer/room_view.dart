@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../models/multiplayer_models.dart';
@@ -289,11 +290,20 @@ class _RoomViewState extends State<RoomView> {
                 final p = svc.peerProfile(uid);
                 final isMe = uid == svc.myId;
                 final isMeeting = svc.activeMeetups.contains(uid);
+                final loc = svc.peerLocations[uid];
+                double? distM;
+                if (room.hasDestination && loc != null && !loc.isOffline) {
+                  distM = Geolocator.distanceBetween(
+                    loc.lat, loc.lng,
+                    room.destLat!, room.destLng!,
+                  );
+                }
                 return _MemberRow(
                   profile: p,
                   fallbackId: uid,
                   isMe: isMe,
                   isMeeting: isMeeting,
+                  distanceToDestM: distM,
                   showKick: isOwner && !isMe,
                   onKick: () => _confirmKick(uid, p?.nickname),
                   // #9 멤버 탭 → 프로필 카드 (거리/위치/액션).
@@ -434,6 +444,8 @@ class _MemberRow extends StatelessWidget {
   final bool showKick;
   final VoidCallback? onKick;
   final VoidCallback? onTap;
+  /// 방 목적지까지 직선거리 (m). null = 표시 안 함.
+  final double? distanceToDestM;
 
   const _MemberRow({
     required this.profile,
@@ -443,7 +455,13 @@ class _MemberRow extends StatelessWidget {
     this.showKick = false,
     this.onKick,
     this.onTap,
+    this.distanceToDestM,
   });
+
+  String _fmtDist(double m) {
+    if (m < 1000) return '${m.round()}m';
+    return '${(m / 1000).toStringAsFixed(1)}km';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -471,6 +489,16 @@ class _MemberRow extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                     color: cs.onSurface)),
           ),
+          if (distanceToDestM != null) ...[
+            Icon(Icons.flag_rounded, size: 14, color: cs.primary),
+            const SizedBox(width: 2),
+            Text(_fmtDist(distanceToDestM!),
+                style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: cs.primary)),
+            const SizedBox(width: 8),
+          ],
           if (isMeeting)
             Container(
               padding:
