@@ -102,88 +102,101 @@ class _M3CapsuleNavBarState extends State<_M3CapsuleNavBar>
     final bottomPadding = MediaQuery.of(context).padding.bottom;
     final itemCount = widget.items.length;
 
+    // 좌우 12px 안전 마진 확보 후 사용 가능한 폭 안에서 itemWidth 자동 계산.
+    // 큰 화면(태블릿)에서는 88dp 상한, 작은 화면(폴드 내부 등) 에서는 자동 축소.
+    // heightFactor: 1.0 — 가로는 부모 폭 채우되 세로는 child 높이로 축소.
+    // Scaffold.bottomNavigationBar 슬롯은 loose height 를 줘서, 단순 Center 를
+    // 쓰면 화면 절반 높이로 부풀고 그 안에서 다시 중앙 정렬되어 탭바가 정중앙에 떠버림.
     return Padding(
       padding: EdgeInsets.only(bottom: bottomPadding + 12),
-      child: UnconstrainedBox(
-        child: Material(
-          elevation: 6,
-          shadowColor: cs.shadow.withValues(alpha: 0.25),
-          borderRadius: BorderRadius.circular(28),
-          color: cs.surfaceContainer,
-          clipBehavior: Clip.antiAlias,
-          child: SizedBox(
-            height: 56,
-            child: LayoutBuilder(builder: (context, constraints) {
-              return Stack(
-                children: [
-                  // 슬라이딩 인디케이터
-                  AnimatedBuilder(
-                    animation: _slideAnim,
-                    builder: (context, _) {
-                      const w = 88.0;
-                      final from = _prevIndex * w;
-                      final to = widget.currentIndex * w;
-                      final current = from + (to - from) * _slideAnim.value;
+      child: Align(
+        alignment: Alignment.bottomCenter,
+        heightFactor: 1.0,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: LayoutBuilder(builder: (context, constraints) {
+            const maxItemWidth = 88.0;
+            final available = constraints.maxWidth;
+            final itemWidth = (available / itemCount).clamp(56.0, maxItemWidth);
+            final barWidth = itemWidth * itemCount;
+            return Material(
+              elevation: 6,
+              shadowColor: cs.shadow.withValues(alpha: 0.25),
+              borderRadius: BorderRadius.circular(28),
+              color: cs.surfaceContainer,
+              clipBehavior: Clip.antiAlias,
+              child: SizedBox(
+                width: barWidth,
+                height: 56,
+                child: Stack(
+                  children: [
+                    AnimatedBuilder(
+                      animation: _slideAnim,
+                      builder: (context, _) {
+                        final from = _prevIndex * itemWidth;
+                        final to = widget.currentIndex * itemWidth;
+                        final current =
+                            from + (to - from) * _slideAnim.value;
 
-                      return Positioned(
-                        left: current + 4,
-                        top: 4,
-                        child: Container(
-                          width: w - 8,
-                          height: 48,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(28),
-                            color: cs.primaryContainer,
+                        return Positioned(
+                          left: current + 4,
+                          top: 4,
+                          child: Container(
+                            width: itemWidth - 8,
+                            height: 48,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(28),
+                              color: cs.primaryContainer,
+                            ),
                           ),
-                        ),
-                      );
-                    },
-                  ),
-                  // 탭 아이템들
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: List.generate(itemCount, (i) {
-                      final item = widget.items[i];
-                      final selected = i == widget.currentIndex;
-                      return GestureDetector(
-                        onTap: () => widget.onTap(i),
-                        behavior: HitTestBehavior.opaque,
-                        child: SizedBox(
-                          width: 88,
-                          height: 56,
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                item.icon,
-                                size: 20,
-                                color: selected
-                                    ? cs.onPrimaryContainer
-                                    : cs.onSurfaceVariant,
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                item.label,
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: selected
-                                      ? FontWeight.w700
-                                      : FontWeight.w500,
+                        );
+                      },
+                    ),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: List.generate(itemCount, (i) {
+                        final item = widget.items[i];
+                        final selected = i == widget.currentIndex;
+                        return GestureDetector(
+                          onTap: () => widget.onTap(i),
+                          behavior: HitTestBehavior.opaque,
+                          child: SizedBox(
+                            width: itemWidth,
+                            height: 56,
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  item.icon,
+                                  size: 20,
                                   color: selected
                                       ? cs.onPrimaryContainer
                                       : cs.onSurfaceVariant,
                                 ),
-                              ),
-                            ],
+                                const SizedBox(height: 2),
+                                Text(
+                                  item.label,
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: selected
+                                        ? FontWeight.w700
+                                        : FontWeight.w500,
+                                    color: selected
+                                        ? cs.onPrimaryContainer
+                                        : cs.onSurfaceVariant,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                      );
-                    }),
-                  ),
-                ],
-              );
-            }),
-          ),
+                        );
+                      }),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }),
         ),
       ),
     );

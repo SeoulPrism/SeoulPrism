@@ -15,6 +15,18 @@ abstract class IMapController {
     double? bearing,
     int durationMs = 1200,
   }) {}
+  /// 카메라 즉시 스냅 (애니메이션 X). flyTo 의 호 모션은 먼 거리(수십 km)에서
+  /// 중간 줌이 12 미만으로 떨어져 Mapbox Standard 의 3D extrusion 이 꺼지고
+  /// 광역 타일을 한꺼번에 fetch 하는데, Android 는 tile decode 가 느려서
+  /// 화면이 일순간 비고 frame skip 발생. 그런 케이스에 대비한 직접 setCamera.
+  void snapTo(double lat, double lng,
+      {double? zoom, double? pitch, double? bearing}) {}
+  /// 시네마틱 도착 (easeTo + follow lock). snap 직후 자연스러운 "위로 올라오는"
+  /// 효과를 만들기 위해 사용. easeTo 가 진행되는 동안 followTrain 의 setCamera
+  /// 호출이 카메라를 끌어당기지 않도록 내부 _flyToEndTime + _isFollowing flag 도
+  /// 함께 세팅. 호출 직후 primeFollowMode() 별도로 부르지 말 것.
+  void arriveAt(double lat, double lng,
+      {double? zoom, double? pitch, double? bearing, int durationMs = 800}) {}
   void toggleLayer(String layerId, bool visible);
   void setPitch(double pitch);
   void setBearing(double bearing);
@@ -217,6 +229,24 @@ abstract class IMapController {
 
   /// 버스 위치 일괄 업데이트 (3D 블록)
   Future<void> updateBusPositions3D(List<BusRenderData> buses) async {}
+
+  // ── 멀티플레이어 peer 핀 (지하철 마커와 충돌 회피용 별도 매니저) ──
+  /// peer 핀 추가/갱신 — 같은 id 호출 시 위치만 이동.
+  Future<void> upsertPeerPin(
+    String id,
+    double lat,
+    double lng, {
+    required Color color,
+  }) async {}
+
+  /// peer 핀 제거.
+  void removePeerPin(String id) {}
+
+  /// 모든 peer 핀 제거 (방 나갈 때).
+  void clearPeerPins() {}
+
+  /// peer 핀 탭 콜백. userId 받음.
+  void setOnPeerPinTapped(void Function(String userId)? callback) {}
 }
 
 /// 항공기 렌더링 데이터

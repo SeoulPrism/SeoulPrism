@@ -1,9 +1,10 @@
 import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'adaptive_glass_container.dart';
 
-/// iOS: CupertinoTextField
-/// Android: Material 3 TextField
+/// iOS: CupertinoTextField (glass=true 면 LiquidGlassContainer 로 래핑)
+/// Android: Material 3 TextField (filled tonal)
 class AdaptiveTextField extends StatelessWidget {
   final TextEditingController? controller;
   final FocusNode? focusNode;
@@ -14,6 +15,10 @@ class AdaptiveTextField extends StatelessWidget {
   final EdgeInsetsGeometry padding;
   final ValueChanged<String>? onChanged;
   final ValueChanged<String>? onSubmitted;
+  /// iOS 에서 LiquidGlass 컨테이너로 감쌀지. 기본 true 로 변경 — 앱 전체 글라스 일관성.
+  final bool glass;
+  /// 글라스 컨테이너 코너 반경.
+  final double glassRadius;
 
   const AdaptiveTextField({
     super.key,
@@ -23,25 +28,37 @@ class AdaptiveTextField extends StatelessWidget {
     this.style,
     this.placeholderStyle,
     this.decoration,
-    this.padding = const EdgeInsets.symmetric(horizontal: 12),
+    this.padding = const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
     this.onChanged,
     this.onSubmitted,
+    this.glass = true,
+    this.glassRadius = 14,
   });
 
   @override
   Widget build(BuildContext context) {
     if (Platform.isIOS) {
-      return CupertinoTextField(
+      final field = CupertinoTextField(
         controller: controller,
         focusNode: focusNode,
         placeholder: placeholder,
-        placeholderStyle: placeholderStyle,
-        style: style,
-        decoration: decoration,
+        placeholderStyle: placeholderStyle ??
+            const TextStyle(color: Color(0xFF8E8E93), fontSize: 14),
+        style: style ?? const TextStyle(color: Colors.white, fontSize: 15),
+        // glass=true 일 때 내부 데코는 투명 (글라스가 배경 담당).
+        decoration: glass ? const BoxDecoration() : decoration,
         padding: padding,
+        cursorColor: const Color(0xFF7C5CFF),
         onChanged: onChanged,
         onSubmitted: onSubmitted,
       );
+      if (glass) {
+        return AdaptiveGlassContainer.rect(
+          cornerRadius: glassRadius,
+          child: field,
+        );
+      }
+      return field;
     }
 
     // Android: Material 3 TextField (컴팩트)

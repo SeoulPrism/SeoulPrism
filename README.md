@@ -1,4 +1,6 @@
-# SeoulPrism
+# Seoul Vista
+
+[![Download on the App Store](https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/en-us?size=250x83)](https://apps.apple.com/us/app/seoul-vista/id6764241077)
 
 서울시 공공데이터 실시간 3D 시각화 플랫폼. 지하철 열차의 실시간 위치를 OSM 선로 위에서 60fps로 재현하고, SNS 콘텐츠 기반 AI 하루 플랜을 생성한다.
 
@@ -70,7 +72,8 @@
 
 ### 인증
 - 이메일/비밀번호 로그인 및 회원가입
-- Google, Apple, Kakao 소셜 로그인
+- Google, Apple 소셜 로그인
+- 게스트(익명) 모드 — 30일 미사용 시 자동 삭제
 - 아이디 찾기, 비밀번호 재설정, 회원 탈퇴
 
 ### Platform-Adaptive UI
@@ -156,15 +159,22 @@ lib/
 - [x] 열차/역 인터랙션 및 카메라 추적
 - [x] 지연 감지 시스템
 - [x] 환경 시스템 (날씨, 조명)
-- [x] 인증 (이메일, Google, Apple, Kakao)
+- [x] 인증 (이메일, Google, Apple) + 게스트 모드
 - [x] Platform-adaptive UI (iOS Liquid Glass / Android Material 3)
 - [x] 라이트/다크 모드
 - [x] SNS AI 플랜 (Gemini Vision)
+- [x] Gemini Live AI 음성 비서
 - [x] 기기별 자동 성능 최적화
 - [x] 혼잡도 히트맵
+- [x] 길찾기 (지하철 + 자동차 + 도보, TMAP turn-by-turn)
+- [x] 다이나믹 아일랜드 길찾기 라이브 액티비티
+- [x] 온보딩 튜토리얼 + 시그니처 로딩 시퀀스
+- [x] 여행 탭 (저장 장소 기반 하루 플랜)
+- [x] **App Store 출시** (2026-05)
 - [ ] 2~9호선 역간소요시간 실측 수집
 - [ ] 코레일 기차 모드
 - [ ] AI 카메라 애니메이션
+- [ ] 버스 오프라인 데이터 + 통합 길찾기
 
 ## 버전
 
@@ -174,3 +184,7 @@ lib/
 | v1.0.0-beta3 | Platform-adaptive UI 시스템 |
 | v1.0.0-beta4 | Android Google 로그인 수정 |
 | v1.0.0-beta5 | AI 플랜 + 라이트/다크 모드 + 기기별 성능 최적화 + 검색 개선 |
+| v1.0.1-beta | Gemini Live AI 음성 비서 통합 |
+| v1.0.2 | Apple 심사 재제출 + 길찾기 능동화 + 다이나믹 아일랜드 + 게스트 모드 |
+| v1.0.3 | 온보딩 튜토리얼 + 여행 탭(저장 장소 기반 하루 플랜) + 설정 통합 + 디버그 로그 토글 |
+| **v1.0.3 (출시)** | **App Store 정식 출시 — Seoul Vista** |

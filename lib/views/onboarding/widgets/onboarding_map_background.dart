@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../../core/debug_log.dart';
 import '../../../core/map_interface.dart';
@@ -162,12 +163,14 @@ class _OnboardingMapBackgroundState extends State<OnboardingMapBackground> {
 
     // 이전 follow 정리
     _customFollowTimer?.cancel();
+    _flight.onAnimationTick = null;
     _followingBusVehId = null;
     _followingFlightIcao = null;
     _subway.deselectTrain();
     _bus.deselectBus();
     _bus.deselectVessel();
 
+    final prevCam = _sceneCameras[_scene]!;
     _scene = s;
     _idleRotateTimer?.cancel();
 
@@ -177,27 +180,52 @@ class _OnboardingMapBackgroundState extends State<OnboardingMapBackground> {
     // 없으면 씬 카메라로 가서 polling.
     final initialTarget = _findNearestForScene(s, cam);
 
+    final tgtLat = initialTarget?.$1 ?? cam.lat;
+    final tgtLng = initialTarget?.$2 ?? cam.lng;
+    final useSnap = _shouldSnap(prevCam.lat, prevCam.lng, tgtLat, tgtLng);
+
+    // 버스/비행기는 컨트롤러 자체에 arrival 애니메이션이 없어, snap 직후 setCamera 가
+    // 즉시 박혀버려 "위로 올라오는" 시네마틱 효과 부재. 지하철/한강버스는 selectTrain/
+    // selectVessel 내부에서 followTrain(첫 호출) flyTo 가 자동 발생해 OK.
+    // → Android 에서 버스/비행기 진입 시: 살짝 wider+flatter 로 snap → arriveAt 으로
+    //   target zoom/pitch 까지 800ms easeTo (지하철의 followTrain flyTo 와 동일한 톤).
+    final needsArrival = useSnap && (s == _Scene.bus || s == _Scene.flight);
+
+    if (useSnap) {
+      if (needsArrival) {
+        _mapController!.snapTo(tgtLat, tgtLng,
+            zoom: cam.zoom - 1.5,
+            pitch: (cam.pitch - 15).clamp(0, 85).toDouble(),
+            bearing: cam.bearing);
+      } else {
+        // 지하철/한강버스 (또는 거리 기반으로 향후 변경 시 일반 snap)
+        _mapController!.snapTo(tgtLat, tgtLng,
+            zoom: cam.zoom, pitch: cam.pitch, bearing: cam.bearing);
+      }
+    } else {
+      // iOS: flyTo 포물선 시네마틱 (출시본 그대로 유지)
+      _mapController!.moveTo(tgtLat, tgtLng,
+          zoom: cam.zoom,
+          pitch: cam.pitch,
+          bearing: cam.bearing,
+          durationMs: 1200);
+    }
+
     if (initialTarget != null) {
-      // flyTo 포물선 — 살짝 올라갔다 내려오는 시네마틱 모션. 한강버스가 좋아 사용자가 좋아함.
-      _mapController!.moveTo(
-        initialTarget.$1,
-        initialTarget.$2,
-        zoom: cam.zoom,
-        pitch: cam.pitch,
-        bearing: cam.bearing,
-        durationMs: 1200,
-      );
-      _mapController!.primeFollowMode();
+      if (needsArrival) {
+        // arriveAt = easeTo + _isFollowing/_flyToEndTime lock.
+        // custom follow 의 setCamera 가 800ms 동안 무시되어 easeTo 가 안 끊김.
+        // primeFollowMode 는 부르지 말 것 (arriveAt 이 같은 flag 처리함).
+        _mapController!.arriveAt(tgtLat, tgtLng,
+            zoom: cam.zoom,
+            pitch: cam.pitch,
+            bearing: cam.bearing,
+            durationMs: 900);
+      } else {
+        _mapController!.primeFollowMode();
+      }
       _bindFollow(s, initialTarget.$3);
     } else {
-      _mapController!.moveTo(
-        cam.lat,
-        cam.lng,
-        zoom: cam.zoom,
-        pitch: cam.pitch,
-        bearing: cam.bearing,
-        durationMs: 1200,
-      );
       // polling 후 데이터 도착하면 부드럽게 차량으로 bridge.
       await Future.delayed(const Duration(milliseconds: 600));
       if (_disposed || _scene != s) return;
@@ -210,6 +238,13 @@ class _OnboardingMapBackgroundState extends State<OnboardingMapBackground> {
       await _waitDataAndBridge(s, cam);
     }
   }
+
+  /// Android 는 onboarding 씬 전환을 모두 snap 으로. iOS 는 flyTo 시네마틱 유지.
+  /// Mapbox Android 가 flyTo 호 모션 + 3D extrusion + 광역 타일 fetch 를 동시에
+  /// 잘 못 처리해서 가까운 거리도 끊김/blank 가 발생하는 경우가 있고,
+  /// 사용자 선호가 "Android 는 깔끔히 끊어가는 룩" 으로 일관 처리하는 것.
+  bool _shouldSnap(double aLat, double aLng, double bLat, double bLng) =>
+      Platform.isAndroid;
 
   /// 해당 씬의 가장 가까운 차량 정보 (없으면 null).
   /// 반환: (lat, lng, vehicleKey) — vehicleKey 는 follow 식별자 (트레인 no/vehId/vesselId/icao24).
@@ -307,24 +342,37 @@ class _OnboardingMapBackgroundState extends State<OnboardingMapBackground> {
 
   /// 버스/항공기 — 컨트롤러에 내장 follow 가 없어 직접 Timer 로 카메라 추적.
   /// followTrain 은 primeFollowMode 덕분에 setCamera(center) 만 함 — 즉시 평면 스냅.
+  ///
+  /// 비행기는 flight overlay 의 `_animationTick` 안에서 직접 카메라 갱신 (콜백).
+  /// 별도 Timer 를 쓰면 두 Timer 의 phase 가 마이크로초 단위로 어긋나
+  /// 카메라가 icon 보다 한 프레임 앞/뒤로 흔들리는 sub-frame aliasing 발생 →
+  /// Android Mapbox 가 그걸 그대로 화면에 드러내 "덜덜거림" 으로 보임.
+  /// icon write 직후 같은 tick 에 setCamera 하면 두 좌표가 정확히 매치돼 안 흔들림.
+  ///
+  /// 버스는 _busSimTimer (33ms) 가 step + flush 모두 같은 tick 에 처리하니
+  /// 그 옆에 별도 33ms 카메라 timer 가 있어도 Mapbox 입장에서 좌표가 일관.
   void _runCustomFollow() {
     _customFollowTimer?.cancel();
-    // 33ms = 30fps — 보간 컨트롤러의 갱신 주기와 매칭. 더 빠르면 같은 좌표 반복 호출.
-    _customFollowTimer = Timer.periodic(const Duration(milliseconds: 33), (_) {
-      if (_disposed || _mapController == null) return;
-      if (_followingBusVehId != null) {
-        final pos = _busSim.findById(_followingBusVehId!);
-        if (pos != null) {
-          _mapController!.followTrain(pos.lat, pos.lng, pos.bearing);
-        }
-      } else if (_followingFlightIcao != null) {
-        // 보간된 위치 — 16~33ms 마다 갱신되어 덜덜거림 없음.
+    _flight.onAnimationTick = null;
+
+    if (_followingFlightIcao != null) {
+      _flight.onAnimationTick = () {
+        if (_disposed || _mapController == null) return;
         final pos = _flight.interpolatedById(_followingFlightIcao!);
         if (pos != null) {
           _mapController!.followTrain(pos.lat, pos.lng, pos.heading);
         }
-      }
-    });
+      };
+    } else if (_followingBusVehId != null) {
+      _customFollowTimer =
+          Timer.periodic(const Duration(milliseconds: 33), (_) {
+        if (_disposed || _mapController == null) return;
+        final pos = _busSim.findById(_followingBusVehId!);
+        if (pos != null) {
+          _mapController!.followTrain(pos.lat, pos.lng, pos.bearing);
+        }
+      });
+    }
   }
 
   void _idleRotateLoop() {
@@ -344,6 +392,7 @@ class _OnboardingMapBackgroundState extends State<OnboardingMapBackground> {
   void _zoomOutToCity() {
     if (_disposed || _mapController == null) return;
     _customFollowTimer?.cancel();
+    _flight.onAnimationTick = null;
     _idleRotateTimer?.cancel();
     _followingBusVehId = null;
     _followingFlightIcao = null;
@@ -351,6 +400,16 @@ class _OnboardingMapBackgroundState extends State<OnboardingMapBackground> {
     _bus.deselectBus();
     _bus.deselectVessel();
     _scene = _Scene.initial;
+
+    // finish 시퀀스 (1.8s flyTo + fade) 동안 HomeView 가 뒤에서 mount 돼
+    // 자기 SubwayOverlay/BusOverlay/FlightOverlay (각 422 trains 등) 를 띄움.
+    // 두 맵의 시뮬레이터가 동시에 돌면 안드로이드에서 main thread blocking →
+    // "Skipped 46 frames" 발생. zoom 14 광역 뷰에서는 차량 아이콘이 안 보이는 줌이라
+    // 시각 손실 없이 즉시 정지해 GPU/CPU 부담을 절반으로 줄임.
+    _busSimTimer?.cancel();
+    _subway.stop();
+    _bus.stop();
+    _flight.stop();
 
     // HomeView 의 SubwayOverlay 가 곧 적용할 환경 (시간/날씨 기반) 을 미리 매칭.
     // 똑같은 lightPreset/fog 로 풀어주면 페이드 시 두 맵이 같은 룩으로 보임.
@@ -361,14 +420,10 @@ class _OnboardingMapBackgroundState extends State<OnboardingMapBackground> {
       atmosphereRange: 1.0,
     );
 
-    _mapController!.moveTo(
-      37.5665,
-      126.9780,
-      zoom: 14.0,
-      pitch: 50,
-      bearing: -15,
-      durationMs: 1800,
-    );
+    // 튜토리얼 → 홈뷰 전환 (앱 시작 시퀀스) 은 항상 부드러운 flyTo.
+    // snap 효과는 in-tutorial 의 지하철/버스/한강버스/비행기 씬 전환에만 사용.
+    _mapController!.moveTo(37.5665, 126.9780,
+        zoom: 14.0, pitch: 50, bearing: -15, durationMs: 1800);
   }
 
   @override

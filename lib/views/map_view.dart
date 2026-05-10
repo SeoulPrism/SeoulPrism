@@ -23,6 +23,12 @@ import '../models/bus_models.dart';
 import '../services/seoul_bus_service.dart';
 import '../widgets/weather_widget.dart';
 import '../widgets/subway_panel.dart';
+import '../services/multiplayer_service.dart';
+import '../widgets/multiplayer/seoul_live_overlays.dart';
+import '../widgets/multiplayer/peer_pin_renderer.dart';
+import '../widgets/multiplayer/live_sharing_badge.dart';
+import '../widgets/app_snackbar.dart';
+import 'multiplayer/peer_profile_card.dart';
 import '../widgets/search_bar.dart';
 import '../services/place_search_service.dart';
 import '../services/favorites_service.dart';
@@ -230,6 +236,60 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     // 위젯/Control 에서 들어온 URL 처리 (com.seoul.prism://route?dep=...&arr=...).
     IncomingUrlService.instance.onUrl(_handleIncomingUrl);
+
+    // Seoul Live (멀티플레이) 상태 변동 시 탭바 모핑/인트로 트리거.
+    MultiplayerService.instance.addListener(_onMultiplayerChanged);
+    // 위치 권한 거부 시 사용자에게 안내 (1회).
+    MultiplayerService.instance.addLocationDeniedListener(_onLocationDenied);
+    // 처음 진입 시 이미 활성 + 튜토리얼 미시청이면 다음 frame 에 인트로 시작.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (MultiplayerService.instance.seoulLiveActive) {
+        SeoulLiveOverlays.maybeRunIntro(context);
+      }
+    });
+  }
+
+  bool _seoulLiveLastSeen =
+      MultiplayerService.instance.seoulLiveActive;
+  PeerPinRenderer? _peerPinRenderer;
+
+  void _onMultiplayerChanged() {
+    if (!mounted) return;
+    final active = MultiplayerService.instance.seoulLiveActive;
+    final flippedOn = !_seoulLiveLastSeen && active;
+    _seoulLiveLastSeen = active;
+    setState(() {});
+    // G1: peer 핀 렌더러 attach/detach.
+    _syncPeerPinRenderer();
+    if (flippedOn) _waitForFocusThenRunIntro();
+  }
+
+  void _syncPeerPinRenderer() {
+    final mc = _mapController;
+    final active = MultiplayerService.instance.seoulLiveActive;
+    if (mc == null) return;
+    if (active && _peerPinRenderer == null) {
+      _peerPinRenderer = PeerPinRenderer(mc)..attach();
+    } else if (!active && _peerPinRenderer != null) {
+      _peerPinRenderer?.detach();
+      _peerPinRenderer = null;
+    }
+  }
+
+  /// 프로필 생성은 보통 ProfileEditSheet (modal) 안에서 일어나므로
+  /// 우리가 최상위 route 가 될 때까지 대기 후 인트로 실행.
+  void _waitForFocusThenRunIntro() {
+    void attempt() {
+      if (!mounted) return;
+      final route = ModalRoute.of(context);
+      if (route != null && route.isCurrent) {
+        SeoulLiveOverlays.maybeRunIntro(context);
+      } else {
+        Future.delayed(const Duration(milliseconds: 150), attempt);
+      }
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) => attempt());
   }
 
   void _handleIncomingUrl(Uri url) {
@@ -255,7 +315,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _subwayController.dispose();
     _busController.dispose();
     _flightController.dispose();
+    MultiplayerService.instance.removeListener(_onMultiplayerChanged);
+    MultiplayerService.instance.removeLocationDeniedListener(_onLocationDenied);
+    _peerPinRenderer?.detach();
     super.dispose();
+  }
+
+  void _onLocationDenied() {
+    if (!mounted) return;
+    showAppSnackBar('위치 권한이 없어서 친구가 내 핀을 못 봐요. 설정 → 위치 에서 허용해주세요.');
   }
 
   // ── 경로 지도 표시 ──
@@ -696,6 +764,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   void _onMapCreated(IMapController controller) {
     _mapController = controller;
+    // G1: 맵 ready 시점에 Seoul Live active 면 즉시 peer 핀 렌더러 attach.
+    _syncPeerPinRenderer();
+    // R1: peer 핀 탭 → 프로필 카드.
+    controller.setOnPeerPinTapped((userId) {
+      if (mounted) PeerProfileCard.show(context, userId);
+    });
     _subwayController.attachMap(controller);
     _busController.attachMap(controller);
     _busController.onStateChanged = () {
@@ -922,6 +996,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
               onProfileTap: () => _openProfile(),
             ),
 
+            // G1: Seoul Live "위치 공유 중" 배지 (방 입장 + ghost 아닐 때).
+            Positioned(
+              top: MediaQuery.of(context).padding.top + 64,
+              left: 0,
+              right: 0,
+              child: Center(child: LiveSharingBadge()),
+            ),
+
             // 날씨/시간 위젯 (검색바 아래 좌측, 패널/검색/길찾기 시 페이드아웃)
             if (_subwayController.isActive)
               Positioned(
@@ -1015,8 +1097,45 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     size: 48,
                     iconSize: 22,
                     tint: const Color(0xFF4A90D9),
-                    onPressed: () {
-                      _mapController?.moveToCurrentLocation();
+                    onPressed: () async {
+                      debugPrint('[Loc] 내 위치 버튼 눌림');
+                      showAppSnackBar('위치 확인 중...');
+                      try {
+                        var permission = await geo.Geolocator.checkPermission();
+                        debugPrint('[Loc] checkPermission: $permission');
+                        if (permission == geo.LocationPermission.denied) {
+                          permission = await geo.Geolocator.requestPermission();
+                          debugPrint('[Loc] requestPermission: $permission');
+                        }
+                        if (permission == geo.LocationPermission.denied ||
+                            permission ==
+                                geo.LocationPermission.deniedForever) {
+                          showAppSnackBar(
+                              '위치 권한 거부됨 → iOS 설정 → Seoul Vista → 위치');
+                          return;
+                        }
+                        final svc =
+                            await geo.Geolocator.isLocationServiceEnabled();
+                        debugPrint('[Loc] serviceEnabled: $svc');
+                        if (!svc) {
+                          showAppSnackBar('iOS 설정 → 개인정보 → 위치 서비스 가 꺼져있어요');
+                          return;
+                        }
+                        // 직접 GPS fix 받아서 카메라 이동.
+                        final pos = await geo.Geolocator.getCurrentPosition(
+                          locationSettings: const geo.LocationSettings(
+                            accuracy: geo.LocationAccuracy.high,
+                            timeLimit: Duration(seconds: 20),
+                          ),
+                        );
+                        debugPrint('[Loc] 위치 fix: ${pos.latitude},${pos.longitude}');
+                        _mapController?.moveTo(pos.latitude, pos.longitude,
+                            zoom: 16.0);
+                        showAppSnackBar('내 위치로 이동했어요');
+                      } catch (e) {
+                        debugPrint('[Loc] 실패: $e');
+                        showAppSnackBar('위치 가져오기 실패: ${e.toString().substring(0, 50)}');
+                      }
                     },
                   ),
                 ),
@@ -2397,12 +2516,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
           }
         });
       },
-      items: const [
-        AdaptiveTabItem(label: '추천', icon: Icons.explore),
-        AdaptiveTabItem(label: '저장', icon: Icons.bookmark),
-        AdaptiveTabItem(label: '지도', icon: Icons.map),
-        AdaptiveTabItem(label: '여행', icon: Icons.calendar_month),
-        AdaptiveTabItem(label: 'AI', icon: Icons.auto_awesome),
+      // Seoul Live 활성 시 가운데 탭이 '지도'→'세계' (Icons.map→Icons.public_rounded) 로 모핑.
+      // 같은 탭 인덱스(2) 를 유지해 onTap 동작은 동일.
+      items: [
+        const AdaptiveTabItem(label: '추천', icon: Icons.explore),
+        const AdaptiveTabItem(label: '저장', icon: Icons.bookmark),
+        MultiplayerService.instance.seoulLiveActive
+            ? const AdaptiveTabItem(label: '세계', icon: Icons.public_rounded)
+            : const AdaptiveTabItem(label: '지도', icon: Icons.map),
+        const AdaptiveTabItem(label: '여행', icon: Icons.calendar_month),
+        const AdaptiveTabItem(label: 'AI', icon: Icons.auto_awesome),
       ],
     );
   }

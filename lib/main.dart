@@ -13,9 +13,13 @@ import 'services/favorites_service.dart';
 import 'services/recent_search_service.dart';
 import 'services/recent_route_service.dart';
 import 'services/visit_history_service.dart';
+import 'services/multiplayer_service.dart';
+import 'services/notification_service.dart';
 import 'theme/app_theme.dart';
+import 'widgets/notification_banner_overlay.dart';
+import 'widgets/app_snackbar.dart';
 import 'views/home_view.dart';
-import 'views/onboarding/launch_loading_view.dart';
+import 'views/onboarding/city_pulse_loading_view.dart';
 import 'views/onboarding/onboarding_view.dart';
 import 'views/onboarding/widgets/onboarding_map_background.dart';
 
@@ -75,6 +79,11 @@ Future<void> main() async {
     FavoritesService.instance.startRealtimeSync();
     VisitHistoryService.instance.startRealtimeSync();
     RecentRouteService.instance.startRealtimeSync();
+    // 멀티플레이 — 익명 사용자는 프로필 row 가 없을 수 있어 init() 은 no-op.
+    // 사용자가 hub 에 진입해 프로필을 작성하면 그때 다시 호출됨.
+    await MultiplayerService.instance.init();
+    // 푸시 알림 — 권한/토큰 등록 (백그라운드 진행 OK).
+    NotificationService.instance.init();
   }
 
   runApp(const SeoulPrismApp());
@@ -90,12 +99,18 @@ class SeoulPrismApp extends StatefulWidget {
     context.findAncestorStateOfType<_SeoulPrismAppState>()?.setThemeMode(mode);
   }
 
+  /// 위젯 트리 전체 재구성 — 테마 변경 후 모든 캐시된 색상/native 위젯 새로 빌드.
+  static void restartApp(BuildContext context) {
+    context.findAncestorStateOfType<_SeoulPrismAppState>()?.restartApp();
+  }
+
   @override
   State<SeoulPrismApp> createState() => _SeoulPrismAppState();
 }
 
 class _SeoulPrismAppState extends State<SeoulPrismApp> {
   final _navigatorKey = GlobalKey<NavigatorState>();
+  Key _appKey = UniqueKey();
   late ThemeMode _themeMode;
 
   @override
@@ -113,6 +128,7 @@ class _SeoulPrismAppState extends State<SeoulPrismApp> {
         FavoritesService.instance.startRealtimeSync();
         VisitHistoryService.instance.startRealtimeSync();
         RecentRouteService.instance.startRealtimeSync();
+        await MultiplayerService.instance.init();
         _navigatorKey.currentState?.pushAndRemoveUntil(
           MaterialPageRoute(builder: (_) => const HomeView()),
           (_) => false,
@@ -130,6 +146,10 @@ class _SeoulPrismAppState extends State<SeoulPrismApp> {
     SettingsService.instance.setThemeMode(mode);
   }
 
+  void restartApp() {
+    setState(() => _appKey = UniqueKey());
+  }
+
   ThemeMode _parseThemeMode(String mode) => switch (mode) {
     'light' => ThemeMode.light,
     'dark' => ThemeMode.dark,
@@ -140,14 +160,18 @@ class _SeoulPrismAppState extends State<SeoulPrismApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       navigatorKey: _navigatorKey,
+      scaffoldMessengerKey: rootScaffoldMessengerKey,
       title: 'Seoul Vista',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       themeMode: _themeMode,
+      // 인앱 알림 배너 — foreground 푸시 메시지 수신 시 상단에 슬라이드.
+      builder: (context, child) =>
+          NotificationBannerOverlay(child: child ?? const SizedBox.shrink()),
       // App Store 심사 가이드 5.1.1(v) — 계정 기반이 아닌 기능에 로그인 강제 금지.
       // 항상 HomeView 부터 진입 (게스트 허용). 로그인은 사용자가 명시적으로 시작 (즐겨찾기 동기화/프로필 등).
-      home: const _RootGate(),
+      home: KeyedSubtree(key: _appKey, child: const _RootGate()),
     );
   }
 }
@@ -165,6 +189,10 @@ enum _GatePhase {
   /// 튜토리얼 통과 사용자 — 로딩 화면 (subway 그리기 + 로고 + 페이드) 진행. HomeView 뒤에서 mount.
   launch,
 
+  /// 튜토리얼 사용자 (신규) — 같은 로딩 화면 진행. OnboardingView 뒤에서 mount 해
+  /// Mapbox/overlay 초기화 끝낸 뒤 시퀀스 종료 시 OnboardingView 노출. 첫 화면 + 무거운 init 겹침 회피.
+  tutorialLoading,
+
   /// 튜토리얼 진행 중 — OnboardingView only.
   tutorial,
 
@@ -176,7 +204,9 @@ enum _GatePhase {
 }
 
 class _RootGateState extends State<_RootGate> {
-  _GatePhase _phase = _GatePhase.tutorial;
+  // 신규 사용자 → tutorialLoading (로딩 후 OnboardingView). 통과 사용자 → launch (로딩 후 HomeView).
+  // initState 에서 _onboardingView 결과에 따라 결정.
+  _GatePhase _phase = _GatePhase.tutorialLoading;
   OnboardingView? _onboardingView;
   // GlobalKey 로 reparent 시 State 보존.
   final _onboardingKey = GlobalKey();
@@ -194,13 +224,18 @@ class _RootGateState extends State<_RootGate> {
       onFinishComplete: _onFinishComplete,
     );
     // 튜토리얼이 필요 없으면 launch 로딩 화면을 거쳐 HomeView 진입.
-    if (_onboardingView == null) {
-      _phase = _GatePhase.launch;
-    }
+    _phase = _onboardingView == null
+        ? _GatePhase.launch
+        : _GatePhase.tutorialLoading;
   }
 
   void _onLaunchLoadingComplete() {
     setState(() => _phase = _GatePhase.done);
+  }
+
+  /// tutorialLoading 시퀀스 끝나면 OnboardingView 만 노출 (LaunchLoadingView 제거).
+  void _onTutorialLoadingComplete() {
+    setState(() => _phase = _GatePhase.tutorial);
   }
 
   void _onFinishStart() {
@@ -228,7 +263,20 @@ class _RootGateState extends State<_RootGate> {
       return Stack(
         children: [
           HomeView(key: _homeKey),
-          LaunchLoadingView(onComplete: _onLaunchLoadingComplete),
+          CityPulseLoadingView(onComplete: _onLaunchLoadingComplete),
+        ],
+      );
+    }
+
+    // tutorialLoading — 신규 사용자 진입. OnboardingView 가 뒤에서 mount(맵/오버레이 초기화)
+    // 하는 동안 LaunchLoadingView 가 위에서 브랜드 시퀀스 진행. 시퀀스 끝나면 _onTutorialLoadingComplete
+    // 가 phase=tutorial 로 전환해 OnboardingView 만 남김. 이렇게 하면 무거운 init 과 첫 화면 표시
+    // 가 시간상 분리되어 사용자가 보는 첫 frame 부터 부드러움.
+    if (_phase == _GatePhase.tutorialLoading) {
+      return Stack(
+        children: [
+          _onboardingView!,
+          CityPulseLoadingView(onComplete: _onTutorialLoadingComplete),
         ],
       );
     }

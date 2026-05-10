@@ -1,10 +1,10 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../services/onboarding_service.dart';
 import '../../theme/app_typography.dart';
 import '../../widgets/adaptive/adaptive.dart';
 import 'onboarding_page.dart';
 import 'pages/living_city_page.dart';
+import 'pages/location_permission_page.dart';
 import 'pages/optimization_page.dart';
 import 'pages/pathfinding_page.dart';
 import 'pages/ready_page.dart';
@@ -45,6 +45,9 @@ class OnboardingView extends StatefulWidget {
       const OnboardingPage(id: LivingCityPage.id, body: LivingCityPage()),
       const OnboardingPage(id: PathfindingPage.id, body: PathfindingPage()),
       const OnboardingPage(id: OptimizationPage.id, body: OptimizationPage()),
+      // 위치 권한 — ready 직전 1장.
+      const OnboardingPage(
+          id: LocationPermissionPage.id, body: LocationPermissionPage()),
       const OnboardingPage(id: ReadyPage.id, body: ReadyPage()),
     ];
     final remainingIds =
@@ -91,9 +94,14 @@ class _OnboardingViewState extends State<OnboardingView>
     });
     _contentFadeCtrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 320),
-      value: 1.0,
+      duration: const Duration(milliseconds: 450),
+      value: 0.0, // 컨텐츠(텍스트/CTA/인디케이터) 만 페이드인. 맵은 그대로 즉시 표시.
     );
+    // 200ms 지연 후 페이드인 시작 — Mapbox GL 컨텍스트 초기화 첫 spike 가
+    // 보통 100~200ms 안에 끝나서 그 이후로 미루면 페이드 frame skip 안 생김.
+    Future.delayed(const Duration(milliseconds: 200), () {
+      if (mounted) _contentFadeCtrl.forward();
+    });
     _backdropFadeCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1100),
@@ -111,7 +119,7 @@ class _OnboardingViewState extends State<OnboardingView>
     _scaffoldFadeCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 600),
-      value: 1.0,
+      value: 1.0, // 등장 페이드는 _contentFadeCtrl 가 담당 (맵은 즉시).
     );
   }
 
@@ -219,48 +227,47 @@ class _OnboardingViewState extends State<OnboardingView>
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final isIos = Platform.isIOS;
+    // iOS 와 동일한 다크 글래스 룩으로 통일 — 배경 지도 위에 얹는 색이라
+    // 플랫폼 별 분기 시 가독성/일관성 모두 떨어짐. Android 도 동일 톤 사용.
+    const scaffoldBg = Color(0xFF0E1018);
+    final skipColor = Colors.white.withValues(alpha: 0.7);
+    const activeIndicator = Colors.white;
+    const inactiveIndicator = Color(0x66FFFFFF);
 
-    final scaffoldBg = isIos ? const Color(0xFF0E1018) : cs.surface;
-    final skipColor = isIos
-        ? Colors.white.withValues(alpha: 0.7)
-        : cs.onSurfaceVariant;
-    final activeIndicator = isIos ? Colors.white : cs.primary;
-    final inactiveIndicator =
-        isIos ? const Color(0x66FFFFFF) : cs.outlineVariant;
-
-    return AnimatedBuilder(
-      animation: _scaffoldFadeCtrl,
-      builder: (context, child) {
-        return Opacity(
-          opacity: _scaffoldFadeCtrl.value,
-          // Material 로 감싸야 텍스트 default underline (노란 줄) 안 생김.
-          child: Material(
-            color: Color.fromRGBO(
-              ((scaffoldBg.r) * 255).round(),
-              ((scaffoldBg.g) * 255).round(),
-              ((scaffoldBg.b) * 255).round(),
-              _scaffoldFadeCtrl.value,
+    // PopScope: Android 시스템 뒤로가기로 튜토리얼 dismiss 방지.
+    // 사용자는 "건너뛰기" 또는 "다음" 으로만 진행 가능 (App/Play Store 정책상 OK,
+    // 명시적 escape hatch 가 있으므로).
+    return PopScope(
+      canPop: false,
+      child: AnimatedBuilder(
+        animation: _scaffoldFadeCtrl,
+        builder: (context, child) {
+          return Opacity(
+            opacity: _scaffoldFadeCtrl.value,
+            // Material 로 감싸야 텍스트 default underline (노란 줄) 안 생김.
+            child: Material(
+              color: Color.fromRGBO(
+                ((scaffoldBg.r) * 255).round(),
+                ((scaffoldBg.g) * 255).round(),
+                ((scaffoldBg.b) * 255).round(),
+                _scaffoldFadeCtrl.value,
+              ),
+              child: child,
             ),
-            child: child,
-          ),
-        );
-      },
-      child: Stack(
+          );
+        },
+        child: Stack(
         fit: StackFit.expand,
         children: [
-          if (isIos) widget.background,
-          if (isIos)
-            FadeTransition(
-              opacity: _backdropFadeCtrl,
-              child: const AuroraOverlay(),
-            ),
-          if (isIos)
-            FadeTransition(
-              opacity: _backdropFadeCtrl,
-              child: _buildBackdropOverlay(),
-            ),
+          widget.background,
+          FadeTransition(
+            opacity: _backdropFadeCtrl,
+            child: const AuroraOverlay(),
+          ),
+          FadeTransition(
+            opacity: _backdropFadeCtrl,
+            child: _buildBackdropOverlay(),
+          ),
           // 페이지 컨텐츠 — finish 시 페이드.
           FadeTransition(
             opacity: _contentFadeCtrl,
@@ -268,7 +275,10 @@ class _OnboardingViewState extends State<OnboardingView>
               ignoring: _finishing,
               child: PageView(
                 controller: _controller,
-                physics: const PageScrollPhysics(),
+                // swipe 전면 비활성화 — 사용자는 "다음" 버튼으로만 진행.
+                // forward-only physics 는 빠른 swipe 에서 살짝 새는 느낌이 있어
+                // 아예 모든 swipe 차단이 가장 깔끔. forward swipe 도 같이 비활성됨.
+                physics: const NeverScrollableScrollPhysics(),
                 children: widget.pages.map((p) => p.body).toList(),
               ),
             ),
@@ -333,9 +343,11 @@ class _OnboardingViewState extends State<OnboardingView>
             ),
         ],
       ),
+      ),
     );
   }
 }
+
 
 /// 종료 시퀀스 정중앙 로고.
 /// _logoCtrl 0..1 단계: 등장(0~0.32) → 유지(0.32~0.7) → 페이드(0.7~1.0).

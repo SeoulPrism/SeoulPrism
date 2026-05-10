@@ -57,6 +57,10 @@ class FlightOverlayController {
   // 콜백
   VoidCallback? onStateChanged;
   void Function(FlightPosition flight)? onFlightSelected;
+  /// _animationTick 끝(렌더 직후) 마다 호출. 외부 카메라 follow 가
+  /// 별도 Timer 폴링 대신 이 콜백을 쓰면 icon 업데이트와 동일 tick 으로 동기 →
+  /// sub-frame phase aliasing 으로 인한 카메라 덜덜거림 제거.
+  VoidCallback? onAnimationTick;
 
   // ── Getters ──
   bool get isActive => _isActive;
@@ -364,6 +368,10 @@ class FlightOverlayController {
     }
 
     mc.updateFlightPositions3D(renderData);
+
+    // icon 위치 write 직후 외부 카메라 follow 가 같은 좌표를 읽도록.
+    // 별도 Timer 폴링은 phase 어긋나 Android 에서 sub-frame 덜덜거림 유발.
+    onAnimationTick?.call();
 
     // 선택된 비행기: 카메라 추적 + 실시간 정보 갱신
     if (_selectedFlight != null) {

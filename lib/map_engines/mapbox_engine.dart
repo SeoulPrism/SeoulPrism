@@ -26,10 +26,23 @@ class MapboxEngine extends StatefulWidget {
   State<MapboxEngine> createState() => _MapboxEngineState();
 }
 
+/// peer 핀 탭 listener (Mapbox Pigeon).
+class _PeerPinClickListener extends OnCircleAnnotationClickListener {
+  final _MapboxEngineState engine;
+  _PeerPinClickListener(this.engine);
+  @override
+  void onCircleAnnotationClick(CircleAnnotation annotation) {
+    debugPrint('[PeerPinClick] annotation ${annotation.id}');
+    engine._firePeerPinTap(annotation);
+  }
+}
+
 class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
   MapboxMap? _mapboxMap;
   PointAnnotationManager? _pointAnnotationManager;
   CircleAnnotationManager? _circleAnnotationManager;
+  CircleAnnotationManager? _peerCircleManager;
+  final Map<String, CircleAnnotation> _peerAnnotations = {};
   PolylineAnnotationManager? _polylineAnnotationManager;
   bool _disposed = false;
   // 채널 에러 발생한 소스: 스타일 재생성 전까지 호출 스킵 (로그 폭주 방지)
@@ -183,6 +196,36 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
       ),
       MapAnimationOptions(duration: durationMs),
     );
+  }
+
+  @override
+  void snapTo(double lat, double lng,
+      {double? zoom, double? pitch, double? bearing}) {
+    _mapboxMap?.setCamera(CameraOptions(
+      center: Point(coordinates: Position(lng, lat)),
+      zoom: zoom,
+      pitch: pitch,
+      bearing: bearing,
+    ));
+    _flyToEndTime = 0;
+  }
+
+  @override
+  void arriveAt(double lat, double lng,
+      {double? zoom, double? pitch, double? bearing, int durationMs = 800}) {
+    _mapboxMap?.easeTo(
+      CameraOptions(
+        center: Point(coordinates: Position(lng, lat)),
+        zoom: zoom,
+        pitch: pitch,
+        bearing: bearing,
+      ),
+      MapAnimationOptions(duration: durationMs),
+    );
+    // followTrain 이 첫 호출에서 또 다른 flyTo 띄우지 않게 lock,
+    // 그리고 추적 setCamera 가 easeTo 끝날 때까지 무시되도록 _flyToEndTime 게이트.
+    _isFollowing = true;
+    _flyToEndTime = DateTime.now().millisecondsSinceEpoch + durationMs;
   }
 
   @override
@@ -640,6 +683,74 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
   void clearCircleMarkers() {
     _circleAnnotationManager?.deleteAll();
     _circleMarkerIds.clear();
+  }
+
+  // ── 멀티플레이어 peer 핀 ──
+
+  @override
+  Future<void> upsertPeerPin(
+    String id,
+    double lat,
+    double lng, {
+    required Color color,
+  }) async {
+    final manager = _peerCircleManager;
+    if (manager == null) return;
+    final existing = _peerAnnotations[id];
+    if (existing != null) {
+      existing.geometry = Point(coordinates: Position(lng, lat));
+      existing.circleColor = color.toARGB32();
+      try {
+        await manager.update(existing);
+      } catch (_) {
+        // 갱신 실패 시 재생성.
+        _peerAnnotations.remove(id);
+        await upsertPeerPin(id, lat, lng, color: color);
+      }
+      return;
+    }
+    final ann = await manager.create(
+      CircleAnnotationOptions(
+        geometry: Point(coordinates: Position(lng, lat)),
+        circleColor: color.toARGB32(),
+        circleRadius: 14.0, // 탭 영역 확보 + 가시성.
+        circleStrokeColor: Colors.white.toARGB32(),
+        circleStrokeWidth: 4.0,
+        circleSortKey: 100, // 다른 마커보다 위.
+      ),
+    );
+    _peerAnnotations[id] = ann;
+  }
+
+  @override
+  void removePeerPin(String id) {
+    final ann = _peerAnnotations.remove(id);
+    if (ann != null) {
+      _peerCircleManager?.delete(ann);
+    }
+  }
+
+  @override
+  void clearPeerPins() {
+    for (final ann in _peerAnnotations.values) {
+      _peerCircleManager?.delete(ann);
+    }
+    _peerAnnotations.clear();
+  }
+
+  void Function(String userId)? _onPeerPinTapped;
+  @override
+  void setOnPeerPinTapped(void Function(String userId)? callback) {
+    _onPeerPinTapped = callback;
+  }
+
+  void _firePeerPinTap(CircleAnnotation tapped) {
+    String? hitUserId;
+    _peerAnnotations.forEach((uid, ann) {
+      if (ann.id == tapped.id) hitUserId = uid;
+    });
+    debugPrint('[PeerPinClick] resolved userId=$hitUserId callback=${_onPeerPinTapped != null}');
+    if (hitUserId != null) _onPeerPinTapped?.call(hitUserId!);
   }
 
   // ── 역 마커 ──
@@ -3051,6 +3162,12 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
 
     mapboxMap.annotations.createCircleAnnotationManager().then((manager) {
       _circleAnnotationManager = manager;
+    });
+
+    // peer 핀 전용 — 지하철/열차 마커와 분리해 개별 update/delete 가능.
+    mapboxMap.annotations.createCircleAnnotationManager().then((manager) {
+      _peerCircleManager = manager;
+      manager.addOnCircleAnnotationClickListener(_PeerPinClickListener(this));
     });
 
     mapboxMap.annotations.createPolylineAnnotationManager().then((manager) {
