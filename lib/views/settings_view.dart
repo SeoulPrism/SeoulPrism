@@ -228,13 +228,13 @@ class _SettingsViewState extends State<SettingsView> {
                   const _ItemDivider(),
                   _TrailingTextItem(
                     label: '라이트 프리셋',
-                    trailing: '${_lightLabel(SettingsService.instance.lightPreset)} >',
+                    trailing: '${_lightLabelStatic(SettingsService.instance.lightPreset)} >',
                     onTap: () => _showPicker(
                       title: '라이트 프리셋',
                       options: const ['새벽', '낮', '저녁', '밤'],
-                      selected: _lightLabel(SettingsService.instance.lightPreset),
+                      selected: _lightLabelStatic(SettingsService.instance.lightPreset),
                       onSelected: (v) {
-                        SettingsService.instance.setLightPreset(_lightKey(v));
+                        SettingsService.instance.setLightPreset(_lightKeyStatic(v));
                         setState(() {});
                       },
                     ),
@@ -678,6 +678,23 @@ class _SettingsViewState extends State<SettingsView> {
       onConfirm: () => OnboardingService.instance.reset(),
     );
   }
+
+  static String _lightLabelStatic(String key) => switch (key) {
+        'auto' => '자동',
+        'dawn' => '새벽',
+        'day' => '낮',
+        'dusk' => '저녁',
+        'night' => '밤',
+        _ => key,
+      };
+  static String _lightKeyStatic(String label) => switch (label) {
+        '자동' => 'auto',
+        '새벽' => 'dawn',
+        '낮' => 'day',
+        '저녁' => 'dusk',
+        '밤' => 'night',
+        _ => label,
+      };
 }
 
 // ─────────────────────────────────────────────────────────────────
