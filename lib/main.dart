@@ -98,9 +98,9 @@ Future<void> main() async {
     FavoritesService.instance.startRealtimeSync();
     VisitHistoryService.instance.startRealtimeSync();
     RecentRouteService.instance.startRealtimeSync();
-    // 멀티플레이 — 익명 사용자는 프로필 row 가 없을 수 있어 init() 은 no-op.
-    // 사용자가 hub 에 진입해 프로필을 작성하면 그때 다시 호출됨.
-    await MultiplayerService.instance.init();
+    // 멀티플레이 init — UI 가 먼저 뜨도록 fire-and-forget.
+    // ChangeNotifier 라 _notify() 시 listening 위젯이 자동 rebuild.
+    MultiplayerService.instance.init();
     // 푸시 알림 — 권한/토큰 등록 (백그라운드 진행 OK).
     NotificationService.instance.init();
     // Spotify (선택 기능). client_id 없으면 isConnected=false 로 idle.
@@ -108,6 +108,7 @@ Future<void> main() async {
   }
 
   // 딥링크 라우터 — room/friend/spotify-callback 모두 잡음.
+  // (SpotifyService 의 AppLinks 와 중복 방지를 위해 SpotifyService 는 자체 listener 사용)
   DeepLinkRouter.instance.start();
 
   runApp(const SeoulPrismApp());
@@ -277,7 +278,7 @@ class _RootGateState extends State<_RootGate> {
     // 기존 사용자 진입 — 새 버전 첫 실행이면 What's New 시트.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      WhatsNewSheet.maybeShow(context);
+      WhatsNewView.maybeShow(context);
     });
   }
 

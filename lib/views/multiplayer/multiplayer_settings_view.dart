@@ -138,7 +138,7 @@ class _MultiplayerSettingsViewState extends State<MultiplayerSettingsView> {
                   icon: Icons.new_releases_outlined,
                   label: '새 기능 다시 보기',
                   hint: 'v$kAppVersion 업데이트 내역',
-                  onTap: () => WhatsNewSheet.maybeShow(context, forceShow: true),
+                  onTap: () => WhatsNewView.maybeShow(context, forceShow: true),
                 ),
               ]),
             ]),

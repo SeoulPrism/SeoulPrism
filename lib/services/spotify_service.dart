@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 
-import 'package:app_links/app_links.dart';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -33,8 +32,7 @@ class SpotifyService extends ChangeNotifier {
   static const _kVerifierKey = 'spotify_pkce_verifier';
 
   final _storage = const FlutterSecureStorage();
-  final _appLinks = AppLinks();
-  StreamSubscription<Uri>? _linkSub;
+  // AppLinks listener 는 DeepLinkRouter 에서 통합 관리 → 여기서 직접 init 안 함.
 
   String? _accessToken;
   String? _refreshToken;
@@ -47,7 +45,7 @@ class SpotifyService extends ChangeNotifier {
   bool get isConnected => _accessToken != null;
   bool get isConfigured => ApiKeys.spotifyClientId.isNotEmpty;
 
-  /// 부팅 시 호출 — 저장된 토큰 로드 + deep-link listener.
+  /// 부팅 시 호출 — 저장된 토큰 로드. AppLinks 는 DeepLinkRouter 가 처리.
   Future<void> init() async {
     try {
       _accessToken = await _storage.read(key: _kAccessKey);
@@ -58,13 +56,6 @@ class SpotifyService extends ChangeNotifier {
       debugPrint('[Spotify] storage read 실패: $e');
     }
 
-    _linkSub = _appLinks.uriLinkStream.listen(_onIncomingLink);
-    // cold-start initial.
-    try {
-      final initial = await _appLinks.getInitialLink();
-      if (initial != null) _onIncomingLink(initial);
-    } catch (_) {}
-
     if (isConnected) {
       // 만료 임박이면 refresh 시도, 그 다음 currently playing 갱신.
       await _maybeRefresh();
@@ -72,11 +63,8 @@ class SpotifyService extends ChangeNotifier {
     }
   }
 
-  @override
-  void dispose() {
-    _linkSub?.cancel();
-    super.dispose();
-  }
+  /// DeepLinkRouter 가 com.seoul.prism://spotify-callback 받으면 호출.
+  Future<void> handleCallback(Uri uri) => _onIncomingLink(uri);
 
   Future<void> connect() async {
     if (!isConfigured) {

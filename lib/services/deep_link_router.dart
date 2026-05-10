@@ -44,7 +44,7 @@ class DeepLinkRouter {
     debugPrint('[DeepLink] $uri');
     switch (uri.host) {
       case 'spotify-callback':
-        // SpotifyService 가 별도 listener 로 처리.
+        SpotifyService.instance.handleCallback(uri);
         return;
       case 'room':
         final code = uri.pathSegments.isNotEmpty
