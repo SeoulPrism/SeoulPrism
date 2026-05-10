@@ -10,9 +10,10 @@ import 'qr_scan_view.dart';
 
 /// 내 친구 코드 보기 + 공유 + 코드로 친구 추가.
 class FriendCodeShareSheet extends StatefulWidget {
-  const FriendCodeShareSheet({super.key});
+  final String? prefillCode;
+  const FriendCodeShareSheet({super.key, this.prefillCode});
 
-  static Future<void> show(BuildContext context) {
+  static Future<void> show(BuildContext context, {String? prefillCode}) {
     return showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -21,7 +22,7 @@ class FriendCodeShareSheet extends StatefulWidget {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (_) => const FriendCodeShareSheet(),
+      builder: (_) => FriendCodeShareSheet(prefillCode: prefillCode),
     );
   }
 
@@ -31,6 +32,17 @@ class FriendCodeShareSheet extends StatefulWidget {
 
 class _FriendCodeShareSheetState extends State<FriendCodeShareSheet> {
   final _codeCtrl = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.prefillCode != null) {
+      _codeCtrl.text = widget.prefillCode!;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _addByCode();
+      });
+    }
+  }
   bool _busy = false;
   String? _error;
   String? _info;

@@ -17,6 +17,7 @@ import 'services/favorites_service.dart';
 import 'services/recent_search_service.dart';
 import 'services/recent_route_service.dart';
 import 'services/visit_history_service.dart';
+import 'services/deep_link_router.dart';
 import 'services/multiplayer_service.dart';
 import 'services/notification_service.dart';
 import 'services/spotify_service.dart';
@@ -104,6 +105,9 @@ Future<void> main() async {
     // Spotify (선택 기능). client_id 없으면 isConnected=false 로 idle.
     SpotifyService.instance.init();
   }
+
+  // 딥링크 라우터 — room/friend/spotify-callback 모두 잡음.
+  DeepLinkRouter.instance.start();
 
   runApp(const SeoulPrismApp());
 }

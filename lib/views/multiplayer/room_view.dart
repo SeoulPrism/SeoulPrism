@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../models/multiplayer_models.dart';
 import '../../services/multiplayer_service.dart';
@@ -236,6 +237,11 @@ class _RoomViewState extends State<RoomView> {
                           showAppSnackBar('코드 복사됨');
                         },
                       ),
+                      const SizedBox(width: 6),
+                      AdaptiveGlassIconButton(
+                        icon: Icons.ios_share_rounded,
+                        onPressed: () => _shareInviteLink(room),
+                      ),
                       // G23: owner 만 코드 회전.
                       if (isOwner) ...[
                         const SizedBox(width: 6),
@@ -364,6 +370,21 @@ class _RoomViewState extends State<RoomView> {
     } catch (e) {
       if (!mounted) return;
       showAppSnackBar('실패: $e');
+    }
+  }
+
+  Future<void> _shareInviteLink(Room room) async {
+    final me = MultiplayerService.instance.myProfile?.nickname ?? '친구';
+    final text =
+        '$me 님이 Seoul Live 친구방에 초대했어요!\n\n코드: ${room.inviteCode}\n\n'
+        '앱 설치 후 → com.seoul.prism://room/${room.inviteCode}\n'
+        '또는 친구방 → 코드 입력 → ${room.inviteCode}';
+    final uri = Uri.parse('sms:?body=${Uri.encodeComponent(text)}');
+    try {
+      await launchUrl(uri);
+    } catch (_) {
+      await Clipboard.setData(ClipboardData(text: text));
+      if (mounted) showAppSnackBar('초대 텍스트 복사됨');
     }
   }
 
