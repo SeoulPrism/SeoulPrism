@@ -293,7 +293,9 @@ class _FriendsViewState extends State<FriendsView> {
     setState(() => _justRequestedIds.add(p.userId));
     try {
       await MultiplayerService.instance.sendFriendRequest(p.userId);
-      showAppSnackBar('${p.nickname} 님에게 친구 신청을 보냈어요');
+      showAppSnackBar(
+          '${p.nickname} 님에게 친구 신청 — 수락하면 푸시 알림이 와요',
+          duration: const Duration(seconds: 4));
     } catch (e) {
       if (mounted) setState(() => _justRequestedIds.remove(p.userId));
       showAppSnackBar(e.toString().replaceFirst('Exception: ', ''));

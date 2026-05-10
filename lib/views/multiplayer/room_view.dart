@@ -5,6 +5,7 @@ import '../../models/multiplayer_models.dart';
 import '../../services/multiplayer_service.dart';
 import '../../widgets/adaptive/adaptive.dart';
 import 'chat_sheet.dart';
+import 'peer_profile_card.dart';
 import '../../widgets/app_snackbar.dart';
 
 class RoomView extends StatefulWidget {
@@ -283,9 +284,12 @@ class _RoomViewState extends State<RoomView> {
                   fallbackId: uid,
                   isMe: isMe,
                   isMeeting: isMeeting,
-                  // G22: owner 만 강퇴 표시.
                   showKick: isOwner && !isMe,
                   onKick: () => _confirmKick(uid, p?.nickname),
+                  // #9 멤버 탭 → 프로필 카드 (거리/위치/액션).
+                  onTap: isMe
+                      ? null
+                      : () => PeerProfileCard.show(context, uid),
                 );
               }),
             ],
@@ -404,6 +408,7 @@ class _MemberRow extends StatelessWidget {
   final bool isMeeting;
   final bool showKick;
   final VoidCallback? onKick;
+  final VoidCallback? onTap;
 
   const _MemberRow({
     required this.profile,
@@ -412,15 +417,18 @@ class _MemberRow extends StatelessWidget {
     required this.isMeeting,
     this.showKick = false,
     this.onKick,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final name = profile?.nickname ?? fallbackId.substring(0, 8);
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      child: Row(
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        child: Row(
         children: [
           if (profile != null)
             _AvatarChip(profile: profile!)
@@ -462,6 +470,7 @@ class _MemberRow extends StatelessWidget {
             ),
           ],
         ],
+      ),
       ),
     );
   }
