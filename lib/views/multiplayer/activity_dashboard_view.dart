@@ -15,6 +15,9 @@ class _ActivityDashboardViewState extends State<ActivityDashboardView> {
   bool _loading = true;
   List<({DateTime day, String kind, int cnt})> _summary = [];
   List<({DateTime at, String kind, Map<String, dynamic> payload})> _recent = [];
+  List<({String userId, String nickname, String pinColor, String pinEmoji,
+      int totalPoints, int meetupCount, int friendCount,
+      int currentStreakDays, List<String> badges})> _leaderboard = [];
 
   @override
   void initState() {
@@ -27,10 +30,12 @@ class _ActivityDashboardViewState extends State<ActivityDashboardView> {
     final svc = MultiplayerService.instance;
     final s = await svc.loadActivitySummary(days: 7);
     final r = await svc.loadRecentActivities(limit: 30);
+    final lb = await svc.loadFriendLeaderboard();
     if (!mounted) return;
     setState(() {
       _summary = s;
       _recent = r;
+      _leaderboard = lb;
       _loading = false;
     });
   }
@@ -66,6 +71,14 @@ class _ActivityDashboardViewState extends State<ActivityDashboardView> {
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                   children: [
                     _WeeklyChart(summary: _summary),
+                    if (_leaderboard.length > 1) ...[
+                      const SizedBox(height: 16),
+                      _SectionLabel(text: '친구 랭킹'),
+                      _Leaderboard(
+                        items: _leaderboard,
+                        myId: MultiplayerService.instance.myId,
+                      ),
+                    ],
                     const SizedBox(height: 16),
                     _SectionLabel(text: '최근 활동'),
                     if (_recent.isEmpty)
@@ -224,6 +237,96 @@ class _WeeklyChart extends StatelessWidget {
         ),
       ],
     );
+  }
+}
+
+class _Leaderboard extends StatelessWidget {
+  final List<({String userId, String nickname, String pinColor, String pinEmoji,
+      int totalPoints, int meetupCount, int friendCount,
+      int currentStreakDays, List<String> badges})> items;
+  final String? myId;
+  const _Leaderboard({required this.items, required this.myId});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return AdaptiveSectionCard(
+      children: [
+        for (var i = 0; i < items.length; i++) ...[
+          if (i > 0)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Divider(
+                  height: 0.5,
+                  thickness: 0.5,
+                  color: cs.outlineVariant.withValues(alpha: 0.4)),
+            ),
+          Builder(builder: (_) {
+            final isMe = items[i].userId == myId;
+            return Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 24,
+                    child: Text(_rankPrefix(i),
+                        style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w800,
+                            color: i < 3 ? cs.primary : cs.onSurfaceVariant)),
+                  ),
+                  const SizedBox(width: 6),
+                  Container(
+                    width: 32, height: 32,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Color(int.parse(
+                          'FF${items[i].pinColor.substring(1)}',
+                          radix: 16)),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(items[i].pinEmoji,
+                        style: const TextStyle(fontSize: 14)),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('${items[i].nickname}${isMe ? ' (나)' : ''}',
+                            style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: isMe ? cs.primary : cs.onSurface)),
+                        const SizedBox(height: 2),
+                        Text(
+                            '만남 ${items[i].meetupCount} · 친구 ${items[i].friendCount} · 연속 ${items[i].currentStreakDays}일',
+                            style: TextStyle(
+                                fontSize: 10,
+                                color: cs.onSurfaceVariant)),
+                      ],
+                    ),
+                  ),
+                  Text('${items[i].totalPoints}p',
+                      style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w900,
+                          color: isMe ? cs.primary : cs.onSurface)),
+                ],
+              ),
+            );
+          }),
+        ],
+      ],
+    );
+  }
+
+  String _rankPrefix(int idx) {
+    if (idx == 0) return '🥇';
+    if (idx == 1) return '🥈';
+    if (idx == 2) return '🥉';
+    return '${idx + 1}';
   }
 }
 

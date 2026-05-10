@@ -431,6 +431,35 @@ class MultiplayerService with WidgetsBindingObserver {
     }
   }
 
+  /// 친구 + 본인 점수 랭킹 (B18).
+  Future<List<({String userId, String nickname, String pinColor,
+      String pinEmoji, int totalPoints, int meetupCount, int friendCount,
+      int currentStreakDays, List<String> badges})>> loadFriendLeaderboard() async {
+    if (myId == null) return [];
+    try {
+      final res = await _sb.rpc('friend_leaderboard');
+      return (res as List).map((r) {
+        final m = r as Map<String, dynamic>;
+        return (
+          userId: m['user_id'] as String,
+          nickname: m['nickname'] as String,
+          pinColor: (m['pin_color'] as String?) ?? '#7C5CFF',
+          pinEmoji: (m['pin_emoji'] as String?) ?? '📍',
+          totalPoints: (m['total_points'] as num?)?.toInt() ?? 0,
+          meetupCount: (m['meetup_count'] as num?)?.toInt() ?? 0,
+          friendCount: (m['friend_count'] as num?)?.toInt() ?? 0,
+          currentStreakDays: (m['current_streak_days'] as num?)?.toInt() ?? 0,
+          badges: ((m['badges'] as List?) ?? const [])
+              .map((e) => e.toString())
+              .toList(),
+        );
+      }).toList();
+    } catch (e) {
+      debugPrint('[Multi] loadFriendLeaderboard 실패: $e');
+      return [];
+    }
+  }
+
   /// 친구 추천 — 친구의 친구 (mutual count 내림차순). 차단/이미친구/요청중 제외.
   Future<List<({MultiplayerProfile profile, int mutualCount})>>
       loadSuggestedFriends({int limit = 10}) async {
