@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../models/multiplayer_models.dart';
 import '../../services/multiplayer_service.dart';
@@ -103,6 +104,61 @@ class _ChatSheetState extends State<ChatSheet> {
     if (text.trim().isEmpty) return;
     _ctrl.clear();
     await MultiplayerService.instance.sendMessage(text, kind: kind);
+  }
+
+  Widget _placeAction(
+      {required IconData icon,
+      required String label,
+      required VoidCallback onTap}) {
+    final cs = Theme.of(context).colorScheme;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        decoration: BoxDecoration(
+          color: cs.surface.withValues(alpha: 0.6),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+              color: cs.outlineVariant.withValues(alpha: 0.5), width: 0.5),
+        ),
+        alignment: Alignment.center,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 16, color: cs.onSurface),
+            const SizedBox(width: 4),
+            Text(label,
+                style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: cs.onSurface)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openExternalDirections(
+      String name, double lat, double lng) async {
+    // iOS: Apple Maps 우선, 없으면 Google Maps
+    // Android: Google Maps geo intent
+    final encoded = Uri.encodeComponent(name);
+    final urls = <Uri>[
+      // iOS Apple Maps
+      Uri.parse('http://maps.apple.com/?daddr=$lat,$lng&q=$encoded'),
+      // Google Maps universal
+      Uri.parse('https://www.google.com/maps/dir/?api=1&destination=$lat,$lng&destination_place_id=$encoded'),
+    ];
+    for (final u in urls) {
+      try {
+        if (await canLaunchUrl(u)) {
+          await launchUrl(u, mode: LaunchMode.externalApplication);
+          return;
+        }
+      } catch (_) {}
+    }
+    if (mounted) showAppSnackBar('지도 앱을 열 수 없어요');
   }
 
   Future<void> _shareMyLocation() async {
@@ -267,60 +323,72 @@ class _ChatSheetState extends State<ChatSheet> {
         children: [
           if (!isMe) ...[_miniAvatar(p), const SizedBox(width: 8)],
           Flexible(
-            child: GestureDetector(
-              onTap: () {
-                MultiplayerService.instance
-                    .requestMapJump(lat: lat, lng: lng, name: name);
-                Navigator.of(context).popUntil((r) => r.isFirst);
-              },
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                constraints: const BoxConstraints(maxWidth: 260),
-                decoration: BoxDecoration(
-                  color: isMe ? cs.primaryContainer : cs.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                      color: cs.outlineVariant.withValues(alpha: 0.4),
-                      width: 0.5),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 40, height: 40,
-                      decoration: BoxDecoration(
-                        color: cs.primary.withValues(alpha: 0.15),
-                        shape: BoxShape.circle,
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              constraints: const BoxConstraints(maxWidth: 260),
+              decoration: BoxDecoration(
+                color: isMe ? cs.primaryContainer : cs.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                    color: cs.outlineVariant.withValues(alpha: 0.4),
+                    width: 0.5),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 40, height: 40,
+                        decoration: BoxDecoration(
+                          color: cs.primary.withValues(alpha: 0.15),
+                          shape: BoxShape.circle,
+                        ),
+                        alignment: Alignment.center,
+                        child: Icon(Icons.place_rounded,
+                            color: cs.primary, size: 22),
                       ),
-                      alignment: Alignment.center,
-                      child: Icon(Icons.place_rounded,
-                          color: cs.primary, size: 22),
-                    ),
-                    const SizedBox(width: 10),
-                    Flexible(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(name,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w700,
-                                  color: isMe
-                                      ? cs.onPrimaryContainer
-                                      : cs.onSurface)),
-                          const SizedBox(height: 2),
-                          Text('탭해서 지도에서 보기',
-                              style: TextStyle(
-                                  fontSize: 11,
-                                  color: cs.onSurfaceVariant)),
-                        ],
+                      const SizedBox(width: 10),
+                      Flexible(
+                        child: Text(name,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                                color: isMe
+                                    ? cs.onPrimaryContainer
+                                    : cs.onSurface)),
                       ),
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _placeAction(
+                          icon: Icons.map_outlined,
+                          label: '지도',
+                          onTap: () {
+                            MultiplayerService.instance.requestMapJump(
+                                lat: lat, lng: lng, name: name);
+                            Navigator.of(context).popUntil((r) => r.isFirst);
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: _placeAction(
+                          icon: Icons.directions_outlined,
+                          label: '길찾기',
+                          onTap: () => _openExternalDirections(name, lat, lng),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ),
