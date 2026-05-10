@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../services/multiplayer_service.dart';
 import '../../widgets/adaptive/adaptive.dart';
 import '../../widgets/app_snackbar.dart';
+import 'qr_scan_view.dart';
 
 /// 내 친구 코드 보기 + 공유 + 코드로 친구 추가.
 class FriendCodeShareSheet extends StatefulWidget {
@@ -73,9 +75,16 @@ class _FriendCodeShareSheetState extends State<FriendCodeShareSheet> {
     }
   }
 
+  Future<void> _scanQr() async {
+    final scanned = await QrScanView.push(context);
+    if (scanned == null || !mounted) return;
+    _codeCtrl.text = scanned;
+    await _addByCode();
+  }
+
   Future<void> _shareCode(String code, String nickname) async {
     final text =
-        '$nickname 님이 Seoul Live 친구 코드를 보냈어요!\n\n코드: $code\n\nSeoul Vista 앱에서 [프로필 → Seoul Live → 친구 → 코드 입력] 으로 추가할 수 있어요.';
+        '$nickname 님이 Seoul Live 친구 코드를 보냈어요!\n\n코드: $code\n\nSeoul Vista 앱에서 [프로필 → Seoul Live → 친구 → 코드 입력] 으로 추가하거나, QR 스캔으로 바로 추가할 수 있어요.\n\nseoulvista://friend/$code';
     // sms: scheme 으로 공유 (추후 share_plus 도입 가능).
     final uri = Uri.parse('sms:?body=${Uri.encodeComponent(text)}');
     try {
@@ -147,6 +156,33 @@ class _FriendCodeShareSheetState extends State<FriendCodeShareSheet> {
                       ),
                     ],
                   ),
+                  if (me?.friendCode != null) ...[
+                    const SizedBox(height: 16),
+                    Center(
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: QrImageView(
+                          data: 'seoulvista://friend/$myCode',
+                          size: 168,
+                          backgroundColor: Colors.white,
+                          version: QrVersions.auto,
+                          gapless: true,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Center(
+                      child: Text(
+                        '친구가 카메라로 스캔하면 바로 추가돼요',
+                        style: TextStyle(
+                            fontSize: 11, color: cs.onSurfaceVariant),
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 12),
                   AdaptiveGlassButton(
                     label: '공유하기',
@@ -169,11 +205,22 @@ class _FriendCodeShareSheetState extends State<FriendCodeShareSheet> {
                       fontWeight: FontWeight.w700,
                       color: cs.onSurfaceVariant)),
             ),
-            AdaptiveTextField(
-              controller: _codeCtrl,
-              placeholder: '8자리 코드',
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: AdaptiveTextField(
+                    controller: _codeCtrl,
+                    placeholder: '8자리 코드',
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 12),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                AdaptiveGlassIconButton(
+                  icon: Icons.qr_code_scanner_rounded,
+                  onPressed: _busy ? null : _scanQr,
+                ),
+              ],
             ),
             const SizedBox(height: 8),
             AdaptiveGlassButton(

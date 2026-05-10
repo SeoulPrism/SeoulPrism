@@ -58,6 +58,8 @@ dependencies:
   flutter_soloud: ^3.2.1
   webview_flutter: ^4.13.1
   flutter_animate: ^4.5.2
+  qr_flutter: ^4.1.0
+  mobile_scanner: ^7.1.2
 
 dev_dependencies:
   flutter_test:
