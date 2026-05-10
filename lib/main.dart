@@ -133,6 +133,8 @@ class _SeoulPrismAppState extends State<SeoulPrismApp> {
   void initState() {
     super.initState();
     _themeMode = _parseThemeMode(SettingsService.instance.themeMode);
+    // 글로벌 만남 알림 — 어떤 화면에 있어도 토스트.
+    MultiplayerService.instance.addMeetupListener(_onGlobalMeetup);
     supabase.auth.onAuthStateChange.listen((data) async {
       final event = data.event;
       final session = data.session;
@@ -164,6 +166,23 @@ class _SeoulPrismAppState extends State<SeoulPrismApp> {
 
   void restartApp() {
     setState(() => _appKey = UniqueKey());
+  }
+
+  void _onGlobalMeetup(String userId, bool started) {
+    if (!started) return;
+    final svc = MultiplayerService.instance;
+    final p = svc.peerProfile(userId);
+    HapticFeedback.mediumImpact();
+    showAppSnackBar('🎉  ${p?.nickname ?? '친구'}와 만났어요!',
+        duration: const Duration(seconds: 4));
+    // 채팅에도 system 형 'meetup' 메시지로 기록.
+    svc.sendMessage('${p?.nickname ?? '친구'}와 만났어요', kind: 'meetup');
+  }
+
+  @override
+  void dispose() {
+    MultiplayerService.instance.removeMeetupListener(_onGlobalMeetup);
+    super.dispose();
   }
 
   ThemeMode _parseThemeMode(String mode) => switch (mode) {

@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../../services/multiplayer_service.dart';
 import '../../widgets/adaptive/adaptive.dart';
-import '../../widgets/app_snackbar.dart';
 import 'friend_code_share.dart';
 import 'friends_view.dart';
 import 'group_editor_view.dart';
@@ -26,27 +24,16 @@ class _MultiplayerHubViewState extends State<MultiplayerHubView> {
   void initState() {
     super.initState();
     MultiplayerService.instance.addListener(_onChanged);
-    MultiplayerService.instance.addMeetupListener(_onMeetup);
   }
 
   @override
   void dispose() {
     MultiplayerService.instance.removeListener(_onChanged);
-    MultiplayerService.instance.removeMeetupListener(_onMeetup);
     super.dispose();
   }
 
   void _onChanged() {
     if (mounted) setState(() {});
-  }
-
-  void _onMeetup(String userId, bool started) {
-    if (!started) return;
-    final p = MultiplayerService.instance.peerProfile(userId);
-    HapticFeedback.mediumImpact();
-    showAppSnackBar('🎉  ${p?.nickname ?? '친구'}와 만났어요!');
-    MultiplayerService.instance
-        .sendMessage('${p?.nickname ?? '친구'}와 만났어요', kind: 'meetup');
   }
 
   @override
@@ -175,6 +162,10 @@ class _MultiplayerHubViewState extends State<MultiplayerHubView> {
             ),
           ],
         ),
+        if (svc.meetupHistory.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          _MeetupHistorySection(history: svc.meetupHistory),
+        ],
         const SizedBox(height: 16),
 
         AdaptiveSectionCard(
@@ -368,6 +359,66 @@ class _HubDivider extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Divider(
           height: 0.5, thickness: 0.5, color: cs.outlineVariant.withValues(alpha: 0.5)),
+    );
+  }
+}
+
+class _MeetupHistorySection extends StatelessWidget {
+  final List<({String userId, DateTime at})> history;
+  const _MeetupHistorySection({required this.history});
+
+  String _ago(DateTime t) {
+    final d = DateTime.now().difference(t);
+    if (d.inMinutes < 1) return '방금';
+    if (d.inMinutes < 60) return '${d.inMinutes}분 전';
+    if (d.inHours < 24) return '${d.inHours}시간 전';
+    return '${d.inDays}일 전';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final svc = MultiplayerService.instance;
+    final shown = history.take(5).toList();
+    return AdaptiveSectionCard(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(14, 12, 14, 4),
+          child: Row(
+            children: [
+              const Text('🎉 최근 만남',
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+              const Spacer(),
+              Text('${history.length}회',
+                  style:
+                      TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+            ],
+          ),
+        ),
+        for (final m in shown)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+            child: Row(
+              children: [
+                Text(svc.peerProfile(m.userId)?.pinEmoji ?? '📍',
+                    style: const TextStyle(fontSize: 16)),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    svc.peerProfile(m.userId)?.nickname ??
+                        m.userId.substring(0, 6),
+                    style: const TextStyle(
+                        fontSize: 13, fontWeight: FontWeight.w600),
+                  ),
+                ),
+                Text(_ago(m.at),
+                    style: TextStyle(
+                        fontSize: 11, color: cs.onSurfaceVariant)),
+              ],
+            ),
+          ),
+        const SizedBox(height: 8),
+      ],
     );
   }
 }

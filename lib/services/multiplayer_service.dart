@@ -130,6 +130,16 @@ class MultiplayerService with WidgetsBindingObserver {
 
   final List<void Function(String peerUserId, bool started)> _meetupListeners = [];
   void addMeetupListener(void Function(String, bool) l) => _meetupListeners.add(l);
+
+  /// 최근 만남 기록 (in-memory, 최대 20개). 앱 재시작 시 사라짐.
+  final List<({String userId, DateTime at})> _meetupHistory = [];
+  List<({String userId, DateTime at})> get meetupHistory =>
+      List.unmodifiable(_meetupHistory);
+  void _recordMeetup(String userId) {
+    _meetupHistory.insert(0, (userId: userId, at: DateTime.now()));
+    if (_meetupHistory.length > 20) _meetupHistory.removeLast();
+    _notify();
+  }
   void removeMeetupListener(void Function(String, bool) l) =>
       _meetupListeners.remove(l);
 
@@ -1121,6 +1131,7 @@ class MultiplayerService with WidgetsBindingObserver {
       if (last != null &&
           DateTime.now().difference(last).inSeconds < 60) continue;
       _lastMeetupNotifiedAt[uid] = DateTime.now();
+      _recordMeetup(uid);
       for (final l in List.of(_meetupListeners)) {
         try { l(uid, true); } catch (_) {}
       }
