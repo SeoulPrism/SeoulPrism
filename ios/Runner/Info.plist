@@ -83,11 +83,11 @@
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>AI 음성 대화를 위해 마이크 접근이 필요합니다.</string>
+	<string>AI 음성 대화 및 친구 채팅 음성 메시지 녹음을 위해 마이크 접근이 필요합니다.</string>
 	<key>NSCameraUsageDescription</key>
-	<string>사진 촬영을 통해 장소를 분석하기 위해 카메라 접근이 필요합니다.</string>
+	<string>장소 분석 및 친구 QR 코드 스캔을 위해 카메라 접근이 필요합니다.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>갤러리 사진을 통해 장소를 분석하기 위해 사진 라이브러리 접근이 필요합니다.</string>
+	<string>장소 분석 및 친구 채팅 사진 공유를 위해 사진 라이브러리 접근이 필요합니다.</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>NSSupportsLiveActivities</key>

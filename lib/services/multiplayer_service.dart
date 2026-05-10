@@ -226,6 +226,10 @@ class MultiplayerService with WidgetsBindingObserver {
         await _loadFriendships();
         await _loadBlocks();
         await _loadFriendGroups();
+        await loadMyVisibleGroups();
+        await loadNotifPrefs();
+        await _loadMyScore();
+        _subscribeMyScore();
         _subscribeFriendshipUpdates();
         _startStaleTick();
         _syncWorldChannel();

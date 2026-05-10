@@ -25,7 +25,14 @@ class _DmListViewState extends State<DmListView> {
 
   Future<void> _load() async {
     setState(() => _loading = true);
-    final t = await MultiplayerService.instance.loadDmList();
+    final svc = MultiplayerService.instance;
+    final t = await svc.loadDmList();
+    // 프로필 캐시 미스 (deleted friend, 동기화 race) 보강.
+    for (final th in t) {
+      if (svc.peerProfile(th.otherUserId) == null) {
+        await svc.fetchPeerProfile(th.otherUserId);
+      }
+    }
     if (!mounted) return;
     setState(() {
       _threads = t;
