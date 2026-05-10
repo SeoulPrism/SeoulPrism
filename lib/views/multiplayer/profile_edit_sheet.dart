@@ -226,12 +226,20 @@ class _MultiplayerProfileEditSheetState
                 AdaptiveSegment(
                     value: 'friends', label: '친구방', icon: Icons.people_alt_rounded),
                 AdaptiveSegment(
-                    value: 'public', label: '전체 공개', icon: Icons.public_rounded),
+                    value: 'selected_groups',
+                    label: '그룹만',
+                    icon: Icons.group_outlined),
+                AdaptiveSegment(
+                    value: 'public', label: '전체', icon: Icons.public_rounded),
               ],
             ),
             const SizedBox(height: 8),
             Text(_visibilityHint(),
                 style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+            if (_visibility == 'selected_groups') ...[
+              const SizedBox(height: 12),
+              _VisibleGroupsPicker(),
+            ],
 
             if (_error != null) ...[
               const SizedBox(height: 16),
@@ -280,6 +288,8 @@ class _MultiplayerProfileEditSheetState
   String _visibilityHint() => switch (_visibility) {
         'ghost' => '위치를 보내지 않습니다. 다른 사람의 위치도 볼 수 없어요.',
         'friends' => '친구방에 입장한 동안만 같은 방 멤버에게 위치가 보여요.',
+        'selected_groups' =>
+          '아래에서 선택한 그룹의 친구만 내 위치를 볼 수 있어요.',
         'public' => '⚠️ Seoul Live 사용자 누구나 내 위치를 볼 수 있어요. 친구방에서도 동일하게 송신돼요.',
         _ => '',
       };
@@ -287,6 +297,90 @@ class _MultiplayerProfileEditSheetState
   Color _hexToColor(String hex) {
     final v = int.parse(hex.substring(1), radix: 16);
     return Color(0xFF000000 | v);
+  }
+}
+
+/// 사용자 그룹 picker — visibility=selected_groups 전용.
+/// 선택 즉시 서버 반영 (저장 버튼과 무관).
+class _VisibleGroupsPicker extends StatefulWidget {
+  @override
+  State<_VisibleGroupsPicker> createState() => _VisibleGroupsPickerState();
+}
+
+class _VisibleGroupsPickerState extends State<_VisibleGroupsPicker> {
+  late Set<String> _selected;
+
+  @override
+  void initState() {
+    super.initState();
+    _selected = Set<String>.from(MultiplayerService.instance.myVisibleGroupIds);
+  }
+
+  Future<void> _toggle(String groupId) async {
+    final newSet = Set<String>.from(_selected);
+    if (newSet.contains(groupId)) {
+      newSet.remove(groupId);
+    } else {
+      newSet.add(groupId);
+    }
+    setState(() => _selected = newSet);
+    try {
+      await MultiplayerService.instance.setMyVisibleGroups(newSet);
+    } catch (_) {/* UI 는 이미 반영 — 실패 시 다음 새로고침에 정정 */}
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final groups = MultiplayerService.instance.friendGroups;
+    if (groups.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: cs.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Text('그룹이 없어요. 친구 → 그룹 에서 만들어주세요.',
+            style:
+                TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+      );
+    }
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: groups.map((g) {
+        final on = _selected.contains(g.id);
+        return GestureDetector(
+          onTap: () => _toggle(g.id),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: on ? cs.primaryContainer : cs.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                  color: on ? cs.primary : Colors.transparent, width: 1.2),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(g.emoji, style: const TextStyle(fontSize: 14)),
+                const SizedBox(width: 4),
+                Text(g.name,
+                    style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: on ? cs.onPrimaryContainer : cs.onSurface)),
+                if (on) ...[
+                  const SizedBox(width: 4),
+                  Icon(Icons.check_rounded,
+                      size: 14, color: cs.onPrimaryContainer),
+                ],
+              ],
+            ),
+          ),
+        );
+      }).toList(),
+    );
   }
 }
 

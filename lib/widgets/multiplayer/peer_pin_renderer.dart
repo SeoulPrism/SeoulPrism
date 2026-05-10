@@ -56,6 +56,21 @@ class PeerPinRenderer {
     // 2. 새/갱신 peer upsert.
     for (final entry in visiblePeers.entries) {
       final profile = _svc.peerProfile(entry.key);
+
+      // B9: peer 가 selected_groups 모드면 서버에 visibility 검증 후 캐시.
+      // 캐시 미스면 일단 표시하고 백그라운드로 검증 → 다음 sync 때 반영.
+      if (profile?.visibility == 'selected_groups') {
+        final allowed = _svc.canSeePeerLocation(entry.key);
+        // canSeePeerLocation 은 캐시되어 있으면 즉시 (Future.value), 아니면 RPC 호출.
+        // dart:async 의 .then 기반으로 처리.
+        allowed.then((ok) {
+          if (!ok && _renderedIds.contains(entry.key)) {
+            map.removePeerPin(entry.key);
+            _renderedIds.remove(entry.key);
+          }
+        });
+      }
+
       var color = profile != null
           ? _hexToColor(profile.pinColor)
           : const Color(0xFF7C5CFF);

@@ -198,6 +198,7 @@ class MultiplayerService with WidgetsBindingObserver {
     await _loadFriendships();
     await _loadBlocks();
     await _loadFriendGroups();
+    await loadMyVisibleGroups();
     await _loadMyScore();
     _subscribeMyScore();
     _subscribeFriendshipUpdates();
@@ -253,6 +254,8 @@ class MultiplayerService with WidgetsBindingObserver {
     _worldChannel = null;
     _scoreChannel = null;
     _myScore = null;
+    _myVisibleGroupIds.clear();
+    _peerVisibleCache.clear();
     _worldPeerLocations.clear();
 
     _myProfile = null;
@@ -641,6 +644,67 @@ class MultiplayerService with WidgetsBindingObserver {
   // ──────────────────────────────────────────────────────────────────
   // 친구 그룹 (G21)
   // ──────────────────────────────────────────────────────────────────
+  // ──────────────────────────────────────────────────────────────────
+  // 그룹별 visibility (B9)
+  // ──────────────────────────────────────────────────────────────────
+  /// 내 visibility=selected_groups 일 때 허용한 그룹 id 들.
+  final Set<String> _myVisibleGroupIds = {};
+  Set<String> get myVisibleGroupIds => Set.unmodifiable(_myVisibleGroupIds);
+
+  /// peer 가 나에게 위치를 보여줄지 (false 면 핀 숨김). 자동 cache.
+  final Map<String, bool> _peerVisibleCache = {};
+
+  Future<void> loadMyVisibleGroups() async {
+    if (myId == null) return;
+    try {
+      final res = await _sb
+          .from('profile_visible_groups')
+          .select('group_id')
+          .eq('user_id', myId!);
+      _myVisibleGroupIds
+        ..clear()
+        ..addAll((res as List).map((r) => r['group_id'] as String));
+      _notify();
+    } catch (e) {
+      debugPrint('[Multi] loadMyVisibleGroups 실패: $e');
+    }
+  }
+
+  Future<void> setMyVisibleGroups(Set<String> groupIds) async {
+    try {
+      await _sb.rpc('set_my_visible_groups',
+          params: {'p_group_ids': groupIds.toList()});
+      _myVisibleGroupIds
+        ..clear()
+        ..addAll(groupIds);
+      _notify();
+    } catch (e) {
+      debugPrint('[Multi] setMyVisibleGroups 실패: $e');
+      rethrow;
+    }
+  }
+
+  /// peer 가 selected_groups 모드일 때 내가 그 사람의 핀을 볼 수 있는지.
+  /// 결과는 캐시 — 반복 호출 시 즉시 반환.
+  Future<bool> canSeePeerLocation(String peerId) async {
+    final cached = _peerVisibleCache[peerId];
+    if (cached != null) return cached;
+    try {
+      final res = await _sb.rpc('am_i_visible_to', params: {'p_owner': peerId});
+      final v = res == true;
+      _peerVisibleCache[peerId] = v;
+      return v;
+    } catch (e) {
+      debugPrint('[Multi] canSeePeerLocation 실패: $e');
+      return true; // 실패 시 보이게 (안전한 fallback).
+    }
+  }
+
+  void invalidatePeerVisibilityCache() {
+    _peerVisibleCache.clear();
+    _notify();
+  }
+
   // ──────────────────────────────────────────────────────────────────
   // 활동 로그 (B8)
   // ──────────────────────────────────────────────────────────────────
