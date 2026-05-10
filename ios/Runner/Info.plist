@@ -62,9 +62,9 @@
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>현재 위치를 지도에 표시하고 주변 정보를 제공하기 위해 위치 권한이 필요합니다.</string>
+	<string>현재 위치를 지도에 표시하고 주변 정보를 제공하며, Seoul Live 친구방에 입장한 동안 친구에게 실시간 위치를 공유하기 위해 위치 권한이 필요합니다.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>현재 위치를 지도에 표시하고 주변 정보를 제공하기 위해 위치 권한이 필요합니다.</string>
+	<string>현재 위치를 지도에 표시하고, Seoul Live 친구방에서 친구에게 실시간 위치를 공유하기 위해 위치 권한이 필요합니다. 백그라운드에서는 위치 공유가 자동으로 일시정지됩니다.</string>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
@@ -121,5 +121,10 @@
 			</dict>
 		</dict>
 	</dict>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+		<string>remote-notification</string>
+	</array>
 </dict>
 </plist>

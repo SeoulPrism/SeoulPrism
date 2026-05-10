@@ -9,3 +9,6 @@ export 'adaptive_tab_bar.dart';
 export 'adaptive_text_field.dart';
 export 'adaptive_dialogs.dart';
 export 'adaptive_surface.dart';
+export 'adaptive_app_bar.dart';
+export 'adaptive_checkbox.dart';
+export 'adaptive_segmented.dart';

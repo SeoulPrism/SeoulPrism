@@ -13,7 +13,30 @@ import ActivityKit
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
+    // Firebase 는 Dart 측 Firebase.initializeApp(...) 가 담당.
+    // APNs 등록은 firebase_messaging swizzle 이 자동으로 해야 하는데
+    // 일부 환경에서 안 됨 → 명시 호출.
+    DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+      application.registerForRemoteNotifications()
+    }
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+  }
+
+  override func application(
+    _ application: UIApplication,
+    didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
+  ) {
+    let token = deviceToken.map { String(format: "%02.2hhx", $0) }.joined()
+    NSLog("[AppDelegate] APNs 등록 성공 — token len=\(token.count)")
+    super.application(application, didRegisterForRemoteNotificationsWithDeviceToken: deviceToken)
+  }
+
+  override func application(
+    _ application: UIApplication,
+    didFailToRegisterForRemoteNotificationsWithError error: Error
+  ) {
+    NSLog("[AppDelegate] APNs 등록 실패: \(error.localizedDescription)")
+    super.application(application, didFailToRegisterForRemoteNotificationsWithError: error)
   }
 
   func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {

@@ -93,19 +93,22 @@ class DeviceProfileService {
 
       debugPrint('[DeviceProfile] iOS $rawModel (${info.systemVersion}) → ${tier.name}');
 
+      // iOS 도 발열 완화 위해 한 단계 내림. Metal 이 부드러워서 30fps 도 충분히
+      // 자연스럽게 보임. animFps 60 + qualityPreset 'high' 동시 운용 시
+      // subway 60Hz + flight 62Hz + river bus 62Hz 동시 tick → A17/M-class 도 누적 발열.
       switch (tier) {
         case DeviceTier.flagship:
           profile = DeviceProfile(deviceName: rawModel, tier: tier,
-            animFps: 60, naverPollMs: 100, qualityPreset: 'high');
+            animFps: 30, naverPollMs: 200, qualityPreset: 'medium');
         case DeviceTier.high:
           profile = DeviceProfile(deviceName: rawModel, tier: tier,
-            animFps: 60, naverPollMs: 150, qualityPreset: 'high');
+            animFps: 30, naverPollMs: 300, qualityPreset: 'medium');
         case DeviceTier.mid:
           profile = DeviceProfile(deviceName: rawModel, tier: tier,
-            animFps: 30, naverPollMs: 300, qualityPreset: 'medium');
+            animFps: 20, naverPollMs: 500, qualityPreset: 'low');
         case DeviceTier.low:
           profile = DeviceProfile(deviceName: rawModel, tier: tier,
-            animFps: 20, naverPollMs: 500, qualityPreset: 'low');
+            animFps: 15, naverPollMs: 800, qualityPreset: 'low');
       }
       return;
     }
@@ -121,26 +124,31 @@ class DeviceProfileService {
 
     // 알려진 기기 매칭
     final tier = _matchKnownDevice(brand, model, sdkInt);
+    // Android 는 전반적으로 Vulkan/Impeller + Mapbox 의 platform view 비용이 커서
+    // iOS 와 같은 등급으로 예산을 잡으면 frame skip 발생. 한 단계씩 보수적으로.
+    //   - animFps 낮춤: subway interpolation 부담 ↓
+    //   - qualityPreset 낮춤: flight/river bus tick 16→33→100ms 으로 늘림
+    //   - naverPollMs 늘림: 네트워크/JSON 디코드 경합 ↓
     switch (tier) {
       case DeviceTier.flagship:
         profile = DeviceProfile(
           deviceName: rawModel, tier: tier,
-          animFps: 30, naverPollMs: 200, qualityPreset: 'high',
+          animFps: 30, naverPollMs: 300, qualityPreset: 'medium',
         );
       case DeviceTier.high:
         profile = DeviceProfile(
           deviceName: rawModel, tier: tier,
-          animFps: 30, naverPollMs: 300, qualityPreset: 'high',
+          animFps: 20, naverPollMs: 500, qualityPreset: 'medium',
         );
       case DeviceTier.mid:
         profile = DeviceProfile(
           deviceName: rawModel, tier: tier,
-          animFps: 20, naverPollMs: 500, qualityPreset: 'medium',
+          animFps: 15, naverPollMs: 800, qualityPreset: 'low',
         );
       case DeviceTier.low:
         profile = DeviceProfile(
           deviceName: rawModel, tier: tier,
-          animFps: 10, naverPollMs: 1000, qualityPreset: 'low',
+          animFps: 10, naverPollMs: 1500, qualityPreset: 'low',
         );
     }
 

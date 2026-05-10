@@ -10,6 +10,9 @@ import '../services/favorites_service.dart';
 import '../services/visit_history_service.dart';
 import 'notifications_view.dart';
 import 'settings_view.dart';
+import 'multiplayer/multiplayer_consent_view.dart';
+import 'multiplayer/multiplayer_hub_view.dart';
+import '../services/multiplayer_service.dart';
 
 class ProfileView extends StatefulWidget {
   const ProfileView({super.key});
@@ -45,6 +48,8 @@ class _ProfileViewState extends State<ProfileView> {
               _buildCategoryTabs(),
               const SizedBox(height: 16),
               _buildCategoryContent(),
+              const SizedBox(height: 24),
+              _buildMultiplayerEntry(),
               const SizedBox(height: 32),
               _buildTimelineSection(),
               const SizedBox(height: 40),
@@ -294,6 +299,80 @@ class _ProfileViewState extends State<ProfileView> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(children: items),
+    );
+  }
+
+  // ─── Multiplayer Entry ───────────────────────────────────────
+
+  Widget _buildMultiplayerEntry() {
+    final cs = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: AdaptiveSurfaceCard(
+        borderRadius: 18,
+        padding: EdgeInsets.zero,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(18),
+          onTap: () async {
+            final hasConsent = await MultiplayerService.hasConsent();
+            if (!mounted) return;
+            if (hasConsent) {
+              Navigator.push(context, MaterialPageRoute(
+                builder: (_) => const MultiplayerHubView(),
+              ));
+            } else {
+              Navigator.push(context, MaterialPageRoute(
+                builder: (_) => MultiplayerConsentView(
+                  onConsented: () {
+                    Navigator.pushReplacement(context, MaterialPageRoute(
+                      builder: (_) => const MultiplayerHubView(),
+                    ));
+                  },
+                ),
+              ));
+            }
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(14),
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Color(0xFF7C5CFF), Color(0xFF5CC8FF)],
+                    ),
+                  ),
+                  child: const Icon(Icons.public_rounded,
+                      color: Colors.white, size: 22),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Seoul Live',
+                          style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800,
+                              color: cs.onSurface)),
+                      const SizedBox(height: 2),
+                      Text('친구와 위치/채팅 실시간 공유 (베타)',
+                          style: TextStyle(
+                              fontSize: 12, color: cs.onSurfaceVariant)),
+                    ],
+                  ),
+                ),
+                Icon(Icons.chevron_right_rounded, color: cs.onSurfaceVariant),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 

@@ -64,162 +64,18 @@ class _SettingsViewState extends State<SettingsView> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         child: Column(
           children: [
-            // Section 1: 지도 관련
-            AdaptiveSectionCard(
-              children: [
-                _SwitchItem(
-                  label: '3D 건물 표시',
-                  value: SettingsService.instance.getBool('show3DBuildings', defaultValue: true),
-                  onChanged: (v) {
-                    SettingsService.instance.setBool('show3DBuildings', v);
-                    setState(() {});
-                  },
-                ),
-                const _ItemDivider(),
-                _SwitchItem(
-                  label: '실시간 지하철 표시',
-                  value: SettingsService.instance.getBool('showSubway', defaultValue: true),
-                  onChanged: (v) {
-                    SettingsService.instance.setBool('showSubway', v);
-                    setState(() {});
-                  },
-                ),
-                const _ItemDivider(),
-                _SwitchItem(
-                  label: 'POI 아이콘 표시',
-                  value: SettingsService.instance.getBool('showPOI', defaultValue: true),
-                  onChanged: (v) {
-                    SettingsService.instance.setBool('showPOI', v);
-                    setState(() {});
-                  },
-                ),
-                const _ItemDivider(),
-                _SwitchItem(
-                  label: '날씨 효과 (안개/비)',
-                  value: SettingsService.instance.getBool('weatherEffect', defaultValue: true),
-                  onChanged: (v) {
-                    SettingsService.instance.setBool('weatherEffect', v);
-                    setState(() {});
-                  },
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-
-            // Section 1.5: 실시간 시각화 — 차량/노선 표시
-            _SectionHeader(label: '실시간 시각화'),
-            AdaptiveSectionCard(
-              children: [
-                _SwitchItem(
-                  label: '지하철 노선',
-                  value: SettingsService.instance.showRoutes,
-                  onChanged: (v) {
-                    SettingsService.instance.setShowRoutes(v);
-                    setState(() {});
-                  },
-                ),
-                const _ItemDivider(),
-                _SwitchItem(
-                  label: '지하철 열차 위치',
-                  value: SettingsService.instance.showTrains,
-                  onChanged: (v) {
-                    SettingsService.instance.setShowTrains(v);
-                    setState(() {});
-                  },
-                ),
-                const _ItemDivider(),
-                _SwitchItem(
-                  label: '지하철 역',
-                  value: SettingsService.instance.showStations,
-                  onChanged: (v) {
-                    SettingsService.instance.setShowStations(v);
-                    setState(() {});
-                  },
-                ),
-                const _ItemDivider(),
-                _SwitchItem(
-                  label: '시내버스',
-                  value: SettingsService.instance.showBuses,
-                  onChanged: (v) {
-                    SettingsService.instance.setShowBuses(v);
-                    setState(() {});
-                  },
-                ),
-                const _ItemDivider(),
-                _SwitchItem(
-                  label: '한강버스',
-                  value: SettingsService.instance.showRiverBus,
-                  onChanged: (v) {
-                    SettingsService.instance.setShowRiverBus(v);
-                    setState(() {});
-                  },
-                ),
-                const _ItemDivider(),
-                _SwitchItem(
-                  label: '항공기',
-                  value: SettingsService.instance.showFlights,
-                  onChanged: (v) {
-                    SettingsService.instance.setShowFlights(v);
-                    setState(() {});
-                  },
-                ),
-              ],
-            ),
-            _RestartHint(),
-            const SizedBox(height: 16),
-
-            // Section 1.6: 데이터 소스 — 어떤 API 를 쓸 지
-            _SectionHeader(label: '데이터 소스'),
-            AdaptiveSectionCard(
-              children: [
-                _TrailingTextItem(
-                  label: '지하철 모드',
-                  trailing:
-                      '${SettingsService.instance.mode == 'live' ? '실시간' : '데모'} >',
-                  onTap: () => _showPicker(
-                    title: '지하철 모드',
-                    options: const ['실시간', '데모'],
-                    selected: SettingsService.instance.mode == 'live' ? '실시간' : '데모',
-                    onSelected: (v) {
-                      SettingsService.instance
-                          .setMode(v == '실시간' ? 'live' : 'demo');
-                      setState(() {});
-                    },
-                  ),
-                ),
-                const _ItemDivider(),
-                _SwitchItem(
-                  label: '서울시 공공 API (60s)',
-                  value: SettingsService.instance.useSeoulApi,
-                  onChanged: (v) {
-                    SettingsService.instance.setUseSeoulApi(v);
-                    setState(() {});
-                  },
-                ),
-                const _ItemDivider(),
-                _SwitchItem(
-                  label: '네이버 API (5s 단위 보정)',
-                  value: SettingsService.instance.useNaverApi,
-                  onChanged: (v) {
-                    SettingsService.instance.setUseNaverApi(v);
-                    setState(() {});
-                  },
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-
-            // Section 1.7: 성능 — 품질 프리셋
-            _SectionHeader(label: '성능'),
+            // 품질 프리셋 — 헤더 없이 맨 위. 사용자가 자주 만지는 항목이라 한 탭으로 접근.
             AdaptiveSectionCard(
               children: [
                 _TrailingTextItem(
                   label: '품질 프리셋',
-                  trailing: '${_qualityLabel(SettingsService.instance.qualityPreset)} >',
+                  trailing:
+                      '${_qualityLabel(SettingsService.instance.qualityPreset)} >',
                   onTap: () => _showPicker(
                     title: '품질 프리셋',
                     options: const ['고품질', '부드러움', '배터리 절약'],
-                    selected: _qualityLabel(SettingsService.instance.qualityPreset),
+                    selected:
+                        _qualityLabel(SettingsService.instance.qualityPreset),
                     onSelected: (v) {
                       SettingsService.instance
                           .setQualityPreset(_qualityKey(v));
@@ -227,38 +83,6 @@ class _SettingsViewState extends State<SettingsView> {
                     },
                   ),
                 ),
-              ],
-            ),
-            const SizedBox(height: 16),
-
-            // Section 1.8: 라이팅
-            _SectionHeader(label: '라이팅'),
-            AdaptiveSectionCard(
-              children: [
-                _SwitchItem(
-                  label: '자동 (시간대 + 날씨)',
-                  value: SettingsService.instance.autoLighting,
-                  onChanged: (v) {
-                    SettingsService.instance.setAutoLighting(v);
-                    setState(() {});
-                  },
-                ),
-                if (!SettingsService.instance.autoLighting) ...[
-                  const _ItemDivider(),
-                  _TrailingTextItem(
-                    label: '라이트 프리셋',
-                    trailing: '${_lightLabel(SettingsService.instance.lightPreset)} >',
-                    onTap: () => _showPicker(
-                      title: '라이트 프리셋',
-                      options: const ['새벽', '낮', '저녁', '밤'],
-                      selected: _lightLabel(SettingsService.instance.lightPreset),
-                      onSelected: (v) {
-                        SettingsService.instance.setLightPreset(_lightKey(v));
-                        setState(() {});
-                      },
-                    ),
-                  ),
-                ],
               ],
             ),
             const SizedBox(height: 16),
@@ -297,9 +121,23 @@ class _SettingsViewState extends State<SettingsView> {
                     options: ['라이트', '다크'],
                     selected: _themeMode,
                     onSelected: (v) {
+                      if (v == _themeMode) return;
                       setState(() => _themeMode = v);
                       final mode = v == '라이트' ? 'light' : 'dark';
                       SeoulPrismApp.setThemeMode(context, mode);
+                      // 테마 완전 적용 위해 위젯 트리 재구성 안내.
+                      showAdaptiveConfirmDialog(
+                        context: context,
+                        title: '테마 변경됨',
+                        content:
+                            '$v 모드를 완전히 적용하려면 앱을 재시작해야 해요. 지금 재시작할까요?',
+                        confirmText: '재시작',
+                        cancelText: '나중에',
+                        onConfirm: () {
+                          // 위젯 트리 강제 재구성 (process 재시작은 iOS 가 막음).
+                          SeoulPrismApp.restartApp(context);
+                        },
+                      );
                     },
                   ),
                 ),
@@ -413,6 +251,27 @@ class _SettingsViewState extends State<SettingsView> {
                   ],
                 );
               },
+            ),
+            const SizedBox(height: 16),
+
+            // 지도 표시 + 데이터 소스 + 라이팅 통합 sub-view 진입.
+            // 개발자 섹션 바로 위에 둔 이유: 자주 안 만지는 시각화 옵션이라
+            // 메인 탭 흐름(품질 → 데이터 관리 → 일반 → 계정) 을 끊지 않게.
+            AdaptiveSectionCard(
+              children: [
+                _ChevronItem(
+                  label: '지도 표시 및 데이터',
+                  onTap: () async {
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const MapDisplaySettingsView(),
+                      ),
+                    );
+                    if (mounted) setState(() {});
+                  },
+                ),
+              ],
             ),
             const SizedBox(height: 16),
 
@@ -653,23 +512,6 @@ class _SettingsViewState extends State<SettingsView> {
         '배터리 절약' => 'low',
         _ => label,
       };
-  static String _lightLabel(String key) => switch (key) {
-        'auto' => '자동',
-        'dawn' => '새벽',
-        'day' => '낮',
-        'dusk' => '저녁',
-        'night' => '밤',
-        _ => key,
-      };
-  static String _lightKey(String label) => switch (label) {
-        '자동' => 'auto',
-        '새벽' => 'dawn',
-        '낮' => 'day',
-        '저녁' => 'dusk',
-        '밤' => 'night',
-        _ => label,
-      };
-
   void _confirmResetTutorial() {
     showAdaptiveConfirmDialog(
       context: context,
@@ -679,6 +521,255 @@ class _SettingsViewState extends State<SettingsView> {
       onConfirm: () => OnboardingService.instance.reset(),
     );
   }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Sub-view: 지도 표시 및 데이터 (settings 메인에서 chevron 으로 진입)
+// settings_view.dart 의 helper widget(_SwitchItem 등)을 공유하기 위해 같은 파일에 둠.
+// ─────────────────────────────────────────────────────────────────
+
+class MapDisplaySettingsView extends StatefulWidget {
+  const MapDisplaySettingsView({super.key});
+
+  @override
+  State<MapDisplaySettingsView> createState() => _MapDisplaySettingsViewState();
+}
+
+class _MapDisplaySettingsViewState extends State<MapDisplaySettingsView> {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        centerTitle: true,
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 8),
+          child: Center(
+            child: _SafeNativeView(
+              fallback: Icon(Icons.arrow_back_ios_rounded,
+                  color: Colors.white.withValues(alpha: 0.85), size: 20),
+              child: AdaptiveGlassIconButton(
+                icon: Icons.arrow_back_ios_rounded,
+                onPressed: () => Navigator.of(context).pop(),
+                iconSize: 18,
+              ),
+            ),
+          ),
+        ),
+        title: Text(
+          '지도 표시 및 데이터',
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onSurface,
+            fontSize: 17,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Column(
+          children: [
+            _SectionHeader(label: '지도 표시'),
+            AdaptiveSectionCard(
+              children: [
+                _SwitchItem(
+                  label: '3D 건물 표시',
+                  value: SettingsService.instance
+                      .getBool('show3DBuildings', defaultValue: true),
+                  onChanged: (v) {
+                    SettingsService.instance.setBool('show3DBuildings', v);
+                    setState(() {});
+                  },
+                ),
+                const _ItemDivider(),
+                _SwitchItem(
+                  label: 'POI 아이콘 표시',
+                  value: SettingsService.instance
+                      .getBool('showPOI', defaultValue: true),
+                  onChanged: (v) {
+                    SettingsService.instance.setBool('showPOI', v);
+                    setState(() {});
+                  },
+                ),
+                const _ItemDivider(),
+                _SwitchItem(
+                  label: '날씨 효과 (안개/비)',
+                  value: SettingsService.instance
+                      .getBool('weatherEffect', defaultValue: true),
+                  onChanged: (v) {
+                    SettingsService.instance.setBool('weatherEffect', v);
+                    setState(() {});
+                  },
+                ),
+                const _ItemDivider(),
+                _SwitchItem(
+                  label: '실시간 지하철',
+                  value: SettingsService.instance
+                      .getBool('showSubway', defaultValue: true),
+                  onChanged: (v) {
+                    SettingsService.instance.setBool('showSubway', v);
+                    setState(() {});
+                  },
+                ),
+                const _ItemDivider(),
+                _SwitchItem(
+                  label: '지하철 노선',
+                  value: SettingsService.instance.showRoutes,
+                  onChanged: (v) {
+                    SettingsService.instance.setShowRoutes(v);
+                    setState(() {});
+                  },
+                ),
+                const _ItemDivider(),
+                _SwitchItem(
+                  label: '지하철 열차 위치',
+                  value: SettingsService.instance.showTrains,
+                  onChanged: (v) {
+                    SettingsService.instance.setShowTrains(v);
+                    setState(() {});
+                  },
+                ),
+                const _ItemDivider(),
+                _SwitchItem(
+                  label: '지하철 역',
+                  value: SettingsService.instance.showStations,
+                  onChanged: (v) {
+                    SettingsService.instance.setShowStations(v);
+                    setState(() {});
+                  },
+                ),
+                const _ItemDivider(),
+                _SwitchItem(
+                  label: '시내버스',
+                  value: SettingsService.instance.showBuses,
+                  onChanged: (v) {
+                    SettingsService.instance.setShowBuses(v);
+                    setState(() {});
+                  },
+                ),
+                const _ItemDivider(),
+                _SwitchItem(
+                  label: '한강버스',
+                  value: SettingsService.instance.showRiverBus,
+                  onChanged: (v) {
+                    SettingsService.instance.setShowRiverBus(v);
+                    setState(() {});
+                  },
+                ),
+                const _ItemDivider(),
+                _SwitchItem(
+                  label: '항공기',
+                  value: SettingsService.instance.showFlights,
+                  onChanged: (v) {
+                    SettingsService.instance.setShowFlights(v);
+                    setState(() {});
+                  },
+                ),
+              ],
+            ),
+            _RestartHint(),
+            const SizedBox(height: 16),
+            _SectionHeader(label: '데이터 소스'),
+            AdaptiveSectionCard(
+              children: [
+                _TrailingTextItem(
+                  label: '지하철 모드',
+                  trailing:
+                      '${SettingsService.instance.mode == 'live' ? '실시간' : '데모'} >',
+                  onTap: () => showAdaptivePicker(
+                    context: context,
+                    title: '지하철 모드',
+                    options: const ['실시간', '데모'],
+                    selected:
+                        SettingsService.instance.mode == 'live' ? '실시간' : '데모',
+                    onSelected: (v) {
+                      SettingsService.instance
+                          .setMode(v == '실시간' ? 'live' : 'demo');
+                      setState(() {});
+                    },
+                  ),
+                ),
+                const _ItemDivider(),
+                _SwitchItem(
+                  label: '서울시 공공 API (60s)',
+                  value: SettingsService.instance.useSeoulApi,
+                  onChanged: (v) {
+                    SettingsService.instance.setUseSeoulApi(v);
+                    setState(() {});
+                  },
+                ),
+                const _ItemDivider(),
+                _SwitchItem(
+                  label: '네이버 API (5s 단위 보정)',
+                  value: SettingsService.instance.useNaverApi,
+                  onChanged: (v) {
+                    SettingsService.instance.setUseNaverApi(v);
+                    setState(() {});
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            _SectionHeader(label: '라이팅'),
+            AdaptiveSectionCard(
+              children: [
+                _SwitchItem(
+                  label: '자동 (시간대 + 날씨)',
+                  value: SettingsService.instance.autoLighting,
+                  onChanged: (v) {
+                    SettingsService.instance.setAutoLighting(v);
+                    setState(() {});
+                  },
+                ),
+                if (!SettingsService.instance.autoLighting) ...[
+                  const _ItemDivider(),
+                  _TrailingTextItem(
+                    label: '라이트 프리셋',
+                    trailing:
+                        '${_lightLabelStatic(SettingsService.instance.lightPreset)} >',
+                    onTap: () => showAdaptivePicker(
+                      context: context,
+                      title: '라이트 프리셋',
+                      options: const ['새벽', '낮', '저녁', '밤'],
+                      selected: _lightLabelStatic(
+                          SettingsService.instance.lightPreset),
+                      onSelected: (v) {
+                        SettingsService.instance
+                            .setLightPreset(_lightKeyStatic(v));
+                        setState(() {});
+                      },
+                    ),
+                  ),
+                ],
+              ],
+            ),
+            const SizedBox(height: 24),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // 라이트 프리셋 라벨 매핑 — _SettingsViewState 의 static 과 동일.
+  static String _lightLabelStatic(String key) => switch (key) {
+        'auto' => '자동',
+        'dawn' => '새벽',
+        'day' => '낮',
+        'dusk' => '저녁',
+        'night' => '밤',
+        _ => key,
+      };
+  static String _lightKeyStatic(String label) => switch (label) {
+        '자동' => 'auto',
+        '새벽' => 'dawn',
+        '낮' => 'day',
+        '저녁' => 'dusk',
+        '밤' => 'night',
+        _ => label,
+      };
 }
 
 // ── Section header (above each AdaptiveSectionCard) ──
