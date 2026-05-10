@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_soloud/flutter_soloud.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:record/record.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../models/multiplayer_models.dart';
@@ -38,6 +42,10 @@ class ChatSheet extends StatefulWidget {
 class _ChatSheetState extends State<ChatSheet> {
   final _ctrl = TextEditingController();
   final _scroll = ScrollController();
+  final _recorder = AudioRecorder();
+  bool _recording = false;
+  DateTime? _recordStartedAt;
+  String? _recordPath;
 
   static const _quickEmojis = ['👋', '😂', '🔥', '👍', '❤️', '🥲', '🎉', '📍'];
 
@@ -57,6 +65,7 @@ class _ChatSheetState extends State<ChatSheet> {
     _scroll.removeListener(_onScroll);
     _ctrl.dispose();
     _scroll.dispose();
+    _recorder.dispose();
     super.dispose();
   }
 
@@ -171,6 +180,65 @@ class _ChatSheetState extends State<ChatSheet> {
       } catch (_) {}
     }
     if (mounted) showAppSnackBar('지도 앱을 열 수 없어요');
+  }
+
+  Future<void> _startRecording() async {
+    try {
+      if (!await _recorder.hasPermission()) {
+        showAppSnackBar('마이크 권한이 필요해요');
+        return;
+      }
+      final dir = await getTemporaryDirectory();
+      final path =
+          '${dir.path}/voice_${DateTime.now().millisecondsSinceEpoch}.m4a';
+      await _recorder.start(
+        const RecordConfig(encoder: AudioEncoder.aacLc, bitRate: 64000),
+        path: path,
+      );
+      setState(() {
+        _recording = true;
+        _recordPath = path;
+        _recordStartedAt = DateTime.now();
+      });
+    } catch (e) {
+      showAppSnackBar('녹음 시작 실패: $e');
+    }
+  }
+
+  Future<void> _stopRecording({bool cancel = false}) async {
+    if (!_recording) return;
+    try {
+      final path = await _recorder.stop();
+      final startedAt = _recordStartedAt;
+      setState(() {
+        _recording = false;
+        _recordStartedAt = null;
+      });
+      if (cancel || path == null || startedAt == null) return;
+      final ms = DateTime.now().difference(startedAt).inMilliseconds;
+      if (ms < 500) {
+        showAppSnackBar('너무 짧아요 — 길게 눌러 녹음');
+        return;
+      }
+      await MultiplayerService.instance.sendVoiceMessage(path, ms);
+    } catch (e) {
+      showAppSnackBar('녹음 종료 실패: $e');
+    }
+  }
+
+  Future<void> _pickAndSendImage() async {
+    try {
+      final picker = ImagePicker();
+      final x = await picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 85,
+        maxWidth: 1600,
+      );
+      if (x == null) return;
+      await MultiplayerService.instance.sendImageMessage(x.path);
+    } catch (e) {
+      showAppSnackBar('사진 전송 실패: $e');
+    }
   }
 
   Future<void> _shareSpotifyTrack() async {
@@ -302,10 +370,35 @@ class _ChatSheetState extends State<ChatSheet> {
             ),
           ),
           const SizedBox(height: 8),
+          if (_recording)
+            Container(
+              margin: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: cs.errorContainer,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.mic_rounded, size: 18, color: cs.error),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text('녹음 중... 손 떼면 전송 / 위로 드래그 시 취소',
+                        style: TextStyle(
+                            fontSize: 12, color: cs.onErrorContainer)),
+                  ),
+                ],
+              ),
+            ),
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
             child: Row(
               children: [
+                AdaptiveGlassIconButton(
+                  icon: Icons.add_photo_alternate_outlined,
+                  onPressed: _pickAndSendImage,
+                ),
+                const SizedBox(width: 4),
                 AdaptiveGlassIconButton(
                   icon: Icons.place_outlined,
                   onPressed: _shareMyLocation,
@@ -319,13 +412,23 @@ class _ChatSheetState extends State<ChatSheet> {
                 Expanded(
                   child: AdaptiveTextField(
                     controller: _ctrl,
-                    placeholder: '메시지 입력',
+                    placeholder: _recording ? '🎙 녹음 중' : '메시지 입력',
                     onSubmitted: (_) => _send(),
                     padding: const EdgeInsets.symmetric(
                         horizontal: 14, vertical: 12),
                   ),
                 ),
                 const SizedBox(width: 8),
+                GestureDetector(
+                  onLongPressStart: (_) => _startRecording(),
+                  onLongPressEnd: (d) => _stopRecording(cancel: d.localPosition.dy < -50),
+                  child: AdaptiveGlassIconButton(
+                    icon:
+                        _recording ? Icons.fiber_manual_record : Icons.mic_none_rounded,
+                    onPressed: _recording ? null : null,
+                  ),
+                ),
+                const SizedBox(width: 4),
                 AdaptiveGlassIconButton(
                   icon: Icons.send_rounded,
                   onPressed: _send,
@@ -440,6 +543,116 @@ class _ChatSheetState extends State<ChatSheet> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _voiceCard(RoomMessage m, MultiplayerProfile? p, bool isMe) {
+    final cs = Theme.of(context).colorScheme;
+    final parts = m.body.split('|');
+    final url = parts.isNotEmpty ? parts[0] : '';
+    final ms = parts.length > 1 ? int.tryParse(parts[1]) ?? 0 : 0;
+    final secs = (ms / 1000).round();
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        mainAxisAlignment:
+            isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+        children: [
+          if (!isMe) ...[_miniAvatar(p), const SizedBox(width: 8)],
+          GestureDetector(
+            onTap: () => _playVoice(url),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: isMe ? cs.primaryContainer : cs.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.play_circle_fill_rounded,
+                      size: 28, color: cs.primary),
+                  const SizedBox(width: 8),
+                  Text('${secs}s 음성',
+                      style: TextStyle(
+                          fontSize: 13,
+                          color:
+                              isMe ? cs.onPrimaryContainer : cs.onSurface)),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _playVoice(String url) async {
+    try {
+      final s = SoLoud.instance;
+      if (!s.isInitialized) await s.init();
+      final src = await s.loadUrl(url);
+      await s.play(src);
+    } catch (e) {
+      showAppSnackBar('재생 실패: $e');
+    }
+  }
+
+  Widget _imageCard(RoomMessage m, MultiplayerProfile? p, bool isMe) {
+    final cs = Theme.of(context).colorScheme;
+    final url = m.body;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        mainAxisAlignment:
+            isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+        children: [
+          if (!isMe) ...[_miniAvatar(p), const SizedBox(width: 8)],
+          GestureDetector(
+            onTap: () => _showImageViewer(url),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(14),
+              child: Image.network(
+                url,
+                width: 200,
+                fit: BoxFit.cover,
+                errorBuilder: (_, _, _) => Container(
+                  width: 200, height: 120,
+                  color: cs.surfaceContainerHighest,
+                  alignment: Alignment.center,
+                  child: Icon(Icons.broken_image_outlined,
+                      color: cs.onSurfaceVariant),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showImageViewer(String url) {
+    showDialog(
+      context: context,
+      builder: (_) => Dialog.fullscreen(
+        backgroundColor: Colors.black,
+        child: Stack(
+          children: [
+            Center(
+              child: InteractiveViewer(
+                child: Image.network(url, fit: BoxFit.contain),
+              ),
+            ),
+            Positioned(
+              top: 40, right: 16,
+              child: IconButton(
+                icon: const Icon(Icons.close_rounded, color: Colors.white),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -565,6 +778,8 @@ class _ChatSheetState extends State<ChatSheet> {
 
     if (m.kind == 'place') return _placeCard(m, p, isMe);
     if (m.kind == 'spotify') return _spotifyCard(m, p, isMe);
+    if (m.kind == 'voice') return _voiceCard(m, p, isMe);
+    if (m.kind == 'image') return _imageCard(m, p, isMe);
 
     if (isMeetup) {
       return Padding(

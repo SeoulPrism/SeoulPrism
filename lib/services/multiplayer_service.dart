@@ -1583,6 +1583,38 @@ class MultiplayerService with WidgetsBindingObserver {
     }
   }
 
+  static final _mediaRand = Random.secure();
+
+  /// 음성/이미지 등 chat-media 업로드. localPath → public URL 반환.
+  /// path = `<my_uid>/<ts>-<rand>.<ext>` 형식.
+  Future<String?> uploadChatMedia(String localPath, {required String ext}) async {
+    if (myId == null) return null;
+    try {
+      final id = DateTime.now().millisecondsSinceEpoch;
+      final name = '$myId/$id-${_mediaRand.nextInt(1 << 30)}.$ext';
+      final file = File(localPath);
+      await _sb.storage.from('chat-media').upload(name, file);
+      return _sb.storage.from('chat-media').getPublicUrl(name);
+    } catch (e) {
+      debugPrint('[Multi] uploadChatMedia 실패: $e');
+      return null;
+    }
+  }
+
+  /// body = `<url>|<duration_ms>` 형식 (chat 가 parse).
+  Future<void> sendVoiceMessage(String localPath, int durationMs) async {
+    final url = await uploadChatMedia(localPath, ext: 'm4a');
+    if (url == null) return;
+    await sendMessage('$url|$durationMs', kind: 'voice');
+  }
+
+  /// body = url 단일.
+  Future<void> sendImageMessage(String localPath) async {
+    final url = await uploadChatMedia(localPath, ext: 'jpg');
+    if (url == null) return;
+    await sendMessage(url, kind: 'image');
+  }
+
   /// 친구방에 장소 카드 공유. body 는 `<name>|<lat>|<lng>` 형식 (parse 는 chat 측).
   Future<void> sharePlaceToRoom({
     required String name,
