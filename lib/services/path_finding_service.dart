@@ -637,7 +637,6 @@ class PathFindingService {
     while (prev.containsKey(path.last)) {
       path.add(prev[path.last]!);
     }
-    path.reversed;
     final reversedPath = path.reversed.toList();
 
     // 경로를 구간(같은 노선)별로 그룹핑.

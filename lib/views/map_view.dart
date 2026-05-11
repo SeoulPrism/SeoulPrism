@@ -24,11 +24,18 @@ import '../services/seoul_bus_service.dart';
 import '../widgets/weather_widget.dart';
 import '../widgets/subway_panel.dart';
 import '../services/multiplayer_service.dart';
+import '../services/building_presence_tracker.dart';
 import '../widgets/multiplayer/seoul_live_overlays.dart';
 import '../widgets/multiplayer/peer_pin_renderer.dart';
 import '../widgets/multiplayer/live_sharing_badge.dart';
+import '../widgets/multiplayer/room_members_panel.dart';
 import '../widgets/app_snackbar.dart';
 import 'multiplayer/peer_profile_card.dart';
+import 'multiplayer/peer_now_playing_view.dart';
+import 'multiplayer/my_avatar_sheet.dart';
+import 'multiplayer/building_occupants_sheet.dart';
+import 'multiplayer/multiplayer_hub_view.dart';
+import 'multiplayer/spotify_view.dart';
 import '../widgets/search_bar.dart';
 import '../services/place_search_service.dart';
 import '../services/favorites_service.dart';
@@ -47,6 +54,8 @@ import 'map/widgets/navigation_banner.dart';
 import 'map/widgets/saved_panel.dart';
 import 'map/widgets/settings_panel.dart';
 import 'map/widgets/travel_panel.dart';
+import 'map/widgets/visit_timeline_panel.dart';
+import '../data/travel_themes.dart';
 import 'map/widgets/info_bars.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 import '../services/visit_history_service.dart';
@@ -90,6 +99,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   bool _settingsOpen = false; // 더 이상 탭으로 진입 안 함 — ProfileView 의 톱니바퀴 아이콘으로만 진입.
   bool _travelOpen = false;
   bool _aiOpen = false;
+  bool _timelineOpen = false; // 프로필에서 진입한 방문 타임라인 패널.
   bool _aiClosing = false;
   bool _recommendOpen = false;
   bool _savedOpen = false;
@@ -142,6 +152,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   bool _satelliteOn = false;
   List<DayPlan>? _dayPlans;
+  // DayPlanView 가 리사이즈/스냅할 때 보고하는 현재 패널 높이. 0 이면 닫힘 처리.
+  double _dayPlanHeight = 0;
+  bool get _dayPlanOpen => _dayPlans != null && _dayPlans!.isNotEmpty;
 
   final CameraInfo _cameraInfo = CameraInfo(
     lat: 37.5665,
@@ -239,8 +252,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     // Seoul Live (멀티플레이) 상태 변동 시 탭바 모핑/인트로 트리거.
     MultiplayerService.instance.addListener(_onMultiplayerChanged);
+    // 내 위치가 건물 안 ↔ 밖 변경 시 user 핀 visibility + 칩 오버레이 sync.
+    BuildingPresenceTracker.instance.addListener(_onIndoorChanged);
     // 위치 권한 거부 시 사용자에게 안내 (1회).
     MultiplayerService.instance.addLocationDeniedListener(_onLocationDenied);
+    // 강퇴됐을 때 안내.
+    MultiplayerService.instance.addKickedListener(_onKicked);
     // 친구방 채팅에서 공유된 장소 카드 탭 → 맵 점프.
     MultiplayerService.instance.pendingMapJump.addListener(_onMapJumpRequested);
     // 처음 진입 시 이미 활성 + 튜토리얼 미시청이면 다음 frame 에 인트로 시작.
@@ -254,17 +271,83 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   bool _seoulLiveLastSeen =
       MultiplayerService.instance.seoulLiveActive;
+  bool _inRoomLastSeen =
+      MultiplayerService.instance.currentRoom != null;
+  bool _indoorLastSeen =
+      BuildingPresenceTracker.instance.myBuilding != null;
   PeerPinRenderer? _peerPinRenderer;
+  /// 건물 footprint 탭 → 임시로 보여주는 마커. 다시 탭하면 occupants 시트로.
+  /// 다른 곳 탭하면 사라짐. Pin id 는 '__bldg_pending__'.
+  String? _pendingBuildingId;
+  static const String _kPendingBuildingPinId = '__bldg_pending__';
+  /// 위치 공유 배지 탭 시 토글되는 친구 목록 패널.
+  bool _membersPanelOpen = false;
+  /// 날씨 위젯 펼침 상태 — 펼치면 다른 상단 위젯들 페이드아웃.
+  bool _weatherExpanded = false;
 
   void _onMultiplayerChanged() {
     if (!mounted) return;
     final active = MultiplayerService.instance.seoulLiveActive;
+    final inRoom = MultiplayerService.instance.currentRoom != null;
     final flippedOn = !_seoulLiveLastSeen && active;
+    final activeChanged = active != _seoulLiveLastSeen;
+    final roomChanged = inRoom != _inRoomLastSeen;
     _seoulLiveLastSeen = active;
-    setState(() {});
-    // G1: peer 핀 렌더러 attach/detach.
+    _inRoomLastSeen = inRoom;
+    // peer 핀 동기화 (mapbox native 호출, widget rebuild 와 무관).
     _syncPeerPinRenderer();
     if (flippedOn) _waitForFocusThenRunIntro();
+    // build() 가 신경쓰는 값 (seoulLiveActive / currentRoom 존재) 이 변한 경우에만
+    // 거대한 map_view 를 리빌드. peer 위치 / DM / friend request 등 다른
+    // notify 이벤트는 build 결과에 영향 없으므로 skip. peer track 은 별도
+    // listener (addPeerTrackListener) 가 따로 처리한다.
+    if (activeChanged || roomChanged) {
+      setState(() {});
+    }
+  }
+
+  void _onIndoorChanged() {
+    if (!mounted) return;
+    final inside = BuildingPresenceTracker.instance.myBuilding != null;
+    if (inside == _indoorLastSeen) return;
+    _indoorLastSeen = inside;
+    _mapController?.setUserPinVisible(!inside);
+    setState(() {});
+  }
+
+  /// 빈 곳 탭 좌표가 건물 안이고 peer 가 있으면 centroid 에 임시 마커 표시.
+  /// 마커가 이미 떠있는 상태에서 다른 곳 탭하면 사라짐.
+  Future<void> _maybeShowBuildingMarker(double lat, double lng) async {
+    final mc = _mapController;
+    if (mc == null) return;
+    // 이미 떠있는 임시 마커가 있으면 일단 제거 (새 좌표 평가 전).
+    if (_pendingBuildingId != null) {
+      mc.removePeerPin(_kPendingBuildingPinId);
+      _pendingBuildingId = null;
+    }
+    final hit = await mc.queryBuildingAt(lat, lng);
+    if (hit == null) return;
+    final tracker = BuildingPresenceTracker.instance;
+    final ids = tracker
+        .peersInBuilding(hit.id)
+        .where((id) => id != MultiplayerService.instance.myId)
+        .toList();
+    if (ids.isEmpty) return;
+    _pendingBuildingId = hit.id;
+    final label = '🏢 ${hit.displayName} · ${ids.length}명';
+    await mc.upsertPeerPin(
+      _kPendingBuildingPinId,
+      hit.centroidLat,
+      hit.centroidLng,
+      color: const Color(0xFFFF8C42),
+      label: label,
+    );
+  }
+
+  void _dismissPendingBuildingMarker() {
+    if (_pendingBuildingId == null) return;
+    _mapController?.removePeerPin(_kPendingBuildingPinId);
+    _pendingBuildingId = null;
   }
 
   void _syncPeerPinRenderer() {
@@ -277,6 +360,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
       _peerPinRenderer?.detach();
       _peerPinRenderer = null;
     }
+    _syncUserPinColor();
+  }
+
+  void _syncUserPinColor() {
+    final mc = _mapController;
+    final p = MultiplayerService.instance.myProfile;
+    if (mc == null || p == null) return;
+    try {
+      final v = int.parse(p.pinColor.substring(1), radix: 16);
+      mc.setUserPinColor(Color(0xFF000000 | v));
+    } catch (_) {}
   }
 
   /// 프로필 생성은 보통 ProfileEditSheet (modal) 안에서 일어나므로
@@ -319,8 +413,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _flightController.dispose();
     MultiplayerService.instance.removeListener(_onMultiplayerChanged);
     MultiplayerService.instance.removeLocationDeniedListener(_onLocationDenied);
+    MultiplayerService.instance.removeKickedListener(_onKicked);
     MultiplayerService.instance.pendingMapJump
         .removeListener(_onMapJumpRequested);
+    BuildingPresenceTracker.instance.removeListener(_onIndoorChanged);
     _peerPinRenderer?.detach();
     super.dispose();
   }
@@ -328,6 +424,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void _onLocationDenied() {
     if (!mounted) return;
     showAppSnackBar('위치 권한이 없어서 친구가 내 핀을 못 봐요. 설정 → 위치 에서 허용해주세요.');
+  }
+
+  void _onKicked() {
+    if (!mounted) return;
+    setState(() => _membersPanelOpen = false);
+    showAppSnackBar('친구방에서 나가졌어요');
   }
 
   void _onMapJumpRequested() {
@@ -557,10 +659,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
       final lineWidth = seg.isWalk ? 4.0 : 5.0;
       final outlineWidth = seg.isWalk ? 6.0 : 8.0;
 
+      // outline 은 다크 맵에서 검정으로 두면 배경에 묻힘 → 항상 흰색 + 적절
+      // 알파. 라이트 모드에선 노선 색이 진해서 흰 outline 도 잘 보임.
       await mc.addPolyline(
         'route_outline_$s',
         seg.coords,
-        color: seg.isWalk ? Colors.white : Colors.black.withValues(alpha: 0.4),
+        color: Colors.white.withValues(alpha: seg.isWalk ? 0.85 : 0.55),
         width: outlineWidth,
         opacity: 1.0,
       );
@@ -730,6 +834,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   void _clearRouteFromMap() {
+    // 진행 중인 _drawRouteOnMap 의 await 체인을 무효화해서 그 사이 추가 폴리라인이
+    // 새로 그려지지 않게 한다 (race condition 방지 — 사용자가 X 누른 직후 잔존
+    // 선이 다시 나타나는 버그 원인).
+    ++_routeAnimId;
     _arrivalRefreshTimer?.cancel();
     _routeNavigationTimer?.cancel();
     _navLocationSub?.cancel();
@@ -743,6 +851,45 @@ class _DashboardScreenState extends State<DashboardScreen> {
     mc.clearPolylines();
     mc.clearCircleMarkers();
     mc.clearRouteArrows();
+    // 명시적으로 directions(walking/driving) 폴리라인도 id 로 한 번 더 제거 —
+    // clearPolylines 가 deleteAll 이라 중복이지만, 향후 segment polyline 만 부분
+    // 제거할 때를 대비해 안전망.
+    mc.removePolyline('directions_route');
+    mc.removePolyline('directions_route_outline');
+  }
+
+  /// 방문 타임라인 패널 진입 시 — 모든 방문 핀을 지도에 그리고 가장 최근 위치로
+  /// 카메라 이동.
+  Future<void> _drawVisitTimelinePins() async {
+    final mc = _mapController;
+    if (mc == null) return;
+    mc.clearCircleMarkers();
+    final visits = VisitHistoryService.instance.recentVisits
+        .where((v) => v.lat != 0 && v.lng != 0)
+        .toList();
+    for (int i = 0; i < visits.length; i++) {
+      final v = visits[i];
+      final isFirst = i == 0;
+      mc.addCircleMarker(
+        'timeline_${v.name}_$i',
+        v.lat,
+        v.lng,
+        color: isFirst ? const Color(0xFFFB6340) : const Color(0xFF4A90D9),
+        radius: isFirst ? 9.0 : 7.0,
+        strokeColor: Colors.white,
+        strokeWidth: 2.0,
+      );
+    }
+    if (visits.isNotEmpty) {
+      final first = visits.first;
+      mc.moveTo(first.lat, first.lng, zoom: 14.0);
+    }
+  }
+
+  void _closeVisitTimeline() {
+    setState(() => _timelineOpen = false);
+    _mapController?.clearCircleMarkers();
+    _delayShowButton();
   }
 
   /// 경로를 따라 화살표 데이터를 수집
@@ -784,9 +931,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _mapController = controller;
     // G1: 맵 ready 시점에 Seoul Live active 면 즉시 peer 핀 렌더러 attach.
     _syncPeerPinRenderer();
-    // R1: peer 핀 탭 → 프로필 카드.
-    controller.setOnPeerPinTapped((userId) {
-      if (mounted) PeerProfileCard.show(context, userId);
+    // R1: peer 핀 탭 — 임시 건물 마커 → occupants 시트, peer 핀 → 프로필.
+    controller.setOnPeerPinTapped((id) {
+      if (!mounted) return;
+      if (id == _kPendingBuildingPinId) {
+        final bid = _pendingBuildingId;
+        _dismissPendingBuildingMarker();
+        if (bid != null) BuildingOccupantsSheet.show(context, bid);
+        return;
+      }
+      // 다른 peer 핀을 탭했을 때 임시 건물 마커가 있으면 같이 정리.
+      _dismissPendingBuildingMarker();
+      final hasTrack =
+          MultiplayerService.instance.peerProfile(id)?.currentTrack != null;
+      if (hasTrack) {
+        PeerNowPlayingView.push(context, id);
+      } else {
+        PeerProfileCard.show(context, id);
+      }
+    });
+    // 내 3D 아바타 탭 → 친구방 멤버 + 지금 듣는 곡 시트.
+    controller.setOnUserAvatarTapped(() {
+      if (mounted) MyAvatarSheet.show(context);
     });
     _subwayController.attachMap(controller);
     _busController.attachMap(controller);
@@ -896,7 +1062,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       });
     });
 
-    // 한강버스 선착장 좌표 탭 감지
+    // 한강버스 선착장 좌표 탭 감지 + 건물 footprint 탭 감지.
     controller.setOnMapCoordTapped((lat, lng) {
       for (final stop in RiverBusData.stops) {
         final dLat = (stop.lat - lat).abs();
@@ -907,10 +1073,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
             _setSelectedPlace(null);
           }
           _showRiverBusStopPanel(stop);
-          // 빈 곳 처리 스킵하도록 — 플래그는 엔진에서
           return;
         }
       }
+      // 건물 hit-test — 그 안에 peer 가 있으면 centroid 에 임시 마커.
+      _maybeShowBuildingMarker(lat, lng);
     });
 
     // 자동으로 데모 모드 시작
@@ -923,6 +1090,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _busController.start();
     // 현재 위치 3D 아바타 활성화
     controller.enableLocationPuck();
+    _syncUserPinColor();
     // 기기 프로필 안내 (최초 1회, 페이드 토스트)
     if (!_profileShown) {
       _profileShown = true;
@@ -936,16 +1104,88 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
+  /// 디테일 위젯을 압축 모드로 감쌈.
+  /// - collapsed=false: 그대로 (natural size)
+  /// - collapsed=true: SizedBox 로 외부 높이 고정 + OverflowBox 로 child 에게는
+  ///   무한 maxHeight 전달 → child 의 Column 이 자기 자연 크기로 layout 하므로
+  ///   RenderFlex overflow 경고 안 남. ClipRect 가 maxHeight 초과분을 잘라냄.
+  ///   top alignment 라 핸들/타이틀이 보이고 아래쪽 디테일이 클립됨.
+  Widget _compactDetail({
+    required bool collapsed,
+    required double maxHeight,
+    required Widget child,
+  }) {
+    return AnimatedSize(
+      duration: const Duration(milliseconds: 350),
+      curve: Curves.easeOutCubic,
+      alignment: Alignment.bottomCenter,
+      child: collapsed
+          ? SizedBox(
+              height: maxHeight,
+              child: ClipRect(
+                child: OverflowBox(
+                  minHeight: 0,
+                  maxHeight: double.infinity,
+                  alignment: Alignment.topCenter,
+                  child: child,
+                ),
+              ),
+            )
+          : child,
+    );
+  }
+
+  /// 현재 열려있는 메인 패널의 화면 높이 점유분 (px). 디테일 위젯이 위로
+  /// 떠오르는 데 사용. 동시에 여러 개 열려있으면 max.
+  double _primaryPanelHeight(double screenHeight) {
+    if (_aiOpen) return screenHeight; // 풀스크린
+    var h = 0.0;
+    if (_recommendOpen) h = max(h, screenHeight * 0.55);
+    if (_savedOpen) h = max(h, screenHeight * 0.55);
+    if (_travelOpen) h = max(h, screenHeight * 0.55);
+    if (_timelineOpen) h = max(h, screenHeight * 0.40);
+    if (_settingsOpen) h = max(h, screenHeight * 0.58);
+    // 하루 플랜 패널 — DayPlanView 가 보고한 실제 높이 (드래그 리사이즈 추종).
+    if (_dayPlans != null && _dayPlans!.isNotEmpty && _dayPlanHeight > 0) {
+      h = max(h, _dayPlanHeight);
+    }
+    // 길찾기 결과 바텀 패널 — RouteSheetShell 의 sheetFraction 따라.
+    if (_routeResult != null && _isNavMode) {
+      h = max(h, screenHeight * _routeSheetFraction);
+    }
+    return h;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final bottomInset = MediaQuery.of(context).padding.bottom + 65;
+    // iOS CNTabBar ≈ 49pt, Android M3 capsule ≈ 56 + padding 12 = 68dp.
+    // 플랫폼별 실제 탭바 높이를 더해서 디테일 패널이 탭바 위에 딱 맞게 안기게.
+    final tabBarHeight = Platform.isIOS ? 49.0 : 68.0;
+    final bottomInset = MediaQuery.of(context).padding.bottom + tabBarHeight;
     final screenHeight = MediaQuery.of(context).size.height;
     final stationPanelMaxHeight = screenHeight * 0.3;
+    // 메인 패널(추천/저장/여행/타임라인/설정) 열려있으면 하단 디테일 위젯이
+    // 그 위에 압축 모드로 떠 있음.
+    final detailLift = _primaryPanelHeight(screenHeight);
+    final detailCompact = detailLift > 0;
+    // 디테일 위젯의 bottom (Positioned bottom 값).
+    // - 압축 시: detailLift + 4 → 패널 바로 위 4px.
+    // - 평상시: bottomInset + 6 → 탭바 위 6px 여백.
+    final detailBottom = detailCompact ? detailLift + 4.0 : bottomInset + 6.0;
+    // 마지노선 = 날씨 위젯 바닥. weather top = padding.top+62, height ~48
+    // (실측). 8px 마진 안 두고 바로 위까지 허용 → iOS notch 때문에 detailMaxHeight
+    // 가 너무 작아져 PlaceDetailPanel 이 잘리던 문제 완화.
+    final topInset = MediaQuery.of(context).padding.top;
+    final detailMaxHeight = detailCompact
+        ? max(180.0, screenHeight - detailBottom - topInset - 110)
+        : double.infinity;
 
     return Scaffold(
       extendBody: true,
       resizeToAvoidBottomInset: false,
-      bottomNavigationBar: (_routeResult != null && _isNavMode)
+      bottomNavigationBar: ((_routeResult != null && _isNavMode) ||
+              _timelineOpen ||
+              (_dayPlans != null && _dayPlans!.isNotEmpty))
           ? null
           : Column(
               mainAxisSize: MainAxisSize.min,
@@ -1015,14 +1255,108 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
 
             // G1: Seoul Live "위치 공유 중" 배지 (방 입장 + ghost 아닐 때).
+            // 길찾기 모드 / 검색 포커스 / 추천·여행 패널 열림 시에는 가림.
             Positioned(
               top: MediaQuery.of(context).padding.top + 64,
               left: 0,
               right: 0,
-              child: Center(child: LiveSharingBadge()),
+              child: Center(
+                child: AnimatedOpacity(
+                  duration: const Duration(milliseconds: 250),
+                  opacity: (_weatherExpanded ||
+                          _isNavMode ||
+                          _isSearchFocused ||
+                          _settingsOpen ||
+                          _recommendOpen ||
+                          _travelOpen ||
+                          _savedOpen ||
+                          _aiOpen)
+                      ? 0.0
+                      : 1.0,
+                  child: IgnorePointer(
+                    ignoring: _weatherExpanded ||
+                        _isNavMode ||
+                        _isSearchFocused ||
+                        _settingsOpen ||
+                        _recommendOpen ||
+                        _travelOpen ||
+                        _savedOpen ||
+                        _aiOpen,
+                    child: LiveSharingBadge(
+                      onTap: () => setState(
+                          () => _membersPanelOpen = !_membersPanelOpen),
+                      onMutedToGhost: () =>
+                          setState(() => _membersPanelOpen = false),
+                    ),
+                  ),
+                ),
+              ),
             ),
 
-            // 날씨/시간 위젯 (검색바 아래 좌측, 패널/검색/길찾기 시 페이드아웃)
+            // 친구 목록 슬라이드 패널 — 배지 바로 아래. weather expanded 면 닫힘.
+            Positioned(
+              top: MediaQuery.of(context).padding.top + 100,
+              left: 0,
+              right: 0,
+              child: RoomMembersPanel(
+                open: _membersPanelOpen &&
+                    !_weatherExpanded &&
+                    MultiplayerService.instance.currentRoom != null,
+                onDismiss: () => setState(() => _membersPanelOpen = false),
+                onPeerTap: (uid, lat, lng) {
+                  _mapController?.moveTo(lat, lng,
+                      zoom: 16.5, pitch: 45, durationMs: 1000);
+                },
+              ),
+            ),
+
+            // 자기 자신이 건물 안일 때 — 사용자 핀 대신 칩 오버레이로 알림.
+            if (BuildingPresenceTracker.instance.myBuilding != null)
+              Positioned(
+                top: MediaQuery.of(context).padding.top + 100,
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: AnimatedOpacity(
+                    duration: const Duration(milliseconds: 250),
+                    opacity: (_membersPanelOpen || _weatherExpanded) ? 0.0 : 1.0,
+                    child: IgnorePointer(
+                      ignoring: _membersPanelOpen || _weatherExpanded,
+                      child: GestureDetector(
+                        onTap: () {
+                          final b = BuildingPresenceTracker.instance.myBuilding;
+                          if (b == null) return;
+                          BuildingOccupantsSheet.show(context, b.id);
+                        },
+                        child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFF8C42),
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.18),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Text(
+                        '🏢 ${BuildingPresenceTracker.instance.myBuilding?.displayName} 안에 있어요',
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700),
+                      ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+
+            // 날씨/시간 위젯 (검색바 아래 좌측, 패널/검색/길찾기/친구목록 시 페이드아웃)
             if (_subwayController.isActive)
               Positioned(
                 top: MediaQuery.of(context).padding.top + 62,
@@ -1030,11 +1364,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 child: AnimatedOpacity(
                   duration: const Duration(milliseconds: 250),
                   curve: Curves.easeInOut,
+                  // 메인 패널(추천/저장/여행/타임라인/하루플랜) 또는 길찾기/검색/
+                  // 설정/친구목록 열림 시 페이드아웃.
                   opacity:
                       (_isNavMode ||
                           _isSearchFocused ||
                           _settingsOpen ||
-                          _travelOpen)
+                          _membersPanelOpen ||
+                          _recommendOpen ||
+                          _savedOpen ||
+                          _travelOpen ||
+                          _timelineOpen ||
+                          _dayPlanOpen)
                       ? 0.0
                       : 1.0,
                   child: IgnorePointer(
@@ -1042,25 +1383,41 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         _isNavMode ||
                         _isSearchFocused ||
                         _settingsOpen ||
-                        _travelOpen,
+                        _membersPanelOpen ||
+                        _recommendOpen ||
+                        _savedOpen ||
+                        _travelOpen ||
+                        _timelineOpen ||
+                        _dayPlanOpen,
                     child: WeatherTimeWidget(
                       environment: _subwayController.environment,
+                      forceCollapse: _membersPanelOpen,
+                      onExpandedChanged: (v) =>
+                          setState(() => _weatherExpanded = v),
                     ),
                   ),
                 ),
               ),
 
-            // 위성지도 토글 버튼 (우상단)
+            // 위성지도(지구본) 토글 버튼 (우상단)
             Positioned(
               top: MediaQuery.of(context).padding.top + 64,
               right: 16,
               child: AnimatedOpacity(
                 duration: const Duration(milliseconds: 250),
+                // 메인 패널(추천/저장/여행/타임라인/하루플랜) 또는 길찾기/검색/
+                // 설정/친구/날씨 펼침 시 페이드아웃.
                 opacity:
                     (_isNavMode ||
                         _isSearchFocused ||
                         _settingsOpen ||
-                        _travelOpen)
+                        _membersPanelOpen ||
+                        _weatherExpanded ||
+                        _recommendOpen ||
+                        _savedOpen ||
+                        _travelOpen ||
+                        _timelineOpen ||
+                        _dayPlanOpen)
                     ? 0.0
                     : 1.0,
                 child: IgnorePointer(
@@ -1068,7 +1425,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       _isNavMode ||
                       _isSearchFocused ||
                       _settingsOpen ||
-                      _travelOpen,
+                      _membersPanelOpen ||
+                      _weatherExpanded ||
+                      _recommendOpen ||
+                      _savedOpen ||
+                      _travelOpen ||
+                      _timelineOpen ||
+                      _dayPlanOpen,
                   child: AnimatedSwitcher(
                     duration: const Duration(milliseconds: 300),
                     child: AdaptiveGlassIconButton(
@@ -1171,22 +1534,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 curve: _selectedTrain != null
                     ? Curves.easeOutCubic
                     : Curves.easeInCubic,
-                bottom: _selectedTrain != null ? bottomInset : -280,
+                bottom: _selectedTrain != null
+                    ? detailBottom
+                    : -280,
                 left: 0,
                 right: 0,
                 child: AnimatedOpacity(
                   duration: const Duration(milliseconds: 300),
                   opacity: _selectedTrain != null ? 1.0 : 0.0,
-                  child: TrainDetailPanel(
-                    train: (_selectedTrain ?? _lastSelectedTrain)!,
-                    delayMinutes:
-                        _subwayController.trainDelays[(_selectedTrain ??
-                                _lastSelectedTrain)!
-                            .trainNo] ??
-                        0,
-                    onClose: () {
-                      _subwayController.deselectTrain();
-                    },
+                  child: _compactDetail(
+                    collapsed: detailCompact,
+                    maxHeight: detailMaxHeight,
+                    child: TrainDetailPanel(
+                      train: (_selectedTrain ?? _lastSelectedTrain)!,
+                      delayMinutes: _subwayController.trainDelays[(_selectedTrain ??
+                                  _lastSelectedTrain)!
+                              .trainNo] ??
+                          0,
+                      onClose: () {
+                        _subwayController.deselectTrain();
+                      },
+                    ),
                   ),
                 ),
               ),
@@ -1196,18 +1564,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
               AnimatedPositioned(
                 duration: const Duration(milliseconds: 350),
                 curve: Curves.easeOutCubic,
-                bottom: bottomInset,
+                bottom: detailBottom,
                 left: 0,
                 right: 0,
                 child: _busController.selectedBus != null &&
                         _busController.selectedBusRoute != null
-                    ? BusDetailPanel(
-                        bus: _busController.selectedBus!,
-                        route: _busController.selectedBusRoute!,
-                        onClose: () {
-                          _busController.deselectBus();
-                          setState(() {});
-                        },
+                    ? _compactDetail(
+                        collapsed: detailCompact,
+                        maxHeight: detailMaxHeight,
+                        child: BusDetailPanel(
+                          bus: _busController.selectedBus!,
+                          route: _busController.selectedBusRoute!,
+                          onClose: () {
+                            _busController.deselectBus();
+                            setState(() {});
+                          },
+                        ),
                       )
                     : const SizedBox.shrink(),
               ),
@@ -1217,15 +1589,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
               AnimatedPositioned(
                 duration: const Duration(milliseconds: 350),
                 curve: Curves.easeOutCubic,
-                bottom: bottomInset,
+                bottom: detailBottom,
                 left: 0,
                 right: 0,
-                child: FlightDetailPanel(
-                  flight: _flightController.selectedFlight!,
-                  onClose: () {
-                    _flightController.deselectFlight();
-                    setState(() {});
-                  },
+                child: _compactDetail(
+                  collapsed: detailCompact,
+                  maxHeight: detailMaxHeight,
+                  child: FlightDetailPanel(
+                    flight: _flightController.selectedFlight!,
+                    onClose: () {
+                      _flightController.deselectFlight();
+                      setState(() {});
+                    },
+                  ),
                 ),
               ),
 
@@ -1236,7 +1612,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ? Curves.easeOutCubic
                   : Curves.easeInCubic,
               bottom: _busController.selectedVessel != null
-                  ? bottomInset
+                  ? detailBottom
                   : -250,
               left: 0,
               right: 0,
@@ -1248,12 +1624,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   if (v != null) _lastVessel = v;
                   final display = v ?? _lastVessel;
                   if (display == null) return const SizedBox(height: 150);
-                  return VesselDetailPanel(
-                    vessel: display,
-                    onClose: () {
-                      _busController.deselectVessel();
-                      setState(() {});
-                    },
+                  return _compactDetail(
+                    collapsed: detailCompact,
+                    maxHeight: detailMaxHeight,
+                    child: VesselDetailPanel(
+                      vessel: display,
+                      onClose: () {
+                        _busController.deselectVessel();
+                        setState(() {});
+                      },
+                    ),
                   );
                 }(),
               ),
@@ -1267,37 +1647,44 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ? Curves.easeOutCubic
                     : Curves.easeInCubic,
                 bottom: _selectedMapStation != null
-                    ? bottomInset
+                    ? detailBottom
                     : -(stationPanelMaxHeight + 50),
                 left: 0,
                 right: 0,
                 child: AnimatedOpacity(
                   duration: const Duration(milliseconds: 300),
                   opacity: _selectedMapStation != null ? 1.0 : 0.0,
-                  child: ClipRect(
-                    child: SizedBox(
-                      height: stationPanelMaxHeight,
-                      child: StationDetailPanel(
-                        stationName:
-                            (_selectedMapStation ?? _lastSelectedMapStation)!,
-                        stationInfo: _selectedMapStation != null
-                            ? _selectedMapStationInfo
-                            : _lastSelectedMapStationInfo,
-                        arrivals: _selectedMapStation != null
-                            ? _selectedMapStationArrivals
-                            : _lastMapStationArrivals,
-                        isLoading: _mapStationLoading,
-                        onClose: () {
-                          _subwayController.deselectStation();
-                        },
-                        onSetDeparture: (name) {
-                          _subwayController.deselectStation();
-                          _startNavWithDeparture(name);
-                        },
-                        onSetArrival: (name) {
-                          _subwayController.deselectStation();
-                          _startNavWithArrival(name);
-                        },
+                  child: AnimatedSize(
+                    duration: const Duration(milliseconds: 350),
+                    curve: Curves.easeOutCubic,
+                    alignment: Alignment.bottomCenter,
+                    child: ClipRect(
+                      child: SizedBox(
+                        height: detailCompact
+                            ? min(stationPanelMaxHeight, detailMaxHeight)
+                            : stationPanelMaxHeight,
+                        child: StationDetailPanel(
+                          stationName:
+                              (_selectedMapStation ?? _lastSelectedMapStation)!,
+                          stationInfo: _selectedMapStation != null
+                              ? _selectedMapStationInfo
+                              : _lastSelectedMapStationInfo,
+                          arrivals: _selectedMapStation != null
+                              ? _selectedMapStationArrivals
+                              : _lastMapStationArrivals,
+                          isLoading: _mapStationLoading,
+                          onClose: () {
+                            _subwayController.deselectStation();
+                          },
+                          onSetDeparture: (name) {
+                            _subwayController.deselectStation();
+                            _startNavWithDeparture(name);
+                          },
+                          onSetArrival: (name) {
+                            _subwayController.deselectStation();
+                            _startNavWithArrival(name);
+                          },
+                        ),
                       ),
                     ),
                   ),
@@ -1310,23 +1697,30 @@ class _DashboardScreenState extends State<DashboardScreen> {
               curve: _selectedPlace != null
                   ? Curves.easeOutCubic
                   : Curves.easeInCubic,
-              bottom: _selectedPlace != null ? bottomInset : -250,
+              bottom: _selectedPlace != null
+                  ? detailBottom
+                  : -250,
               left: 0,
               right: 0,
               child: AnimatedOpacity(
                 duration: const Duration(milliseconds: 350),
                 opacity: _selectedPlace != null ? 1.0 : 0.0,
                 child: _lastSelectedPlace != null
-                    ? PlaceDetailPanel(
-                        place: (_selectedPlace ?? _lastSelectedPlace)!,
-                        onClose: () => setState(() {
-                          _setSelectedPlace(null);
-                          _removePlaceMarker();
-                        }),
-                        onShowWebView: () =>
-                            _showPlaceWebView(_selectedPlace ?? _lastSelectedPlace!),
-                        onDeparture: _startNavWithDeparture,
-                        onArrival: _startNavWithArrival,
+                    ? _compactDetail(
+                        collapsed: detailCompact,
+                        maxHeight: detailMaxHeight,
+                        child: PlaceDetailPanel(
+                          place: (_selectedPlace ?? _lastSelectedPlace)!,
+                          compact: detailCompact,
+                          onClose: () => setState(() {
+                            _setSelectedPlace(null);
+                            _removePlaceMarker();
+                          }),
+                          onShowWebView: () => _showPlaceWebView(
+                              _selectedPlace ?? _lastSelectedPlace!),
+                          onDeparture: _startNavWithDeparture,
+                          onArrival: _startNavWithArrival,
+                        ),
                       )
                     : const SizedBox(height: 200),
               ),
@@ -1338,18 +1732,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
               curve: _selectedRiverStop != null
                   ? Curves.easeOutCubic
                   : Curves.easeInCubic,
-              bottom: _selectedRiverStop != null ? bottomInset : -250,
+              bottom: _selectedRiverStop != null
+                  ? detailBottom
+                  : -250,
               left: 0,
               right: 0,
               child: AnimatedOpacity(
                 duration: const Duration(milliseconds: 350),
                 opacity: _selectedRiverStop != null ? 1.0 : 0.0,
                 child: _lastSelectedRiverStop != null
-                    ? RiverBusStopPanel(
-                        stop: (_selectedRiverStop ?? _lastSelectedRiverStop)!,
-                        onClose: () => setState(() => _setSelectedRiverStop(null)),
-                        onDeparture: _startNavWithDeparture,
-                        onArrival: _startNavWithArrival,
+                    ? _compactDetail(
+                        collapsed: detailCompact,
+                        maxHeight: detailMaxHeight,
+                        child: RiverBusStopPanel(
+                          stop: (_selectedRiverStop ?? _lastSelectedRiverStop)!,
+                          onClose: () =>
+                              setState(() => _setSelectedRiverStop(null)),
+                          onDeparture: _startNavWithDeparture,
+                          onArrival: _startNavWithArrival,
+                        ),
                       )
                     : const SizedBox(height: 200),
               ),
@@ -1372,6 +1773,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
             // 저장 패널 오버레이 (바텀시트)
             _buildSavedOverlay(context, screenHeight),
+
+            // 방문 타임라인 패널 (프로필 → 타임라인 지도 탭 시 진입)
+            _buildVisitTimelineOverlay(context, screenHeight),
 
             // 통합 AI 오버레이 (풀스크린 Glow + Gemini Live)
             if (_aiOpen)
@@ -1454,6 +1858,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
     );
     if (result != null && mounted) {
+      // 방문 타임라인 표시 시그널 — 프로필의 지도 영역 탭 시.
+      if (result['showTimeline'] == true) {
+        setState(() {
+          _timelineOpen = true;
+          _hideButtonForPanel = true;
+        });
+        // 모든 방문지 핀을 지도에 그리고 가장 최근 방문 위치로 카메라 이동.
+        Future.delayed(const Duration(milliseconds: 300), () {
+          if (!mounted) return;
+          _drawVisitTimelinePins();
+        });
+        return;
+      }
       final lat = result['lat'] as double?;
       final lng = result['lng'] as double?;
       final name = result['name'] as String? ?? '';
@@ -2042,7 +2459,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   List<double>? _resolveStationCoord(String name) {
-    if (name == '내 위치') return null;
+    // "내 위치" 출발/도착 — PathResult 의 첫/마지막 segment 좌표 우선 사용
+    // (path_finding_service 가 GPS 좌표를 segment.startLat/endLat 에 박아둠).
+    if (name == '내 위치') {
+      final r = _routeResult;
+      if (r != null && r.segments.isNotEmpty) {
+        if (name == r.departure) {
+          final s = r.segments.first;
+          if (s.startLat != null && s.startLng != null) {
+            return [s.startLat!, s.startLng!];
+          }
+        }
+        if (name == r.arrival) {
+          final s = r.segments.last;
+          if (s.endLat != null && s.endLng != null) {
+            return [s.endLat!, s.endLng!];
+          }
+        }
+      }
+      return null;
+    }
     // 지하철역
     for (final e in SubwayColors.lineColors.entries) {
       for (final s in SeoulSubwayData.getLineStations(e.key)) {
@@ -2084,27 +2520,91 @@ class _DashboardScreenState extends State<DashboardScreen> {
       if (_routeResult != null) {
         _drawRouteOnMap(_routeResult!);
       }
-    } else {
-      final result = _directionsCache[mode];
-      if (result != null) _drawDirectionsOnMap(result);
+      return;
     }
+    // 자동차(1) / 도보(2) — 캐시에 없으면 즉시 fetch.
+    final cached = _directionsCache[mode];
+    if (cached != null) {
+      _drawDirectionsOnMap(cached);
+      return;
+    }
+    if (_routeResult == null) return;
+    final from = _resolveStationCoord(_routeResult!.departure);
+    final to = _resolveStationCoord(_routeResult!.arrival);
+    if (from == null || to == null) {
+      showAppSnackBar('출발/도착 좌표를 찾을 수 없어요');
+      return;
+    }
+    final ds = DirectionsService.instance;
+    final fetchAnimId = ++_routeAnimId;
+    final future = mode == 1
+        ? ds.getDrivingRoute(from[0], from[1], to[0], to[1])
+        : ds.getWalkingRoute(from[0], from[1], to[0], to[1]);
+    showAppSnackBar(mode == 1 ? '자동차 경로 불러오는 중...' : '도보 경로 불러오는 중...');
+    future.then((r) {
+      if (!mounted) return;
+      // 사용자가 그 사이 다른 모드로 다시 전환했으면 무시.
+      if (_routeAnimId != fetchAnimId || _transportMode != mode) return;
+      if (r == null) {
+        // TMAP 에서 받은 실제 사유 노출 — '...' 만 떠 있는 문제 진단용.
+        final err = ds.lastError ?? '경로를 불러오지 못했어요';
+        showAppSnackBar(err);
+        return;
+      }
+      setState(() => _directionsCache[mode] = r);
+      _drawDirectionsOnMap(r);
+    });
   }
 
-  void _drawDirectionsOnMap(DirectionsResult result) {
+  Future<void> _drawDirectionsOnMap(DirectionsResult result) async {
     _clearRouteFromMap();
+    final mc = _mapController;
+    if (mc == null) return;
+    final animId = ++_routeAnimId;
+
     final color = switch (result.mode) {
-      TravelMode.walking => Colors.green,
-      TravelMode.driving => Colors.blue,
-      TravelMode.transit => Colors.purple,
+      TravelMode.walking => Colors.greenAccent.shade400,
+      TravelMode.driving => Colors.blueAccent.shade400,
+      TravelMode.transit => Colors.purpleAccent.shade200,
     };
-    // coordinates는 이미 [lat, lng]
     final coords = result.coordinates;
-    _mapController?.addPolyline(
+    if (coords.length < 2) return;
+
+    // outline 은 한번에 그려서 전체 경로 미리보기.
+    await mc.addPolyline(
+      'directions_route_outline',
+      coords,
+      color: Colors.white,
+      width: 8.0,
+      opacity: 0.55,
+    );
+    if (_routeAnimId != animId) return;
+
+    // 컬러 라인은 12 단계로 점진 그리기 (지하철 경로와 동일 패턴).
+    final total = coords.length;
+    final step = max(1, total ~/ 12);
+    for (int i = step; i < total; i += step) {
+      if (_routeAnimId != animId) return;
+      final partial = coords.sublist(0, i);
+      mc.removePolyline('directions_route');
+      await mc.addPolyline(
+        'directions_route',
+        partial,
+        color: color,
+        width: 5.5,
+        opacity: 1.0,
+      );
+      await Future.delayed(const Duration(milliseconds: 80));
+    }
+    if (_routeAnimId != animId) return;
+    // 마지막 — 전체 좌표로 마무리 (마지막 step 누락 보정).
+    mc.removePolyline('directions_route');
+    await mc.addPolyline(
       'directions_route',
       coords,
       color: color,
-      width: 5.0,
-      opacity: 0.8,
+      width: 5.5,
+      opacity: 1.0,
     );
   }
 
@@ -2118,6 +2618,79 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   void _startNavWithArrival(String name, {double? lat, double? lng}) {
     _searchBarKey.currentState?.enterNavWithArrival(name, lat: lat, lng: lng);
+  }
+
+  /// 하루 플랜의 모든 stop 을 하나의 PathResult 로 묶어 본 앱 길찾기/네비 모드로 진입.
+  /// precompute 된 [PlanStop.routeFromPrevious] 가 있으면 그대로 사용,
+  /// 없으면 좌표 기반으로 PathFindingService 호출해 leg 별 경로를 계산해 결합한다.
+  Future<void> _navigateAllPlanStops(DayPlan plan) async {
+    // 좌표 있는 stop 만 추출 (이름이 그래프에 없으면 findPath 가 좌표로 폴백).
+    final stops = plan.stops.where((s) => s.place.hasCoordinates).toList();
+    if (stops.length < 2) return;
+
+    final pathService = PathFindingService();
+    final allSegments = <PathSegment>[];
+    int totalTime = 0;
+    double totalDist = 0;
+    int transfers = 0;
+    PathSearchType searchType = PathSearchType.duration;
+
+    for (int i = 1; i < stops.length; i++) {
+      final from = stops[i - 1].place;
+      final to = stops[i].place;
+      PathResult? leg = stops[i].routeFromPrevious;
+      // precompute 가 비어 있으면 그 자리에서 계산.
+      if (leg == null) {
+        try {
+          leg = await pathService.findPath(
+            departure: from.name,
+            arrival: to.name,
+            departureLat: from.lat,
+            departureLng: from.lng,
+            arrivalLat: to.lat,
+            arrivalLng: to.lng,
+          );
+        } catch (_) {
+          leg = null;
+        }
+      }
+      if (leg == null || leg.segments.isEmpty) continue;
+      allSegments.addAll(leg.segments);
+      totalTime += leg.totalTimeSec;
+      totalDist += leg.totalDistanceKm;
+      transfers += leg.transferCount;
+      if (i == 1) searchType = leg.searchType;
+    }
+
+    if (allSegments.isEmpty || !mounted) return;
+
+    final combined = PathResult(
+      departure: stops.first.place.name,
+      arrival: stops.last.place.name,
+      searchType: searchType,
+      totalTimeSec: totalTime,
+      totalDistanceKm: totalDist,
+      transferCount: transfers,
+      segments: allSegments,
+    );
+
+    setState(() {
+      _dayPlans = null;
+      _dayPlanHeight = 0;
+      _routeResult = combined;
+      _transportMode = 0;
+      _directionsCache.clear();
+    });
+    // 검색바에 결과 주입 → nav 모드 UI + onNavModeChanged 콜백 →
+    // _isNavMode=true 가 되어 결과 바텀 패널 (_buildRouteResultOverlay) 표시.
+    _searchBarKey.currentState?.enterNavWithRoute(
+      combined,
+      depLat: stops.first.place.lat,
+      depLng: stops.first.place.lng,
+      arrLat: stops.last.place.lat,
+      arrLng: stops.last.place.lng,
+    );
+    _drawRouteOnMap(combined);
   }
 
 
@@ -2355,7 +2928,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         }
         break;
       case AiAction.findRoute:
-        final from = event.params['from'] as String?;
+        // from 은 현재 위치 고정 (앱 길찾기가 user location 기반).
         final to = event.params['to'] as String?;
         _dismissAi();
         Future.delayed(const Duration(milliseconds: 600), () {
@@ -2367,18 +2940,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         _mapController?.setSatelliteVisible(_satelliteOn);
         break;
       case AiAction.addFavorite:
-        if (_selectedPlace != null) {
-          FavoritesService.instance.toggle(
-            FavoritePlace(
-              name: _selectedPlace!.name,
-              address: _selectedPlace!.address,
-              category: _selectedPlace!.category,
-              lat: _selectedPlace!.lat,
-              lng: _selectedPlace!.lng,
-            ),
-          );
-          setState(() {});
-        }
+        _handleAiAddFavorite(event.params['placeName'] as String?);
         break;
       case AiAction.openRecommendation:
         _dismissAi();
@@ -2408,12 +2970,107 @@ class _DashboardScreenState extends State<DashboardScreen> {
           });
         }
         break;
+      case AiAction.applyTheme:
+        _handleAiApplyTheme(event.params['theme_id'] as String? ?? '');
+        break;
+      case AiAction.planFromSaved:
+        _dismissAi();
+        Future.delayed(const Duration(milliseconds: 600), () {
+          if (mounted) _buildPlanFromSavedPlaces();
+        });
+        break;
+      case AiAction.openTravel:
+        _dismissAi();
+        Future.delayed(const Duration(milliseconds: 600), () {
+          if (!mounted) return;
+          setState(() {
+            _travelOpen = true;
+            _hideButtonForPanel = true;
+          });
+        });
+        break;
+      case AiAction.openMultiplayer:
+        _dismissAi();
+        Future.delayed(const Duration(milliseconds: 600), () {
+          if (!mounted) return;
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const MultiplayerHubView()),
+          );
+        });
+        break;
+      case AiAction.openSpotify:
+        _dismissAi();
+        Future.delayed(const Duration(milliseconds: 600), () {
+          if (!mounted) return;
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const SpotifyView()),
+          );
+        });
+        break;
+      case AiAction.setLiveVisibility:
+        final v = event.params['visibility'] as String? ?? 'normal';
+        MultiplayerService.instance.setVisibility(v == 'ghost' ? 'ghost' : 'normal');
+        break;
       case AiAction.requestPhoto:
       case AiAction.addPlaces:
       case AiAction.removePlace:
       case AiAction.confirmPlan:
         break;
     }
+  }
+
+  /// AI: 즐겨찾기 토글. placeName 지정 시 그 장소, 없으면 _selectedPlace.
+  void _handleAiAddFavorite(String? placeName) {
+    final fav = FavoritesService.instance;
+    if (placeName != null && placeName.isNotEmpty) {
+      // 이미 즐겨찾기에 있으면 제거
+      if (fav.isFavorite(placeName)) {
+        fav.remove(placeName);
+        setState(() {});
+        return;
+      }
+      // 좌표 모르면 검색해서 추가
+      PlaceSearchService.instance.search(placeName).then((results) {
+        if (!mounted || results.isEmpty) return;
+        final p = results.first;
+        fav.toggle(FavoritePlace(
+          name: p.name,
+          address: p.address,
+          category: p.category,
+          lat: p.lat,
+          lng: p.lng,
+        ));
+        setState(() {});
+      });
+      return;
+    }
+    if (_selectedPlace != null) {
+      fav.toggle(FavoritePlace(
+        name: _selectedPlace!.name,
+        address: _selectedPlace!.address,
+        category: _selectedPlace!.category,
+        lat: _selectedPlace!.lat,
+        lng: _selectedPlace!.lng,
+      ));
+      setState(() {});
+    }
+  }
+
+  /// AI: theme_id 로 큐레이션 코스 적용.
+  void _handleAiApplyTheme(String themeId) {
+    if (themeId.isEmpty) return;
+    final theme = kTravelThemes.firstWhere(
+      (t) => t.id == themeId,
+      orElse: () => kTravelThemes.first,
+    );
+    _dismissAi();
+    Future.delayed(const Duration(milliseconds: 600), () {
+      if (!mounted) return;
+      setState(() {
+        _travelOpen = false;
+        _dayPlans = [buildPlanFromTheme(theme)];
+      });
+    });
   }
 
   /// URL 분석 후 플랜 생성
@@ -2455,10 +3112,34 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
-  /// AI 요청으로 플랜 생성 (텍스트 기반)
-  Future<void> _createPlanFromAi(String style, String? placesJson) async {
-    DebugLog.log('[AI Action] Create plan: style=$style');
+  /// AI 요청으로 플랜 생성 (장소 텍스트 또는 스타일만 받아 Gemini 로 추출).
+  Future<void> _createPlanFromAi(String style, String? placesText) async {
+    try {
+      final query = (placesText != null && placesText.trim().isNotEmpty)
+          ? placesText
+          : '서울 ${_styleHint(style)} 추천 코스';
+      final result = await GeminiService.instance.analyzeContent(
+        SnsContent(imagePaths: [], text: query, url: ''),
+      );
+      if (result.places.isEmpty || !mounted) return;
+      final geoPlaces = await GeminiService.instance.geocodeAll(result.places);
+      if (!mounted) return;
+      final plans = await DayPlanService.instance.generatePlans(geoPlaces);
+      if (plans.isEmpty || !mounted) return;
+      _dismissAi();
+      Future.delayed(const Duration(milliseconds: 600), () {
+        if (mounted) setState(() => _dayPlans = plans);
+      });
+    } catch (e) {
+      DebugLog.log('[AI Action] _createPlanFromAi failed: $e');
+    }
   }
+
+  String _styleHint(String style) => switch (style) {
+        'leisurely' => '여유로운',
+        'foodFocused' => '맛집 중심',
+        _ => '효율적인',
+      };
 
   // ── 하단 탭바 (리퀴드 글라스) ──
   Widget _buildBottomTabBar() {
@@ -2473,8 +3154,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
         : _aiOpen
         ? 4
         : 2;
+    final liveActive = MultiplayerService.instance.seoulLiveActive;
 
     return AdaptiveTabBar(
+      // ValueKey(liveActive) — Seoul Live 토글 시 CNTabBar 가 customIcon 변경을
+      // 감지 못해 iOS 에서 '지도' 아이콘이 그대로 남는 버그가 있어, 키를 바꿔
+      // 인스턴스를 새로 만들도록 한다. (Android 도 함께 새로 그려져 일관성 유지.)
+      key: ValueKey('tabbar_$liveActive'),
       currentIndex: currentIndex,
       onTap: (index) {
         setState(() {
@@ -2543,7 +3229,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       items: [
         const AdaptiveTabItem(label: '추천', icon: Icons.explore),
         const AdaptiveTabItem(label: '저장', icon: Icons.bookmark),
-        MultiplayerService.instance.seoulLiveActive
+        liveActive
             ? const AdaptiveTabItem(label: '세계', icon: Icons.public_rounded)
             : const AdaptiveTabItem(label: '지도', icon: Icons.map),
         const AdaptiveTabItem(label: '여행', icon: Icons.calendar_month),
@@ -2598,7 +3284,86 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
     );
 
-    for (int i = 0; i < r.segments.length; i++) {
+    // 대중교통 모드(0) 일 때만 segment 별 타임라인. 자동차/도보 모드는
+    // 별도의 간단한 요약 타일로 대체 (대중교통 경로가 남아있던 버그 수정).
+    if (_transportMode != 0) {
+      final dir = _directionsCache[_transportMode];
+      final isWalkMode = _transportMode == 2;
+      final color = isWalkMode
+          ? Colors.greenAccent.shade400
+          : Colors.blueAccent.shade400;
+      final icon = isWalkMode ? Icons.directions_walk : Icons.directions_car;
+      final label = isWalkMode ? '도보로 이동' : '자동차로 이동';
+      final mins = dir != null ? (dir.durationSec / 60).ceil() : null;
+      final km = dir?.distanceKm;
+      timelineItems.add(
+        _timelineRow(
+          dotColor: color,
+          dotHollow: false,
+          lineColor: color,
+          lineBelow: true,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Row(
+              children: [
+                Icon(icon, size: 20, color: color),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        label,
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: onSurface,
+                        ),
+                      ),
+                      if (mins != null || km != null) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          [
+                            if (mins != null) '$mins분',
+                            if (km != null) '${km.toStringAsFixed(1)}km',
+                          ].join(' · '),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: mutedColor,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      // 도보 모드 turn-by-turn (Mapbox steps 가 있으면).
+      if (isWalkMode && dir != null && dir.walkSteps.isNotEmpty) {
+        for (final step in dir.walkSteps.take(10)) {
+          timelineItems.add(
+            _timelineRow(
+              dotColor: null,
+              lineColor: Colors.grey.withValues(alpha: 0.3),
+              lineDashed: true,
+              lineBelow: true,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Text(
+                  step.description,
+                  style: TextStyle(fontSize: 12, color: mutedColor),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ),
+          );
+        }
+      }
+    } else for (int i = 0; i < r.segments.length; i++) {
       final seg = r.segments[i];
       if (seg.isTransfer) continue;
 
@@ -3058,12 +3823,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
               _transportMode == 0
                   ? r.totalTimeFormatted
                   : _directionsCache[_transportMode] != null
-                  ? formatDuration(
-                      _directionsCache[_transportMode]!.durationSec,
-                    )
-                  : '...',
+                      ? formatDuration(
+                          _directionsCache[_transportMode]!.durationSec,
+                        )
+                      : '계산 중',
               style: TextStyle(
-                fontSize: 32,
+                fontSize: _transportMode != 0 &&
+                        _directionsCache[_transportMode] == null
+                    ? 22
+                    : 32,
                 fontWeight: FontWeight.w800,
                 color: onSurface,
                 height: 1.1,
@@ -3310,6 +4078,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
               });
             },
             onUseSaved: () => _buildPlanFromSavedPlaces(),
+            onUseTheme: (theme) {
+              setState(() {
+                _travelOpen = false;
+                _dayPlans = [buildPlanFromTheme(theme)];
+              });
+            },
             onClose: () => setState(() => _travelOpen = false),
           ),
         ),
@@ -3352,9 +4126,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  // ── 추천 패널 오버레이 (바텀시트) ──
+  // ── 추천 패널 오버레이 (바텀시트) — 여행 패널과 동일 높이 ──
   Widget _buildRecommendOverlay(BuildContext context, double screenHeight) {
-    final panelHeight = screenHeight * 0.50;
+    final panelHeight = screenHeight * 0.55;
 
     return AnimatedPositioned(
       duration: const Duration(milliseconds: 400),
@@ -3374,6 +4148,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
           },
           child: RecommendationPanel(
             onClose: () => setState(() => _recommendOpen = false),
+            onPlaceTap: (place) {
+              // 추천 패널 닫고 지도에서 장소 선택 (외부 카카오맵 X)
+              setState(() => _recommendOpen = false);
+              _mapController?.moveTo(place.lat, place.lng, zoom: 16.0);
+              _showPlaceMarker(place);
+              setState(() => _setSelectedPlace(place));
+            },
           ),
         ),
       ),
@@ -3381,8 +4162,52 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   // ── 저장 패널 오버레이 (바텀시트) ──
+  Widget _buildVisitTimelineOverlay(BuildContext context, double screenHeight) {
+    final panelHeight = screenHeight * 0.40;
+    return AnimatedPositioned(
+      duration: const Duration(milliseconds: 400),
+      curve: _timelineOpen ? Curves.easeOutCubic : Curves.easeInCubic,
+      bottom: _timelineOpen ? 0 : -panelHeight - 50,
+      left: 0,
+      right: 0,
+      height: panelHeight,
+      child: AnimatedOpacity(
+        duration: const Duration(milliseconds: 350),
+        opacity: _timelineOpen ? 1.0 : 0.0,
+        child: GestureDetector(
+          onVerticalDragEnd: (details) {
+            if (details.velocity.pixelsPerSecond.dy > 200) {
+              _closeVisitTimeline();
+            }
+          },
+          child: VisitTimelinePanel(
+            onClose: _closeVisitTimeline,
+            onPlaceTap: (lat, lng, name) {
+              // 발자국 탭 → 패널 닫고 우리 지도의 장소 상세 위젯 띄우기
+              // (SavedPanel "최근 방문" 과 동일한 흐름).
+              _closeVisitTimeline();
+              Future.delayed(const Duration(milliseconds: 400), () {
+                if (!mounted) return;
+                _mapController?.moveTo(lat, lng, zoom: 16.0);
+                final place = PlaceSearchResult(
+                  name: name,
+                  address: '',
+                  category: '방문 기록',
+                  lat: lat,
+                  lng: lng,
+                );
+                _showPlaceMarker(place);
+                setState(() => _setSelectedPlace(place));
+              });
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildSavedOverlay(BuildContext context, double screenHeight) {
-    final panelHeight = screenHeight * 0.50;
+    final panelHeight = screenHeight * 0.55;
 
     return AnimatedPositioned(
       duration: const Duration(milliseconds: 400),
@@ -3445,47 +4270,56 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return AnimatedPositioned(
       duration: const Duration(milliseconds: 400),
       curve: show ? Curves.easeOutCubic : Curves.easeInCubic,
+      // 하루 플랜은 풀스크린 패널 — bottom 0 으로 탭바 아래까지 확장.
+      // (detailBottom 으로 띄우면 내부 SafeArea 와 중복돼 탭바 위 떠 있는 듯
+      // 보이는 버그 발생.)
       bottom: show ? 0 : -600,
       left: 0,
       right: 0,
       child: AnimatedOpacity(
         duration: const Duration(milliseconds: 350),
         opacity: show ? 1.0 : 0.0,
-        child: GestureDetector(
-          onVerticalDragEnd: (details) {
-            if (details.velocity.pixelsPerSecond.dy > 200) {
-              setState(() => _dayPlans = null);
-            }
-          },
-          child: Container(
-            decoration: BoxDecoration(
-              color: isDark
-                  ? Colors.black.withValues(alpha: 0.85)
-                  : Colors.white.withValues(alpha: 0.92),
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(24),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.2),
-                  blurRadius: 20,
-                  offset: const Offset(0, -4),
-                ),
-              ],
+        // GestureDetector 제거 — 드래그/리사이즈/닫기는 DayPlanView 내부 핸들이 담당.
+        child: Container(
+          decoration: BoxDecoration(
+            color: isDark
+                ? Colors.black.withValues(alpha: 0.85)
+                : Colors.white.withValues(alpha: 0.92),
+            borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(24),
             ),
-            child: show
-                ? DayPlanView(
-                    plans: _dayPlans!,
-                    mapController: _mapController,
-                    onClose: () => setState(() => _dayPlans = null),
-                    onNavigateToStop: (name, lat, lng) {
-                      // 하루 플랜 닫고 본 앱 길찾기로 이동 (도착지 자동 채움 + 출발지=내 위치).
-                      setState(() => _dayPlans = null);
-                      _startNavWithArrival(name, lat: lat, lng: lng);
-                    },
-                  )
-                : const SizedBox.shrink(),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.2),
+                blurRadius: 20,
+                offset: const Offset(0, -4),
+              ),
+            ],
           ),
+          child: show
+              ? DayPlanView(
+                  plans: _dayPlans!,
+                  mapController: _mapController,
+                  onClose: () => setState(() {
+                    _dayPlans = null;
+                    _dayPlanHeight = 0;
+                  }),
+                  onNavigateToStop: (name, lat, lng) {
+                    // 하루 플랜 닫고 본 앱 길찾기로 이동 (도착지 자동 채움 + 출발지=내 위치).
+                    setState(() {
+                      _dayPlans = null;
+                      _dayPlanHeight = 0;
+                    });
+                    _startNavWithArrival(name, lat: lat, lng: lng);
+                  },
+                  onNavigateAllStops: _navigateAllPlanStops,
+                  onHeightChanged: (h) {
+                    if (_dayPlanHeight != h) {
+                      setState(() => _dayPlanHeight = h);
+                    }
+                  },
+                )
+              : const SizedBox.shrink(),
         ),
       ),
     );

@@ -61,6 +61,7 @@ class _SavedPanelState extends State<SavedPanel> {
               IconButton(
                 icon: Icon(Icons.close, size: 20, color: _ts),
                 onPressed: widget.onClose,
+                tooltip: '닫기',
                 visualDensity: VisualDensity.compact,
               ),
             ],
@@ -192,6 +193,7 @@ class _SavedPanelState extends State<SavedPanel> {
               await FavoritesService.instance.remove(f.name);
               setState(() {});
             },
+            tooltip: '즐겨찾기 해제',
             visualDensity: VisualDensity.compact,
           ),
         );

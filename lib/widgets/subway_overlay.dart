@@ -428,10 +428,13 @@ class SubwayOverlayController {
     onStateChanged?.call();
   }
 
-  /// 노선 필터 설정
-  void setLineFilter(Set<String>? lines) {
+  /// 노선 필터 설정. [persist] false 면 SharedPreferences 안 건드림
+  /// (온보딩 데모 등 임시 필터링용).
+  void setLineFilter(Set<String>? lines, {bool persist = true}) {
     _selectedLines = lines;
-    SettingsService.instance.setSelectedLines(lines);
+    if (persist) {
+      SettingsService.instance.setSelectedLines(lines);
+    }
     if (_isActive) {
       _renderAnimatedTrains();
       if (_showRoutes) _drawSubwayRoutes();

@@ -14,6 +14,9 @@ class PlaceDetailPanel extends StatefulWidget {
   final VoidCallback onShowWebView;
   final void Function(String name, {double? lat, double? lng}) onDeparture;
   final void Function(String name, {double? lat, double? lng}) onArrival;
+  /// 압축 모드 — 메인 패널 위에 떠 있을 때 true. 푸터 텍스트/간격을 줄여
+  /// 좁은 공간에서도 액션 버튼까지 보이게.
+  final bool compact;
 
   const PlaceDetailPanel({
     super.key,
@@ -22,6 +25,7 @@ class PlaceDetailPanel extends StatefulWidget {
     required this.onShowWebView,
     required this.onDeparture,
     required this.onArrival,
+    this.compact = false,
   });
 
   @override
@@ -161,17 +165,24 @@ class _PlaceDetailPanelState extends State<PlaceDetailPanel> {
                   ),
                 if (hasPhone) ...[
                   const SizedBox(height: 4),
-                  GestureDetector(
+                  InkWell(
                     onTap: () => launchUrl(Uri.parse('tel:${place.phone}')),
-                    child: Row(
-                      children: [
-                        Icon(Icons.phone_outlined, size: 14, color: cs.primary),
-                        const SizedBox(width: 4),
-                        Text(
-                          place.phone!,
-                          style: TextStyle(fontSize: 12, color: cs.primary),
-                        ),
-                      ],
+                    borderRadius: BorderRadius.circular(6),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 4, vertical: 2),
+                      child: Row(
+                        children: [
+                          Icon(Icons.phone_outlined,
+                              size: 14, color: cs.primary),
+                          const SizedBox(width: 4),
+                          Text(
+                            place.phone!,
+                            style:
+                                TextStyle(fontSize: 12, color: cs.primary),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ],
@@ -217,7 +228,7 @@ class _PlaceDetailPanelState extends State<PlaceDetailPanel> {
                   ),
                 ],
               ),
-              if (hasUrl)
+              if (hasUrl && !widget.compact)
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
                   child: Center(

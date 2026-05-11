@@ -7,8 +7,17 @@ import '../theme/app_colors.dart';
 /// 탭하면 옆으로 길쭉하게 펼쳐지며 주간 예보
 class WeatherTimeWidget extends StatefulWidget {
   final EnvironmentData? environment;
+  /// 펼침 상태가 바뀔 때 외부에 알림 — map_view 가 다른 위젯 페이드 처리에 사용.
+  final ValueChanged<bool>? onExpandedChanged;
+  /// 외부에서 강제 collapse 하고 싶을 때 — true → false 로 토글되면 collapse.
+  final bool forceCollapse;
 
-  const WeatherTimeWidget({super.key, this.environment});
+  const WeatherTimeWidget({
+    super.key,
+    this.environment,
+    this.onExpandedChanged,
+    this.forceCollapse = false,
+  });
 
   @override
   State<WeatherTimeWidget> createState() => _WeatherTimeWidgetState();
@@ -19,12 +28,23 @@ class _WeatherTimeWidgetState extends State<WeatherTimeWidget> {
   List<DailyForecast>? _forecast;
   bool _loading = false;
 
+  @override
+  void didUpdateWidget(WeatherTimeWidget old) {
+    super.didUpdateWidget(old);
+    if (widget.forceCollapse && _expanded) {
+      setState(() => _expanded = false);
+      widget.onExpandedChanged?.call(false);
+    }
+  }
+
   void _toggle() async {
     if (_expanded) {
       setState(() => _expanded = false);
+      widget.onExpandedChanged?.call(false);
       return;
     }
     setState(() => _expanded = true);
+    widget.onExpandedChanged?.call(true);
     if (_forecast == null) {
       setState(() => _loading = true);
       final forecast = await EnvironmentService.instance.fetchWeeklyForecast();

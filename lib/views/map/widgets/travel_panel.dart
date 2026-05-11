@@ -2,23 +2,29 @@ import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../data/travel_themes.dart';
+import '../../../services/environment_service.dart';
+import '../../../services/spotify_service.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
+import '../../../data/travel_styles.dart';
 import '../../../services/seoul_tourism_service.dart';
+import '../../../services/settings_service.dart';
 
 /// 여행 (Day Plan) 바텀시트 패널.
-/// 위쪽: 일정 만들기 액션 두 개 (AI / 저장 장소).
-/// 아래쪽: "여행 영감" — 서울 문화행사 세로 리스트.
+/// 위→아래: AI/저장 액션 → 테마 추천 8장(가로 스와이프) → Spotify 분위기(연결 시) → 이번 주 이벤트.
 class TravelPanel extends StatefulWidget {
   final VoidCallback onUseAi;
   final VoidCallback onUseSaved;
   final VoidCallback onClose;
+  final ValueChanged<TravelTheme> onUseTheme;
 
   const TravelPanel({
     super.key,
     required this.onUseAi,
     required this.onUseSaved,
     required this.onClose,
+    required this.onUseTheme,
   });
 
   @override
@@ -27,23 +33,77 @@ class TravelPanel extends StatefulWidget {
 
 class _TravelPanelState extends State<TravelPanel> {
   final _tourism = SeoulTourismService.instance;
+  final _spotify = SpotifyService.instance;
   List<CulturalEvent> _events = [];
   bool _loading = true;
+
+  /// 사용자가 튜토리얼에서 고른 무드. 'mixed' 와 빈값은 굳이 노출 안 함.
+  TravelStyle? get _userStyle {
+    final s = travelStyleByKey(
+      SettingsService.instance.getString(kTravelStylePrefKey),
+    );
+    if (s == null || s.key == 'mixed') return null;
+    return s;
+  }
 
   @override
   void initState() {
     super.initState();
     _load();
+    _spotify.addListener(_onSpotifyChanged);
+  }
+
+  @override
+  void dispose() {
+    _spotify.removeListener(_onSpotifyChanged);
+    super.dispose();
+  }
+
+  void _onSpotifyChanged() {
+    if (mounted) setState(() {});
   }
 
   Future<void> _load({bool force = false}) async {
     if (mounted) setState(() => _loading = true);
-    final events = await _tourism.getEvents(limit: 20, forceRefresh: force);
+    final events = await _tourism.getEvents(limit: 6, forceRefresh: force);
     if (!mounted) return;
     setState(() {
       _events = events;
       _loading = false;
     });
+  }
+
+  /// 시간대/날씨/사용자 스타일로 테마 정렬: 매칭 시 상단으로.
+  /// 사용자 스타일 (튜토리얼 AI 파트에서 선택) 매칭이 가장 강한 신호.
+  List<TravelTheme> _sortedThemes() {
+    final env = EnvironmentService.instance.current;
+    final hour = DateTime.now().hour;
+    final weather = env?.weather;
+    final style = SettingsService.instance.getString(kTravelStylePrefKey);
+
+    int score(TravelTheme t) {
+      var s = 0;
+      if (t.bestHours != null && t.bestHours!.contains(hour)) s += 10;
+      if (weather != null &&
+          t.bestWeather != null &&
+          t.bestWeather!.contains(weather)) {
+        s += 20;
+      }
+      // 스타일 매칭 (+40, 가장 강한 가중치)
+      if (_themeMatchesStyle(t.id, style)) s += 40;
+      return s;
+    }
+
+    final list = [...kTravelThemes];
+    list.sort((a, b) => score(b).compareTo(score(a)));
+    return list;
+  }
+
+  /// 사용자 스타일에 매칭되는 테마인지. mixed/빈값 → 모두 false.
+  bool _themeMatchesStyle(String themeId, String style) {
+    final s = travelStyleByKey(style);
+    if (s == null) return false;
+    return s.matchingThemeIds.contains(themeId);
   }
 
   Future<void> _open(CulturalEvent e) async {
@@ -97,13 +157,33 @@ class _TravelPanelState extends State<TravelPanel> {
               ),
               slivers: [
                 SliverToBoxAdapter(child: _buildHeader(txtPrimary, txtMuted)),
-                SliverToBoxAdapter(child: const SizedBox(height: 18)),
+                SliverToBoxAdapter(child: const SizedBox(height: 14)),
+                // 1. 당신의 테마 — 최상단 히어로. 골랐을 때만 노출 (mixed 제외).
+                //    헤더 없이 카드 자체가 시그니처: "당신의 테마" 라벨이 카드 안에 박힘.
+                if (_userStyle != null) ...[
+                  SliverToBoxAdapter(
+                    child: _UserStyleCard(
+                      style: _userStyle!,
+                      txtPrimary: txtPrimary,
+                      txtMuted: txtMuted,
+                      onTap: () {
+                        final match = _sortedThemes().firstWhere(
+                          (t) => _userStyle!.matchingThemeIds.contains(t.id),
+                          orElse: () => _sortedThemes().first,
+                        );
+                        widget.onUseTheme(match);
+                      },
+                    ),
+                  ),
+                  SliverToBoxAdapter(child: const SizedBox(height: 16)),
+                ],
+                // 2. AI / 저장 액션 — 사용자 정의 코스 생성.
                 SliverToBoxAdapter(
                   child: _HeroAction(
                     onTap: widget.onUseAi,
                   ),
                 ),
-                SliverToBoxAdapter(child: const SizedBox(height: 10)),
+                SliverToBoxAdapter(child: const SizedBox(height: 8)),
                 SliverToBoxAdapter(
                   child: _SecondaryAction(
                     onTap: widget.onUseSaved,
@@ -111,6 +191,34 @@ class _TravelPanelState extends State<TravelPanel> {
                     txtMuted: txtMuted,
                   ),
                 ),
+                SliverToBoxAdapter(child: const SizedBox(height: 26)),
+                // 3. 큐레이션 테마 — 8개 미리 만들어둔 코스.
+                SliverToBoxAdapter(
+                  child: _buildSectionHeader(
+                    title: '테마 추천',
+                    subtitle: '탭 한 번으로 코스 자동 생성',
+                    txtPrimary: txtPrimary,
+                    txtMuted: txtMuted,
+                  ),
+                ),
+                SliverToBoxAdapter(child: const SizedBox(height: 12)),
+                SliverToBoxAdapter(
+                  child: _ThemeCarousel(
+                    themes: _sortedThemes(),
+                    onTap: widget.onUseTheme,
+                  ),
+                ),
+                if (_spotify.isConnected && _spotify.currentTrack != null) ...[
+                  SliverToBoxAdapter(child: const SizedBox(height: 24)),
+                  SliverToBoxAdapter(
+                    child: _SpotifyMoodTile(
+                      track: _spotify.currentTrack!,
+                      txtPrimary: txtPrimary,
+                      txtMuted: txtMuted,
+                      onUseTheme: widget.onUseTheme,
+                    ),
+                  ),
+                ],
                 SliverToBoxAdapter(child: const SizedBox(height: 28)),
                 SliverToBoxAdapter(
                   child: _buildInspirationHeader(txtPrimary, txtMuted),
@@ -205,6 +313,36 @@ class _TravelPanelState extends State<TravelPanel> {
     );
   }
 
+  Widget _buildSectionHeader({
+    required String title,
+    required String subtitle,
+    required Color txtPrimary,
+    required Color txtMuted,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 0, 24, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+              color: txtPrimary,
+              letterSpacing: -0.3,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            subtitle,
+            style: AppTypography.caption.copyWith(color: txtMuted),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildInspirationHeader(Color txtPrimary, Color txtMuted) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 0, 24, 0),
@@ -216,7 +354,7 @@ class _TravelPanelState extends State<TravelPanel> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '여행 영감',
+                  '이번 주 이벤트',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w800,
@@ -455,6 +593,165 @@ class _SecondaryAction extends StatelessWidget {
   }
 }
 
+/// 사용자가 튜토리얼에서 고른 무드 — 여행 패널 최상단 히어로 카드.
+/// 자체 헤더 라벨 + 큰 이모지 + CTA 까지 한 카드 안에 다 박혀 있어
+/// 별도 섹션 헤더 없이도 독립적으로 시그니처 역할.
+class _UserStyleCard extends StatelessWidget {
+  final TravelStyle style;
+  final Color txtPrimary;
+  final Color txtMuted;
+  final VoidCallback onTap;
+  const _UserStyleCard({
+    required this.style,
+    required this.txtPrimary,
+    required this.txtMuted,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final c0 = style.palette[0];
+    final c1 = style.palette[3];
+    final c2 = style.palette[5];
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(20),
+          child: Ink(
+            padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  c0.withValues(alpha: 0.28),
+                  c1.withValues(alpha: 0.18),
+                  c2.withValues(alpha: 0.10),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: c0.withValues(alpha: 0.55),
+                width: 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: c0.withValues(alpha: 0.22),
+                  blurRadius: 22,
+                  spreadRadius: 0,
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 카드 자체에 박힌 작은 라벨 — 섹션 헤더 대신.
+                Row(
+                  children: [
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: c0,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: c0.withValues(alpha: 0.7),
+                            blurRadius: 6,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      '당신의 테마',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.6,
+                        color: c0,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: 52,
+                      height: 52,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: c0.withValues(alpha: 0.22),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Text(
+                        style.emoji,
+                        style: const TextStyle(fontSize: 28),
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            style.title,
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                              color: txtPrimary,
+                              height: 1.1,
+                              letterSpacing: -0.2,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            style.subtitle,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: txtMuted,
+                              height: 1.3,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                // CTA hint — 카드 하단.
+                Row(
+                  children: [
+                    Text(
+                      '이 무드로 코스 시작',
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w700,
+                        color: c0,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Icon(
+                      Icons.arrow_forward_rounded,
+                      size: 16,
+                      color: c0,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// 행사 세로 타일 — 큰 썸네일 + 정보.
 class _EventTile extends StatelessWidget {
   final CulturalEvent event;
@@ -592,6 +889,349 @@ class _EventTile extends StatelessWidget {
       loadingBuilder: (ctx, child, prog) =>
           prog == null ? child : placeholder,
       errorBuilder: (_, __, ___) => placeholder,
+    );
+  }
+}
+
+/// 테마 카드 가로 스와이프 리스트.
+class _ThemeCarousel extends StatelessWidget {
+  final List<TravelTheme> themes;
+  final ValueChanged<TravelTheme> onTap;
+  const _ThemeCarousel({required this.themes, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 132,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        itemCount: themes.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 12),
+        itemBuilder: (_, i) => _ThemeCard(
+          theme: themes[i],
+          onTap: () => onTap(themes[i]),
+        ),
+      ),
+    );
+  }
+}
+
+class _ThemeCard extends StatelessWidget {
+  final TravelTheme theme;
+  final VoidCallback onTap;
+  const _ThemeCard({required this.theme, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        width: 200,
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(theme.colorStart), Color(theme.colorEnd)],
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Color(theme.colorStart).withValues(alpha: 0.30),
+              blurRadius: 12,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text(theme.emoji, style: const TextStyle(fontSize: 22)),
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.25),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    '${theme.stops.length}곳',
+                    style: const TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const Spacer(),
+            Text(
+              theme.title,
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
+                letterSpacing: -0.2,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 3),
+            Text(
+              theme.subtitle,
+              style: TextStyle(
+                fontSize: 11,
+                color: Colors.white.withValues(alpha: 0.92),
+                height: 1.3,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Spotify 현재 트랙 → 분위기 매칭 한 줄 추천.
+class _SpotifyMoodTile extends StatefulWidget {
+  final SpotifyTrack track;
+  final Color txtPrimary;
+  final Color txtMuted;
+  final ValueChanged<TravelTheme> onUseTheme;
+  const _SpotifyMoodTile({
+    required this.track,
+    required this.txtPrimary,
+    required this.txtMuted,
+    required this.onUseTheme,
+  });
+
+  @override
+  State<_SpotifyMoodTile> createState() => _SpotifyMoodTileState();
+}
+
+class _SpotifyMoodTileState extends State<_SpotifyMoodTile> {
+  SpotifyAudioFeatures? _features;
+  TravelTheme? _matched;
+  String? _lastFetchedTrackId;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchAndMatch();
+  }
+
+  @override
+  void didUpdateWidget(covariant _SpotifyMoodTile old) {
+    super.didUpdateWidget(old);
+    if (old.track.trackId != widget.track.trackId) {
+      _features = null;
+      _matched = null;
+      _fetchAndMatch();
+    }
+  }
+
+  Future<void> _fetchAndMatch() async {
+    final id = widget.track.trackId;
+    if (id == null || id == _lastFetchedTrackId) {
+      // trackId 없으면 키워드 fallback 만으로 매칭.
+      setState(() => _matched = _matchByKeywords());
+      return;
+    }
+    _lastFetchedTrackId = id;
+    final f = await SpotifyService.instance.getAudioFeatures(id);
+    if (!mounted) return;
+    setState(() {
+      _features = f;
+      _matched = f != null ? _matchByFeatures(f) : _matchByKeywords();
+    });
+  }
+
+  /// valence×energy 4분면 + danceability 가중치로 kTravelThemes 매칭.
+  TravelTheme _matchByFeatures(SpotifyAudioFeatures f) {
+    final highValence = f.valence >= 0.5;
+    final highEnergy = f.energy >= 0.5;
+    String preferredId;
+    if (highValence && highEnergy) {
+      // 신나는 기분 — K팝 / 한강 / 카페
+      preferredId = f.danceability > 0.6 ? 'kpop' : 'hangang_wind';
+    } else if (highValence && !highEnergy) {
+      // 차분한 행복 — 카페 / 궁궐
+      preferredId = f.tempo < 110 ? 'palace_walk' : 'cafe_hop';
+    } else if (!highValence && highEnergy) {
+      // 격렬한 어두움 — 야경
+      preferredId = 'night_view';
+    } else {
+      // 우울하고 차분 — 우중 실내 / 야경
+      preferredId = f.energy < 0.3 ? 'rainy_indoor' : 'night_view';
+    }
+    return kTravelThemes.firstWhere(
+      (t) => t.id == preferredId,
+      orElse: () => kTravelThemes.first,
+    );
+  }
+
+  /// Audio Features 미연동 fallback — 곡명 키워드 기반.
+  TravelTheme _matchByKeywords() {
+    final t = '${widget.track.name} ${widget.track.artist}'.toLowerCase();
+    String id;
+    if (t.contains('night') ||
+        t.contains('밤') ||
+        t.contains('moon') ||
+        t.contains('야')) {
+      id = 'night_view';
+    } else if (t.contains('rain') || t.contains('비')) {
+      id = 'rainy_indoor';
+    } else if (t.contains('summer') ||
+        t.contains('여름') ||
+        t.contains('beach')) {
+      id = 'hangang_wind';
+    } else if (t.contains('coffee') ||
+        t.contains('cafe') ||
+        t.contains('lofi')) {
+      id = 'cafe_hop';
+    } else if (t.contains('love') || t.contains('사랑')) {
+      id = 'palace_walk';
+    } else if (t.contains('food') || t.contains('맛')) {
+      id = 'foodie_day';
+    } else {
+      id = 'hangang_wind';
+    }
+    return kTravelThemes.firstWhere(
+      (x) => x.id == id,
+      orElse: () => kTravelThemes.first,
+    );
+  }
+
+  String _suggestionLine() {
+    final theme = _matched;
+    if (theme == null) return '곡 분위기 분석 중...';
+    final f = _features;
+    if (f == null) return '${theme.emoji} ${theme.title}';
+    // valence 별 톤 다르게.
+    final tone = f.valence >= 0.6
+        ? '신나는 분위기엔'
+        : f.valence >= 0.4
+            ? '오늘 같은 날엔'
+            : f.energy >= 0.6
+                ? '강렬한 비트엔'
+                : '차분한 분위기엔';
+    return '$tone ${theme.emoji} ${theme.title}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final track = widget.track;
+    final txtPrimary = widget.txtPrimary;
+    final txtMuted = widget.txtMuted;
+    final isLight = Theme.of(context).brightness == Brightness.light;
+    final bg = isLight
+        ? Colors.black.withValues(alpha: 0.04)
+        : Colors.white.withValues(alpha: 0.06);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Material(
+        color: bg,
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: _matched == null
+              ? null
+              : () => widget.onUseTheme(_matched!),
+          child: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: const Color(0xFF1DB954).withValues(alpha: 0.35),
+                width: 0.8,
+              ),
+            ),
+            child: Row(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: track.albumImageUrl != null
+                      ? Image.network(
+                          track.albumImageUrl!,
+                          width: 48,
+                          height: 48,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => _albumPlaceholder(),
+                        )
+                      : _albumPlaceholder(),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.music_note_rounded,
+                            size: 12,
+                            color: Color(0xFF1DB954),
+                          ),
+                          const SizedBox(width: 3),
+                          Text(
+                            '오늘의 분위기',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFF1DB954),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        _suggestionLine(),
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: txtPrimary,
+                          height: 1.3,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${track.name} · ${track.artist}',
+                        style: TextStyle(fontSize: 10, color: txtMuted),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _albumPlaceholder() {
+    return Container(
+      width: 48,
+      height: 48,
+      color: const Color(0xFF1DB954).withValues(alpha: 0.18),
+      child: const Icon(
+        Icons.music_note_rounded,
+        color: Color(0xFF1DB954),
+        size: 22,
+      ),
     );
   }
 }
