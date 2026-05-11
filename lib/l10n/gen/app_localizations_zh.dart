@@ -2431,4 +2431,203 @@ class AppL10nZh extends AppL10n {
   String adminAgoDay(int day) {
     return '$day 天前';
   }
+
+  @override
+  String get liveDiagTitle => '实时诊断';
+
+  @override
+  String get liveDiagMyId => '我的 ID';
+
+  @override
+  String get liveDiagVisibility => '公开范围';
+
+  @override
+  String get liveDiagRoom => '房间';
+
+  @override
+  String get liveDiagPeers => '接收对端';
+
+  @override
+  String liveDiagPeersValue(int count) {
+    return '$count 个';
+  }
+
+  @override
+  String get liveDiagPresenceStatus => 'Presence 状态';
+
+  @override
+  String get liveDiagWorldStatus => 'World 状态';
+
+  @override
+  String get liveDiagLastSent => '最近发送';
+
+  @override
+  String get liveDiagSendError => '发送错误';
+
+  @override
+  String get liveDiagGps => 'GPS';
+
+  @override
+  String get liveDiagPaused => '已暂停';
+
+  @override
+  String get liveDiagActivityFailCount => '活动记录失败';
+
+  @override
+  String liveDiagActivityFailValue(int count) {
+    return '$count 次';
+  }
+
+  @override
+  String get liveDiagLastActivityError => '最近活动错误';
+
+  @override
+  String get liveDiagFooter => '如有问题请截图分享';
+
+  @override
+  String get liveDiagClose => '关闭';
+
+  @override
+  String get liveDiagNoProfile => '(无资料)';
+
+  @override
+  String get liveDiagNone => '(无)';
+
+  @override
+  String get liveDiagNotConnected => '(未连接)';
+
+  @override
+  String get liveDiagNotUsed => '(未使用)';
+
+  @override
+  String get liveDiagNotSent => '尚未发送';
+
+  @override
+  String liveDiagSecondsAgo(int sec) {
+    return '$sec 秒前';
+  }
+
+  @override
+  String liveDiagRoomLabel(String code, int count) {
+    return '$code ($count 人)';
+  }
+
+  @override
+  String get liveDiagGpsHas => '有';
+
+  @override
+  String get liveDiagGpsNo => '无';
+
+  @override
+  String get mpConsentLocationDenied => '请在 设置 > 位置 中允许位置权限。';
+
+  @override
+  String get mpConsentTitle => '多人功能开始前的说明';
+
+  @override
+  String get mpConsentHeading => 'Seoul Live 同意';
+
+  @override
+  String get mpConsentBody => '为了与朋友共享位置,需要您同意以下项目。每项可以单独同意/拒绝,并可随时在设置中撤回。';
+
+  @override
+  String get mpConsentItem1Title => '[必需] 个人资料处理';
+
+  @override
+  String get mpConsentItem1Detail =>
+      '昵称、图钉颜色/表情、出生年份。用于服务识别和阻止 14 岁以下注册。保留至账号删除,注销时立即销毁。';
+
+  @override
+  String get mpConsentItem2Title => '[必需] 位置信息处理 (LBS 法 §18)';
+
+  @override
+  String get mpConsentItem2Detail =>
+      'GPS 坐标和移动方向。会向房间成员实时共享,或在选择「公开」时向所有 Seoul Live 用户实时共享。不进行长期存储 — 通过 Realtime 通道临时传输。可随时在资料中将公开范围更改为隐身/房间/公开。';
+
+  @override
+  String get mpConsentItem3Title => '[必需] 位置基础服务使用条款';
+
+  @override
+  String get mpConsentItem3Detail => '由放通委备案运营商提供。14 岁以下不可使用。';
+
+  @override
+  String get mpConsentItem3Link => '查看条款全文';
+
+  @override
+  String get mpConsentDeclineNote => '拒绝后仅多人功能不可用,其他功能仍可正常使用。';
+
+  @override
+  String get mpConsentBackgroundNote => '应用进入后台时位置共享会自动暂停 (省电)。';
+
+  @override
+  String get mpConsentSubmit => '同意并开始';
+
+  @override
+  String get mpConsentLaterButton => '稍后';
+
+  @override
+  String get mpConsentSubmitBusy => '处理中……';
+
+  @override
+  String get mpConsentLbsTermsBody =>
+      '本条款规定 Seoul Vista 提供的 Seoul Live (以下简称\"服务\") 位置基础服务的使用事项。';
+
+  @override
+  String get optTitle => '为你的设备调校';
+
+  @override
+  String get optSubtitle => '实时可视化对 GPU 负担较大。\n请根据设备选择。';
+
+  @override
+  String get optPresetHighTitle => '高画质';
+
+  @override
+  String get optPresetHighDetail => '60fps · 5 秒刷新 · 抗锯齿 ON';
+
+  @override
+  String get optPresetSmoothTitle => '流畅';
+
+  @override
+  String get optPresetSmoothDetail => '30fps · 10 秒刷新';
+
+  @override
+  String get optPresetBatteryTitle => '省电';
+
+  @override
+  String get optPresetBatteryDetail => '20fps · 30 秒刷新 · 特效 OFF';
+
+  @override
+  String get optAdvancedTitle => '高级 — 选择要显示的图层';
+
+  @override
+  String get optLayerSubway => '地铁 (实时列车位置)';
+
+  @override
+  String get optLayerSubwaySub => '首尔地铁 + 广域铁路。GPU 负担最大';
+
+  @override
+  String get optLayerBus => '市内公交';
+
+  @override
+  String get optLayerBusSub => '首尔 + 京畿市内公交实时位置';
+
+  @override
+  String get optLayerRiverBus => '汉江公交';
+
+  @override
+  String get optLayerRiverBusSub => '汉江运营船舶';
+
+  @override
+  String get optLayerFlights => '飞机';
+
+  @override
+  String get optLayerFlightsSub => '仁川机场附近的实时飞机';
+
+  @override
+  String optDetectedTier(String tier) {
+    return '检测为 $tier 级';
+  }
+
+  @override
+  String get optRecommended => '推荐';
 }

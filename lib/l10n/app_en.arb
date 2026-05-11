@@ -1145,5 +1145,88 @@
   "adminAgoDay": "{day}d ago",
   "@adminAgoDay": {
     "placeholders": { "day": { "type": "int" } }
-  }
+  },
+
+  "liveDiagTitle": "Live diagnostics",
+  "liveDiagMyId": "My ID",
+  "liveDiagVisibility": "Visibility",
+  "liveDiagRoom": "Room",
+  "liveDiagPeers": "Peers receiving",
+  "liveDiagPeersValue": "{count}",
+  "@liveDiagPeersValue": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "liveDiagPresenceStatus": "Presence status",
+  "liveDiagWorldStatus": "World status",
+  "liveDiagLastSent": "Last sent",
+  "liveDiagSendError": "Send error",
+  "liveDiagGps": "GPS",
+  "liveDiagPaused": "Paused",
+  "liveDiagActivityFailCount": "Activity fail count",
+  "liveDiagActivityFailValue": "{count}",
+  "@liveDiagActivityFailValue": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "liveDiagLastActivityError": "Last activity error",
+  "liveDiagFooter": "Capture this screen if there's an issue",
+  "liveDiagClose": "Close",
+  "liveDiagNoProfile": "(no profile)",
+  "liveDiagNone": "(none)",
+  "liveDiagNotConnected": "(not connected)",
+  "liveDiagNotUsed": "(not used)",
+  "liveDiagNotSent": "Not sent yet",
+  "liveDiagSecondsAgo": "{sec}s ago",
+  "@liveDiagSecondsAgo": {
+    "placeholders": { "sec": { "type": "int" } }
+  },
+  "liveDiagRoomLabel": "{code} ({count} members)",
+  "@liveDiagRoomLabel": {
+    "placeholders": {
+      "code": { "type": "String" },
+      "count": { "type": "int" }
+    }
+  },
+  "liveDiagGpsHas": "yes",
+  "liveDiagGpsNo": "no",
+
+  "mpConsentLocationDenied": "Allow location permission in Settings > Location.",
+  "mpConsentTitle": "Before starting multiplayer",
+  "mpConsentHeading": "Seoul Live consent",
+  "mpConsentBody": "To share your location with friends, you need to agree to the items below. Each item can be agreed/declined separately and revoked any time in Settings.",
+  "mpConsentItem1Title": "[Required] Profile data",
+  "mpConsentItem1Detail": "Nickname, pin color/emoji, birth year. For service identification and 14+ age check. Retained until account deletion; deleted immediately on withdrawal.",
+  "mpConsentItem2Title": "[Required] Location data (LBS Act §18)",
+  "mpConsentItem2Detail": "GPS coordinates and direction. Shared in real time with room members or, when set to public, all Seoul Live users. Not stored persistently — ephemeral over Realtime channels. Visibility (private/room/public) can be changed any time in your profile.",
+  "mpConsentItem3Title": "[Required] LBS terms of service",
+  "mpConsentItem3Detail": "Provided by a KCC-registered operator. Not available to users under 14.",
+  "mpConsentItem3Link": "Read the full terms",
+  "mpConsentDeclineNote": "Declining only disables multiplayer; the rest of the app works normally.",
+  "mpConsentBackgroundNote": "Location sharing auto-pauses when the app goes to the background (battery saver).",
+  "mpConsentSubmit": "Agree and start",
+  "mpConsentLaterButton": "Later",
+  "mpConsentSubmitBusy": "Processing…",
+  "mpConsentLbsTermsBody": "These terms govern the use of the location-based service (\"Service\") provided by Seoul Vista's Seoul Live.",
+
+  "optTitle": "Tuned to your device",
+  "optSubtitle": "Real-time visualization is GPU-intensive.\nPick what fits your device.",
+  "optPresetHighTitle": "High quality",
+  "optPresetHighDetail": "60 fps · 5s refresh · AA on",
+  "optPresetSmoothTitle": "Smooth",
+  "optPresetSmoothDetail": "30 fps · 10s refresh",
+  "optPresetBatteryTitle": "Battery saver",
+  "optPresetBatteryDetail": "20 fps · 30s refresh · effects off",
+  "optAdvancedTitle": "Advanced — pick layers",
+  "optLayerSubway": "Subway (live train positions)",
+  "optLayerSubwaySub": "Seoul subway + metro rail. Highest GPU load",
+  "optLayerBus": "City bus",
+  "optLayerBusSub": "Seoul + Gyeonggi city bus live positions",
+  "optLayerRiverBus": "Han River bus",
+  "optLayerRiverBusSub": "Han River ferries",
+  "optLayerFlights": "Aircraft",
+  "optLayerFlightsSub": "Live aircraft around Incheon airport",
+  "optDetectedTier": "Detected as {tier} tier",
+  "@optDetectedTier": {
+    "placeholders": { "tier": { "type": "String" } }
+  },
+  "optRecommended": "Recommended"
 }

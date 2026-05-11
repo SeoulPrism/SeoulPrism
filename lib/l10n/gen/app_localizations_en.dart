@@ -2492,4 +2492,209 @@ class AppL10nEn extends AppL10n {
   String adminAgoDay(int day) {
     return '${day}d ago';
   }
+
+  @override
+  String get liveDiagTitle => 'Live diagnostics';
+
+  @override
+  String get liveDiagMyId => 'My ID';
+
+  @override
+  String get liveDiagVisibility => 'Visibility';
+
+  @override
+  String get liveDiagRoom => 'Room';
+
+  @override
+  String get liveDiagPeers => 'Peers receiving';
+
+  @override
+  String liveDiagPeersValue(int count) {
+    return '$count';
+  }
+
+  @override
+  String get liveDiagPresenceStatus => 'Presence status';
+
+  @override
+  String get liveDiagWorldStatus => 'World status';
+
+  @override
+  String get liveDiagLastSent => 'Last sent';
+
+  @override
+  String get liveDiagSendError => 'Send error';
+
+  @override
+  String get liveDiagGps => 'GPS';
+
+  @override
+  String get liveDiagPaused => 'Paused';
+
+  @override
+  String get liveDiagActivityFailCount => 'Activity fail count';
+
+  @override
+  String liveDiagActivityFailValue(int count) {
+    return '$count';
+  }
+
+  @override
+  String get liveDiagLastActivityError => 'Last activity error';
+
+  @override
+  String get liveDiagFooter => 'Capture this screen if there\'s an issue';
+
+  @override
+  String get liveDiagClose => 'Close';
+
+  @override
+  String get liveDiagNoProfile => '(no profile)';
+
+  @override
+  String get liveDiagNone => '(none)';
+
+  @override
+  String get liveDiagNotConnected => '(not connected)';
+
+  @override
+  String get liveDiagNotUsed => '(not used)';
+
+  @override
+  String get liveDiagNotSent => 'Not sent yet';
+
+  @override
+  String liveDiagSecondsAgo(int sec) {
+    return '${sec}s ago';
+  }
+
+  @override
+  String liveDiagRoomLabel(String code, int count) {
+    return '$code ($count members)';
+  }
+
+  @override
+  String get liveDiagGpsHas => 'yes';
+
+  @override
+  String get liveDiagGpsNo => 'no';
+
+  @override
+  String get mpConsentLocationDenied =>
+      'Allow location permission in Settings > Location.';
+
+  @override
+  String get mpConsentTitle => 'Before starting multiplayer';
+
+  @override
+  String get mpConsentHeading => 'Seoul Live consent';
+
+  @override
+  String get mpConsentBody =>
+      'To share your location with friends, you need to agree to the items below. Each item can be agreed/declined separately and revoked any time in Settings.';
+
+  @override
+  String get mpConsentItem1Title => '[Required] Profile data';
+
+  @override
+  String get mpConsentItem1Detail =>
+      'Nickname, pin color/emoji, birth year. For service identification and 14+ age check. Retained until account deletion; deleted immediately on withdrawal.';
+
+  @override
+  String get mpConsentItem2Title => '[Required] Location data (LBS Act §18)';
+
+  @override
+  String get mpConsentItem2Detail =>
+      'GPS coordinates and direction. Shared in real time with room members or, when set to public, all Seoul Live users. Not stored persistently — ephemeral over Realtime channels. Visibility (private/room/public) can be changed any time in your profile.';
+
+  @override
+  String get mpConsentItem3Title => '[Required] LBS terms of service';
+
+  @override
+  String get mpConsentItem3Detail =>
+      'Provided by a KCC-registered operator. Not available to users under 14.';
+
+  @override
+  String get mpConsentItem3Link => 'Read the full terms';
+
+  @override
+  String get mpConsentDeclineNote =>
+      'Declining only disables multiplayer; the rest of the app works normally.';
+
+  @override
+  String get mpConsentBackgroundNote =>
+      'Location sharing auto-pauses when the app goes to the background (battery saver).';
+
+  @override
+  String get mpConsentSubmit => 'Agree and start';
+
+  @override
+  String get mpConsentLaterButton => 'Later';
+
+  @override
+  String get mpConsentSubmitBusy => 'Processing…';
+
+  @override
+  String get mpConsentLbsTermsBody =>
+      'These terms govern the use of the location-based service (\"Service\") provided by Seoul Vista\'s Seoul Live.';
+
+  @override
+  String get optTitle => 'Tuned to your device';
+
+  @override
+  String get optSubtitle =>
+      'Real-time visualization is GPU-intensive.\nPick what fits your device.';
+
+  @override
+  String get optPresetHighTitle => 'High quality';
+
+  @override
+  String get optPresetHighDetail => '60 fps · 5s refresh · AA on';
+
+  @override
+  String get optPresetSmoothTitle => 'Smooth';
+
+  @override
+  String get optPresetSmoothDetail => '30 fps · 10s refresh';
+
+  @override
+  String get optPresetBatteryTitle => 'Battery saver';
+
+  @override
+  String get optPresetBatteryDetail => '20 fps · 30s refresh · effects off';
+
+  @override
+  String get optAdvancedTitle => 'Advanced — pick layers';
+
+  @override
+  String get optLayerSubway => 'Subway (live train positions)';
+
+  @override
+  String get optLayerSubwaySub => 'Seoul subway + metro rail. Highest GPU load';
+
+  @override
+  String get optLayerBus => 'City bus';
+
+  @override
+  String get optLayerBusSub => 'Seoul + Gyeonggi city bus live positions';
+
+  @override
+  String get optLayerRiverBus => 'Han River bus';
+
+  @override
+  String get optLayerRiverBusSub => 'Han River ferries';
+
+  @override
+  String get optLayerFlights => 'Aircraft';
+
+  @override
+  String get optLayerFlightsSub => 'Live aircraft around Incheon airport';
+
+  @override
+  String optDetectedTier(String tier) {
+    return 'Detected as $tier tier';
+  }
+
+  @override
+  String get optRecommended => 'Recommended';
 }

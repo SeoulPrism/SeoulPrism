@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import '../../../l10n/gen/app_localizations.dart';
 import '../../../services/device_profile_service.dart';
 import '../../../services/settings_service.dart';
 import '../../../theme/app_typography.dart';
@@ -30,12 +31,13 @@ class _OptimizationPageState extends State<OptimizationPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppL10n.of(context);
     final dp = DeviceProfileService.instance;
     final tierLabel = switch (dp.profile.tier) {
-      DeviceTier.flagship => '플래그십',
-      DeviceTier.high => '상위',
-      DeviceTier.mid => '중급',
-      DeviceTier.low => '저사양',
+      DeviceTier.flagship => l.panelTierFlagship,
+      DeviceTier.high => l.panelTierHigh,
+      DeviceTier.mid => l.panelTierMid,
+      DeviceTier.low => l.panelTierLow,
     };
     final cs = Theme.of(context).colorScheme;
     final isIos = Platform.isIOS;
@@ -52,7 +54,7 @@ class _OptimizationPageState extends State<OptimizationPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                '내 기기에 맞춰',
+                l.optTitle,
                 style: AppTypography.displayLg.copyWith(
                   color: titleColor,
                   fontSize: 28,
@@ -61,7 +63,7 @@ class _OptimizationPageState extends State<OptimizationPage> {
               ),
               const SizedBox(height: 6),
               Text(
-                '실시간 시각화는 GPU 부담이 커요.\n기기에 맞게 골라주세요.',
+                l.optSubtitle,
                 style: AppTypography.bodySm.copyWith(color: subColor),
               ),
               const SizedBox(height: 20),
@@ -69,8 +71,8 @@ class _OptimizationPageState extends State<OptimizationPage> {
               const SizedBox(height: 18),
               _PresetTile(
                 preset: 'high',
-                title: '고품질',
-                detail: '60fps · 5초 갱신 · 안티얼라이어싱 ON',
+                title: l.optPresetHighTitle,
+                detail: l.optPresetHighDetail,
                 recommended: dp.profile.qualityPreset == 'high',
                 selected: _selected == 'high',
                 onTap: () => _select('high'),
@@ -78,8 +80,8 @@ class _OptimizationPageState extends State<OptimizationPage> {
               const SizedBox(height: 8),
               _PresetTile(
                 preset: 'medium',
-                title: '부드러움',
-                detail: '30fps · 10초 갱신',
+                title: l.optPresetSmoothTitle,
+                detail: l.optPresetSmoothDetail,
                 recommended: dp.profile.qualityPreset == 'medium',
                 selected: _selected == 'medium',
                 onTap: () => _select('medium'),
@@ -87,8 +89,8 @@ class _OptimizationPageState extends State<OptimizationPage> {
               const SizedBox(height: 8),
               _PresetTile(
                 preset: 'low',
-                title: '배터리 절약',
-                detail: '20fps · 30초 갱신 · 효과 OFF',
+                title: l.optPresetBatteryTitle,
+                detail: l.optPresetBatteryDetail,
                 recommended: dp.profile.qualityPreset == 'low',
                 selected: _selected == 'low',
                 onTap: () => _select('low'),
@@ -140,7 +142,7 @@ class _AdvancedToggle extends StatelessWidget {
             ),
             const SizedBox(width: 4),
             Text(
-              '고급 — 표시할 레이어 선택',
+              AppL10n.of(context).optAdvancedTitle,
               style: AppTypography.bodySm.copyWith(
                 color: color,
                 fontWeight: FontWeight.w600,
@@ -159,6 +161,7 @@ class _LayerToggles extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppL10n.of(context);
     final s = SettingsService.instance;
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -166,8 +169,8 @@ class _LayerToggles extends StatelessWidget {
         _LayerRow(
           icon: Icons.directions_subway,
           color: const Color(0xFF00B0FF),
-          label: '지하철 (실시간 열차 위치)',
-          subtitle: '서울 지하철 + 광역철도. GPU 부담이 가장 큼',
+          label: l.optLayerSubway,
+          subtitle: l.optLayerSubwaySub,
           value: s.showTrains,
           onChanged: (v) {
             s.setShowTrains(v);
@@ -177,8 +180,8 @@ class _LayerToggles extends StatelessWidget {
         _LayerRow(
           icon: Icons.directions_bus,
           color: const Color(0xFF00E676),
-          label: '시내버스',
-          subtitle: '서울 + 경기 시내버스 실시간 위치',
+          label: l.optLayerBus,
+          subtitle: l.optLayerBusSub,
           value: s.showBuses,
           onChanged: (v) {
             s.setShowBuses(v);
@@ -188,8 +191,8 @@ class _LayerToggles extends StatelessWidget {
         _LayerRow(
           icon: Icons.directions_boat,
           color: const Color(0xFF00ACC1),
-          label: '한강버스',
-          subtitle: '한강 운항 선박',
+          label: l.optLayerRiverBus,
+          subtitle: l.optLayerRiverBusSub,
           value: s.showRiverBus,
           onChanged: (v) {
             s.setShowRiverBus(v);
@@ -199,8 +202,8 @@ class _LayerToggles extends StatelessWidget {
         _LayerRow(
           icon: Icons.flight,
           color: const Color(0xFFFFC400),
-          label: '항공기',
-          subtitle: '인천공항 주변 실시간 항공기',
+          label: l.optLayerFlights,
+          subtitle: l.optLayerFlightsSub,
           value: s.showFlights,
           onChanged: (v) {
             s.setShowFlights(v);
@@ -320,7 +323,7 @@ class _DetectionRow extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
                 Text(
-                  '$tier 등급으로 감지됨',
+                  AppL10n.of(context).optDetectedTier(tier),
                   style: AppTypography.caption.copyWith(color: sub),
                 ),
               ],
@@ -424,7 +427,7 @@ class _PresetTile extends StatelessWidget {
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
-                            '권장',
+                            AppL10n.of(context).optRecommended,
                             style: AppTypography.caption.copyWith(
                               color: const Color(0xFF00E676),
                               fontWeight: FontWeight.w700,

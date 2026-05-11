@@ -2447,4 +2447,205 @@ class AppL10nKo extends AppL10n {
   String adminAgoDay(int day) {
     return '$day일 전';
   }
+
+  @override
+  String get liveDiagTitle => '실시간 진단';
+
+  @override
+  String get liveDiagMyId => '내 ID';
+
+  @override
+  String get liveDiagVisibility => '공개 범위';
+
+  @override
+  String get liveDiagRoom => '방';
+
+  @override
+  String get liveDiagPeers => '받는 peer';
+
+  @override
+  String liveDiagPeersValue(int count) {
+    return '$count명';
+  }
+
+  @override
+  String get liveDiagPresenceStatus => 'Presence 상태';
+
+  @override
+  String get liveDiagWorldStatus => 'World 상태';
+
+  @override
+  String get liveDiagLastSent => '마지막 송신';
+
+  @override
+  String get liveDiagSendError => '송신 오류';
+
+  @override
+  String get liveDiagGps => 'GPS';
+
+  @override
+  String get liveDiagPaused => '일시정지';
+
+  @override
+  String get liveDiagActivityFailCount => '활동기록 실패';
+
+  @override
+  String liveDiagActivityFailValue(int count) {
+    return '$count회';
+  }
+
+  @override
+  String get liveDiagLastActivityError => '최근 활동 오류';
+
+  @override
+  String get liveDiagFooter => '문제 있으면 이 화면 캡처해서 공유';
+
+  @override
+  String get liveDiagClose => '닫기';
+
+  @override
+  String get liveDiagNoProfile => '(프로필 없음)';
+
+  @override
+  String get liveDiagNone => '(없음)';
+
+  @override
+  String get liveDiagNotConnected => '(미연결)';
+
+  @override
+  String get liveDiagNotUsed => '(미사용)';
+
+  @override
+  String get liveDiagNotSent => '아직 송신 안함';
+
+  @override
+  String liveDiagSecondsAgo(int sec) {
+    return '$sec초 전';
+  }
+
+  @override
+  String liveDiagRoomLabel(String code, int count) {
+    return '$code ($count명)';
+  }
+
+  @override
+  String get liveDiagGpsHas => '있음';
+
+  @override
+  String get liveDiagGpsNo => '없음';
+
+  @override
+  String get mpConsentLocationDenied => '설정 > 위치 에서 위치 권한을 허용해주세요.';
+
+  @override
+  String get mpConsentTitle => '멀티플레이 시작 전 안내';
+
+  @override
+  String get mpConsentHeading => 'Seoul Live 동의';
+
+  @override
+  String get mpConsentBody =>
+      '친구와 위치를 공유하기 위해 아래 항목에 동의가 필요해요. 각 항목은 별도로 동의/거부할 수 있고, 언제든 설정에서 철회할 수 있어요.';
+
+  @override
+  String get mpConsentItem1Title => '[필수] 프로필 정보 처리';
+
+  @override
+  String get mpConsentItem1Detail =>
+      '닉네임, 핀 색상/이모지, 출생연도. 서비스 식별 및 14세 미만 가입 차단 목적. 계정 삭제 시까지 보유, 탈퇴 시 즉시 파기.';
+
+  @override
+  String get mpConsentItem2Title => '[필수] 위치정보 처리 (LBS법 §18)';
+
+  @override
+  String get mpConsentItem2Detail =>
+      'GPS 좌표·이동 방향. 친구방 멤버 또는 (전체 공개 선택 시) 모든 Seoul Live 사용자에게 실시간 공유. 영구 저장 X — Realtime 채널 휘발 전송. 공개 범위는 프로필에서 비공개/친구방/전체 공개 중 언제든 변경 가능.';
+
+  @override
+  String get mpConsentItem3Title => '[필수] 위치기반서비스 이용약관';
+
+  @override
+  String get mpConsentItem3Detail => '방통위 신고 사업자가 제공. 14세 미만 이용 불가.';
+
+  @override
+  String get mpConsentItem3Link => '약관 전문 보기';
+
+  @override
+  String get mpConsentDeclineNote => '거부해도 멀티플레이만 비활성화되고 나머지 기능은 정상 사용 가능해요.';
+
+  @override
+  String get mpConsentBackgroundNote =>
+      '앱이 백그라운드로 가면 위치 공유는 자동 일시정지돼요 (배터리 보호).';
+
+  @override
+  String get mpConsentSubmit => '동의하고 시작';
+
+  @override
+  String get mpConsentLaterButton => '나중에';
+
+  @override
+  String get mpConsentSubmitBusy => '처리 중...';
+
+  @override
+  String get mpConsentLbsTermsBody =>
+      '이 약관은 Seoul Vista 가 제공하는 Seoul Live(이하 \"서비스\")의 위치기반서비스 이용에 관한 사항을 정합니다.';
+
+  @override
+  String get optTitle => '내 기기에 맞춰';
+
+  @override
+  String get optSubtitle => '실시간 시각화는 GPU 부담이 커요.\n기기에 맞게 골라주세요.';
+
+  @override
+  String get optPresetHighTitle => '고품질';
+
+  @override
+  String get optPresetHighDetail => '60fps · 5초 갱신 · 안티얼라이어싱 ON';
+
+  @override
+  String get optPresetSmoothTitle => '부드러움';
+
+  @override
+  String get optPresetSmoothDetail => '30fps · 10초 갱신';
+
+  @override
+  String get optPresetBatteryTitle => '배터리 절약';
+
+  @override
+  String get optPresetBatteryDetail => '20fps · 30초 갱신 · 효과 OFF';
+
+  @override
+  String get optAdvancedTitle => '고급 — 표시할 레이어 선택';
+
+  @override
+  String get optLayerSubway => '지하철 (실시간 열차 위치)';
+
+  @override
+  String get optLayerSubwaySub => '서울 지하철 + 광역철도. GPU 부담이 가장 큼';
+
+  @override
+  String get optLayerBus => '시내버스';
+
+  @override
+  String get optLayerBusSub => '서울 + 경기 시내버스 실시간 위치';
+
+  @override
+  String get optLayerRiverBus => '한강버스';
+
+  @override
+  String get optLayerRiverBusSub => '한강 운항 선박';
+
+  @override
+  String get optLayerFlights => '항공기';
+
+  @override
+  String get optLayerFlightsSub => '인천공항 주변 실시간 항공기';
+
+  @override
+  String optDetectedTier(String tier) {
+    return '$tier 등급으로 감지됨';
+  }
+
+  @override
+  String get optRecommended => '권장';
 }

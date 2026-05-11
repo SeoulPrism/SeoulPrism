@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 
+import '../../l10n/gen/app_localizations.dart';
 import '../../services/multiplayer_service.dart';
 import '../../widgets/adaptive/adaptive.dart';
 import 'login_required_gate.dart';
@@ -39,7 +40,7 @@ class _MultiplayerConsentViewState extends State<MultiplayerConsentView> {
         permission == LocationPermission.deniedForever) {
       setState(() {
         _busy = false;
-        _error = '설정 > 위치 에서 위치 권한을 허용해주세요.';
+        _error = AppL10n.of(context).mpConsentLocationDenied;
       });
       return;
     }
@@ -57,23 +58,23 @@ class _MultiplayerConsentViewState extends State<MultiplayerConsentView> {
 
   Widget _buildConsent(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final l = AppL10n.of(context);
 
     return Scaffold(
       backgroundColor: cs.surface,
-      appBar: const AdaptiveAppBar(title: '멀티플레이 시작 전 안내'),
+      appBar: AdaptiveAppBar(title: l.mpConsentTitle),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
           children: [
-            Text('Seoul Live 동의',
+            Text(l.mpConsentHeading,
                 style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.w800,
                     color: cs.onSurface)),
             const SizedBox(height: 6),
             Text(
-              '친구와 위치를 공유하기 위해 아래 항목에 동의가 필요해요. '
-              '각 항목은 별도로 동의/거부할 수 있고, 언제든 설정에서 철회할 수 있어요.',
+              l.mpConsentBody,
               style: TextStyle(color: cs.onSurfaceVariant, height: 1.45),
             ),
             const SizedBox(height: 20),
@@ -81,30 +82,25 @@ class _MultiplayerConsentViewState extends State<MultiplayerConsentView> {
             AdaptiveSectionCard(
               children: [
                 _ConsentRow(
-                  title: '[필수] 프로필 정보 처리',
-                  detail: '닉네임, 핀 색상/이모지, 출생연도. '
-                      '서비스 식별 및 14세 미만 가입 차단 목적. '
-                      '계정 삭제 시까지 보유, 탈퇴 시 즉시 파기.',
+                  title: l.mpConsentItem1Title,
+                  detail: l.mpConsentItem1Detail,
                   value: _agreeProfile,
                   onChanged: (v) => setState(() => _agreeProfile = v),
                 ),
                 const _Divider(),
                 _ConsentRow(
-                  title: '[필수] 위치정보 처리 (LBS법 §18)',
-                  detail: 'GPS 좌표·이동 방향. '
-                      '친구방 멤버 또는 (전체 공개 선택 시) 모든 Seoul Live 사용자에게 실시간 공유. '
-                      '영구 저장 X — Realtime 채널 휘발 전송. '
-                      '공개 범위는 프로필에서 비공개/친구방/전체 공개 중 언제든 변경 가능.',
+                  title: l.mpConsentItem2Title,
+                  detail: l.mpConsentItem2Detail,
                   value: _agreeLocation,
                   onChanged: (v) => setState(() => _agreeLocation = v),
                 ),
                 const _Divider(),
                 _ConsentRow(
-                  title: '[필수] 위치기반서비스 이용약관',
-                  detail: '방통위 신고 사업자가 제공. 14세 미만 이용 불가.',
+                  title: l.mpConsentItem3Title,
+                  detail: l.mpConsentItem3Detail,
                   value: _agreeLbsTerms,
                   onChanged: (v) => setState(() => _agreeLbsTerms = v),
-                  linkText: '약관 전문 보기',
+                  linkText: l.mpConsentItem3Link,
                   onLinkTap: () => _showFullTerms(context),
                 ),
               ],
@@ -127,7 +123,7 @@ class _MultiplayerConsentViewState extends State<MultiplayerConsentView> {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          '거부해도 멀티플레이만 비활성화되고 나머지 기능은 정상 사용 가능해요.',
+                          l.mpConsentDeclineNote,
                           style: TextStyle(
                               fontSize: 12,
                               color: cs.onSurfaceVariant,
@@ -144,7 +140,7 @@ class _MultiplayerConsentViewState extends State<MultiplayerConsentView> {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          '앱이 백그라운드로 가면 위치 공유는 자동 일시정지돼요 (배터리 보호).',
+                          l.mpConsentBackgroundNote,
                           style: TextStyle(
                               fontSize: 12,
                               color: cs.onSurfaceVariant,
@@ -164,14 +160,14 @@ class _MultiplayerConsentViewState extends State<MultiplayerConsentView> {
 
             const SizedBox(height: 24),
             AdaptiveGlassButton(
-              label: _busy ? '처리 중...' : '동의하고 시작',
+              label: _busy ? l.mpConsentSubmitBusy : l.mpConsentSubmit,
               onPressed: (_allRequired && !_busy) ? _proceed : null,
             ),
             const SizedBox(height: 8),
             Center(
               child: TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('나중에'),
+                child: Text(l.mpConsentLaterButton),
               ),
             ),
           ],

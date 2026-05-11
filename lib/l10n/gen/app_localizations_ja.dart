@@ -2446,4 +2446,205 @@ class AppL10nJa extends AppL10n {
   String adminAgoDay(int day) {
     return '$day 日前';
   }
+
+  @override
+  String get liveDiagTitle => 'リアルタイム診断';
+
+  @override
+  String get liveDiagMyId => 'マイ ID';
+
+  @override
+  String get liveDiagVisibility => '公開範囲';
+
+  @override
+  String get liveDiagRoom => 'ルーム';
+
+  @override
+  String get liveDiagPeers => '受信ピア';
+
+  @override
+  String liveDiagPeersValue(int count) {
+    return '$count 人';
+  }
+
+  @override
+  String get liveDiagPresenceStatus => 'Presence 状態';
+
+  @override
+  String get liveDiagWorldStatus => 'World 状態';
+
+  @override
+  String get liveDiagLastSent => '最終送信';
+
+  @override
+  String get liveDiagSendError => '送信エラー';
+
+  @override
+  String get liveDiagGps => 'GPS';
+
+  @override
+  String get liveDiagPaused => '一時停止';
+
+  @override
+  String get liveDiagActivityFailCount => '活動記録失敗';
+
+  @override
+  String liveDiagActivityFailValue(int count) {
+    return '$count 回';
+  }
+
+  @override
+  String get liveDiagLastActivityError => '直近の活動エラー';
+
+  @override
+  String get liveDiagFooter => '問題があればこの画面をキャプチャして共有してください';
+
+  @override
+  String get liveDiagClose => '閉じる';
+
+  @override
+  String get liveDiagNoProfile => '(プロフィールなし)';
+
+  @override
+  String get liveDiagNone => '(なし)';
+
+  @override
+  String get liveDiagNotConnected => '(未接続)';
+
+  @override
+  String get liveDiagNotUsed => '(未使用)';
+
+  @override
+  String get liveDiagNotSent => '未送信';
+
+  @override
+  String liveDiagSecondsAgo(int sec) {
+    return '$sec 秒前';
+  }
+
+  @override
+  String liveDiagRoomLabel(String code, int count) {
+    return '$code ($count 人)';
+  }
+
+  @override
+  String get liveDiagGpsHas => 'あり';
+
+  @override
+  String get liveDiagGpsNo => 'なし';
+
+  @override
+  String get mpConsentLocationDenied => '設定 > 位置情報 で位置情報の権限を許可してください。';
+
+  @override
+  String get mpConsentTitle => 'マルチプレイ開始前のご案内';
+
+  @override
+  String get mpConsentHeading => 'Seoul Live 同意';
+
+  @override
+  String get mpConsentBody =>
+      '友だちと位置を共有するために、以下の項目への同意が必要です。各項目は個別に同意/拒否でき、いつでも設定から撤回できます。';
+
+  @override
+  String get mpConsentItem1Title => '[必須] プロフィール情報の処理';
+
+  @override
+  String get mpConsentItem1Detail =>
+      'ニックネーム、ピンの色/絵文字、生年。サービスの識別および 14 歳未満の登録防止のため。アカウント削除時まで保有、退会時に即時破棄。';
+
+  @override
+  String get mpConsentItem2Title => '[必須] 位置情報の処理 (LBS 法 §18)';
+
+  @override
+  String get mpConsentItem2Detail =>
+      'GPS 座標・移動方向。ルームのメンバー、または全体公開を選択した場合はすべての Seoul Live ユーザーにリアルタイムで共有。永続保存なし — Realtime チャネルで一時的に送信。公開範囲は プロフィールから 非公開/ルーム/全体公開 をいつでも変更できます。';
+
+  @override
+  String get mpConsentItem3Title => '[必須] 位置基盤サービス利用規約';
+
+  @override
+  String get mpConsentItem3Detail => '放送通信委員会届出事業者が提供。14 歳未満は利用不可。';
+
+  @override
+  String get mpConsentItem3Link => '規約全文を見る';
+
+  @override
+  String get mpConsentDeclineNote => '拒否してもマルチプレイのみ無効になり、その他の機能は通常通り利用可能です。';
+
+  @override
+  String get mpConsentBackgroundNote =>
+      'アプリがバックグラウンドになると位置共有は自動で一時停止されます (バッテリー保護)。';
+
+  @override
+  String get mpConsentSubmit => '同意して開始';
+
+  @override
+  String get mpConsentLaterButton => 'あとで';
+
+  @override
+  String get mpConsentSubmitBusy => '処理中…';
+
+  @override
+  String get mpConsentLbsTermsBody =>
+      '本規約は Seoul Vista が提供する Seoul Live (以下「本サービス」) の位置基盤サービス利用に関する事項を定めるものです。';
+
+  @override
+  String get optTitle => 'あなたの端末に合わせて';
+
+  @override
+  String get optSubtitle => 'リアルタイムビジュアライズは GPU 負荷が高めです。\n端末に合わせてお選びください。';
+
+  @override
+  String get optPresetHighTitle => '高画質';
+
+  @override
+  String get optPresetHighDetail => '60fps · 5 秒更新 · アンチエイリアシング ON';
+
+  @override
+  String get optPresetSmoothTitle => 'なめらか';
+
+  @override
+  String get optPresetSmoothDetail => '30fps · 10 秒更新';
+
+  @override
+  String get optPresetBatteryTitle => 'バッテリー節約';
+
+  @override
+  String get optPresetBatteryDetail => '20fps · 30 秒更新 · エフェクト OFF';
+
+  @override
+  String get optAdvancedTitle => '詳細 — 表示するレイヤーを選択';
+
+  @override
+  String get optLayerSubway => '地下鉄 (リアルタイム列車位置)';
+
+  @override
+  String get optLayerSubwaySub => 'ソウル地下鉄 + 広域鉄道。GPU 負荷が最大';
+
+  @override
+  String get optLayerBus => '市バス';
+
+  @override
+  String get optLayerBusSub => 'ソウル + 京畿の市バスのリアルタイム位置';
+
+  @override
+  String get optLayerRiverBus => '漢江バス';
+
+  @override
+  String get optLayerRiverBusSub => '漢江を運航する船舶';
+
+  @override
+  String get optLayerFlights => '航空機';
+
+  @override
+  String get optLayerFlightsSub => '仁川空港周辺のリアルタイム航空機';
+
+  @override
+  String optDetectedTier(String tier) {
+    return '$tier 等級として検出されました';
+  }
+
+  @override
+  String get optRecommended => '推奨';
 }

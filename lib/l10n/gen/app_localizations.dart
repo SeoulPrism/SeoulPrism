@@ -4486,6 +4486,378 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'{day}d ago'**
   String adminAgoDay(int day);
+
+  /// No description provided for @liveDiagTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Live diagnostics'**
+  String get liveDiagTitle;
+
+  /// No description provided for @liveDiagMyId.
+  ///
+  /// In en, this message translates to:
+  /// **'My ID'**
+  String get liveDiagMyId;
+
+  /// No description provided for @liveDiagVisibility.
+  ///
+  /// In en, this message translates to:
+  /// **'Visibility'**
+  String get liveDiagVisibility;
+
+  /// No description provided for @liveDiagRoom.
+  ///
+  /// In en, this message translates to:
+  /// **'Room'**
+  String get liveDiagRoom;
+
+  /// No description provided for @liveDiagPeers.
+  ///
+  /// In en, this message translates to:
+  /// **'Peers receiving'**
+  String get liveDiagPeers;
+
+  /// No description provided for @liveDiagPeersValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}'**
+  String liveDiagPeersValue(int count);
+
+  /// No description provided for @liveDiagPresenceStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Presence status'**
+  String get liveDiagPresenceStatus;
+
+  /// No description provided for @liveDiagWorldStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'World status'**
+  String get liveDiagWorldStatus;
+
+  /// No description provided for @liveDiagLastSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Last sent'**
+  String get liveDiagLastSent;
+
+  /// No description provided for @liveDiagSendError.
+  ///
+  /// In en, this message translates to:
+  /// **'Send error'**
+  String get liveDiagSendError;
+
+  /// No description provided for @liveDiagGps.
+  ///
+  /// In en, this message translates to:
+  /// **'GPS'**
+  String get liveDiagGps;
+
+  /// No description provided for @liveDiagPaused.
+  ///
+  /// In en, this message translates to:
+  /// **'Paused'**
+  String get liveDiagPaused;
+
+  /// No description provided for @liveDiagActivityFailCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Activity fail count'**
+  String get liveDiagActivityFailCount;
+
+  /// No description provided for @liveDiagActivityFailValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}'**
+  String liveDiagActivityFailValue(int count);
+
+  /// No description provided for @liveDiagLastActivityError.
+  ///
+  /// In en, this message translates to:
+  /// **'Last activity error'**
+  String get liveDiagLastActivityError;
+
+  /// No description provided for @liveDiagFooter.
+  ///
+  /// In en, this message translates to:
+  /// **'Capture this screen if there\'s an issue'**
+  String get liveDiagFooter;
+
+  /// No description provided for @liveDiagClose.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get liveDiagClose;
+
+  /// No description provided for @liveDiagNoProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'(no profile)'**
+  String get liveDiagNoProfile;
+
+  /// No description provided for @liveDiagNone.
+  ///
+  /// In en, this message translates to:
+  /// **'(none)'**
+  String get liveDiagNone;
+
+  /// No description provided for @liveDiagNotConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'(not connected)'**
+  String get liveDiagNotConnected;
+
+  /// No description provided for @liveDiagNotUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'(not used)'**
+  String get liveDiagNotUsed;
+
+  /// No description provided for @liveDiagNotSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Not sent yet'**
+  String get liveDiagNotSent;
+
+  /// No description provided for @liveDiagSecondsAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{sec}s ago'**
+  String liveDiagSecondsAgo(int sec);
+
+  /// No description provided for @liveDiagRoomLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'{code} ({count} members)'**
+  String liveDiagRoomLabel(String code, int count);
+
+  /// No description provided for @liveDiagGpsHas.
+  ///
+  /// In en, this message translates to:
+  /// **'yes'**
+  String get liveDiagGpsHas;
+
+  /// No description provided for @liveDiagGpsNo.
+  ///
+  /// In en, this message translates to:
+  /// **'no'**
+  String get liveDiagGpsNo;
+
+  /// No description provided for @mpConsentLocationDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow location permission in Settings > Location.'**
+  String get mpConsentLocationDenied;
+
+  /// No description provided for @mpConsentTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Before starting multiplayer'**
+  String get mpConsentTitle;
+
+  /// No description provided for @mpConsentHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Seoul Live consent'**
+  String get mpConsentHeading;
+
+  /// No description provided for @mpConsentBody.
+  ///
+  /// In en, this message translates to:
+  /// **'To share your location with friends, you need to agree to the items below. Each item can be agreed/declined separately and revoked any time in Settings.'**
+  String get mpConsentBody;
+
+  /// No description provided for @mpConsentItem1Title.
+  ///
+  /// In en, this message translates to:
+  /// **'[Required] Profile data'**
+  String get mpConsentItem1Title;
+
+  /// No description provided for @mpConsentItem1Detail.
+  ///
+  /// In en, this message translates to:
+  /// **'Nickname, pin color/emoji, birth year. For service identification and 14+ age check. Retained until account deletion; deleted immediately on withdrawal.'**
+  String get mpConsentItem1Detail;
+
+  /// No description provided for @mpConsentItem2Title.
+  ///
+  /// In en, this message translates to:
+  /// **'[Required] Location data (LBS Act §18)'**
+  String get mpConsentItem2Title;
+
+  /// No description provided for @mpConsentItem2Detail.
+  ///
+  /// In en, this message translates to:
+  /// **'GPS coordinates and direction. Shared in real time with room members or, when set to public, all Seoul Live users. Not stored persistently — ephemeral over Realtime channels. Visibility (private/room/public) can be changed any time in your profile.'**
+  String get mpConsentItem2Detail;
+
+  /// No description provided for @mpConsentItem3Title.
+  ///
+  /// In en, this message translates to:
+  /// **'[Required] LBS terms of service'**
+  String get mpConsentItem3Title;
+
+  /// No description provided for @mpConsentItem3Detail.
+  ///
+  /// In en, this message translates to:
+  /// **'Provided by a KCC-registered operator. Not available to users under 14.'**
+  String get mpConsentItem3Detail;
+
+  /// No description provided for @mpConsentItem3Link.
+  ///
+  /// In en, this message translates to:
+  /// **'Read the full terms'**
+  String get mpConsentItem3Link;
+
+  /// No description provided for @mpConsentDeclineNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Declining only disables multiplayer; the rest of the app works normally.'**
+  String get mpConsentDeclineNote;
+
+  /// No description provided for @mpConsentBackgroundNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Location sharing auto-pauses when the app goes to the background (battery saver).'**
+  String get mpConsentBackgroundNote;
+
+  /// No description provided for @mpConsentSubmit.
+  ///
+  /// In en, this message translates to:
+  /// **'Agree and start'**
+  String get mpConsentSubmit;
+
+  /// No description provided for @mpConsentLaterButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Later'**
+  String get mpConsentLaterButton;
+
+  /// No description provided for @mpConsentSubmitBusy.
+  ///
+  /// In en, this message translates to:
+  /// **'Processing…'**
+  String get mpConsentSubmitBusy;
+
+  /// No description provided for @mpConsentLbsTermsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'These terms govern the use of the location-based service (\"Service\") provided by Seoul Vista\'s Seoul Live.'**
+  String get mpConsentLbsTermsBody;
+
+  /// No description provided for @optTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Tuned to your device'**
+  String get optTitle;
+
+  /// No description provided for @optSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Real-time visualization is GPU-intensive.\nPick what fits your device.'**
+  String get optSubtitle;
+
+  /// No description provided for @optPresetHighTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'High quality'**
+  String get optPresetHighTitle;
+
+  /// No description provided for @optPresetHighDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'60 fps · 5s refresh · AA on'**
+  String get optPresetHighDetail;
+
+  /// No description provided for @optPresetSmoothTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Smooth'**
+  String get optPresetSmoothTitle;
+
+  /// No description provided for @optPresetSmoothDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'30 fps · 10s refresh'**
+  String get optPresetSmoothDetail;
+
+  /// No description provided for @optPresetBatteryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Battery saver'**
+  String get optPresetBatteryTitle;
+
+  /// No description provided for @optPresetBatteryDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'20 fps · 30s refresh · effects off'**
+  String get optPresetBatteryDetail;
+
+  /// No description provided for @optAdvancedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Advanced — pick layers'**
+  String get optAdvancedTitle;
+
+  /// No description provided for @optLayerSubway.
+  ///
+  /// In en, this message translates to:
+  /// **'Subway (live train positions)'**
+  String get optLayerSubway;
+
+  /// No description provided for @optLayerSubwaySub.
+  ///
+  /// In en, this message translates to:
+  /// **'Seoul subway + metro rail. Highest GPU load'**
+  String get optLayerSubwaySub;
+
+  /// No description provided for @optLayerBus.
+  ///
+  /// In en, this message translates to:
+  /// **'City bus'**
+  String get optLayerBus;
+
+  /// No description provided for @optLayerBusSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Seoul + Gyeonggi city bus live positions'**
+  String get optLayerBusSub;
+
+  /// No description provided for @optLayerRiverBus.
+  ///
+  /// In en, this message translates to:
+  /// **'Han River bus'**
+  String get optLayerRiverBus;
+
+  /// No description provided for @optLayerRiverBusSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Han River ferries'**
+  String get optLayerRiverBusSub;
+
+  /// No description provided for @optLayerFlights.
+  ///
+  /// In en, this message translates to:
+  /// **'Aircraft'**
+  String get optLayerFlights;
+
+  /// No description provided for @optLayerFlightsSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Live aircraft around Incheon airport'**
+  String get optLayerFlightsSub;
+
+  /// No description provided for @optDetectedTier.
+  ///
+  /// In en, this message translates to:
+  /// **'Detected as {tier} tier'**
+  String optDetectedTier(String tier);
+
+  /// No description provided for @optRecommended.
+  ///
+  /// In en, this message translates to:
+  /// **'Recommended'**
+  String get optRecommended;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {
