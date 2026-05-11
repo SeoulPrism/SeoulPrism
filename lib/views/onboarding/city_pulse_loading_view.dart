@@ -25,6 +25,11 @@ class _CityPulseLoadingViewState extends State<CityPulseLoadingView>
   late final AnimationController _revealCtrl; // 진짜 지도 reveal
   late final AnimationController _scaffoldFadeCtrl; // 최종 페이드
 
+  // ShaderMask 가 활성화될 시점 — reveal 시작 후에만 켜서 shader 재생성 비용을
+  // 첫 2.2s 동안 회피한다 (이 동안 뒤에서 Mapbox 가 mount 중이라 UI thread 가
+  // 가장 바쁨).
+  bool _revealStarted = false;
+
   @override
   void initState() {
     super.initState();
@@ -48,6 +53,7 @@ class _CityPulseLoadingViewState extends State<CityPulseLoadingView>
     // 도시 구축이 거의 끝나갈 때 (2.2s) reveal 시작 — 살짝 overlap 으로 자연스러움.
     await Future.delayed(const Duration(milliseconds: 2200));
     if (!mounted) return;
+    setState(() => _revealStarted = true);
     _revealCtrl.forward();
     // 텍스트는 reveal 중간쯤에 페이드 시작.
     await Future.delayed(const Duration(milliseconds: 700));
@@ -68,142 +74,192 @@ class _CityPulseLoadingViewState extends State<CityPulseLoadingView>
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation:
-          Listenable.merge([_buildCtrl, _revealCtrl, _scaffoldFadeCtrl]),
-      builder: (_, __) {
-        // Material(transparency) — Text 위젯 노란 underline 디버그 표시 방지.
-        return Material(
-          type: MaterialType.transparency,
-          child: Opacity(
-            opacity: _scaffoldFadeCtrl.value,
-            child: Stack(
-              fit: StackFit.expand,
+    // 부모는 정적 — setState 폭격 없음. 컨트롤러 .value 가 바뀌는 영역은 각자
+    // AnimatedBuilder 로 좁혀서 다시 그린다. 그래서 build() 자체는 진입 시
+    // 한 번만 실행됨.
+    //
+    // Material(transparency) — Text 위젯 노란 underline 디버그 표시 방지.
+    return Material(
+      type: MaterialType.transparency,
+      child: AnimatedBuilder(
+        animation: _scaffoldFadeCtrl,
+        builder: (context, child) => Opacity(
+          opacity: _scaffoldFadeCtrl.value,
+          child: child,
+        ),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            // 도시 모델 레이어 — 진입 첫 ~2.2s 는 ShaderMask 없이 (shader
+            // 재생성 비용 회피). reveal 시작되면 ShaderMask 켜서 radial reveal.
+            _revealStarted ? _buildCityLayerMasked() : _buildCityLayer(),
+
+            // 브랜드 텍스트 — reveal 시작 후 페이드 아웃.
+            _buildBrandText(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 도시 모델 (ShaderMask 없음) — 첫 2.2s 동안 사용.
+  Widget _buildCityLayer() {
+    return RepaintBoundary(
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          const DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: RadialGradient(
+                center: Alignment.center,
+                radius: 1.2,
+                colors: [Color(0xFF18203A), Color(0xFF080A12)],
+              ),
+            ),
+          ),
+          // 페인터만 컨트롤러 tick 으로 다시 그림. 부모는 리빌드 안 함.
+          AnimatedBuilder(
+            animation: _buildCtrl,
+            builder: (_, __) => CustomPaint(
+              // willChange: true 라 Flutter raster cache 는 어차피 안 함 →
+              // isComplex 와 동시 사용은 모순. progress 가 매 프레임 변하니
+              // cache 를 노리지 말고 willChange 만 두는 게 맞다.
+              willChange: true,
+              painter: _IsoCityPainter(progress: _buildCtrl.value),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 도시 모델 + ShaderMask reveal — reveal 시작 후 사용.
+  Widget _buildCityLayerMasked() {
+    return RepaintBoundary(
+      child: AnimatedBuilder(
+        animation: _revealCtrl,
+        builder: (context, child) {
+          return ShaderMask(
+            blendMode: BlendMode.dstOut,
+            shaderCallback: (rect) {
+              final p = _revealCtrl.value;
+              return RadialGradient(
+                center: Alignment.center,
+                radius: 1.0,
+                colors: const [
+                  Colors.white,
+                  Colors.white,
+                  Colors.transparent,
+                ],
+                stops: [
+                  0.0,
+                  (p * 0.95).clamp(0.0, 0.95),
+                  ((p * 0.95) + 0.10).clamp(0.0, 1.0),
+                ],
+              ).createShader(rect);
+            },
+            child: child,
+          );
+        },
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            const DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: RadialGradient(
+                  center: Alignment.center,
+                  radius: 1.2,
+                  colors: [Color(0xFF18203A), Color(0xFF080A12)],
+                ),
+              ),
+            ),
+            AnimatedBuilder(
+              animation: _buildCtrl,
+              builder: (_, __) => CustomPaint(
+                isComplex: true,
+                willChange: true,
+                painter: _IsoCityPainter(progress: _buildCtrl.value),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBrandText() {
+    return Positioned(
+      left: 0,
+      right: 0,
+      bottom: 0,
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 56),
+          child: AnimatedBuilder(
+            animation: _revealCtrl,
+            builder: (_, child) => Opacity(
+              opacity: (1.0 - _revealCtrl.value).clamp(0.0, 1.0),
+              child: child,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                // ShaderMask + dstOut: 다크 + 도시 모델 레이어에 radial 구멍을 뚫음.
-                // 구멍 안쪽으로 뒤의 진짜 Mapbox 지도가 드러남.
-                ShaderMask(
-                  blendMode: BlendMode.dstOut,
-                  shaderCallback: (rect) {
-                    final p = _revealCtrl.value;
-                    return RadialGradient(
-                      center: Alignment.center,
-                      radius: 1.0,
-                      colors: const [
-                        Colors.white,
-                        Colors.white,
-                        Colors.transparent,
-                      ],
-                      stops: [
-                        0.0,
-                        (p * 0.95).clamp(0.0, 0.95),
-                        ((p * 0.95) + 0.10).clamp(0.0, 1.0),
-                      ],
-                    ).createShader(rect);
-                  },
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      // 어두운 베이스 (네이비 → 검정 그라데이션).
-                      const DecoratedBox(
-                        decoration: BoxDecoration(
-                          gradient: RadialGradient(
-                            center: Alignment.center,
-                            radius: 1.2,
-                            colors: [
-                              Color(0xFF18203A),
-                              Color(0xFF080A12),
-                            ],
-                          ),
-                        ),
+                Text(
+                  'Seoul Vista',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 30,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.5,
+                    shadows: [
+                      Shadow(
+                        color: const Color(0xFF8FE3FF).withValues(alpha: 0.55),
+                        blurRadius: 22,
                       ),
-                      // isometric 도시 모델링 — 빌딩 솟아오름 + 한강 + 격자.
-                      CustomPaint(
-                        painter: _IsoCityPainter(progress: _buildCtrl.value),
+                      Shadow(
+                        color: const Color(0xFFBC82F3).withValues(alpha: 0.35),
+                        blurRadius: 14,
                       ),
                     ],
                   ),
-                ),
-
-                // 브랜드 텍스트 — reveal 시작 직전에 페이드 아웃 시작.
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  child: SafeArea(
-                    child: Padding(
-                      padding: const EdgeInsets.only(bottom: 56),
-                      child: Opacity(
-                        opacity: (1.0 - _revealCtrl.value).clamp(0.0, 1.0),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              'Seoul Vista',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 30,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: 1.5,
-                                shadows: [
-                                  Shadow(
-                                    color: const Color(0xFF8FE3FF)
-                                        .withValues(alpha: 0.55),
-                                    blurRadius: 22,
-                                  ),
-                                  Shadow(
-                                    color: const Color(0xFFBC82F3)
-                                        .withValues(alpha: 0.35),
-                                    blurRadius: 14,
-                                  ),
-                                ],
-                              ),
-                            )
-                                .animate()
-                                .fadeIn(duration: 500.ms, delay: 200.ms)
-                                .slideY(
-                                  begin: 0.3,
-                                  end: 0,
-                                  duration: 500.ms,
-                                  delay: 200.ms,
-                                  curve: Curves.easeOutCubic,
-                                ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'v1.0.4',
-                              style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.45),
-                                fontSize: 11,
-                                letterSpacing: 1.2,
-                                fontFeatures: const [
-                                  FontFeature.tabularFigures(),
-                                ],
-                              ),
-                            )
-                                .animate()
-                                .fadeIn(duration: 500.ms, delay: 350.ms),
-                            const SizedBox(height: 10),
-                            Text(
-                              '도시를 구축하고 있어요',
-                              style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.65),
-                                fontSize: 13,
-                                letterSpacing: 0.6,
-                              ),
-                            )
-                                .animate()
-                                .fadeIn(duration: 500.ms, delay: 500.ms),
-                          ],
-                        ),
-                      ),
+                )
+                    .animate()
+                    .fadeIn(duration: 500.ms, delay: 200.ms)
+                    .slideY(
+                      begin: 0.3,
+                      end: 0,
+                      duration: 500.ms,
+                      delay: 200.ms,
+                      curve: Curves.easeOutCubic,
                     ),
+                const SizedBox(height: 4),
+                Text(
+                  'v1.0.5',
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.45),
+                    fontSize: 11,
+                    letterSpacing: 1.2,
+                    fontFeatures: const [FontFeature.tabularFigures()],
                   ),
-                ),
+                )
+                    .animate()
+                    .fadeIn(duration: 500.ms, delay: 350.ms),
+                const SizedBox(height: 10),
+                Text(
+                  '도시를 구축하고 있어요',
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.65),
+                    fontSize: 13,
+                    letterSpacing: 0.6,
+                  ),
+                )
+                    .animate()
+                    .fadeIn(duration: 500.ms, delay: 500.ms),
               ],
             ),
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 }
@@ -354,17 +410,16 @@ class _IsoCityPainter extends CustomPainter {
     final paint = Paint()
       ..color = const Color(0xFF2A3550).withValues(alpha: 0.35)
       ..strokeWidth = 0.6;
-    const gridSize = 12;
-    const step = 1.0;
+    // 8 → 13 × 2 = 26 line draws (전 50 → 26, 약 절반). 시각 차이 미미.
+    const gridSize = 8;
+    const step = 1.5;
+    final bound = gridSize * step;
     for (int i = -gridSize; i <= gridSize; i++) {
+      final v = i * step;
       // x 라인 (z 변화)
-      final p1 = project(i * step, 0, -gridSize * step);
-      final p2 = project(i * step, 0, gridSize * step);
-      canvas.drawLine(p1, p2, paint);
+      canvas.drawLine(project(v, 0, -bound), project(v, 0, bound), paint);
       // z 라인 (x 변화)
-      final p3 = project(-gridSize * step, 0, i * step);
-      final p4 = project(gridSize * step, 0, i * step);
-      canvas.drawLine(p3, p4, paint);
+      canvas.drawLine(project(-bound, 0, v), project(bound, 0, v), paint);
     }
   }
 
@@ -385,15 +440,23 @@ class _IsoCityPainter extends CustomPainter {
     for (int i = 1; i < pts.length; i++) {
       path.lineTo(pts[i].dx, pts[i].dy);
     }
-    // 글로우.
+    // 글로우 — MaskFilter.blur 는 iOS Impeller 에서 첫 paint 시 Metal shader
+    // compile 로 jank → 두 단계 stroke 로 같은 글로우 효과를 blur 없이 낸다.
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = const Color(0xFF4A90E2).withValues(alpha: 0.18)
+        ..strokeWidth = 14
+        ..strokeCap = StrokeCap.round
+        ..style = PaintingStyle.stroke,
+    );
     canvas.drawPath(
       path,
       Paint()
         ..color = const Color(0xFF4A90E2).withValues(alpha: 0.30)
-        ..strokeWidth = 12
+        ..strokeWidth = 8
         ..strokeCap = StrokeCap.round
-        ..style = PaintingStyle.stroke
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6),
+        ..style = PaintingStyle.stroke,
     );
     // 코어.
     canvas.drawPath(
@@ -457,32 +520,32 @@ class _IsoCityPainter extends CustomPainter {
       ..close();
     canvas.drawPath(top, Paint()..color = topColor);
 
-    // 모서리 라인 — 살짝 더 밝게.
-    final edgePaint = Paint()
-      ..color = _shade(b.color, 1.3).withValues(alpha: 0.4)
-      ..strokeWidth = 0.7
-      ..style = PaintingStyle.stroke;
-    canvas.drawPath(top, edgePaint);
-    canvas.drawPath(right, edgePaint);
+    // (모서리 stroke 제거 — 23 빌딩 × 2 stroke pass = 46 draw call 절감.
+    // 시각 차이 미미하고, 윗면/우측 면의 _shade 차이로 모서리 라인 자체가
+    // 자연스럽게 보인다.)
 
-    // 랜드마크 — 꼭대기 글로우.
+    // 랜드마크 — 꼭대기 글로우. blur 대신 동심원 alpha 계단으로 글로우 표현
+    // (iOS Impeller jank 회피).
     if (b.isLandmark) {
       final topCenter = project(b.wx, height, b.wz);
       canvas.drawCircle(
-        topCenter,
-        14,
-        Paint()
-          ..color = b.color.withValues(alpha: 0.55)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10),
+        topCenter, 18,
+        Paint()..color = b.color.withValues(alpha: 0.10),
       );
       canvas.drawCircle(
-        topCenter,
-        4,
+        topCenter, 12,
+        Paint()..color = b.color.withValues(alpha: 0.25),
+      );
+      canvas.drawCircle(
+        topCenter, 7,
+        Paint()..color = b.color.withValues(alpha: 0.55),
+      );
+      canvas.drawCircle(
+        topCenter, 4,
         Paint()..color = b.color,
       );
       canvas.drawCircle(
-        topCenter,
-        2,
+        topCenter, 2,
         Paint()..color = Colors.white.withValues(alpha: 0.95),
       );
     }

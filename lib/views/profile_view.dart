@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../main.dart';
+import '../core/api_keys.dart';
 import '../services/favorites_service.dart';
 import '../services/visit_history_service.dart';
 import 'notifications_view.dart';
@@ -29,6 +30,13 @@ class _ProfileViewState extends State<ProfileView> {
     '최근 방문',
     '자주 방문',
   ];
+
+  /// 타임라인에서 펼친 날짜 그룹 라벨 ('오늘', '어제', '3일 전', ...).
+  /// 기본은 모두 접힘 → 그룹당 5개 노출 + 더보기.
+  final Set<String> _expandedTimelineGroups = {};
+
+  /// 그룹당 기본 노출 개수 — 더보기 누르면 전부 노출.
+  static const _kTimelineGroupLimit = 5;
 
   @override
   Widget build(BuildContext context) {
@@ -118,7 +126,7 @@ class _ProfileViewState extends State<ProfileView> {
 
   Widget _buildUserInfo() {
     final cs = Theme.of(context).colorScheme;
-    const isM3 = true;
+    final isM3 = Platform.isAndroid;
 
     return Center(
       child: Column(
@@ -203,20 +211,25 @@ class _ProfileViewState extends State<ProfileView> {
         separatorBuilder: (_, _) => const SizedBox(width: 10),
         itemBuilder: (context, index) {
           final isSelected = _selectedCategoryIndex == index;
-          final cs = Theme.of(context).colorScheme;
-          const isM3 = true;
+          final isM3 = Platform.isAndroid;
 
           if (isM3) {
             return FilterChip(
               selected: isSelected,
               label: Text(_categories[index]),
-              onSelected: (_) => setState(() => _selectedCategoryIndex = index),
+              onSelected: (_) => setState(() {
+                _selectedCategoryIndex = index;
+                _expandedAll = false;
+              }),
               showCheckmark: false,
             );
           }
 
           return GestureDetector(
-            onTap: () => setState(() => _selectedCategoryIndex = index),
+            onTap: () => setState(() {
+              _selectedCategoryIndex = index;
+              _expandedAll = false;
+            }),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(20),
               child: BackdropFilter(
@@ -258,23 +271,40 @@ class _ProfileViewState extends State<ProfileView> {
 
   // ─── Category Content ────────────────────
 
+  /// 카테고리별 미리보기 5개 + 더 많으면 "자세히 보기" 버튼.
+  static const int _previewCount = 5;
+  bool _expandedAll = false;
+
   Widget _buildCategoryContent() {
     final cs = Theme.of(context).colorScheme;
 
     List<Widget> items;
     if (_selectedCategoryIndex == 0) {
       final favs = FavoritesService.instance.favorites;
-      items = favs.map((f) => _buildPlaceCard(f.name, f.category, Icons.favorite, Colors.redAccent, cs, lat: f.lat, lng: f.lng)).toList();
+      items = favs
+          .map((f) => _buildPlaceCard(f.name, f.category, Icons.favorite,
+              Colors.redAccent, cs,
+              lat: f.lat, lng: f.lng))
+          .toList();
     } else if (_selectedCategoryIndex == 1) {
       final recent = VisitHistoryService.instance.recentVisits;
       items = recent.map((r) {
         final ago = DateTime.now().difference(r.visitedAt);
-        final agoStr = ago.inDays > 0 ? '${ago.inDays}일 전' : ago.inHours > 0 ? '${ago.inHours}시간 전' : '방금';
-        return _buildPlaceCard(r.name, agoStr, Icons.history, cs.primary, cs, lat: r.lat, lng: r.lng);
+        final agoStr = ago.inDays > 0
+            ? '${ago.inDays}일 전'
+            : ago.inHours > 0
+                ? '${ago.inHours}시간 전'
+                : '방금';
+        return _buildPlaceCard(r.name, agoStr, Icons.history, cs.primary, cs,
+            lat: r.lat, lng: r.lng);
       }).toList();
     } else {
       final freq = VisitHistoryService.instance.frequentVisits;
-      items = freq.map((r) => _buildPlaceCard(r.name, '${r.visitCount}회 방문', Icons.repeat, cs.tertiary, cs, lat: r.lat, lng: r.lng)).toList();
+      items = freq
+          .map((r) => _buildPlaceCard(
+              r.name, '${r.visitCount}회 방문', Icons.repeat, cs.tertiary, cs,
+              lat: r.lat, lng: r.lng))
+          .toList();
     }
 
     if (items.isEmpty) {
@@ -291,14 +321,47 @@ class _ProfileViewState extends State<ProfileView> {
                 style: TextStyle(fontSize: 14, color: cs.onSurfaceVariant),
               ),
             ),
+          ),
         ),
-      ),
-    );
+      );
     }
+
+    final hasMore = items.length > _previewCount;
+    final visible = (_expandedAll || !hasMore)
+        ? items
+        : items.sublist(0, _previewCount);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Column(children: items),
+      child: Column(
+        children: [
+          ...visible,
+          if (hasMore) ...[
+            const SizedBox(height: 8),
+            _buildExpandToggle(cs, items.length),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildExpandToggle(ColorScheme cs, int total) {
+    final isExpanded = _expandedAll;
+    final remaining = total - _previewCount;
+    return TextButton.icon(
+      onPressed: () => setState(() => _expandedAll = !_expandedAll),
+      icon: Icon(
+        isExpanded ? Icons.expand_less_rounded : Icons.expand_more_rounded,
+        size: 18,
+      ),
+      label: Text(
+        isExpanded ? '접기' : '$remaining개 더 보기',
+        style: const TextStyle(fontWeight: FontWeight.w600),
+      ),
+      style: TextButton.styleFrom(
+        foregroundColor: cs.primary,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      ),
     );
   }
 
@@ -379,80 +442,270 @@ class _ProfileViewState extends State<ProfileView> {
   // ─── Timeline Section ────────────────────────────────────────
 
   Widget _buildTimelineSection() {
+    final cs = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final visits = VisitHistoryService.instance.recentVisits;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            '내 타임라인',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w800,
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
+          Row(
+            children: [
+              Text(
+                '내 타임라인',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                  color: cs.onSurface,
+                ),
+              ),
+              const Spacer(),
+              if (visits.isNotEmpty)
+                Text(
+                  '${visits.length}곳',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: cs.onSurfaceVariant,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+            ],
           ),
           const SizedBox(height: 16),
-          // Map preview card
-          AdaptiveGlassContainer.rect(
-            cornerRadius: 24,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(24),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 25, sigmaY: 25),
-                child: Container(
-                  width: double.infinity,
-                  height: 180,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(24),
-                    color: Colors.white.withValues(alpha: 0.10),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.15),
-                      width: 0.5,
+          // Mapbox Static Image — 최근 방문지 핀 표시. 탭 → 메인 지도 +
+          // 방문 타임라인 패널 (네이버 지도 스타일).
+          GestureDetector(
+            onTap: visits.isEmpty
+                ? null
+                : () => Navigator.pop(context, {'showTimeline': true}),
+            child: _TimelineMapPreview(visits: visits, isDark: isDark),
+          ),
+          const SizedBox(height: 16),
+          // 시간순 visit feed.
+          if (visits.isEmpty)
+            AdaptiveSurfaceCard(
+              borderRadius: 16,
+              child: SizedBox(
+                width: double.infinity,
+                height: 90,
+                child: Center(
+                  child: Text(
+                    '방문 기록이 없어요. 장소를 탐색하고 길찾기를 해보세요.',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: cs.onSurfaceVariant,
                     ),
-                  ),
-                  child: Stack(
-                    children: [
-                      // Simulated map grid
-                      CustomPaint(
-                        size: const Size(double.infinity, 180),
-                        painter: _MapGridPainter(),
-                      ),
-                      Center(
-                        child: Icon(
-                          Icons.map_outlined,
-                          size: 48,
-                          color: Colors.white.withValues(alpha: 0.20),
-                        ),
-                      ),
-                    ],
                   ),
                 ),
               ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          // Recent location items
-          _buildLocationItem(
-            icon: Icons.location_on_rounded,
-            title: '최근 방문',
-            subtitle: _recentVisitSummary(),
-          ),
-          const SizedBox(height: 10),
-          _buildLocationItem(
-            icon: Icons.access_time_rounded,
-            title: '자주 방문',
-            subtitle: _frequentVisitSummary(),
-          ),
-          const SizedBox(height: 10),
-          _buildLocationItem(
-            icon: Icons.favorite_rounded,
-            title: '즐겨찾기',
-            subtitle: '${FavoritesService.instance.favorites.length}개 저장됨',
-          ),
+            )
+          else
+            ..._buildTimelineFeed(visits, cs),
         ],
       ),
     );
+  }
+
+  /// 방문 기록을 날짜별로 그룹핑 후 카드 리스트 생성.
+  /// 그룹마다 5개까지 노출, 나머지는 더보기 토글.
+  List<Widget> _buildTimelineFeed(List<VisitRecord> visits, ColorScheme cs) {
+    String dateLabel(DateTime d) {
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      final dDay = DateTime(d.year, d.month, d.day);
+      final diff = today.difference(dDay).inDays;
+      if (diff == 0) return '오늘';
+      if (diff == 1) return '어제';
+      if (diff < 7) return '$diff일 전';
+      return '${d.month}월 ${d.day}일';
+    }
+
+    // 1) 라벨별로 묶음 (입력은 시간 내림차순 가정 → 순서 유지).
+    final groups = <String, List<VisitRecord>>{};
+    final order = <String>[];
+    for (final v in visits) {
+      final label = dateLabel(v.visitedAt);
+      if (!groups.containsKey(label)) {
+        order.add(label);
+        groups[label] = [];
+      }
+      groups[label]!.add(v);
+    }
+
+    // 2) 그룹별로 헤더 + 카드 5개(또는 전체) + 더보기 버튼 렌더.
+    final widgets = <Widget>[];
+    for (int gi = 0; gi < order.length; gi++) {
+      final label = order[gi];
+      final groupVisits = groups[label]!;
+      final expanded = _expandedTimelineGroups.contains(label);
+      final showAll = expanded || groupVisits.length <= _kTimelineGroupLimit;
+      final shown = showAll ? groupVisits : groupVisits.take(_kTimelineGroupLimit).toList();
+      final hidden = groupVisits.length - shown.length;
+
+      if (gi > 0) widgets.add(const SizedBox(height: 14));
+      widgets.add(Padding(
+        padding: const EdgeInsets.only(bottom: 8, left: 4),
+        child: Row(
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: cs.primary,
+                letterSpacing: 0.3,
+              ),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              '${groupVisits.length}',
+              style: TextStyle(
+                fontSize: 11,
+                color: cs.onSurfaceVariant,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ));
+      for (final v in shown) {
+        widgets.add(Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: _buildVisitCard(v, cs),
+        ));
+      }
+      // 5개 초과 그룹 → 더보기 / 접기 토글.
+      if (groupVisits.length > _kTimelineGroupLimit) {
+        widgets.add(
+          _TimelineExpandToggle(
+            expanded: expanded,
+            hiddenCount: hidden,
+            onTap: () {
+              setState(() {
+                if (expanded) {
+                  _expandedTimelineGroups.remove(label);
+                } else {
+                  _expandedTimelineGroups.add(label);
+                }
+              });
+            },
+          ),
+        );
+      }
+    }
+    return widgets;
+  }
+
+  Widget _buildVisitCard(VisitRecord v, ColorScheme cs) {
+    final timeStr =
+        '${v.visitedAt.hour.toString().padLeft(2, '0')}:${v.visitedAt.minute.toString().padLeft(2, '0')}';
+    final color = _categoryAccent(v.category);
+    return GestureDetector(
+      onTap: (v.lat != 0 && v.lng != 0)
+          ? () => Navigator.pop(
+              context, {'lat': v.lat, 'lng': v.lng, 'name': v.name})
+          : null,
+      child: AdaptiveSurfaceCard(
+        borderRadius: 14,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                color: color.withValues(alpha: 0.12),
+              ),
+              child: Icon(
+                _categoryIcon(v.category),
+                size: 18,
+                color: color,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    v.name,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: cs.onSurface,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Row(
+                    children: [
+                      Text(timeStr,
+                          style: TextStyle(
+                              fontSize: 11, color: cs.onSurfaceVariant)),
+                      if (v.category.isNotEmpty) ...[
+                        const SizedBox(width: 6),
+                        Text('·',
+                            style: TextStyle(color: cs.onSurfaceVariant)),
+                        const SizedBox(width: 6),
+                        Text(v.category,
+                            style: TextStyle(
+                                fontSize: 11, color: cs.onSurfaceVariant)),
+                      ],
+                      if (v.visitCount > 1) ...[
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 1),
+                          decoration: BoxDecoration(
+                            color: color.withValues(alpha: 0.14),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            '${v.visitCount}회',
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: color,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right_rounded,
+                size: 18, color: cs.onSurfaceVariant),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Color _categoryAccent(String cat) {
+    if (cat.contains('맛') || cat.contains('식')) return Colors.orange;
+    if (cat.contains('카페')) return const Color(0xFF795548);
+    if (cat.contains('쇼')) return Colors.pink;
+    if (cat.contains('관광') || cat.contains('명소')) return Colors.blue;
+    if (cat.contains('문화') || cat.contains('전시')) return Colors.purple;
+    if (cat.contains('자연') || cat.contains('공원')) return Colors.green;
+    return Colors.blueAccent;
+  }
+
+  IconData _categoryIcon(String cat) {
+    if (cat.contains('맛') || cat.contains('식')) return Icons.restaurant_rounded;
+    if (cat.contains('카페')) return Icons.local_cafe_rounded;
+    if (cat.contains('쇼')) return Icons.shopping_bag_rounded;
+    if (cat.contains('관광') || cat.contains('명소')) {
+      return Icons.travel_explore_rounded;
+    }
+    if (cat.contains('문화') || cat.contains('전시')) return Icons.museum_rounded;
+    if (cat.contains('자연') || cat.contains('공원')) return Icons.park_rounded;
+    return Icons.place_rounded;
   }
 
   Widget _buildPlaceCard(String name, String subtitle, IconData icon, Color iconColor, ColorScheme cs, {double? lat, double? lng}) {
@@ -488,67 +741,6 @@ class _ProfileViewState extends State<ProfileView> {
     );
   }
 
-  Widget _buildLocationItem({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-  }) {
-    final cs = Theme.of(context).colorScheme;
-    const isM3 = true;
-
-    return AdaptiveSurfaceCard(
-      borderRadius: 20,
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              color: isM3 ? cs.secondaryContainer : Colors.white.withValues(alpha: 0.10),
-            ),
-            child: Icon(
-              icon,
-              size: 20,
-              color: isM3 ? cs.onSecondaryContainer : Colors.white.withValues(alpha: 0.50),
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: isM3 ? cs.onSurface : Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w400,
-                    color: isM3 ? cs.onSurfaceVariant : Colors.white.withValues(alpha: 0.40),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Icon(
-            Icons.chevron_right_rounded,
-            size: 20,
-            color: isM3 ? cs.onSurfaceVariant : Colors.white.withValues(alpha: 0.30),
-          ),
-        ],
-      ),
-    );
-  }
-
   void _editUsername() {
     final controller = TextEditingController(
       text: supabase.auth.currentUser?.userMetadata?['username'] ?? '',
@@ -556,7 +748,6 @@ class _ProfileViewState extends State<ProfileView> {
     showDialog(
       context: context,
       builder: (ctx) {
-        final cs = Theme.of(ctx).colorScheme;
         return AlertDialog(
           title: const Text('이름 변경'),
           content: TextField(
@@ -587,18 +778,6 @@ class _ProfileViewState extends State<ProfileView> {
         );
       },
     );
-  }
-
-  String _recentVisitSummary() {
-    final recent = VisitHistoryService.instance.recentVisits;
-    if (recent.isEmpty) return '방문 기록이 없습니다';
-    return recent.take(2).map((r) => r.name).join(', ');
-  }
-
-  String _frequentVisitSummary() {
-    final freq = VisitHistoryService.instance.frequentVisits;
-    if (freq.isEmpty) return '방문 기록이 없습니다';
-    return freq.take(2).map((r) => '${r.name}(${r.visitCount}회)').join(', ');
   }
 
   // ─── Footer ───���─────────────────────────────��────────────────
@@ -636,24 +815,204 @@ class _ProfileViewState extends State<ProfileView> {
   }
 }
 
-// ─── Map Grid Painter ──────────────────────────────────────────
+// ─── Timeline Expand Toggle ────────────────────────────────────
+// 한 날짜 그룹 5개 초과 시 카드 하단에 붙는 더보기 / 접기 버튼.
 
-class _MapGridPainter extends CustomPainter {
+class _TimelineExpandToggle extends StatelessWidget {
+  final bool expanded;
+  final int hiddenCount;
+  final VoidCallback onTap;
+  const _TimelineExpandToggle({
+    required this.expanded,
+    required this.hiddenCount,
+    required this.onTap,
+  });
+
   @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.06)
-      ..strokeWidth = 0.5;
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: cs.surfaceContainerHighest.withValues(alpha: 0.5),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: cs.outlineVariant.withValues(alpha: 0.4),
+                width: 1,
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  expanded ? '접기' : '더보기',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: cs.primary,
+                  ),
+                ),
+                if (!expanded) ...[
+                  const SizedBox(width: 6),
+                  Text(
+                    '+$hiddenCount',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: cs.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+                const SizedBox(width: 4),
+                Icon(
+                  expanded
+                      ? Icons.keyboard_arrow_up_rounded
+                      : Icons.keyboard_arrow_down_rounded,
+                  size: 18,
+                  color: cs.primary,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
 
-    const spacing = 24.0;
-    for (double x = 0; x < size.width; x += spacing) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
-    }
-    for (double y = 0; y < size.height; y += spacing) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
-    }
+// ─── Timeline Map Preview ──────────────────────────────────────
+// Mapbox Static Image API — 가벼운 평면 미리보기. 핀 자동 fit (auto).
+
+class _TimelineMapPreview extends StatelessWidget {
+  final List<VisitRecord> visits;
+  final bool isDark;
+  const _TimelineMapPreview({required this.visits, required this.isDark});
+
+  String? _staticUrl(double width, double height, double dpr) {
+    final pinned =
+        visits.where((v) => v.lat != 0 && v.lng != 0).take(8).toList();
+    if (pinned.isEmpty) return null;
+    final markers = pinned
+        .asMap()
+        .entries
+        .map((e) {
+          final i = e.key;
+          final v = e.value;
+          final lng = v.lng.toStringAsFixed(5);
+          final lat = v.lat.toStringAsFixed(5);
+          // 최근(첫 핀) 은 주황, 나머지 파랑.
+          final color = i == 0 ? 'fb6340' : '4a90d9';
+          return 'pin-s+$color($lng,$lat)';
+        })
+        .join(',');
+    // satellite-v9 — 라벨 0 개라 한/영 문제 없음. zoom 9 = 경기도 + 인천
+    // 전체가 한 화면에 들어옴. 핀만 깔끔하게 강조.
+    final center = pinned.first;
+    final centerLng = center.lng.toStringAsFixed(5);
+    final centerLat = center.lat.toStringAsFixed(5);
+    const zoom = '9';
+    const style = 'mapbox/satellite-v9';
+    final w = width.round();
+    final h = height.round();
+    final retina = dpr >= 2 ? '@2x' : '';
+    return 'https://api.mapbox.com/styles/v1/$style/static/$markers/'
+        '$centerLng,$centerLat,$zoom/${w}x$h$retina'
+        '?access_token=${ApiKeys.mapboxAccessToken}'
+        '&attribution=false&logo=false';
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final dpr = MediaQuery.of(context).devicePixelRatio;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        width: double.infinity,
+        height: 180,
+        color: cs.surfaceContainerHighest,
+        child: LayoutBuilder(
+          builder: (ctx, constraints) {
+            final url =
+                _staticUrl(constraints.maxWidth, constraints.maxHeight, dpr);
+            if (url == null) {
+              return Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.explore_off_rounded,
+                        size: 32, color: cs.onSurfaceVariant),
+                    const SizedBox(height: 6),
+                    Text(
+                      '방문지가 쌓이면 여기 지도에 표시돼요',
+                      style: TextStyle(
+                          fontSize: 12, color: cs.onSurfaceVariant),
+                    ),
+                  ],
+                ),
+              );
+            }
+            return Stack(
+              children: [
+                Positioned.fill(
+                  child: Image.network(
+                    url,
+                    fit: BoxFit.cover,
+                    loadingBuilder: (_, child, prog) {
+                      if (prog == null) return child;
+                      return Center(
+                        child: SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: cs.onSurfaceVariant,
+                          ),
+                        ),
+                      );
+                    },
+                    errorBuilder: (_, __, ___) => Center(
+                      child: Icon(Icons.map_outlined,
+                          size: 36,
+                          color: cs.onSurfaceVariant.withValues(alpha: 0.5)),
+                    ),
+                  ),
+                ),
+                // 우상단 핀 개수 배지.
+                Positioned(
+                  top: 10,
+                  right: 10,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.55),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      '최근 ${visits.where((v) => v.lat != 0 && v.lng != 0).take(8).length}곳',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
 }

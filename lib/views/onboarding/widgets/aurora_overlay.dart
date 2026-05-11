@@ -55,7 +55,9 @@ class _AuroraPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final w = size.width;
     final h = size.height;
-    canvas.saveLayer(Offset.zero & size, Paint());
+    // saveLayer + BlendMode.screen 은 iOS Metal 에서 매 frame off-screen 버퍼 +
+    // screen blend shader compile → jank. BlendMode.plus 로 가산 합성하여
+    // 어두운 배경 위에서 같은 "빛" 효과를 saveLayer 없이 얻는다.
 
     // 광원 1 — 보라 (좌상→우중)
     final p1 = Offset(
@@ -69,7 +71,7 @@ class _AuroraPainter extends CustomPainter {
         ..shader = RadialGradient(
           colors: [_purple.withValues(alpha: 0.45), _purple.withValues(alpha: 0)],
         ).createShader(Rect.fromCircle(center: p1, radius: max(w, h) * 0.55))
-        ..blendMode = BlendMode.screen,
+        ..blendMode = BlendMode.plus,
     );
 
     // 광원 2 — 시안 (우하→좌중)
@@ -84,7 +86,7 @@ class _AuroraPainter extends CustomPainter {
         ..shader = RadialGradient(
           colors: [_cyan.withValues(alpha: 0.32), _cyan.withValues(alpha: 0)],
         ).createShader(Rect.fromCircle(center: p2, radius: max(w, h) * 0.5))
-        ..blendMode = BlendMode.screen,
+        ..blendMode = BlendMode.plus,
     );
 
     // 광원 3 — 코랄 (드리프트 강함, 작음)
@@ -99,10 +101,8 @@ class _AuroraPainter extends CustomPainter {
         ..shader = RadialGradient(
           colors: [_coral.withValues(alpha: 0.22), _coral.withValues(alpha: 0)],
         ).createShader(Rect.fromCircle(center: p3, radius: max(w, h) * 0.32))
-        ..blendMode = BlendMode.screen,
+        ..blendMode = BlendMode.plus,
     );
-
-    canvas.restore();
   }
 
   @override

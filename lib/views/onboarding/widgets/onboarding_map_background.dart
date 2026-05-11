@@ -130,7 +130,8 @@ class _OnboardingMapBackgroundState extends State<OnboardingMapBackground> {
     // 지하철 — 데모 모드 강제 (튜토리얼은 보여주기). TrainSimulator 가 1호선 일반/급행/초급행 자동 생성.
     _origSubwayMode = SettingsService.instance.mode;
     _subway.attachMap(controller);
-    _subway.setLineFilter({'1001'});
+    // 데모 — 사용자 설정에 영향 X.
+    _subway.setLineFilter({'1001'}, persist: false);
     _subway.setMode(SubwayMode.demo);
     await _subway.start();
 

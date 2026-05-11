@@ -4,7 +4,7 @@ import '../../theme/app_typography.dart';
 import '../../widgets/adaptive/adaptive.dart';
 import 'onboarding_page.dart';
 import 'pages/living_city_page.dart';
-import 'pages/location_permission_page.dart';
+import 'pages/permissions_page.dart';
 import 'pages/optimization_page.dart';
 import 'pages/pathfinding_page.dart';
 import 'pages/ready_page.dart';
@@ -45,9 +45,9 @@ class OnboardingView extends StatefulWidget {
       const OnboardingPage(id: LivingCityPage.id, body: LivingCityPage()),
       const OnboardingPage(id: PathfindingPage.id, body: PathfindingPage()),
       const OnboardingPage(id: OptimizationPage.id, body: OptimizationPage()),
-      // 위치 권한 — ready 직전 1장.
+      // 5개 권한 (위치/알림/카메라/사진/마이크) 한 화면에 일괄 동의.
       const OnboardingPage(
-          id: LocationPermissionPage.id, body: LocationPermissionPage()),
+          id: PermissionsPage.id, body: PermissionsPage()),
       const OnboardingPage(id: ReadyPage.id, body: ReadyPage()),
     ];
     final remainingIds =
@@ -86,12 +86,15 @@ class _OnboardingViewState extends State<OnboardingView>
   late final AnimationController _scaffoldFadeCtrl;
   bool _finishing = false;
 
+  late final VoidCallback _pageListener;
+
   @override
   void initState() {
     super.initState();
-    _controller.addListener(() {
+    _pageListener = () {
       setState(() => _progress = _controller.page ?? 0);
-    });
+    };
+    _controller.addListener(_pageListener);
     _contentFadeCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 450),
@@ -125,6 +128,7 @@ class _OnboardingViewState extends State<OnboardingView>
 
   @override
   void dispose() {
+    _controller.removeListener(_pageListener);
     _controller.dispose();
     _contentFadeCtrl.dispose();
     _backdropFadeCtrl.dispose();

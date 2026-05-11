@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import '../models/sns_content_models.dart';
+import '../services/route_renderer.dart';
 import '../theme/app_colors.dart';
 import '../widgets/adaptive/adaptive.dart';
 import '../core/map_interface.dart';
@@ -14,47 +15,103 @@ class DayPlanView extends StatefulWidget {
   /// (place name, lat, lng) 전달.
   final void Function(String name, double lat, double lng)? onNavigateToStop;
 
+  /// 위젯 상단 "전체 길찾기" 버튼 — 모든 stop 을 하나의 경로로 묶어 본 앱 길찾기/
+  /// 네비 모드로 진입.
+  final void Function(DayPlan plan)? onNavigateAllStops;
+
+  /// 패널 높이 (px) 가 바뀔 때 호출 — map_view 가 다른 디테일 위젯을 그 위로
+  /// 끌어올리는 데 사용 (드래그 리사이즈/스냅 시 실시간 보고).
+  final void Function(double height)? onHeightChanged;
+
   const DayPlanView({
     super.key,
     required this.plans,
     this.mapController,
     this.onClose,
     this.onNavigateToStop,
+    this.onNavigateAllStops,
+    this.onHeightChanged,
   });
 
   @override
   State<DayPlanView> createState() => _DayPlanViewState();
 }
 
-class _DayPlanViewState extends State<DayPlanView> {
+class _DayPlanViewState extends State<DayPlanView>
+    with SingleTickerProviderStateMixin {
   int _selectedPlanIndex = 0;
+  int _renderId = 0;
+
+  // 패널 리사이즈 상태 — 사용자가 상단 핸들 드래그로 위/아래 늘리고 줄임.
+  // 절대 픽셀이 아닌 화면 높이에 대한 비율로 저장 → 회전/멀티윈도우에서도 안정.
+  double? _panelHeight;
+  static const double _kMinHeight = 220.0; // 헤더 + 스타일카드 + 요약
+  static const double _kMidHeight = 480.0; // 기본 (타임라인 약 240)
+  static const double _kHandleSize = 28.0;
+
+  // dragEnd 시 target 으로 부드럽게 애니메이션 (즉시 setState 점프 X).
+  late AnimationController _snapCtrl;
+  Animation<double>? _snapAnim;
+
+  // onHeightChanged 중복 호출 방지용 — 직전에 보고한 높이.
+  double? _lastReportedHeight;
 
   DayPlan get _currentPlan => widget.plans[_selectedPlanIndex];
+
+  /// 좌표 있는 stop 이 2개 이상이면 전체 길찾기 가능 (route 가 precompute 안 된
+  /// 테마 plan 도 좌표만 있으면 map_view 에서 on-the-fly 계산).
+  bool get _canNavigateAll =>
+      _currentPlan.stops.where((s) => s.place.hasCoordinates).length >= 2;
 
   @override
   void initState() {
     super.initState();
-    _renderMarkers();
+    _snapCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 280),
+    );
+    _renderMap();
   }
 
   @override
   void dispose() {
     _clearMap();
+    _snapCtrl.dispose();
     super.dispose();
   }
 
-  void _clearMap() {
-    widget.mapController?.clearPolylines();
-    widget.mapController?.clearCircleMarkers();
+  void _animateTo(double target) {
+    _snapCtrl.stop();
+    final from = _panelHeight ?? _kMidHeight;
+    if ((from - target).abs() < 0.5) return;
+    _snapAnim = Tween<double>(begin: from, end: target).animate(
+      CurvedAnimation(parent: _snapCtrl, curve: Curves.easeOutCubic),
+    );
+    void tick() {
+      if (!mounted) return;
+      setState(() => _panelHeight = _snapAnim!.value);
+    }
+    _snapAnim!.addListener(tick);
+    _snapCtrl.forward(from: 0).whenCompleteOrCancel(() {
+      _snapAnim?.removeListener(tick);
+    });
   }
 
-  /// stops 위치에 마커만 — 이동 경로 polyline 그리지 않음 (사용자 요청).
-  /// 사용자가 각 카드의 "길찾기" 버튼 누르면 본 앱 길찾기 시스템으로 이동.
-  Future<void> _renderMarkers() async {
+  void _clearMap() {
+    ++_renderId;
+    widget.mapController?.clearPolylines();
+    widget.mapController?.clearCircleMarkers();
+    widget.mapController?.clearRouteArrows();
+  }
+
+  /// stops 마커 + stop 간 [routeFromPrevious] 폴리라인 + 화살표.
+  /// 시각은 길찾기 (`_drawRouteOnMap`) 와 동일 — outline + colored line + arrows.
+  Future<void> _renderMap() async {
     final mc = widget.mapController;
     if (mc == null) return;
 
     _clearMap();
+    final renderId = ++_renderId;
 
     final plan = _currentPlan;
     if (plan.stops.isEmpty) return;
@@ -84,7 +141,24 @@ class _DayPlanViewState extends State<DayPlanView> {
       mc.moveTo(centerLat - span * 0.15, centerLng, zoom: zoom - 0.5, pitch: 20);
     }
 
-    // 모든 마커 일괄 추가 (애니메이션 없이 곧장).
+    // stop 간 이동 경로 — 마커보다 먼저 그려서 마커가 위로 올라오게.
+    // 화살표는 모든 leg 의 것을 모아 한 번에 updateRouteArrows 호출 (SymbolLayer 갱신).
+    final allArrows = <Map<String, dynamic>>[];
+    for (int i = 0; i < plan.stops.length; i++) {
+      final route = plan.stops[i].routeFromPrevious;
+      if (route == null) continue;
+      await RouteRenderer.render(
+        mc,
+        route,
+        prefix: 'plan_route_$i',
+        drawTransitMarkers: true,
+        arrowsOut: allArrows,
+      );
+      if (renderId != _renderId) return; // 도중 다른 플랜 선택되면 중단.
+    }
+    if (allArrows.isNotEmpty) await mc.updateRouteArrows(allArrows);
+
+    // stop 번호 마커.
     for (int i = 0; i < plan.stops.length; i++) {
       final place = plan.stops[i].place;
       if (!place.hasCoordinates) continue;
@@ -108,81 +182,171 @@ class _DayPlanViewState extends State<DayPlanView> {
     return AppColors.accent;
   }
 
+  void _handleDragUpdate(DragUpdateDetails d, double maxHeight) {
+    // 진행 중 snap 애니메이션 있으면 중단 — 손가락 따라감.
+    _snapCtrl.stop();
+    setState(() {
+      final base = _panelHeight ?? _kMidHeight;
+      // 위로 끌면 패널이 커져야 함 → primaryDelta 가 음수일 때 height 증가.
+      final next = (base - d.delta.dy).clamp(_kMinHeight, maxHeight);
+      _panelHeight = next;
+    });
+  }
+
+  void _handleDragEnd(DragEndDetails d, double maxHeight) {
+    final v = d.velocity.pixelsPerSecond.dy;
+    final current = _panelHeight ?? _kMidHeight;
+    // 속도 기반 projected 위치 (100ms 후 미끄러진 자리) — flick 도 살짝 미끄럼.
+    final projected = (current - v * 0.1).clamp(_kMinHeight, maxHeight);
+    // 스냅 포인트 (min, mid, max) 중 projected 와 가장 가까운 곳으로.
+    final candidates = <double>[_kMinHeight, _kMidHeight, maxHeight];
+    candidates
+        .sort((a, b) => (projected - a).abs().compareTo((projected - b).abs()));
+    _animateTo(candidates.first);
+  }
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bottomPadding = MediaQuery.of(context).padding.bottom;
 
     if (widget.plans.isEmpty) {
       return const SizedBox.shrink();
     }
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // 헤더
-        Container(
-          padding: const EdgeInsets.fromLTRB(20, 12, 8, 0),
-          child: Row(
-            children: [
-              Text(
-                '하루 플랜',
-                style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w700,
-                  color: isDark ? Colors.white : cs.onSurface,
+    final screenHeight = MediaQuery.of(context).size.height;
+    final topInset = MediaQuery.of(context).padding.top;
+    final maxHeight = screenHeight - topInset - 80;
+    final height = (_panelHeight ?? _kMidHeight).clamp(_kMinHeight, maxHeight);
+
+    // 높이 변화를 parent 에 알려 디테일 위젯/플로팅 등이 위로 lift 되게.
+    if (_lastReportedHeight != height) {
+      _lastReportedHeight = height;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) widget.onHeightChanged?.call(height);
+      });
+    }
+
+    return SizedBox(
+      height: height,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // 드래그 핸들 (위아래 리사이즈) + 전체 길찾기 / 닫기.
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onVerticalDragUpdate: (d) => _handleDragUpdate(d, maxHeight),
+            onVerticalDragEnd: (d) => _handleDragEnd(d, maxHeight),
+            child: _buildHandleBar(cs, isDark),
+          ),
+
+          // 헤더
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 4, 8, 0),
+            child: Row(
+              children: [
+                Text(
+                  '하루 플랜',
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700,
+                    color: isDark ? Colors.white : cs.onSurface,
+                  ),
                 ),
-              ),
-              const Spacer(),
-              IconButton(
-                icon: Icon(Icons.close, color: isDark ? Colors.white70 : cs.onSurfaceVariant),
-                onPressed: () {
-                  _clearMap();
-                  widget.onClose?.call();
-                },
-              ),
-            ],
-          ),
-        ),
-
-        // 스타일 선택 탭
-        SizedBox(
-          height: 84,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            itemCount: widget.plans.length,
-            itemBuilder: (context, i) => _buildStyleCard(i, cs, isDark),
-          ),
-        ),
-
-        // 요약
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-          child: Row(
-            children: [
-              _summaryChip('🕐 ${_currentPlan.startTime}–${_currentPlan.endTime}', cs, isDark),
-              const SizedBox(width: 8),
-              _summaryChip('🚇 ${_currentPlan.totalTransitMinutes}분', cs, isDark),
-              if (_currentPlan.transferCount > 0) ...[
-                const SizedBox(width: 8),
-                _summaryChip('🔄 ${_currentPlan.transferCount}회', cs, isDark),
+                const Spacer(),
+                if (_canNavigateAll && widget.onNavigateAllStops != null)
+                  TextButton.icon(
+                    onPressed: () =>
+                        widget.onNavigateAllStops!(_currentPlan),
+                    style: TextButton.styleFrom(
+                      backgroundColor: cs.primary.withValues(alpha: 0.12),
+                      foregroundColor: cs.primary,
+                      visualDensity: VisualDensity.compact,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
+                      minimumSize: const Size(0, 32),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16)),
+                    ),
+                    icon: const Icon(Icons.alt_route_rounded, size: 16),
+                    label: const Text(
+                      '전체 길찾기',
+                      style: TextStyle(
+                          fontSize: 12, fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                IconButton(
+                  icon: Icon(Icons.close,
+                      color: isDark ? Colors.white70 : cs.onSurfaceVariant),
+                  onPressed: () {
+                    _clearMap();
+                    widget.onClose?.call();
+                  },
+                ),
               ],
-            ],
+            ),
           ),
-        ),
 
-        // 타임라인
-        SizedBox(
-          height: 280,
-          child: ListView.builder(
-            padding: EdgeInsets.fromLTRB(20, 8, 20, bottomPadding + 16),
-            itemCount: _currentPlan.stops.length,
-            itemBuilder: (context, i) => _buildStopItem(i, cs, isDark),
+          // 스타일 선택 탭
+          SizedBox(
+            height: 84,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              itemCount: widget.plans.length,
+              itemBuilder: (context, i) => _buildStyleCard(i, cs, isDark),
+            ),
+          ),
+
+          // 요약
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+            child: Row(
+              children: [
+                _summaryChip(
+                    '🕐 ${_currentPlan.startTime}–${_currentPlan.endTime}',
+                    cs,
+                    isDark),
+                const SizedBox(width: 8),
+                _summaryChip('🚇 ${_currentPlan.totalTransitMinutes}분', cs, isDark),
+                if (_currentPlan.transferCount > 0) ...[
+                  const SizedBox(width: 8),
+                  _summaryChip('🔄 ${_currentPlan.transferCount}회', cs, isDark),
+                ],
+              ],
+            ),
+          ),
+
+          // 타임라인 — 남는 공간 채움.
+          Expanded(
+            child: ListView.builder(
+              padding: EdgeInsets.fromLTRB(
+                  20, 8, 20, MediaQuery.of(context).padding.bottom + 16),
+              itemCount: _currentPlan.stops.length,
+              itemBuilder: (context, i) => _buildStopItem(i, cs, isDark),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHandleBar(ColorScheme cs, bool isDark) {
+    return SizedBox(
+      height: _kHandleSize,
+      child: Center(
+        child: Container(
+          width: 44,
+          height: 5,
+          decoration: BoxDecoration(
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.28)
+                : cs.onSurfaceVariant.withValues(alpha: 0.35),
+            borderRadius: BorderRadius.circular(3),
           ),
         ),
-      ],
+      ),
     );
   }
 
@@ -193,7 +357,7 @@ class _DayPlanViewState extends State<DayPlanView> {
     return GestureDetector(
       onTap: () {
         setState(() => _selectedPlanIndex = index);
-        _renderMarkers();
+        _renderMap();
       },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
@@ -269,24 +433,34 @@ class _DayPlanViewState extends State<DayPlanView> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 타임라인 도트 + 점선 연결선 (다음 stop 까지)
+        // 타임라인 도트 + 점선 연결선 (다음 stop 까지) — 도트 탭 시 해당 좌표로 카메라.
         Column(
           children: [
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: dotColor.withValues(alpha: 0.15),
-                border: Border.all(color: dotColor, width: 2),
-              ),
-              child: Center(
-                child: Text(
-                  '${index + 1}',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: dotColor,
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: hasCoords
+                  ? () => widget.mapController?.moveTo(
+                        place.lat!,
+                        place.lng!,
+                        zoom: 16.0,
+                      )
+                  : null,
+              child: Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: dotColor.withValues(alpha: 0.15),
+                  border: Border.all(color: dotColor, width: 2),
+                ),
+                child: Center(
+                  child: Text(
+                    '${index + 1}',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: dotColor,
+                    ),
                   ),
                 ),
               ),
