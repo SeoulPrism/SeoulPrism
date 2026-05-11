@@ -45,19 +45,24 @@ class _WhatsNewViewState extends State<WhatsNewView> {
   // 페이지 정의는 BuildContext 가 있어야 현지화된 타이틀/본문을 빌드할 수 있어
   // const → instance method 로 전환. 그라데이션/이모지는 고정.
   static const _pageGradients = <List<Color>>[
-    [Color(0xFF7C5CFF), Color(0xFF5CC8FF)],
-    [Color(0xFFBC82F3), Color(0xFFFF6B9D)],
-    [Color(0xFFFF7A00), Color(0xFFFFC371)],
-    [Color(0xFF06B6D4), Color(0xFF22D3EE)],
-    [Color(0xFF1DB954), Color(0xFF1ED760)],
-    [Color(0xFFEC4899), Color(0xFFF472B6)],
-    [Color(0xFFA855F7), Color(0xFFD946EF)],
-    [Color(0xFF10B981), Color(0xFF34D399)],
+    [Color(0xFF7C5CFF), Color(0xFF5CC8FF)], // 1 환영
+    [Color(0xFFBC82F3), Color(0xFFFF6B9D)], // 2 무드
+    [Color(0xFFFF7A00), Color(0xFFFFC371)], // 3 같이가기
+    [Color(0xFF06B6D4), Color(0xFF22D3EE)], // 4 DM
+    [Color(0xFF1DB954), Color(0xFF1ED760)], // 5 Spotify
+    [Color(0xFFEC4899), Color(0xFFF472B6)], // 6 친구 늘리기
+    [Color(0xFFA855F7), Color(0xFFD946EF)], // 7 점수
+    [Color(0xFF10B981), Color(0xFF34D399)], // 8 프라이버시
+    [Color(0xFF3B82F6), Color(0xFF06B6D4)], // 9 길찾기
+    [Color(0xFFF59E0B), Color(0xFFFB923C)], // 10 하루 플랜
+    [Color(0xFF14B8A6), Color(0xFF60A5FA)], // 11 다국어
+    [Color(0xFF8B5CF6), Color(0xFFEC4899)], // 12 AI 음성
   ];
   static const _pageEmojis = <String>[
     '🎉', '✨', '🎯', '💬', '🎵', '🤝', '🏆', '🛡',
+    '🗺', '📅', '🌐', '🎙',
   ];
-  static const _pageCount = 8;
+  static const _pageCount = 12;
 
   List<_WnPage> _pagesFor(BuildContext ctx) {
     final l = AppL10n.of(ctx);
@@ -70,6 +75,10 @@ class _WhatsNewViewState extends State<WhatsNewView> {
       l.whatsNewPage6Title,
       l.whatsNewPage7Title,
       l.whatsNewPage8Title,
+      l.whatsNewPage9Title,
+      l.whatsNewPage10Title,
+      l.whatsNewPage11Title,
+      l.whatsNewPage12Title,
     ];
     final bodies = <String>[
       l.whatsNewPage1Body,
@@ -80,6 +89,10 @@ class _WhatsNewViewState extends State<WhatsNewView> {
       l.whatsNewPage6Body,
       l.whatsNewPage7Body,
       l.whatsNewPage8Body,
+      l.whatsNewPage9Body,
+      l.whatsNewPage10Body,
+      l.whatsNewPage11Body,
+      l.whatsNewPage12Body,
     ];
     return [
       for (int i = 0; i < _pageCount; i++)

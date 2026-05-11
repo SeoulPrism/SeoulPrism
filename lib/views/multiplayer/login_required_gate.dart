@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../l10n/gen/app_localizations.dart';
 import '../../widgets/adaptive/adaptive.dart';
 import '../auth_view.dart';
 
@@ -78,22 +79,20 @@ class _LoginRequiredView extends StatelessWidget {
                     size: 40, color: Colors.white),
               ),
               const SizedBox(height: 20),
-              Text('로그인이 필요해요',
+              Text(AppL10n.of(context).loginRequiredTitle,
                   style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.w800,
                       color: cs.onSurface)),
               const SizedBox(height: 10),
               Text(
-                '멀티플레이는 정식 로그인 사용자만 이용할 수 있어요.\n'
-                '게스트(익명) 계정은 30일 미사용 시 자동 삭제되어\n'
-                '친구·방 정보가 사라질 수 있기 때문이에요.',
+                AppL10n.of(context).loginRequiredBody,
                 textAlign: TextAlign.center,
                 style: TextStyle(color: cs.onSurfaceVariant, height: 1.5),
               ),
               const SizedBox(height: 28),
               AdaptiveGlassButton(
-                label: '로그인하기',
+                label: AppL10n.of(context).loginRequiredCta,
                 onPressed: () {
                   Navigator.push(context,
                       MaterialPageRoute(builder: (_) => const AuthView()));
@@ -103,7 +102,7 @@ class _LoginRequiredView extends StatelessWidget {
               Center(
                 child: TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('나중에'),
+                  child: Text(AppL10n.of(context).commonLater),
                 ),
               ),
             ],

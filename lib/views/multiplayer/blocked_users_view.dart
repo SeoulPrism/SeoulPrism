@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/gen/app_localizations.dart';
 import '../../models/multiplayer_models.dart';
 import '../../services/multiplayer_service.dart';
 import '../../widgets/adaptive/adaptive.dart';
@@ -44,7 +45,7 @@ class _BlockedUsersViewState extends State<BlockedUsersView> {
     final list = _blocked;
     return Scaffold(
       backgroundColor: cs.surface,
-      appBar: const AdaptiveAppBar(title: '차단 목록'),
+      appBar: AdaptiveAppBar(title: AppL10n.of(context).blockedUsersTitle),
       body: SafeArea(
         child: list == null
             ? const Center(child: CircularProgressIndicator())
@@ -58,7 +59,7 @@ class _BlockedUsersViewState extends State<BlockedUsersView> {
                           Icon(Icons.block_rounded,
                               size: 56, color: cs.onSurfaceVariant),
                           const SizedBox(height: 12),
-                          Text('차단한 사용자가 없어요',
+                          Text(AppL10n.of(context).blockedUsersEmpty,
                               style:
                                   TextStyle(color: cs.onSurfaceVariant)),
                         ],
@@ -111,14 +112,14 @@ class _BlockedRow extends StatelessWidget {
           TextButton(
             onPressed: () => showAdaptiveConfirmDialog(
               context: context,
-              title: '${profile.nickname} 차단 해제',
-              content: '차단을 해제하면 다시 만날 수 있고 메시지도 보입니다.',
-              confirmText: '해제',
+              title: AppL10n.of(context).blockedUsersUnblockTitle(profile.nickname),
+              content: AppL10n.of(context).blockedUsersUnblockBody,
+              confirmText: AppL10n.of(context).blockedUsersUnblockConfirm,
               onConfirm: () =>
                   MultiplayerService.instance.unblockUser(profile.userId),
             ),
             style: TextButton.styleFrom(foregroundColor: cs.primary),
-            child: const Text('해제'),
+            child: Text(AppL10n.of(context).blockedUsersUnblockConfirm),
           ),
         ],
       ),

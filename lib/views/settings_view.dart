@@ -321,18 +321,12 @@ class _SettingsViewState extends State<SettingsView> {
                         final idx = labels.indexOf(label);
                         if (idx < 0) return;
                         final picked = _appLangCodes[idx];
-                        if (picked == _appLangCode) return;
-                        setState(() => _appLangCode = picked);
+                        if (picked == _appLangCode) return;                        setState(() => _appLangCode = picked);
                         SeoulPrismApp.setAppLanguage(context, picked);
-                        final l = AppL10n.of(context);
-                        showAdaptiveConfirmDialog(
-                          context: context,
-                          title: l.languageChangedTitle,
-                          content: l.languageChangedBody,
-                          confirmText: l.languageRestartNow,
-                          cancelText: l.languageRestartLater,
-                          onConfirm: () => SeoulPrismApp.restartApp(context),
-                        );
+                        // iOS/Android 모두 위젯 트리 강제 재마운트 시도.
+                        // iOS 는 한 frame placeholder 거쳐 native view 도
+                        // dispose 되도록 처리됨 (main.dart restartApp).
+                        SeoulPrismApp.restartApp(context);
                       },
                     );
                   },
@@ -376,16 +370,7 @@ class _SettingsViewState extends State<SettingsView> {
                         if (picked == _themeModeCode) return;
                         setState(() => _themeModeCode = picked);
                         SeoulPrismApp.setThemeMode(context, picked);
-                        final l = AppL10n.of(context);
-                        showAdaptiveConfirmDialog(
-                          context: context,
-                          title: l.settingsThemeChangedTitle,
-                          content: l.settingsThemeChangedBody(
-                              _themeLabel(context, picked)),
-                          confirmText: l.settingsRestartConfirm,
-                          cancelText: l.commonLater,
-                          onConfirm: () => SeoulPrismApp.restartApp(context),
-                        );
+                        SeoulPrismApp.restartApp(context);
                       },
                     );
                   },

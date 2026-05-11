@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../l10n/gen/app_localizations.dart';
 import '../../models/multiplayer_models.dart';
 import '../../services/multiplayer_service.dart';
 import '../../widgets/adaptive/adaptive.dart';
@@ -93,9 +94,10 @@ class _PeerNowPlayingViewState extends State<PeerNowPlayingView> {
     }
   }
 
-  String _formatDistance(double meters) {
-    if (meters < 1000) return '${meters.round()}m 거리';
-    return '${(meters / 1000).toStringAsFixed(1)}km 거리';
+  String _formatDistance(BuildContext ctx, double meters) {
+    final l = AppL10n.of(ctx);
+    if (meters < 1000) return l.peerDistanceMeters(meters.round());
+    return l.peerDistanceKm((meters / 1000).toStringAsFixed(1));
   }
 
   @override
@@ -130,7 +132,7 @@ class _PeerNowPlayingViewState extends State<PeerNowPlayingView> {
         actions: [
           IconButton(
             icon: const Icon(Icons.flag_outlined),
-            tooltip: '신고',
+            tooltip: AppL10n.of(context).peerReport,
             onPressed: () {
               ReportSheet.showForUser(context, widget.userId,
                   nickname: p.nickname);
@@ -199,8 +201,9 @@ class _PeerNowPlayingViewState extends State<PeerNowPlayingView> {
                   // 프로필 카드.
                   _ProfileBlock(
                     profile: p,
-                    distanceLabel:
-                        _distanceM != null ? _formatDistance(_distanceM!) : null,
+                    distanceLabel: _distanceM != null
+                        ? _formatDistance(context, _distanceM!)
+                        : null,
                     pinColor: pinColor,
                   ),
                   const SizedBox(height: 24),
@@ -230,12 +233,13 @@ class _PeerNowPlayingViewState extends State<PeerNowPlayingView> {
   }
 
   Widget _primaryAction(_FriendState state, MultiplayerProfile p, ColorScheme cs) {
+    final l = AppL10n.of(context);
     return switch (state) {
-      _FriendState.friend => const _GhostBtn(label: '친구입니다 ✓', enabled: false),
+      _FriendState.friend => _GhostBtn(label: l.peerNowPlayingBtnFriend, enabled: false),
       _FriendState.requested =>
-        const _GhostBtn(label: '신청 보냄', enabled: false),
+        _GhostBtn(label: l.peerNowPlayingBtnRequested, enabled: false),
       _FriendState.incoming => _GhostBtn(
-          label: _busy ? '...' : '친구 신청 수락',
+          label: _busy ? '...' : l.peerNowPlayingBtnAccept,
           enabled: !_busy,
           onTap: () => _runWithBusy(() async {
             final svc = MultiplayerService.instance;
@@ -243,16 +247,16 @@ class _PeerNowPlayingViewState extends State<PeerNowPlayingView> {
                 (x) => x.otherSide(svc.myId ?? '') == widget.userId);
             await svc.acceptFriendRequest(f);
             if (!mounted) return;
-            showAppSnackBar('${p.nickname} 와 친구가 됐어요');
+            showAppSnackBar(AppL10n.of(context).peerNowFriend(p.nickname));
           }),
         ),
       _FriendState.none => _GhostBtn(
-          label: _busy ? '...' : '친구 신청 보내기',
+          label: _busy ? '...' : l.peerNowPlayingBtnSendRequest,
           enabled: !_busy,
           onTap: () => _runWithBusy(() async {
             await MultiplayerService.instance.sendFriendRequest(widget.userId);
             if (!mounted) return;
-            showAppSnackBar('${p.nickname} 에게 신청을 보냈어요');
+            showAppSnackBar(AppL10n.of(context).peerRequestSent(p.nickname));
           }),
         ),
     };
@@ -343,9 +347,9 @@ class _SpotifyChip extends StatelessWidget {
             const Icon(Icons.play_arrow_rounded,
                 color: Colors.white, size: 20),
             const SizedBox(width: 4),
-            const Text(
-              'Spotify에서 듣기',
-              style: TextStyle(
+            Text(
+              AppL10n.of(context).peerNowPlayingOpenInSpotify,
+              style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w800,
                 fontSize: 13,
@@ -414,7 +418,7 @@ class _ProfileBlock extends StatelessWidget {
                               color: Colors.white.withValues(alpha: 0.7))),
                     if (profile.friendCode != null) ...[
                       const SizedBox(height: 2),
-                      Text('친구 코드 ${profile.friendCode}',
+                      Text(AppL10n.of(context).peerFriendCode(profile.friendCode ?? ''),
                           style: TextStyle(
                               fontSize: 11,
                               color: Colors.white.withValues(alpha: 0.55))),

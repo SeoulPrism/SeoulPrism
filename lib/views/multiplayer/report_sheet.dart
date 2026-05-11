@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/gen/app_localizations.dart';
 import '../../models/multiplayer_models.dart';
 import '../../services/multiplayer_service.dart';
 import '../../widgets/adaptive/adaptive.dart';
@@ -63,15 +64,19 @@ class _ReportSheetState extends State<ReportSheet> {
   bool _saving = false;
   String? _error;
 
-  static const _reasons = [
-    '스팸/광고',
-    '욕설/혐오 표현',
-    '성적/불쾌한 콘텐츠',
-    '괴롭힘/스토킹',
-    '가짜 위치/사칭',
-    '미성년자 보호 위반',
-    '기타',
-  ];
+  // ARB key 로 lookup 해야 해서 const 가 아니라 build 시점에 생성.
+  List<String> _reasons(BuildContext ctx) {
+    final l = AppL10n.of(ctx);
+    return [
+      l.reportReasonSpam,
+      l.reportReasonHate,
+      l.reportReasonSexual,
+      l.reportReasonHarass,
+      l.reportReasonFakeLocation,
+      l.reportReasonMinorAbuse,
+      l.reportReasonOther,
+    ];
+  }
 
   @override
   void dispose() {
@@ -81,7 +86,7 @@ class _ReportSheetState extends State<ReportSheet> {
 
   Future<void> _submit() async {
     if (_selected == null) {
-      setState(() => _error = '사유를 선택해주세요.');
+      setState(() => _error = AppL10n.of(context).reportSelectReason);
       return;
     }
     final reason = _reasonCtrl.text.trim().isEmpty
@@ -101,7 +106,7 @@ class _ReportSheetState extends State<ReportSheet> {
       }
       if (!mounted) return;
       Navigator.pop(context);
-      showAppSnackBar('신고가 접수됐어요. 24시간 내 검토됩니다.');
+      showAppSnackBar(AppL10n.of(context).reportSubmitted);
     } catch (e) {
       setState(() {
         _saving = false;
@@ -113,10 +118,12 @@ class _ReportSheetState extends State<ReportSheet> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final l = AppL10n.of(context);
     final inset = MediaQuery.of(context).viewInsets.bottom;
     final title = widget.targetType == ReportTargetType.user
-        ? '${widget.targetLabel ?? '사용자'} 신고'
-        : '메시지 신고';
+        ? l.reportTitleUser(widget.targetLabel ?? l.reportFallbackUser)
+        : l.reportTitleMessage;
+    final reasons = _reasons(context);
 
     return Padding(
       padding: EdgeInsets.fromLTRB(20, 4, 20, inset + 24),
@@ -131,7 +138,7 @@ class _ReportSheetState extends State<ReportSheet> {
                     fontWeight: FontWeight.w800,
                     color: cs.onSurface)),
             const SizedBox(height: 4),
-            Text('운영팀이 검토 후 24시간 이내에 조치합니다.',
+            Text(l.reportNote,
                 style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
             const SizedBox(height: 16),
 
@@ -151,7 +158,7 @@ class _ReportSheetState extends State<ReportSheet> {
                         fontSize: 13, color: cs.onSurfaceVariant)),
               ),
 
-            ..._reasons.map((r) => _RadioRow(
+            ...reasons.map((r) => _RadioRow(
                   label: r,
                   selected: _selected == r,
                   onTap: () => setState(() => _selected = r),
@@ -160,7 +167,7 @@ class _ReportSheetState extends State<ReportSheet> {
             const SizedBox(height: 12),
             AdaptiveTextField(
               controller: _reasonCtrl,
-              placeholder: '추가 설명 (선택)',
+              placeholder: l.reportExtraPlaceholder,
               padding:
                   const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             ),
@@ -172,7 +179,7 @@ class _ReportSheetState extends State<ReportSheet> {
 
             const SizedBox(height: 20),
             AdaptiveGlassButton(
-              label: _saving ? '전송 중...' : '신고하기',
+              label: _saving ? l.reportSubmitting : l.reportSubmit,
               onPressed: _saving ? null : _submit,
             ),
           ],

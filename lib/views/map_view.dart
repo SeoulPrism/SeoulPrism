@@ -408,6 +408,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void dispose() {
     _arrivalRefreshTimer?.cancel();
     _routeNavigationTimer?.cancel();
+    _profileToastShowTimer?.cancel();
+    _profileToastHideTimer?.cancel();
     _navLocationSub?.cancel();
     _subwayController.dispose();
     _busController.dispose();
@@ -929,6 +931,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   bool _profileShown = false;
   bool _showProfileToast = false;
+  // restartApp (테마/언어 변경) 으로 위젯 트리가 defunct 된 뒤 timer 가 fire
+  // → setState 가 dead element 에서 호출되어 assertion 실패하는 케이스가
+  // 있어 Timer 를 보관 + dispose 에서 cancel.
+  Timer? _profileToastShowTimer;
+  Timer? _profileToastHideTimer;
 
   void _onMapCreated(IMapController controller) {
     _mapController = controller;
@@ -1097,11 +1104,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
     // 기기 프로필 안내 (최초 1회, 페이드 토스트)
     if (!_profileShown) {
       _profileShown = true;
-      Future.delayed(const Duration(milliseconds: 1200), () {
+      _profileToastShowTimer =
+          Timer(const Duration(milliseconds: 1200), () {
         if (!mounted) return;
         setState(() => _showProfileToast = true);
-        Future.delayed(const Duration(seconds: 3), () {
-          if (mounted) setState(() => _showProfileToast = false);
+        _profileToastHideTimer = Timer(const Duration(seconds: 3), () {
+          if (!mounted) return;
+          setState(() => _showProfileToast = false);
         });
       });
     }

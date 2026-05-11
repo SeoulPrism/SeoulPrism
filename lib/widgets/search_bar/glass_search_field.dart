@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../adaptive/adaptive.dart';
 import '../../theme/app_typography.dart';
 import '../../theme/app_spacing.dart';
@@ -79,7 +80,7 @@ class _GlassSearchFieldState extends State<GlassSearchField>
                 child: AdaptiveSearchField(
                   controller: widget.controller,
                   focusNode: widget.focusNode,
-                  placeholder: '장소, 버스, 지하철 검색',
+                  placeholder: AppL10n.of(context).searchPlaceholder,
                   placeholderStyle: TextStyle(
                     color: placeholderColor,
                     fontSize: 14,
@@ -95,7 +96,7 @@ class _GlassSearchFieldState extends State<GlassSearchField>
                 builder: (_, value, __) {
                   if (value.text.isEmpty) return const SizedBox.shrink();
                   return Semantics(
-                    label: '검색어 지우기',
+                    label: AppL10n.of(context).searchClearLabel,
                     button: true,
                     child: GestureDetector(
                       onTap: widget.onClear,

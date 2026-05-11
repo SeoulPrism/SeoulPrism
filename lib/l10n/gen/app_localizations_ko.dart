@@ -48,16 +48,11 @@ class AppL10nKo extends AppL10n {
   String get languageZh => '简体中文';
 
   @override
-  String get languageChangedTitle => '언어가 변경되었어요';
+  String get languageChangedTitle => '언어 저장됨';
 
   @override
-  String get languageChangedBody => '새 언어를 완전히 적용하려면 앱을 재시작해야 해요. 지금 재시작할까요?';
-
-  @override
-  String get languageRestartNow => '재시작';
-
-  @override
-  String get languageRestartLater => '나중에';
+  String get languageChangedBody =>
+      '새 언어를 완전히 적용하려면 앱 전환기에서 앱을 위로 밀어 종료한 뒤 다시 열어주세요.';
 
   @override
   String get routeUnitHour => '시간';
@@ -238,6 +233,34 @@ class AppL10nKo extends AppL10n {
   @override
   String get whatsNewPage8Body =>
       '알림은 종류별로 켜고 끄고,\n내 위치는 특정 그룹에게만.\n안전과 프라이버시는 본인이.';
+
+  @override
+  String get whatsNewPage9Title => '한 번에 길찾기';
+
+  @override
+  String get whatsNewPage9Body =>
+      '지하철·버스·도보를 하나로.\n환승, 실시간 도착, 역 출구까지\n한 화면에서 다 보여요.';
+
+  @override
+  String get whatsNewPage10Title => '하루 플랜 자동 생성';
+
+  @override
+  String get whatsNewPage10Body =>
+      '저장한 장소로 하루 코스를 짜드려요.\n효율 동선·여유 산책·맛집 중심,\n3가지 스타일로.';
+
+  @override
+  String get whatsNewPage11Title => '4개 언어 지원';
+
+  @override
+  String get whatsNewPage11Body =>
+      '한국어·영어·일본어·중국어.\nAI 비서도 같은 언어로 답해요.\n기기 언어에 자동으로 맞춰져요.';
+
+  @override
+  String get whatsNewPage12Title => '말로 묻고 답 받기';
+
+  @override
+  String get whatsNewPage12Body =>
+      'AI 비서랑 음성으로 자연스럽게.\n검색·길찾기·추천도 음성으로.\nGemini Live 가 듣고 바로 답해요.';
 
   @override
   String get profileCategoryFavorites => '즐겨찾기';
@@ -884,15 +907,15 @@ class AppL10nKo extends AppL10n {
   String get settingsThemeDark => '다크';
 
   @override
-  String get settingsThemeChangedTitle => '테마 변경됨';
+  String get settingsThemeChangedTitle => '테마 저장됨';
 
   @override
   String settingsThemeChangedBody(String theme) {
-    return '$theme 모드를 완전히 적용하려면 앱을 재시작해야 해요. 지금 재시작할까요?';
+    return '$theme 모드를 완전히 적용하려면 앱 전환기에서 앱을 위로 밀어 종료한 뒤 다시 열어주세요.';
   }
 
   @override
-  String get settingsRestartConfirm => '재시작';
+  String get settingsRestartConfirm => '확인';
 
   @override
   String get settingsMapHome => '지도 홈 시작';
@@ -2063,6 +2086,441 @@ class AppL10nKo extends AppL10n {
 
   @override
   String get searchCloseTooltip => '길찾기 닫기';
+
+  @override
+  String get searchPlaceholder => '장소, 버스, 지하철 검색';
+
+  @override
+  String get searchClearLabel => '검색어 지우기';
+
+  @override
+  String get searchRecentTitle => '최근 검색';
+
+  @override
+  String get searchRecentClearAll => '전체 삭제';
+
+  @override
+  String get searchRecentRoutesTitle => '최근 길찾기';
+
+  @override
+  String get searchBusTypeTrunk => '간선';
+
+  @override
+  String get searchBusTypeBranch => '지선';
+
+  @override
+  String get searchBusTypeCircular => '순환';
+
+  @override
+  String get searchBusTypeMetro => '광역';
+
+  @override
+  String get searchBusTypeIncheon => '인천';
+
+  @override
+  String get searchBusTypeGyeonggi => '경기';
+
+  @override
+  String get searchBusTypeDefault => '버스';
+
+  @override
+  String get searchCatFood => '음식점';
+
+  @override
+  String get searchCatCafe => '카페';
+
+  @override
+  String get searchCatPark => '공원';
+
+  @override
+  String get searchCatShopping => '쇼핑';
+
+  @override
+  String get searchCatMedical => '의료';
+
+  @override
+  String get searchCatEducation => '교육';
+
+  @override
+  String get searchCatLodging => '숙박';
+
+  @override
+  String get searchCatFinance => '금융';
+
+  @override
+  String get searchCatTransit => '교통';
+
+  @override
+  String get searchCatAddress => '주소';
+
+  @override
+  String get searchCatCity => '도시';
+
+  @override
+  String get searchCatNeighborhood => '동네';
+
+  @override
+  String get searchCatRoad => '도로';
+
+  @override
+  String liveBadgePeerTrack(String nickname, String track) {
+    return '$nickname 가 $track 듣고 있어요';
+  }
+
+  @override
+  String liveBadgeSharing(int count) {
+    return '$count명에게 위치 공유 중';
+  }
+
+  @override
+  String get liveBadgeStopped => '위치 공유를 중지했어요';
+
+  @override
+  String get seoulLiveStartTitle => 'Seoul Live 시작';
+
+  @override
+  String get seoulLiveStartBody => '지도가 세계로 확장됐어요';
+
+  @override
+  String get seoulLiveStep2Title => '친구의 핀이 지도에 떠요';
+
+  @override
+  String get seoulLiveStep2Body =>
+      '같은 친구방의 멤버가 핀(닉네임 + 이모지) 으로 실시간 표시돼요. 친구가 움직이면 핀도 같이 움직여요.';
+
+  @override
+  String get seoulLiveStep3Title => '친구방 코드로 모이기';
+
+  @override
+  String get seoulLiveStep3Body =>
+      '프로필 → Seoul Live → 친구방에서 새 방을 만들거나 6자리 초대 코드로 입장하세요. 정원은 8명이에요.';
+
+  @override
+  String get seoulLiveStep4Title => '50m 이내면 만남 알림';
+
+  @override
+  String get seoulLiveStep4Body => '친구와 가까워지면 햅틱과 알림이 울려요. 채팅에도 자동으로 기록돼요.';
+
+  @override
+  String get seoulLiveStep5Title => '언제든 비공개 모드';
+
+  @override
+  String get seoulLiveStep5Body =>
+      '상단의 \"위치 공유 중\" 배지를 탭하면 즉시 ghost 모드로 전환돼요. 친구방을 나가면 자동으로 송신이 멈춰요.';
+
+  @override
+  String get seoulLivePermTitle => '알림 받기';
+
+  @override
+  String get seoulLivePermBody =>
+      '친구 신청 / 새 메시지 / 만남이 발생하면 푸시 알림으로 알려드려요. 아래 \"허용\" 버튼을 눌러 알림을 받아주세요.';
+
+  @override
+  String get seoulLivePermAllowed => '✓ 알림 권한 허용됨';
+
+  @override
+  String get seoulLivePermDenied => '거부됨 — 설정에서 직접 허용할 수 있어요';
+
+  @override
+  String get seoulLivePermRequesting => '요청 중...';
+
+  @override
+  String get seoulLivePermAllow => '알림 허용';
+
+  @override
+  String get roomMembersEmpty => '같이 있는 친구가 없어요';
+
+  @override
+  String roomMembersWithCount(int count) {
+    return '같이 있는 친구 $count명';
+  }
+
+  @override
+  String get roomMembersGhost => '비공개';
+
+  @override
+  String get roomMembersDisconnected => '연결 안됨';
+
+  @override
+  String get roomMembersRealtime => '실시간';
+
+  @override
+  String get roomMembersStale => '잠시 떨어짐';
+
+  @override
+  String get dmListAgoJust => '방금';
+
+  @override
+  String dmListAgoMin(int min) {
+    return '$min분';
+  }
+
+  @override
+  String dmListAgoHour(int hour) {
+    return '$hour시간';
+  }
+
+  @override
+  String dmListAgoDay(int day) {
+    return '$day일';
+  }
+
+  @override
+  String get dmListKindVoice => '🎙 음성';
+
+  @override
+  String get dmListKindImage => '🖼 사진';
+
+  @override
+  String get dmListKindPlace => '📍 장소';
+
+  @override
+  String get dmListKindSpotify => '🎵 노래';
+
+  @override
+  String get dmListEmpty => '아직 DM 이 없어요';
+
+  @override
+  String get dmListEmptyHint => '친구 화면에서 메시지 버튼을 눌러 시작';
+
+  @override
+  String get friendGroupsNewTitle => '새 그룹';
+
+  @override
+  String get friendGroupsNewTooltip => '새 그룹';
+
+  @override
+  String get friendGroupsEmpty => '아직 그룹이 없어요';
+
+  @override
+  String get friendGroupsEmptyHint => '상단 + 로 친구를 묶어 보세요';
+
+  @override
+  String get friendGroupsEmptyHintAlt => '우상단 + 버튼으로 그룹을 만들어 친구를 분류하세요.';
+
+  @override
+  String get friendGroupsNamePlaceholder => '예: 가족, 회사, 동호회';
+
+  @override
+  String get friendGroupsCreate => '만들기';
+
+  @override
+  String get friendGroupsCreated => '그룹 만들어졌어요';
+
+  @override
+  String friendGroupsFailure(String error) {
+    return '실패: $error';
+  }
+
+  @override
+  String friendGroupsDeleteTitle(String emoji, String name) {
+    return '$emoji $name 삭제';
+  }
+
+  @override
+  String get friendGroupsDeleteBody => '그룹을 삭제해요. 친구는 사라지지 않아요.';
+
+  @override
+  String get friendGroupsDelete => '삭제';
+
+  @override
+  String get friendGroupsName => '이름';
+
+  @override
+  String get friendGroupsIcon => '아이콘';
+
+  @override
+  String friendGroupsMemberCount(int count) {
+    return '$count명';
+  }
+
+  @override
+  String get friendGroupsNoFriendsPrompt => '친구를 먼저 추가하세요.';
+
+  @override
+  String get friendGroupsVisibilityHint => '그룹별 가시성 / 채팅에 활용돼요';
+
+  @override
+  String friendGroupsMembersTitle(String emoji, String name) {
+    return '$emoji $name 멤버';
+  }
+
+  @override
+  String get friendGroupsEditMembers => '멤버 편집';
+
+  @override
+  String get friendGroupsEmptyFriendsBox => '아직 친구가 없어요';
+
+  @override
+  String get loginRequiredTitle => '로그인이 필요해요';
+
+  @override
+  String get loginRequiredBody =>
+      '멀티플레이는 정식 로그인 사용자만 이용할 수 있어요.\n게스트(익명) 계정은 30일 미사용 시 자동 삭제되어\n친구·방 정보가 사라질 수 있기 때문이에요.';
+
+  @override
+  String get loginRequiredCta => '로그인하기';
+
+  @override
+  String get reportReasonSpam => '스팸/광고';
+
+  @override
+  String get reportReasonHate => '욕설/혐오 표현';
+
+  @override
+  String get reportReasonSexual => '성적/불쾌한 콘텐츠';
+
+  @override
+  String get reportReasonHarass => '괴롭힘/스토킹';
+
+  @override
+  String get reportReasonFakeLocation => '가짜 위치/사칭';
+
+  @override
+  String get reportReasonMinorAbuse => '미성년자 보호 위반';
+
+  @override
+  String get reportReasonOther => '기타';
+
+  @override
+  String get reportSelectReason => '사유를 선택해주세요.';
+
+  @override
+  String get reportSubmitted => '신고가 접수됐어요. 24시간 내 검토됩니다.';
+
+  @override
+  String reportTitleUser(String label) {
+    return '$label 신고';
+  }
+
+  @override
+  String get reportTitleMessage => '메시지 신고';
+
+  @override
+  String get reportNote => '운영팀이 검토 후 24시간 이내에 조치합니다.';
+
+  @override
+  String get reportExtraPlaceholder => '추가 설명 (선택)';
+
+  @override
+  String get reportSubmit => '신고하기';
+
+  @override
+  String get reportSubmitting => '전송 중...';
+
+  @override
+  String get reportFallbackUser => '사용자';
+
+  @override
+  String get blockedUsersTitle => '차단 목록';
+
+  @override
+  String get blockedUsersEmpty => '차단한 사용자가 없어요';
+
+  @override
+  String blockedUsersUnblockTitle(String name) {
+    return '$name 차단 해제';
+  }
+
+  @override
+  String get blockedUsersUnblockBody => '차단을 해제하면 다시 만날 수 있고 메시지도 보입니다.';
+
+  @override
+  String get blockedUsersUnblockConfirm => '해제';
+
+  @override
+  String get activityTitle => '활동 분석';
+
+  @override
+  String get activityCatMeetup => '🎉 만남';
+
+  @override
+  String get activityCatFriend => '🤝 친구';
+
+  @override
+  String get activityCatRoomJoined => '🚪 방 입장';
+
+  @override
+  String get activityCatPlaceShared => '📍 장소 공유';
+
+  @override
+  String get activityCatDestination => '🎯 목적지';
+
+  @override
+  String get activityAgoJust => '방금';
+
+  @override
+  String activityAgoMin(int min) {
+    return '$min분 전';
+  }
+
+  @override
+  String activityAgoHour(int hour) {
+    return '$hour시간 전';
+  }
+
+  @override
+  String activityAgoDay(int day) {
+    return '$day일 전';
+  }
+
+  @override
+  String get activityRanking => '친구 랭킹';
+
+  @override
+  String get activityRecent => '최근 활동';
+
+  @override
+  String get activityEmpty => '아직 기록된 활동이 없어요';
+
+  @override
+  String activityCode(String code) {
+    return '코드 $code';
+  }
+
+  @override
+  String get activityThisWeek => '이번 주 활동';
+
+  @override
+  String activityTotalCount(int count) {
+    return '총 $count건';
+  }
+
+  @override
+  String get activityWeekdayMon => '월';
+
+  @override
+  String get activityWeekdayTue => '화';
+
+  @override
+  String get activityWeekdayWed => '수';
+
+  @override
+  String get activityWeekdayThu => '목';
+
+  @override
+  String get activityWeekdayFri => '금';
+
+  @override
+  String get activityWeekdaySat => '토';
+
+  @override
+  String get activityWeekdaySun => '일';
+
+  @override
+  String get peerNowPlayingBtnFriend => '친구입니다 ✓';
+
+  @override
+  String get peerNowPlayingBtnRequested => '신청 보냄';
+
+  @override
+  String get peerNowPlayingBtnAccept => '친구 신청 수락';
+
+  @override
+  String get peerNowPlayingBtnSendRequest => '친구 신청 보내기';
+
+  @override
+  String get peerNowPlayingOpenInSpotify => 'Spotify에서 듣기';
 
   @override
   String get mapNoLocationPermission =>

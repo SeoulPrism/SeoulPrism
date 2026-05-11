@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/gen/app_localizations.dart';
 import '../../models/multiplayer_models.dart';
 import '../../services/multiplayer_service.dart';
 import '../../widgets/adaptive/adaptive.dart';
@@ -40,19 +41,21 @@ class _DmListViewState extends State<DmListView> {
     });
   }
 
-  String _ago(DateTime t) {
+  String _ago(BuildContext ctx, DateTime t) {
+    final l = AppL10n.of(ctx);
     final d = DateTime.now().difference(t);
-    if (d.inMinutes < 1) return '방금';
-    if (d.inMinutes < 60) return '${d.inMinutes}분';
-    if (d.inHours < 24) return '${d.inHours}시간';
-    return '${d.inDays}일';
+    if (d.inMinutes < 1) return l.dmListAgoJust;
+    if (d.inMinutes < 60) return l.dmListAgoMin(d.inMinutes);
+    if (d.inHours < 24) return l.dmListAgoHour(d.inHours);
+    return l.dmListAgoDay(d.inDays);
   }
 
-  String _previewBody(String? body, String? kind) {
-    if (kind == 'voice') return '🎙 음성';
-    if (kind == 'image') return '🖼 사진';
-    if (kind == 'place') return '📍 장소';
-    if (kind == 'spotify') return '🎵 노래';
+  String _previewBody(BuildContext ctx, String? body, String? kind) {
+    final l = AppL10n.of(ctx);
+    if (kind == 'voice') return l.dmListKindVoice;
+    if (kind == 'image') return l.dmListKindImage;
+    if (kind == 'place') return l.dmListKindPlace;
+    if (kind == 'spotify') return l.dmListKindSpotify;
     if (kind == 'emoji') return body ?? '';
     return body ?? '';
   }
@@ -77,10 +80,10 @@ class _DmListViewState extends State<DmListView> {
                           Icon(Icons.chat_bubble_outline_rounded,
                               size: 48, color: cs.onSurfaceVariant),
                           const SizedBox(height: 12),
-                          Text('아직 DM 이 없어요',
+                          Text(AppL10n.of(context).dmListEmpty,
                               style: TextStyle(color: cs.onSurfaceVariant)),
                           const SizedBox(height: 4),
-                          Text('친구 화면에서 메시지 버튼을 눌러 시작',
+                          Text(AppL10n.of(context).dmListEmptyHint,
                               style: TextStyle(
                                   fontSize: 12,
                                   color: cs.onSurfaceVariant)),
@@ -119,7 +122,7 @@ class _DmListViewState extends State<DmListView> {
                                 style: const TextStyle(
                                     fontWeight: FontWeight.w700)),
                             subtitle: Text(
-                              _previewBody(t.lastBody, t.lastKind),
+                              _previewBody(context, t.lastBody, t.lastKind),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
@@ -130,7 +133,7 @@ class _DmListViewState extends State<DmListView> {
                               mainAxisAlignment: MainAxisAlignment.center,
                               crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
-                                Text(_ago(t.lastMessageAt),
+                                Text(_ago(context, t.lastMessageAt),
                                     style: TextStyle(
                                         fontSize: 10,
                                         color: cs.onSurfaceVariant)),

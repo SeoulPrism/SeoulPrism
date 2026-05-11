@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 
+import '../../l10n/gen/app_localizations.dart';
 import '../../services/multiplayer_service.dart';
 import '../app_snackbar.dart';
 import 'live_sharing_diagnostics_dialog.dart';
@@ -56,10 +57,11 @@ class _LiveSharingBadgeState extends State<LiveSharingBadge> {
     // 같은 방 멤버일 때만 노출.
     if (svc.currentRoom == null) return;
     if (!svc.currentRoomMembers.contains(userId)) return;
-    final nickname = svc.peerProfile(userId)?.nickname ?? '친구';
+    final l = AppL10n.of(context);
+    final nickname = svc.peerProfile(userId)?.nickname ?? l.dmDefaultPeer;
     _flashTimer?.cancel();
     setState(() {
-      _flashMessage = '$nickname 가 $track 듣고 있어요';
+      _flashMessage = l.liveBadgePeerTrack(nickname, track);
     });
     _flashTimer = Timer(_kFlashDuration, () {
       if (!mounted) return;
@@ -111,7 +113,9 @@ class _LiveSharingBadgeState extends State<LiveSharingBadge> {
               key: ValueKey(_flashMessage ?? '__base__'),
               constraints: const BoxConstraints(maxWidth: 240),
               child: Text(
-                isFlash ? _flashMessage! : '$memberCount명에게 위치 공유 중',
+                isFlash
+                    ? _flashMessage!
+                    : AppL10n.of(context).liveBadgeSharing(memberCount),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
@@ -136,7 +140,7 @@ class _LiveSharingBadgeState extends State<LiveSharingBadge> {
         }
         await svc.setVisibility('ghost');
         widget.onMutedToGhost?.call();
-        showAppSnackBar('위치 공유를 중지했어요');
+        if (mounted) showAppSnackBar(AppL10n.of(context).liveBadgeStopped);
       },
       onLongPress: () => LiveSharingDiagnosticsDialog.show(context),
       child: Platform.isIOS

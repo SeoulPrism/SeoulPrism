@@ -127,10 +127,18 @@ Future<void> main() async {
   // (SpotifyService 의 AppLinks 와 중복 방지를 위해 SpotifyService 는 자체 listener 사용)
   DeepLinkRouter.instance.start();
 
-  runApp(const SeoulPrismApp());
+  runApp(SeoulPrismApp(key: _appStateKey));
 }
 
 final supabase = Supabase.instance.client;
+
+/// 어디서나 _SeoulPrismAppState 에 직접 접근하기 위한 GlobalKey.
+/// context.findAncestorStateOfType 은 다이얼로그/route push 등 일부 context
+/// 상황 (특히 iOS Cupertino dialog 의 confirm 콜백) 에서 null 을 반환해
+/// restartApp/setThemeMode 가 조용히 실패하는 케이스가 있어, GlobalKey 로
+/// 직접 access 가 가장 견고하다.
+final GlobalKey<_SeoulPrismAppState> _appStateKey =
+    GlobalKey<_SeoulPrismAppState>();
 
 /// Mapbox 라벨에 쓸 BCP-47 코드. 'system' 이면 OS 언어로 폴백 (지원 외엔 'en').
 String _resolveMapboxLanguage() {
@@ -151,19 +159,22 @@ Locale? _localeFromAppLanguage(String code) {
 class SeoulPrismApp extends StatefulWidget {
   const SeoulPrismApp({super.key});
 
-  /// 외부에서 테마 변경 시 호출
+  /// 외부에서 테마 변경 시 호출. context 는 호출 호환성 위해 유지 (실제로는
+  /// 사용하지 않고 GlobalKey 로 State 에 직접 접근).
   static void setThemeMode(BuildContext context, String mode) {
-    context.findAncestorStateOfType<_SeoulPrismAppState>()?.setThemeMode(mode);
+    _appStateKey.currentState?.setThemeMode(mode);
   }
 
   /// 외부에서 앱 표시 언어 변경 시 호출. code 는 'system'|'ko'|'en'|'ja'|'zh'.
   static void setAppLanguage(BuildContext context, String code) {
-    context.findAncestorStateOfType<_SeoulPrismAppState>()?.setAppLanguage(code);
+    _appStateKey.currentState?.setAppLanguage(code);
   }
 
-  /// 위젯 트리 전체 재구성 — 테마 변경 후 모든 캐시된 색상/native 위젯 새로 빌드.
-  static void restartApp(BuildContext context) {
-    context.findAncestorStateOfType<_SeoulPrismAppState>()?.restartApp();
+  /// 위젯 트리 강제 재마운트로 테마/언어 즉시 반영.
+  /// Android: setState 만으로 충분. iOS: 한 frame placeholder 화면을 거쳐
+  /// native view (Mapbox 등) 도 dispose 되게 강제.
+  static Future<void> restartApp(BuildContext context) {
+    return _appStateKey.currentState?.restartApp() ?? Future.value();
   }
 
   @override
@@ -172,7 +183,11 @@ class SeoulPrismApp extends StatefulWidget {
 
 class _SeoulPrismAppState extends State<SeoulPrismApp> {
   GlobalKey<NavigatorState> get _navigatorKey => rootNavigatorKey;
+  // restartApp 시점에 새 UniqueKey 로 swap → KeyedSubtree element 재마운트.
   Key _appKey = UniqueKey();
+  // iOS 에서 한 frame placeholder 화면을 보여 native view (Mapbox) 가
+  // detach → dispose 되게 강제. true → ColoredBox, false → _RootGate.
+  bool _restarting = false;
   late ThemeMode _themeMode;
   late String _appLanguage;
 
@@ -235,8 +250,23 @@ class _SeoulPrismAppState extends State<SeoulPrismApp> {
     MapboxMapsOptions.setLanguage(_resolveMapboxLanguage());
   }
 
-  void restartApp() {
-    setState(() => _appKey = UniqueKey());
+  /// 위젯 트리 재마운트.
+  /// - Android: setState (_appKey 갱신) 만으로 KeyedSubtree 재마운트 + Mapbox
+  ///   native view 도 재생성.
+  /// - iOS: 같은 setState 만으론 Mapbox iOS native view 가 재사용되어 새
+  ///   언어/테마 반영이 안 됨. _restarting=true 로 home 을 한 frame 동안
+  ///   ColoredBox 로 교체해 강제 unmount → dispose 사이클을 거치게 한 뒤
+  ///   다시 _RootGate 마운트.
+  Future<void> restartApp() async {
+    if (!mounted) return;
+    setState(() {
+      _restarting = true;
+      _appKey = UniqueKey();
+    });
+    // 한 frame 이상 (~150ms) placeholder 노출 — iOS native view dispose 여유.
+    await Future<void>.delayed(const Duration(milliseconds: 150));
+    if (!mounted) return;
+    setState(() => _restarting = false);
   }
 
   void _onGlobalMeetup(String userId, bool started) {
@@ -295,7 +325,13 @@ class _SeoulPrismAppState extends State<SeoulPrismApp> {
           NotificationBannerOverlay(child: child ?? const SizedBox.shrink()),
       // App Store 심사 가이드 5.1.1(v) — 계정 기반이 아닌 기능에 로그인 강제 금지.
       // 항상 HomeView 부터 진입 (게스트 허용). 로그인은 사용자가 명시적으로 시작 (즐겨찾기 동기화/프로필 등).
-      home: KeyedSubtree(key: _appKey, child: const _RootGate()),
+      home: _restarting
+          ? ColoredBox(
+              color: _themeMode == ThemeMode.light
+                  ? Colors.white
+                  : Colors.black,
+            )
+          : KeyedSubtree(key: _appKey, child: const _RootGate()),
     );
   }
 }

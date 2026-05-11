@@ -48,17 +48,11 @@ class AppL10nJa extends AppL10n {
   String get languageZh => '简体中文';
 
   @override
-  String get languageChangedTitle => '言語を変更しました';
+  String get languageChangedTitle => '言語を保存しました';
 
   @override
   String get languageChangedBody =>
-      '新しい言語を完全に適用するにはアプリを再起動する必要があります。今すぐ再起動しますか?';
-
-  @override
-  String get languageRestartNow => '再起動';
-
-  @override
-  String get languageRestartLater => 'あとで';
+      '新しい言語を完全に適用するには、Appスイッチャーで上にスワイプしてアプリを閉じ、もう一度開いてください。';
 
   @override
   String get routeUnitHour => '時間';
@@ -239,6 +233,34 @@ class AppL10nJa extends AppL10n {
   @override
   String get whatsNewPage8Body =>
       '通知は種類ごとにオン/オフ、\n位置情報は特定のグループにだけ。\n安全とプライバシーはあなたの手に。';
+
+  @override
+  String get whatsNewPage9Title => '経路をひとまとめに';
+
+  @override
+  String get whatsNewPage9Body =>
+      '地下鉄・バス・徒歩をひとつに。\n乗り換え、リアルタイム到着、駅の出口まで\n同じ画面で。';
+
+  @override
+  String get whatsNewPage10Title => '一日プラン、自動で';
+
+  @override
+  String get whatsNewPage10Body =>
+      '保存した場所から一日コースを作成。\n効率重視・のんびり・グルメ中心、\n3つのスタイルから。';
+
+  @override
+  String get whatsNewPage11Title => 'あなたの言葉で';
+
+  @override
+  String get whatsNewPage11Body =>
+      '韓国語・英語・日本語・中国語。\nAIアシスタントも同じ言語で。\n端末の言語に自動で合わせます。';
+
+  @override
+  String get whatsNewPage12Title => '声でたずねる';
+
+  @override
+  String get whatsNewPage12Body =>
+      'AIアシスタントと声で自然に。\n検索・経路・おすすめも声で。\nGemini Live が聞いてその場で答えます。';
 
   @override
   String get profileCategoryFavorites => 'お気に入り';
@@ -885,15 +907,15 @@ class AppL10nJa extends AppL10n {
   String get settingsThemeDark => 'ダーク';
 
   @override
-  String get settingsThemeChangedTitle => 'テーマを変更';
+  String get settingsThemeChangedTitle => 'テーマを保存しました';
 
   @override
   String settingsThemeChangedBody(String theme) {
-    return '$theme モードを完全に適用するには再起動が必要です。今すぐ再起動しますか?';
+    return '$theme モードを完全に適用するには、Appスイッチャーで上にスワイプしてアプリを閉じ、もう一度開いてください。';
   }
 
   @override
-  String get settingsRestartConfirm => '再起動';
+  String get settingsRestartConfirm => 'OK';
 
   @override
   String get settingsMapHome => 'マップのホーム起点';
@@ -2063,6 +2085,441 @@ class AppL10nJa extends AppL10n {
 
   @override
   String get searchCloseTooltip => 'ルート画面を閉じる';
+
+  @override
+  String get searchPlaceholder => '場所・バス・地下鉄を検索';
+
+  @override
+  String get searchClearLabel => '検索をクリア';
+
+  @override
+  String get searchRecentTitle => '最近の検索';
+
+  @override
+  String get searchRecentClearAll => 'すべて削除';
+
+  @override
+  String get searchRecentRoutesTitle => '最近のルート';
+
+  @override
+  String get searchBusTypeTrunk => '幹線';
+
+  @override
+  String get searchBusTypeBranch => '支線';
+
+  @override
+  String get searchBusTypeCircular => '循環';
+
+  @override
+  String get searchBusTypeMetro => '広域';
+
+  @override
+  String get searchBusTypeIncheon => '仁川';
+
+  @override
+  String get searchBusTypeGyeonggi => '京畿';
+
+  @override
+  String get searchBusTypeDefault => 'バス';
+
+  @override
+  String get searchCatFood => '飲食';
+
+  @override
+  String get searchCatCafe => 'カフェ';
+
+  @override
+  String get searchCatPark => '公園';
+
+  @override
+  String get searchCatShopping => 'ショッピング';
+
+  @override
+  String get searchCatMedical => '医療';
+
+  @override
+  String get searchCatEducation => '教育';
+
+  @override
+  String get searchCatLodging => '宿泊';
+
+  @override
+  String get searchCatFinance => '金融';
+
+  @override
+  String get searchCatTransit => '交通';
+
+  @override
+  String get searchCatAddress => '住所';
+
+  @override
+  String get searchCatCity => '都市';
+
+  @override
+  String get searchCatNeighborhood => '町';
+
+  @override
+  String get searchCatRoad => '道路';
+
+  @override
+  String liveBadgePeerTrack(String nickname, String track) {
+    return '$nickname さんが $track を聴いています';
+  }
+
+  @override
+  String liveBadgeSharing(int count) {
+    return '$count 人と位置共有中';
+  }
+
+  @override
+  String get liveBadgeStopped => '位置共有を停止しました';
+
+  @override
+  String get seoulLiveStartTitle => 'Seoul Live 開始';
+
+  @override
+  String get seoulLiveStartBody => 'マップが世界に広がりました';
+
+  @override
+  String get seoulLiveStep2Title => '友だちのピンがマップに表示';
+
+  @override
+  String get seoulLiveStep2Body =>
+      '同じルームのメンバーがピン (ニックネーム + 絵文字) でリアルタイム表示されます。友だちが動くとピンも一緒に動きます。';
+
+  @override
+  String get seoulLiveStep3Title => 'ルームコードで集合';
+
+  @override
+  String get seoulLiveStep3Body =>
+      'プロフィール → Seoul Live → ルームで新しいルームを作るか、6 桁の招待コードで参加しましょう。定員は 8 人です。';
+
+  @override
+  String get seoulLiveStep4Title => '50m 以内で出会い通知';
+
+  @override
+  String get seoulLiveStep4Body => '友だちと近づくとハプティックと通知が鳴ります。チャットにも自動で記録されます。';
+
+  @override
+  String get seoulLiveStep5Title => 'いつでも非公開モード';
+
+  @override
+  String get seoulLiveStep5Body =>
+      '上部の「位置共有中」バッジをタップすると、すぐに ghost モードに切り替わります。ルームを出ると自動で送信が止まります。';
+
+  @override
+  String get seoulLivePermTitle => '通知を受け取る';
+
+  @override
+  String get seoulLivePermBody =>
+      '友だち申請 / 新メッセージ / 出会いが発生したらプッシュ通知でお知らせします。下の「許可」を押してください。';
+
+  @override
+  String get seoulLivePermAllowed => '✓ 通知を許可しました';
+
+  @override
+  String get seoulLivePermDenied => '拒否されました — 設定から手動で許可できます';
+
+  @override
+  String get seoulLivePermRequesting => 'リクエスト中…';
+
+  @override
+  String get seoulLivePermAllow => '通知を許可';
+
+  @override
+  String get roomMembersEmpty => '一緒にいる友だちがいません';
+
+  @override
+  String roomMembersWithCount(int count) {
+    return '一緒にいる友だち $count 人';
+  }
+
+  @override
+  String get roomMembersGhost => '非公開';
+
+  @override
+  String get roomMembersDisconnected => '未接続';
+
+  @override
+  String get roomMembersRealtime => 'リアルタイム';
+
+  @override
+  String get roomMembersStale => '少し離れています';
+
+  @override
+  String get dmListAgoJust => 'たった今';
+
+  @override
+  String dmListAgoMin(int min) {
+    return '$min 分';
+  }
+
+  @override
+  String dmListAgoHour(int hour) {
+    return '$hour 時間';
+  }
+
+  @override
+  String dmListAgoDay(int day) {
+    return '$day 日';
+  }
+
+  @override
+  String get dmListKindVoice => '🎙 音声';
+
+  @override
+  String get dmListKindImage => '🖼 写真';
+
+  @override
+  String get dmListKindPlace => '📍 場所';
+
+  @override
+  String get dmListKindSpotify => '🎵 曲';
+
+  @override
+  String get dmListEmpty => 'まだ DM がありません';
+
+  @override
+  String get dmListEmptyHint => '友だち画面でメッセージボタンから開始';
+
+  @override
+  String get friendGroupsNewTitle => '新しいグループ';
+
+  @override
+  String get friendGroupsNewTooltip => '新しいグループ';
+
+  @override
+  String get friendGroupsEmpty => 'まだグループがありません';
+
+  @override
+  String get friendGroupsEmptyHint => '上の + でグループを作成しましょう';
+
+  @override
+  String get friendGroupsEmptyHintAlt => '右上の + ボタンでグループを作って友だちを分類しましょう。';
+
+  @override
+  String get friendGroupsNamePlaceholder => '例: 家族・会社・サークル';
+
+  @override
+  String get friendGroupsCreate => '作成';
+
+  @override
+  String get friendGroupsCreated => 'グループを作成しました';
+
+  @override
+  String friendGroupsFailure(String error) {
+    return '失敗: $error';
+  }
+
+  @override
+  String friendGroupsDeleteTitle(String emoji, String name) {
+    return '$emoji $name を削除';
+  }
+
+  @override
+  String get friendGroupsDeleteBody => 'グループのみ削除されます。友だちは残ります。';
+
+  @override
+  String get friendGroupsDelete => '削除';
+
+  @override
+  String get friendGroupsName => '名前';
+
+  @override
+  String get friendGroupsIcon => 'アイコン';
+
+  @override
+  String friendGroupsMemberCount(int count) {
+    return '$count 人';
+  }
+
+  @override
+  String get friendGroupsNoFriendsPrompt => 'まず友だちを追加してください。';
+
+  @override
+  String get friendGroupsVisibilityHint => 'グループ別の公開範囲 / チャットに使えます';
+
+  @override
+  String friendGroupsMembersTitle(String emoji, String name) {
+    return '$emoji $name のメンバー';
+  }
+
+  @override
+  String get friendGroupsEditMembers => 'メンバーを編集';
+
+  @override
+  String get friendGroupsEmptyFriendsBox => 'まだ友だちがいません';
+
+  @override
+  String get loginRequiredTitle => 'ログインが必要です';
+
+  @override
+  String get loginRequiredBody =>
+      'マルチプレイは正式ログインユーザーのみ利用できます。\nゲスト (匿名) アカウントは 30 日未使用で自動削除されるため、\n友だち・ルーム情報が失われる可能性があります。';
+
+  @override
+  String get loginRequiredCta => 'ログイン';
+
+  @override
+  String get reportReasonSpam => 'スパム/広告';
+
+  @override
+  String get reportReasonHate => '暴言/ヘイト表現';
+
+  @override
+  String get reportReasonSexual => '性的/不快なコンテンツ';
+
+  @override
+  String get reportReasonHarass => '嫌がらせ/ストーキング';
+
+  @override
+  String get reportReasonFakeLocation => '偽の位置/なりすまし';
+
+  @override
+  String get reportReasonMinorAbuse => '未成年者保護違反';
+
+  @override
+  String get reportReasonOther => 'その他';
+
+  @override
+  String get reportSelectReason => '理由を選択してください。';
+
+  @override
+  String get reportSubmitted => '報告を受け付けました。24 時間以内に審査します。';
+
+  @override
+  String reportTitleUser(String label) {
+    return '$label を報告';
+  }
+
+  @override
+  String get reportTitleMessage => 'メッセージを報告';
+
+  @override
+  String get reportNote => '運営チームが審査後 24 時間以内に対応します。';
+
+  @override
+  String get reportExtraPlaceholder => '詳細 (任意)';
+
+  @override
+  String get reportSubmit => '報告する';
+
+  @override
+  String get reportSubmitting => '送信中…';
+
+  @override
+  String get reportFallbackUser => 'ユーザー';
+
+  @override
+  String get blockedUsersTitle => 'ブロックリスト';
+
+  @override
+  String get blockedUsersEmpty => 'ブロック中のユーザーはいません';
+
+  @override
+  String blockedUsersUnblockTitle(String name) {
+    return '$name のブロックを解除';
+  }
+
+  @override
+  String get blockedUsersUnblockBody => '解除すると再び出会えるようになり、メッセージも表示されます。';
+
+  @override
+  String get blockedUsersUnblockConfirm => '解除';
+
+  @override
+  String get activityTitle => 'アクティビティ';
+
+  @override
+  String get activityCatMeetup => '🎉 出会い';
+
+  @override
+  String get activityCatFriend => '🤝 友だち';
+
+  @override
+  String get activityCatRoomJoined => '🚪 ルーム参加';
+
+  @override
+  String get activityCatPlaceShared => '📍 場所共有';
+
+  @override
+  String get activityCatDestination => '🎯 目的地';
+
+  @override
+  String get activityAgoJust => 'たった今';
+
+  @override
+  String activityAgoMin(int min) {
+    return '$min 分前';
+  }
+
+  @override
+  String activityAgoHour(int hour) {
+    return '$hour 時間前';
+  }
+
+  @override
+  String activityAgoDay(int day) {
+    return '$day 日前';
+  }
+
+  @override
+  String get activityRanking => '友だちランキング';
+
+  @override
+  String get activityRecent => '最近のアクティビティ';
+
+  @override
+  String get activityEmpty => 'まだ記録された活動がありません';
+
+  @override
+  String activityCode(String code) {
+    return 'コード $code';
+  }
+
+  @override
+  String get activityThisWeek => '今週のアクティビティ';
+
+  @override
+  String activityTotalCount(int count) {
+    return '計 $count 件';
+  }
+
+  @override
+  String get activityWeekdayMon => '月';
+
+  @override
+  String get activityWeekdayTue => '火';
+
+  @override
+  String get activityWeekdayWed => '水';
+
+  @override
+  String get activityWeekdayThu => '木';
+
+  @override
+  String get activityWeekdayFri => '金';
+
+  @override
+  String get activityWeekdaySat => '土';
+
+  @override
+  String get activityWeekdaySun => '日';
+
+  @override
+  String get peerNowPlayingBtnFriend => '友だちです ✓';
+
+  @override
+  String get peerNowPlayingBtnRequested => '申請済';
+
+  @override
+  String get peerNowPlayingBtnAccept => '友だち申請を承認';
+
+  @override
+  String get peerNowPlayingBtnSendRequest => '友だち申請を送る';
+
+  @override
+  String get peerNowPlayingOpenInSpotify => 'Spotify で聴く';
 
   @override
   String get mapNoLocationPermission =>

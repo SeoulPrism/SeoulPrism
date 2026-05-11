@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 
+import '../../l10n/gen/app_localizations.dart';
 import '../../models/multiplayer_models.dart';
 import '../../services/multiplayer_service.dart';
 import '../app_snackbar.dart';
@@ -130,8 +131,8 @@ class _Panel extends StatelessWidget {
               Expanded(
                 child: Text(
                   memberIds.isEmpty
-                      ? '같이 있는 친구가 없어요'
-                      : '같이 있는 친구 ${memberIds.length}명',
+                      ? AppL10n.of(context).roomMembersEmpty
+                      : AppL10n.of(context).roomMembersWithCount(memberIds.length),
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w800,
@@ -145,7 +146,9 @@ class _Panel extends StatelessWidget {
                 onTap: () async {
                   await svc.setVisibility('ghost');
                   onDismiss();
-                  showAppSnackBar('위치 공유를 중지했어요');
+                  if (context.mounted) {
+                    showAppSnackBar(AppL10n.of(context).liveBadgeStopped);
+                  }
                 },
                 child: Container(
                   padding: const EdgeInsets.symmetric(
@@ -165,7 +168,7 @@ class _Panel extends StatelessWidget {
                               ? Colors.white
                               : cs.onSurfaceVariant),
                       const SizedBox(width: 4),
-                      Text('비공개',
+                      Text(AppL10n.of(context).roomMembersGhost,
                           style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w700,
@@ -324,10 +327,13 @@ class _MemberRowState extends State<_MemberRow> {
                             color: Color(0xFF1DB954)),
                       )
                     else if (loc == null)
-                      Text('연결 안됨',
+                      Text(AppL10n.of(context).roomMembersDisconnected,
                           style: TextStyle(fontSize: 10, color: dim))
                     else
-                      Text(loc.isStale ? '잠시 떨어짐' : '실시간',
+                      Text(
+                          loc.isStale
+                              ? AppL10n.of(context).roomMembersStale
+                              : AppL10n.of(context).roomMembersRealtime,
                           style: TextStyle(fontSize: 10, color: dim)),
                   ],
                 ),

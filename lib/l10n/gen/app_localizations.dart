@@ -182,26 +182,14 @@ abstract class AppL10n {
   /// No description provided for @languageChangedTitle.
   ///
   /// In en, this message translates to:
-  /// **'Language changed'**
+  /// **'Language saved'**
   String get languageChangedTitle;
 
   /// No description provided for @languageChangedBody.
   ///
   /// In en, this message translates to:
-  /// **'Restart the app to fully apply the new language. Restart now?'**
+  /// **'To fully apply the new language, please close the app (swipe up from the app switcher) and reopen it.'**
   String get languageChangedBody;
-
-  /// No description provided for @languageRestartNow.
-  ///
-  /// In en, this message translates to:
-  /// **'Restart'**
-  String get languageRestartNow;
-
-  /// No description provided for @languageRestartLater.
-  ///
-  /// In en, this message translates to:
-  /// **'Later'**
-  String get languageRestartLater;
 
   /// No description provided for @routeUnitHour.
   ///
@@ -502,6 +490,54 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Toggle notifications by type,\nshare your location with only certain groups.\nSafety and privacy stay with you.'**
   String get whatsNewPage8Body;
+
+  /// No description provided for @whatsNewPage9Title.
+  ///
+  /// In en, this message translates to:
+  /// **'Routes, end to end'**
+  String get whatsNewPage9Title;
+
+  /// No description provided for @whatsNewPage9Body.
+  ///
+  /// In en, this message translates to:
+  /// **'Subway, bus, and walking — all in one.\nTransfers, live arrivals, and station exits\nshow up where you need them.'**
+  String get whatsNewPage9Body;
+
+  /// No description provided for @whatsNewPage10Title.
+  ///
+  /// In en, this message translates to:
+  /// **'Day plans, made for you'**
+  String get whatsNewPage10Title;
+
+  /// No description provided for @whatsNewPage10Body.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn your saved places into a day.\nEfficient, leisurely, or food-focused —\npick a style and go.'**
+  String get whatsNewPage10Body;
+
+  /// No description provided for @whatsNewPage11Title.
+  ///
+  /// In en, this message translates to:
+  /// **'Speaks your language'**
+  String get whatsNewPage11Title;
+
+  /// No description provided for @whatsNewPage11Body.
+  ///
+  /// In en, this message translates to:
+  /// **'Korean, English, Japanese, Chinese.\nThe AI assistant replies in the same.\nIt follows your device language.'**
+  String get whatsNewPage11Body;
+
+  /// No description provided for @whatsNewPage12Title.
+  ///
+  /// In en, this message translates to:
+  /// **'Just ask out loud'**
+  String get whatsNewPage12Title;
+
+  /// No description provided for @whatsNewPage12Body.
+  ///
+  /// In en, this message translates to:
+  /// **'Talk to the AI naturally.\nSearch, navigate, get picks — by voice.\nGemini Live listens and answers live.'**
+  String get whatsNewPage12Body;
 
   /// No description provided for @profileCategoryFavorites.
   ///
@@ -1646,19 +1682,19 @@ abstract class AppL10n {
   /// No description provided for @settingsThemeChangedTitle.
   ///
   /// In en, this message translates to:
-  /// **'Theme changed'**
+  /// **'Theme saved'**
   String get settingsThemeChangedTitle;
 
   /// No description provided for @settingsThemeChangedBody.
   ///
   /// In en, this message translates to:
-  /// **'Restart to fully apply {theme} mode. Restart now?'**
+  /// **'To fully apply {theme} mode, please close the app (swipe up from the app switcher) and reopen it.'**
   String settingsThemeChangedBody(String theme);
 
   /// No description provided for @settingsRestartConfirm.
   ///
   /// In en, this message translates to:
-  /// **'Restart'**
+  /// **'OK'**
   String get settingsRestartConfirm;
 
   /// No description provided for @settingsMapHome.
@@ -3796,6 +3832,798 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Close directions'**
   String get searchCloseTooltip;
+
+  /// No description provided for @searchPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Search places · bus · subway'**
+  String get searchPlaceholder;
+
+  /// No description provided for @searchClearLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear search'**
+  String get searchClearLabel;
+
+  /// No description provided for @searchRecentTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent searches'**
+  String get searchRecentTitle;
+
+  /// No description provided for @searchRecentClearAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear all'**
+  String get searchRecentClearAll;
+
+  /// No description provided for @searchRecentRoutesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent directions'**
+  String get searchRecentRoutesTitle;
+
+  /// No description provided for @searchBusTypeTrunk.
+  ///
+  /// In en, this message translates to:
+  /// **'Trunk'**
+  String get searchBusTypeTrunk;
+
+  /// No description provided for @searchBusTypeBranch.
+  ///
+  /// In en, this message translates to:
+  /// **'Branch'**
+  String get searchBusTypeBranch;
+
+  /// No description provided for @searchBusTypeCircular.
+  ///
+  /// In en, this message translates to:
+  /// **'Circular'**
+  String get searchBusTypeCircular;
+
+  /// No description provided for @searchBusTypeMetro.
+  ///
+  /// In en, this message translates to:
+  /// **'Metro'**
+  String get searchBusTypeMetro;
+
+  /// No description provided for @searchBusTypeIncheon.
+  ///
+  /// In en, this message translates to:
+  /// **'Incheon'**
+  String get searchBusTypeIncheon;
+
+  /// No description provided for @searchBusTypeGyeonggi.
+  ///
+  /// In en, this message translates to:
+  /// **'Gyeonggi'**
+  String get searchBusTypeGyeonggi;
+
+  /// No description provided for @searchBusTypeDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Bus'**
+  String get searchBusTypeDefault;
+
+  /// No description provided for @searchCatFood.
+  ///
+  /// In en, this message translates to:
+  /// **'Food'**
+  String get searchCatFood;
+
+  /// No description provided for @searchCatCafe.
+  ///
+  /// In en, this message translates to:
+  /// **'Café'**
+  String get searchCatCafe;
+
+  /// No description provided for @searchCatPark.
+  ///
+  /// In en, this message translates to:
+  /// **'Park'**
+  String get searchCatPark;
+
+  /// No description provided for @searchCatShopping.
+  ///
+  /// In en, this message translates to:
+  /// **'Shopping'**
+  String get searchCatShopping;
+
+  /// No description provided for @searchCatMedical.
+  ///
+  /// In en, this message translates to:
+  /// **'Medical'**
+  String get searchCatMedical;
+
+  /// No description provided for @searchCatEducation.
+  ///
+  /// In en, this message translates to:
+  /// **'Education'**
+  String get searchCatEducation;
+
+  /// No description provided for @searchCatLodging.
+  ///
+  /// In en, this message translates to:
+  /// **'Lodging'**
+  String get searchCatLodging;
+
+  /// No description provided for @searchCatFinance.
+  ///
+  /// In en, this message translates to:
+  /// **'Finance'**
+  String get searchCatFinance;
+
+  /// No description provided for @searchCatTransit.
+  ///
+  /// In en, this message translates to:
+  /// **'Transit'**
+  String get searchCatTransit;
+
+  /// No description provided for @searchCatAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'Address'**
+  String get searchCatAddress;
+
+  /// No description provided for @searchCatCity.
+  ///
+  /// In en, this message translates to:
+  /// **'City'**
+  String get searchCatCity;
+
+  /// No description provided for @searchCatNeighborhood.
+  ///
+  /// In en, this message translates to:
+  /// **'Neighborhood'**
+  String get searchCatNeighborhood;
+
+  /// No description provided for @searchCatRoad.
+  ///
+  /// In en, this message translates to:
+  /// **'Road'**
+  String get searchCatRoad;
+
+  /// No description provided for @liveBadgePeerTrack.
+  ///
+  /// In en, this message translates to:
+  /// **'{nickname} is listening to {track}'**
+  String liveBadgePeerTrack(String nickname, String track);
+
+  /// No description provided for @liveBadgeSharing.
+  ///
+  /// In en, this message translates to:
+  /// **'Sharing with {count} {count, plural, one{person} other{people}}'**
+  String liveBadgeSharing(int count);
+
+  /// No description provided for @liveBadgeStopped.
+  ///
+  /// In en, this message translates to:
+  /// **'Stopped location sharing'**
+  String get liveBadgeStopped;
+
+  /// No description provided for @seoulLiveStartTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Seoul Live started'**
+  String get seoulLiveStartTitle;
+
+  /// No description provided for @seoulLiveStartBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your map just expanded to the world.'**
+  String get seoulLiveStartBody;
+
+  /// No description provided for @seoulLiveStep2Title.
+  ///
+  /// In en, this message translates to:
+  /// **'Your friends\' pins appear on the map'**
+  String get seoulLiveStep2Title;
+
+  /// No description provided for @seoulLiveStep2Body.
+  ///
+  /// In en, this message translates to:
+  /// **'Members of the same friend room show up as pins (nickname + emoji) in real time. Their pin moves as they move.'**
+  String get seoulLiveStep2Body;
+
+  /// No description provided for @seoulLiveStep3Title.
+  ///
+  /// In en, this message translates to:
+  /// **'Meet up by friend room code'**
+  String get seoulLiveStep3Title;
+
+  /// No description provided for @seoulLiveStep3Body.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Profile → Seoul Live → Friend Room to create a new room or join with a 6-digit invite code. Capacity is 8.'**
+  String get seoulLiveStep3Body;
+
+  /// No description provided for @seoulLiveStep4Title.
+  ///
+  /// In en, this message translates to:
+  /// **'Meetup alerts within 50m'**
+  String get seoulLiveStep4Title;
+
+  /// No description provided for @seoulLiveStep4Body.
+  ///
+  /// In en, this message translates to:
+  /// **'Haptics and a notification fire when you get close. Auto-logged to chat.'**
+  String get seoulLiveStep4Body;
+
+  /// No description provided for @seoulLiveStep5Title.
+  ///
+  /// In en, this message translates to:
+  /// **'Go private anytime'**
+  String get seoulLiveStep5Title;
+
+  /// No description provided for @seoulLiveStep5Body.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the \"Sharing\" badge at the top to switch to ghost mode instantly. Leaving a friend room also stops sending.'**
+  String get seoulLiveStep5Body;
+
+  /// No description provided for @seoulLivePermTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Get notifications'**
+  String get seoulLivePermTitle;
+
+  /// No description provided for @seoulLivePermBody.
+  ///
+  /// In en, this message translates to:
+  /// **'We\'ll send a push when friend requests, new messages, or meetups happen. Tap \"Allow\" below.'**
+  String get seoulLivePermBody;
+
+  /// No description provided for @seoulLivePermAllowed.
+  ///
+  /// In en, this message translates to:
+  /// **'✓ Notifications allowed'**
+  String get seoulLivePermAllowed;
+
+  /// No description provided for @seoulLivePermDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Denied — you can allow it from Settings'**
+  String get seoulLivePermDenied;
+
+  /// No description provided for @seoulLivePermRequesting.
+  ///
+  /// In en, this message translates to:
+  /// **'Requesting…'**
+  String get seoulLivePermRequesting;
+
+  /// No description provided for @seoulLivePermAllow.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow notifications'**
+  String get seoulLivePermAllow;
+
+  /// No description provided for @roomMembersEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No one nearby yet'**
+  String get roomMembersEmpty;
+
+  /// No description provided for @roomMembersWithCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} {count, plural, one{friend} other{friends}} here'**
+  String roomMembersWithCount(int count);
+
+  /// No description provided for @roomMembersGhost.
+  ///
+  /// In en, this message translates to:
+  /// **'Private'**
+  String get roomMembersGhost;
+
+  /// No description provided for @roomMembersDisconnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnected'**
+  String get roomMembersDisconnected;
+
+  /// No description provided for @roomMembersRealtime.
+  ///
+  /// In en, this message translates to:
+  /// **'Live'**
+  String get roomMembersRealtime;
+
+  /// No description provided for @roomMembersStale.
+  ///
+  /// In en, this message translates to:
+  /// **'Briefly out'**
+  String get roomMembersStale;
+
+  /// No description provided for @dmListAgoJust.
+  ///
+  /// In en, this message translates to:
+  /// **'Now'**
+  String get dmListAgoJust;
+
+  /// No description provided for @dmListAgoMin.
+  ///
+  /// In en, this message translates to:
+  /// **'{min}m'**
+  String dmListAgoMin(int min);
+
+  /// No description provided for @dmListAgoHour.
+  ///
+  /// In en, this message translates to:
+  /// **'{hour}h'**
+  String dmListAgoHour(int hour);
+
+  /// No description provided for @dmListAgoDay.
+  ///
+  /// In en, this message translates to:
+  /// **'{day}d'**
+  String dmListAgoDay(int day);
+
+  /// No description provided for @dmListKindVoice.
+  ///
+  /// In en, this message translates to:
+  /// **'🎙 Voice'**
+  String get dmListKindVoice;
+
+  /// No description provided for @dmListKindImage.
+  ///
+  /// In en, this message translates to:
+  /// **'🖼 Photo'**
+  String get dmListKindImage;
+
+  /// No description provided for @dmListKindPlace.
+  ///
+  /// In en, this message translates to:
+  /// **'📍 Place'**
+  String get dmListKindPlace;
+
+  /// No description provided for @dmListKindSpotify.
+  ///
+  /// In en, this message translates to:
+  /// **'🎵 Track'**
+  String get dmListKindSpotify;
+
+  /// No description provided for @dmListEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No DMs yet'**
+  String get dmListEmpty;
+
+  /// No description provided for @dmListEmptyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Open a friend and tap the message button to start'**
+  String get dmListEmptyHint;
+
+  /// No description provided for @friendGroupsNewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'New group'**
+  String get friendGroupsNewTitle;
+
+  /// No description provided for @friendGroupsNewTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'New group'**
+  String get friendGroupsNewTooltip;
+
+  /// No description provided for @friendGroupsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No groups yet'**
+  String get friendGroupsEmpty;
+
+  /// No description provided for @friendGroupsEmptyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap + above to group your friends'**
+  String get friendGroupsEmptyHint;
+
+  /// No description provided for @friendGroupsEmptyHintAlt.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a group with + in the top-right to organize friends.'**
+  String get friendGroupsEmptyHintAlt;
+
+  /// No description provided for @friendGroupsNamePlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Family, Work, Club'**
+  String get friendGroupsNamePlaceholder;
+
+  /// No description provided for @friendGroupsCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Create'**
+  String get friendGroupsCreate;
+
+  /// No description provided for @friendGroupsCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Group created'**
+  String get friendGroupsCreated;
+
+  /// No description provided for @friendGroupsFailure.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed: {error}'**
+  String friendGroupsFailure(String error);
+
+  /// No description provided for @friendGroupsDeleteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {emoji} {name}'**
+  String friendGroupsDeleteTitle(String emoji, String name);
+
+  /// No description provided for @friendGroupsDeleteBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The group is deleted but friends are kept.'**
+  String get friendGroupsDeleteBody;
+
+  /// No description provided for @friendGroupsDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get friendGroupsDelete;
+
+  /// No description provided for @friendGroupsName.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get friendGroupsName;
+
+  /// No description provided for @friendGroupsIcon.
+  ///
+  /// In en, this message translates to:
+  /// **'Icon'**
+  String get friendGroupsIcon;
+
+  /// No description provided for @friendGroupsMemberCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} {count, plural, one{member} other{members}}'**
+  String friendGroupsMemberCount(int count);
+
+  /// No description provided for @friendGroupsNoFriendsPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Add friends first.'**
+  String get friendGroupsNoFriendsPrompt;
+
+  /// No description provided for @friendGroupsVisibilityHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Used for group-based visibility / chat'**
+  String get friendGroupsVisibilityHint;
+
+  /// No description provided for @friendGroupsMembersTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{emoji} {name} members'**
+  String friendGroupsMembersTitle(String emoji, String name);
+
+  /// No description provided for @friendGroupsEditMembers.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit members'**
+  String get friendGroupsEditMembers;
+
+  /// No description provided for @friendGroupsEmptyFriendsBox.
+  ///
+  /// In en, this message translates to:
+  /// **'No friends yet'**
+  String get friendGroupsEmptyFriendsBox;
+
+  /// No description provided for @loginRequiredTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-in required'**
+  String get loginRequiredTitle;
+
+  /// No description provided for @loginRequiredBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Multiplayer is for signed-in users only.\nGuest (anonymous) accounts auto-delete after 30 days of inactivity,\nso friend/room data may be lost.'**
+  String get loginRequiredBody;
+
+  /// No description provided for @loginRequiredCta.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in'**
+  String get loginRequiredCta;
+
+  /// No description provided for @reportReasonSpam.
+  ///
+  /// In en, this message translates to:
+  /// **'Spam / Ads'**
+  String get reportReasonSpam;
+
+  /// No description provided for @reportReasonHate.
+  ///
+  /// In en, this message translates to:
+  /// **'Abuse / hate speech'**
+  String get reportReasonHate;
+
+  /// No description provided for @reportReasonSexual.
+  ///
+  /// In en, this message translates to:
+  /// **'Sexual / disturbing content'**
+  String get reportReasonSexual;
+
+  /// No description provided for @reportReasonHarass.
+  ///
+  /// In en, this message translates to:
+  /// **'Harassment / stalking'**
+  String get reportReasonHarass;
+
+  /// No description provided for @reportReasonFakeLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Fake location / impersonation'**
+  String get reportReasonFakeLocation;
+
+  /// No description provided for @reportReasonMinorAbuse.
+  ///
+  /// In en, this message translates to:
+  /// **'Minor safety violation'**
+  String get reportReasonMinorAbuse;
+
+  /// No description provided for @reportReasonOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get reportReasonOther;
+
+  /// No description provided for @reportSelectReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Please pick a reason.'**
+  String get reportSelectReason;
+
+  /// No description provided for @reportSubmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Report received. Reviewed within 24h.'**
+  String get reportSubmitted;
+
+  /// No description provided for @reportTitleUser.
+  ///
+  /// In en, this message translates to:
+  /// **'Report {label}'**
+  String reportTitleUser(String label);
+
+  /// No description provided for @reportTitleMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Report message'**
+  String get reportTitleMessage;
+
+  /// No description provided for @reportNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Our ops team reviews and takes action within 24 hours.'**
+  String get reportNote;
+
+  /// No description provided for @reportExtraPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Add details (optional)'**
+  String get reportExtraPlaceholder;
+
+  /// No description provided for @reportSubmit.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit report'**
+  String get reportSubmit;
+
+  /// No description provided for @reportSubmitting.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending…'**
+  String get reportSubmitting;
+
+  /// No description provided for @reportFallbackUser.
+  ///
+  /// In en, this message translates to:
+  /// **'user'**
+  String get reportFallbackUser;
+
+  /// No description provided for @blockedUsersTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocked'**
+  String get blockedUsersTitle;
+
+  /// No description provided for @blockedUsersEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No blocked users'**
+  String get blockedUsersEmpty;
+
+  /// No description provided for @blockedUsersUnblockTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Unblock {name}'**
+  String blockedUsersUnblockTitle(String name);
+
+  /// No description provided for @blockedUsersUnblockBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Unblocking lets you meet them again and see their messages.'**
+  String get blockedUsersUnblockBody;
+
+  /// No description provided for @blockedUsersUnblockConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Unblock'**
+  String get blockedUsersUnblockConfirm;
+
+  /// No description provided for @activityTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Activity'**
+  String get activityTitle;
+
+  /// No description provided for @activityCatMeetup.
+  ///
+  /// In en, this message translates to:
+  /// **'🎉 Meetup'**
+  String get activityCatMeetup;
+
+  /// No description provided for @activityCatFriend.
+  ///
+  /// In en, this message translates to:
+  /// **'🤝 Friend'**
+  String get activityCatFriend;
+
+  /// No description provided for @activityCatRoomJoined.
+  ///
+  /// In en, this message translates to:
+  /// **'🚪 Room joined'**
+  String get activityCatRoomJoined;
+
+  /// No description provided for @activityCatPlaceShared.
+  ///
+  /// In en, this message translates to:
+  /// **'📍 Place shared'**
+  String get activityCatPlaceShared;
+
+  /// No description provided for @activityCatDestination.
+  ///
+  /// In en, this message translates to:
+  /// **'🎯 Destination'**
+  String get activityCatDestination;
+
+  /// No description provided for @activityAgoJust.
+  ///
+  /// In en, this message translates to:
+  /// **'Now'**
+  String get activityAgoJust;
+
+  /// No description provided for @activityAgoMin.
+  ///
+  /// In en, this message translates to:
+  /// **'{min} min ago'**
+  String activityAgoMin(int min);
+
+  /// No description provided for @activityAgoHour.
+  ///
+  /// In en, this message translates to:
+  /// **'{hour}h ago'**
+  String activityAgoHour(int hour);
+
+  /// No description provided for @activityAgoDay.
+  ///
+  /// In en, this message translates to:
+  /// **'{day}d ago'**
+  String activityAgoDay(int day);
+
+  /// No description provided for @activityRanking.
+  ///
+  /// In en, this message translates to:
+  /// **'Friend ranking'**
+  String get activityRanking;
+
+  /// No description provided for @activityRecent.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent activity'**
+  String get activityRecent;
+
+  /// No description provided for @activityEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No activity recorded yet'**
+  String get activityEmpty;
+
+  /// No description provided for @activityCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Code {code}'**
+  String activityCode(String code);
+
+  /// No description provided for @activityThisWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'This week\'s activity'**
+  String get activityThisWeek;
+
+  /// No description provided for @activityTotalCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} total'**
+  String activityTotalCount(int count);
+
+  /// No description provided for @activityWeekdayMon.
+  ///
+  /// In en, this message translates to:
+  /// **'Mon'**
+  String get activityWeekdayMon;
+
+  /// No description provided for @activityWeekdayTue.
+  ///
+  /// In en, this message translates to:
+  /// **'Tue'**
+  String get activityWeekdayTue;
+
+  /// No description provided for @activityWeekdayWed.
+  ///
+  /// In en, this message translates to:
+  /// **'Wed'**
+  String get activityWeekdayWed;
+
+  /// No description provided for @activityWeekdayThu.
+  ///
+  /// In en, this message translates to:
+  /// **'Thu'**
+  String get activityWeekdayThu;
+
+  /// No description provided for @activityWeekdayFri.
+  ///
+  /// In en, this message translates to:
+  /// **'Fri'**
+  String get activityWeekdayFri;
+
+  /// No description provided for @activityWeekdaySat.
+  ///
+  /// In en, this message translates to:
+  /// **'Sat'**
+  String get activityWeekdaySat;
+
+  /// No description provided for @activityWeekdaySun.
+  ///
+  /// In en, this message translates to:
+  /// **'Sun'**
+  String get activityWeekdaySun;
+
+  /// No description provided for @peerNowPlayingBtnFriend.
+  ///
+  /// In en, this message translates to:
+  /// **'Friends ✓'**
+  String get peerNowPlayingBtnFriend;
+
+  /// No description provided for @peerNowPlayingBtnRequested.
+  ///
+  /// In en, this message translates to:
+  /// **'Requested'**
+  String get peerNowPlayingBtnRequested;
+
+  /// No description provided for @peerNowPlayingBtnAccept.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept request'**
+  String get peerNowPlayingBtnAccept;
+
+  /// No description provided for @peerNowPlayingBtnSendRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'Send friend request'**
+  String get peerNowPlayingBtnSendRequest;
+
+  /// No description provided for @peerNowPlayingOpenInSpotify.
+  ///
+  /// In en, this message translates to:
+  /// **'Open in Spotify'**
+  String get peerNowPlayingOpenInSpotify;
 
   /// No description provided for @mapNoLocationPermission.
   ///

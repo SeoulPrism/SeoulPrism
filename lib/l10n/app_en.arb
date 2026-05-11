@@ -24,10 +24,8 @@
   "languageJa": "日本語",
   "languageZh": "简体中文",
 
-  "languageChangedTitle": "Language changed",
-  "languageChangedBody": "Restart the app to fully apply the new language. Restart now?",
-  "languageRestartNow": "Restart",
-  "languageRestartLater": "Later",
+  "languageChangedTitle": "Language saved",
+  "languageChangedBody": "To fully apply the new language, please close the app (swipe up from the app switcher) and reopen it.",
 
   "routeUnitHour": "h",
   "routeUnitMin": "min",
@@ -134,6 +132,14 @@
   "whatsNewPage7Body": "Earn points and badges from adds, meetups, and streaks.\nCompare with friends in the ranking,\nand review your week on a chart.",
   "whatsNewPage8Title": "Your way",
   "whatsNewPage8Body": "Toggle notifications by type,\nshare your location with only certain groups.\nSafety and privacy stay with you.",
+  "whatsNewPage9Title": "Routes, end to end",
+  "whatsNewPage9Body": "Subway, bus, and walking — all in one.\nTransfers, live arrivals, and station exits\nshow up where you need them.",
+  "whatsNewPage10Title": "Day plans, made for you",
+  "whatsNewPage10Body": "Turn your saved places into a day.\nEfficient, leisurely, or food-focused —\npick a style and go.",
+  "whatsNewPage11Title": "Speaks your language",
+  "whatsNewPage11Body": "Korean, English, Japanese, Chinese.\nThe AI assistant replies in the same.\nIt follows your device language.",
+  "whatsNewPage12Title": "Just ask out loud",
+  "whatsNewPage12Body": "Talk to the AI naturally.\nSearch, navigate, get picks — by voice.\nGemini Live listens and answers live.",
 
   "profileCategoryFavorites": "Favorites",
   "profileCategoryRecent": "Recent",
@@ -450,12 +456,12 @@
   "settingsThemeMode": "Theme",
   "settingsThemeLight": "Light",
   "settingsThemeDark": "Dark",
-  "settingsThemeChangedTitle": "Theme changed",
-  "settingsThemeChangedBody": "Restart to fully apply {theme} mode. Restart now?",
+  "settingsThemeChangedTitle": "Theme saved",
+  "settingsThemeChangedBody": "To fully apply {theme} mode, please close the app (swipe up from the app switcher) and reopen it.",
   "@settingsThemeChangedBody": {
     "placeholders": { "theme": { "type": "String" } }
   },
-  "settingsRestartConfirm": "Restart",
+  "settingsRestartConfirm": "OK",
   "settingsMapHome": "Map home start",
   "settingsMapHomeDefault": "Default",
   "settingsMapHomeMyLocation": "My location",
@@ -975,6 +981,206 @@
   "searchArrivalFieldHint": "To",
   "searchSwapDepArr": "Swap from/to",
   "searchCloseTooltip": "Close directions",
+  "searchPlaceholder": "Search places · bus · subway",
+  "searchClearLabel": "Clear search",
+  "searchRecentTitle": "Recent searches",
+  "searchRecentClearAll": "Clear all",
+  "searchRecentRoutesTitle": "Recent directions",
+  "searchBusTypeTrunk": "Trunk",
+  "searchBusTypeBranch": "Branch",
+  "searchBusTypeCircular": "Circular",
+  "searchBusTypeMetro": "Metro",
+  "searchBusTypeIncheon": "Incheon",
+  "searchBusTypeGyeonggi": "Gyeonggi",
+  "searchBusTypeDefault": "Bus",
+  "searchCatFood": "Food",
+  "searchCatCafe": "Café",
+  "searchCatPark": "Park",
+  "searchCatShopping": "Shopping",
+  "searchCatMedical": "Medical",
+  "searchCatEducation": "Education",
+  "searchCatLodging": "Lodging",
+  "searchCatFinance": "Finance",
+  "searchCatTransit": "Transit",
+  "searchCatAddress": "Address",
+  "searchCatCity": "City",
+  "searchCatNeighborhood": "Neighborhood",
+  "searchCatRoad": "Road",
+
+  "liveBadgePeerTrack": "{nickname} is listening to {track}",
+  "@liveBadgePeerTrack": {
+    "placeholders": {
+      "nickname": { "type": "String" },
+      "track": { "type": "String" }
+    }
+  },
+  "liveBadgeSharing": "Sharing with {count} {count, plural, one{person} other{people}}",
+  "@liveBadgeSharing": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "liveBadgeStopped": "Stopped location sharing",
+  "seoulLiveStartTitle": "Seoul Live started",
+  "seoulLiveStartBody": "Your map just expanded to the world.",
+  "seoulLiveStep2Title": "Your friends' pins appear on the map",
+  "seoulLiveStep2Body": "Members of the same friend room show up as pins (nickname + emoji) in real time. Their pin moves as they move.",
+  "seoulLiveStep3Title": "Meet up by friend room code",
+  "seoulLiveStep3Body": "Open Profile → Seoul Live → Friend Room to create a new room or join with a 6-digit invite code. Capacity is 8.",
+  "seoulLiveStep4Title": "Meetup alerts within 50m",
+  "seoulLiveStep4Body": "Haptics and a notification fire when you get close. Auto-logged to chat.",
+  "seoulLiveStep5Title": "Go private anytime",
+  "seoulLiveStep5Body": "Tap the \"Sharing\" badge at the top to switch to ghost mode instantly. Leaving a friend room also stops sending.",
+  "seoulLivePermTitle": "Get notifications",
+  "seoulLivePermBody": "We'll send a push when friend requests, new messages, or meetups happen. Tap \"Allow\" below.",
+  "seoulLivePermAllowed": "✓ Notifications allowed",
+  "seoulLivePermDenied": "Denied — you can allow it from Settings",
+  "seoulLivePermRequesting": "Requesting…",
+  "seoulLivePermAllow": "Allow notifications",
+  "roomMembersEmpty": "No one nearby yet",
+  "roomMembersWithCount": "{count} {count, plural, one{friend} other{friends}} here",
+  "@roomMembersWithCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "roomMembersGhost": "Private",
+  "roomMembersDisconnected": "Disconnected",
+  "roomMembersRealtime": "Live",
+  "roomMembersStale": "Briefly out",
+
+  "dmListAgoJust": "Now",
+  "dmListAgoMin": "{min}m",
+  "@dmListAgoMin": {
+    "placeholders": { "min": { "type": "int" } }
+  },
+  "dmListAgoHour": "{hour}h",
+  "@dmListAgoHour": {
+    "placeholders": { "hour": { "type": "int" } }
+  },
+  "dmListAgoDay": "{day}d",
+  "@dmListAgoDay": {
+    "placeholders": { "day": { "type": "int" } }
+  },
+  "dmListKindVoice": "🎙 Voice",
+  "dmListKindImage": "🖼 Photo",
+  "dmListKindPlace": "📍 Place",
+  "dmListKindSpotify": "🎵 Track",
+  "dmListEmpty": "No DMs yet",
+  "dmListEmptyHint": "Open a friend and tap the message button to start",
+
+  "friendGroupsNewTitle": "New group",
+  "friendGroupsNewTooltip": "New group",
+  "friendGroupsEmpty": "No groups yet",
+  "friendGroupsEmptyHint": "Tap + above to group your friends",
+  "friendGroupsEmptyHintAlt": "Create a group with + in the top-right to organize friends.",
+  "friendGroupsNamePlaceholder": "e.g. Family, Work, Club",
+  "friendGroupsCreate": "Create",
+  "friendGroupsCreated": "Group created",
+  "friendGroupsFailure": "Failed: {error}",
+  "@friendGroupsFailure": {
+    "placeholders": { "error": { "type": "String" } }
+  },
+  "friendGroupsDeleteTitle": "Delete {emoji} {name}",
+  "@friendGroupsDeleteTitle": {
+    "placeholders": {
+      "emoji": { "type": "String" },
+      "name": { "type": "String" }
+    }
+  },
+  "friendGroupsDeleteBody": "The group is deleted but friends are kept.",
+  "friendGroupsDelete": "Delete",
+  "friendGroupsName": "Name",
+  "friendGroupsIcon": "Icon",
+  "friendGroupsMemberCount": "{count} {count, plural, one{member} other{members}}",
+  "@friendGroupsMemberCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "friendGroupsNoFriendsPrompt": "Add friends first.",
+  "friendGroupsVisibilityHint": "Used for group-based visibility / chat",
+  "friendGroupsMembersTitle": "{emoji} {name} members",
+  "@friendGroupsMembersTitle": {
+    "placeholders": {
+      "emoji": { "type": "String" },
+      "name": { "type": "String" }
+    }
+  },
+  "friendGroupsEditMembers": "Edit members",
+  "friendGroupsEmptyFriendsBox": "No friends yet",
+
+  "loginRequiredTitle": "Sign-in required",
+  "loginRequiredBody": "Multiplayer is for signed-in users only.\nGuest (anonymous) accounts auto-delete after 30 days of inactivity,\nso friend/room data may be lost.",
+  "loginRequiredCta": "Sign in",
+
+  "reportReasonSpam": "Spam / Ads",
+  "reportReasonHate": "Abuse / hate speech",
+  "reportReasonSexual": "Sexual / disturbing content",
+  "reportReasonHarass": "Harassment / stalking",
+  "reportReasonFakeLocation": "Fake location / impersonation",
+  "reportReasonMinorAbuse": "Minor safety violation",
+  "reportReasonOther": "Other",
+  "reportSelectReason": "Please pick a reason.",
+  "reportSubmitted": "Report received. Reviewed within 24h.",
+  "reportTitleUser": "Report {label}",
+  "@reportTitleUser": {
+    "placeholders": { "label": { "type": "String" } }
+  },
+  "reportTitleMessage": "Report message",
+  "reportNote": "Our ops team reviews and takes action within 24 hours.",
+  "reportExtraPlaceholder": "Add details (optional)",
+  "reportSubmit": "Submit report",
+  "reportSubmitting": "Sending…",
+  "reportFallbackUser": "user",
+
+  "blockedUsersTitle": "Blocked",
+  "blockedUsersEmpty": "No blocked users",
+  "blockedUsersUnblockTitle": "Unblock {name}",
+  "@blockedUsersUnblockTitle": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "blockedUsersUnblockBody": "Unblocking lets you meet them again and see their messages.",
+  "blockedUsersUnblockConfirm": "Unblock",
+
+  "activityTitle": "Activity",
+  "activityCatMeetup": "🎉 Meetup",
+  "activityCatFriend": "🤝 Friend",
+  "activityCatRoomJoined": "🚪 Room joined",
+  "activityCatPlaceShared": "📍 Place shared",
+  "activityCatDestination": "🎯 Destination",
+  "activityAgoJust": "Now",
+  "activityAgoMin": "{min} min ago",
+  "@activityAgoMin": {
+    "placeholders": { "min": { "type": "int" } }
+  },
+  "activityAgoHour": "{hour}h ago",
+  "@activityAgoHour": {
+    "placeholders": { "hour": { "type": "int" } }
+  },
+  "activityAgoDay": "{day}d ago",
+  "@activityAgoDay": {
+    "placeholders": { "day": { "type": "int" } }
+  },
+  "activityRanking": "Friend ranking",
+  "activityRecent": "Recent activity",
+  "activityEmpty": "No activity recorded yet",
+  "activityCode": "Code {code}",
+  "@activityCode": {
+    "placeholders": { "code": { "type": "String" } }
+  },
+  "activityThisWeek": "This week's activity",
+  "activityTotalCount": "{count} total",
+  "@activityTotalCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "activityWeekdayMon": "Mon",
+  "activityWeekdayTue": "Tue",
+  "activityWeekdayWed": "Wed",
+  "activityWeekdayThu": "Thu",
+  "activityWeekdayFri": "Fri",
+  "activityWeekdaySat": "Sat",
+  "activityWeekdaySun": "Sun",
+
+  "peerNowPlayingBtnFriend": "Friends ✓",
+  "peerNowPlayingBtnRequested": "Requested",
+  "peerNowPlayingBtnAccept": "Accept request",
+  "peerNowPlayingBtnSendRequest": "Send friend request",
+  "peerNowPlayingOpenInSpotify": "Open in Spotify",
 
   "mapNoLocationPermission": "Without location permission, friends can't see your pin. Open Settings → Location to allow.",
   "mapLeftRoom": "You left the friend room",

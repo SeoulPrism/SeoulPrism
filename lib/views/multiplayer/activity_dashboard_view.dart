@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/gen/app_localizations.dart';
 import '../../services/multiplayer_service.dart';
 import '../../widgets/adaptive/adaptive.dart';
 
@@ -40,20 +41,25 @@ class _ActivityDashboardViewState extends State<ActivityDashboardView> {
     });
   }
 
-  static const _kindLabel = {
-    'meetup': '🎉 만남',
-    'friend_added': '🤝 친구',
-    'room_joined': '🚪 방 입장',
-    'place_shared': '📍 장소 공유',
-    'destination_set': '🎯 목적지',
-  };
+  String _kindLabel(BuildContext ctx, String kind) {
+    final l = AppL10n.of(ctx);
+    return switch (kind) {
+      'meetup' => l.activityCatMeetup,
+      'friend_added' => l.activityCatFriend,
+      'room_joined' => l.activityCatRoomJoined,
+      'place_shared' => l.activityCatPlaceShared,
+      'destination_set' => l.activityCatDestination,
+      _ => kind,
+    };
+  }
 
-  String _ago(DateTime t) {
+  String _ago(BuildContext ctx, DateTime t) {
+    final l = AppL10n.of(ctx);
     final d = DateTime.now().difference(t);
-    if (d.inMinutes < 1) return '방금';
-    if (d.inMinutes < 60) return '${d.inMinutes}분 전';
-    if (d.inHours < 24) return '${d.inHours}시간 전';
-    return '${d.inDays}일 전';
+    if (d.inMinutes < 1) return l.activityAgoJust;
+    if (d.inMinutes < 60) return l.activityAgoMin(d.inMinutes);
+    if (d.inHours < 24) return l.activityAgoHour(d.inHours);
+    return l.activityAgoDay(d.inDays);
   }
 
   @override
@@ -61,7 +67,7 @@ class _ActivityDashboardViewState extends State<ActivityDashboardView> {
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
       backgroundColor: cs.surface,
-      appBar: AdaptiveAppBar(title: '활동 분석'),
+      appBar: AdaptiveAppBar(title: AppL10n.of(context).activityTitle),
       body: SafeArea(
         child: _loading
             ? const Center(child: CircularProgressIndicator())
@@ -73,19 +79,19 @@ class _ActivityDashboardViewState extends State<ActivityDashboardView> {
                     _WeeklyChart(summary: _summary),
                     if (_leaderboard.length > 1) ...[
                       const SizedBox(height: 16),
-                      _SectionLabel(text: '친구 랭킹'),
+                      _SectionLabel(text: AppL10n.of(context).activityRanking),
                       _Leaderboard(
                         items: _leaderboard,
                         myId: MultiplayerService.instance.myId,
                       ),
                     ],
                     const SizedBox(height: 16),
-                    _SectionLabel(text: '최근 활동'),
+                    _SectionLabel(text: AppL10n.of(context).activityRecent),
                     if (_recent.isEmpty)
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 24),
                         child: Center(
-                          child: Text('아직 기록된 활동이 없어요',
+                          child: Text(AppL10n.of(context).activityEmpty,
                               style:
                                   TextStyle(color: cs.onSurfaceVariant)),
                         ),
@@ -107,12 +113,12 @@ class _ActivityDashboardViewState extends State<ActivityDashboardView> {
                             ListTile(
                               dense: true,
                               title: Text(
-                                  _kindLabel[_recent[i].kind] ?? _recent[i].kind,
+                                  _kindLabel(context, _recent[i].kind),
                                   style: const TextStyle(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w600)),
-                              subtitle: _payloadHint(_recent[i].payload),
-                              trailing: Text(_ago(_recent[i].at),
+                              subtitle: _payloadHint(context, _recent[i].payload),
+                              trailing: Text(_ago(context, _recent[i].at),
                                   style: TextStyle(
                                       fontSize: 11,
                                       color: cs.onSurfaceVariant)),
@@ -127,18 +133,18 @@ class _ActivityDashboardViewState extends State<ActivityDashboardView> {
     );
   }
 
-  Widget? _payloadHint(Map<String, dynamic> p) {
+  Widget? _payloadHint(BuildContext ctx, Map<String, dynamic> p) {
     if (p.containsKey('name')) {
       return Text(p['name'].toString(),
           style: TextStyle(
               fontSize: 11,
-              color: Theme.of(context).colorScheme.onSurfaceVariant));
+              color: Theme.of(ctx).colorScheme.onSurfaceVariant));
     }
     if (p.containsKey('code')) {
-      return Text('코드 ${p['code']}',
+      return Text(AppL10n.of(ctx).activityCode(p['code'].toString()),
           style: TextStyle(
               fontSize: 11,
-              color: Theme.of(context).colorScheme.onSurfaceVariant));
+              color: Theme.of(ctx).colorScheme.onSurfaceVariant));
     }
     return null;
   }
@@ -175,10 +181,12 @@ class _WeeklyChart extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
           child: Row(
             children: [
-              const Text('이번 주 활동',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800)),
+              Text(AppL10n.of(context).activityThisWeek,
+                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800)),
               const Spacer(),
-              Text('총 ${byDay.values.fold<int>(0, (a, b) => a + b)}건',
+              Text(
+                  AppL10n.of(context).activityTotalCount(
+                      byDay.values.fold<int>(0, (a, b) => a + b)),
                   style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
             ],
           ),
@@ -195,7 +203,16 @@ class _WeeklyChart extends StatelessWidget {
                 final isToday = d.day == today.day &&
                     d.month == today.month &&
                     d.year == today.year;
-                final wd = ['월', '화', '수', '목', '금', '토', '일'][d.weekday - 1];
+                final l = AppL10n.of(context);
+                final wd = [
+                  l.activityWeekdayMon,
+                  l.activityWeekdayTue,
+                  l.activityWeekdayWed,
+                  l.activityWeekdayThu,
+                  l.activityWeekdayFri,
+                  l.activityWeekdaySat,
+                  l.activityWeekdaySun,
+                ][d.weekday - 1];
                 return Expanded(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.end,
@@ -294,7 +311,10 @@ class _Leaderboard extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('${items[i].nickname}${isMe ? ' (나)' : ''}',
+                        Text(
+                            isMe
+                                ? AppL10n.of(context).roomNameMe(items[i].nickname)
+                                : items[i].nickname,
                             style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w700,

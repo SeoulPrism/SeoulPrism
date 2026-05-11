@@ -4,15 +4,26 @@ import 'package:flutter/material.dart';
 
 /// iOS: CupertinoAlertDialog
 /// Android: Material 3 AlertDialog
+/// [cancelText] 가 null 이면 cancel 버튼 없이 confirm 단일 버튼 (alert 패턴).
 Future<void> showAdaptiveConfirmDialog({
   required BuildContext context,
   required String title,
   required String content,
-  String cancelText = '취소',
+  String? cancelText = '취소',
   required String confirmText,
   bool isDestructive = false,
   required VoidCallback onConfirm,
 }) {
+  // iOS Cupertino 다이얼로그는 Navigator.pop 후 즉시 onConfirm 을 부르면
+  // dismiss 애니메이션 중에 setState/rebuild 가 일어나면서 KeyedSubtree
+  // 같은 트리 재구성이 시각적으로 적용되지 않는 경우가 있다 (테마/언어 변경 후
+  // restartApp 이 안 되는 증상). pop 이 commit 된 뒤 다음 frame 에 사용자
+  // 콜백을 실행해 race 를 회피. Android Material 다이얼로그도 같은 패턴으로
+  // 통일.
+  void runAfterPop() {
+    WidgetsBinding.instance.addPostFrameCallback((_) => onConfirm());
+  }
+
   if (Platform.isIOS) {
     return showCupertinoDialog(
       context: context,
@@ -20,15 +31,17 @@ Future<void> showAdaptiveConfirmDialog({
         title: Text(title),
         content: Text(content),
         actions: [
-          CupertinoDialogAction(
-            onPressed: () => Navigator.pop(context),
-            child: Text(cancelText),
-          ),
+          if (cancelText != null)
+            CupertinoDialogAction(
+              onPressed: () => Navigator.pop(context),
+              child: Text(cancelText),
+            ),
           CupertinoDialogAction(
             isDestructiveAction: isDestructive,
+            isDefaultAction: cancelText == null,
             onPressed: () {
               Navigator.pop(context);
-              onConfirm();
+              runAfterPop();
             },
             child: Text(confirmText),
           ),
@@ -49,15 +62,16 @@ Future<void> showAdaptiveConfirmDialog({
       title: Text(title),
       content: Text(content, style: const TextStyle(height: 1.5)),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text(cancelText),
-        ),
+        if (cancelText != null)
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(cancelText),
+          ),
         if (isDestructive)
           FilledButton(
             onPressed: () {
               Navigator.pop(context);
-              onConfirm();
+              runAfterPop();
             },
             style: FilledButton.styleFrom(
               backgroundColor: cs.error,
@@ -69,7 +83,7 @@ Future<void> showAdaptiveConfirmDialog({
           FilledButton(
             onPressed: () {
               Navigator.pop(context);
-              onConfirm();
+              runAfterPop();
             },
             child: Text(confirmText),
           ),

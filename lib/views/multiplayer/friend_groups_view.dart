@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/gen/app_localizations.dart';
 import '../../models/multiplayer_models.dart';
 import '../../services/multiplayer_service.dart';
 import '../../widgets/adaptive/adaptive.dart';
@@ -37,14 +38,15 @@ class _FriendGroupsViewState extends State<FriendGroupsView> {
     final result = await showDialog<({String name, String emoji})?>(
       context: context,
       builder: (ctx) {
+        final l = AppL10n.of(ctx);
         return StatefulBuilder(builder: (ctx, setSt) {
           return AlertDialog(
-            title: const Text('새 그룹'),
+            title: Text(l.friendGroupsNewTitle),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('이름',
+                Text(l.friendGroupsName,
                     style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
@@ -52,12 +54,12 @@ class _FriendGroupsViewState extends State<FriendGroupsView> {
                 const SizedBox(height: 6),
                 AdaptiveTextField(
                   controller: ctrl,
-                  placeholder: '예: 가족, 회사, 동호회',
+                  placeholder: l.friendGroupsNamePlaceholder,
                   padding: const EdgeInsets.symmetric(
                       horizontal: 14, vertical: 12),
                 ),
                 const SizedBox(height: 16),
-                Text('아이콘',
+                Text(l.friendGroupsIcon,
                     style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
@@ -83,7 +85,7 @@ class _FriendGroupsViewState extends State<FriendGroupsView> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx, null),
-                child: const Text('취소'),
+                child: Text(l.commonCancel),
               ),
               TextButton(
                 onPressed: () {
@@ -91,7 +93,7 @@ class _FriendGroupsViewState extends State<FriendGroupsView> {
                   if (name.isEmpty) return;
                   Navigator.pop(ctx, (name: name, emoji: emoji));
                 },
-                child: const Text('만들기'),
+                child: Text(l.friendGroupsCreate),
               ),
             ],
           );
@@ -104,24 +106,30 @@ class _FriendGroupsViewState extends State<FriendGroupsView> {
         name: result.name,
         emoji: result.emoji,
       );
-      if (mounted) showAppSnackBar('그룹 만들어졌어요');
+      if (mounted) showAppSnackBar(AppL10n.of(context).friendGroupsCreated);
     } catch (e) {
-      if (mounted) showAppSnackBar('실패: $e');
+      if (mounted) {
+        showAppSnackBar(AppL10n.of(context).friendGroupsFailure(e.toString()));
+      }
     }
   }
 
   Future<void> _confirmDelete(FriendGroup g) async {
+    final l = AppL10n.of(context);
     showAdaptiveConfirmDialog(
       context: context,
-      title: '${g.emoji} ${g.name} 삭제',
-      content: '그룹을 삭제해요. 친구는 사라지지 않아요.',
-      confirmText: '삭제',
+      title: l.friendGroupsDeleteTitle(g.emoji, g.name),
+      content: l.friendGroupsDeleteBody,
+      confirmText: l.friendGroupsDelete,
       isDestructive: true,
       onConfirm: () async {
         try {
           await MultiplayerService.instance.deleteFriendGroup(g.id);
         } catch (e) {
-          if (mounted) showAppSnackBar('실패: $e');
+          if (mounted) {
+            showAppSnackBar(
+                AppL10n.of(context).friendGroupsFailure(e.toString()));
+          }
         }
       },
     );
@@ -148,14 +156,14 @@ class _FriendGroupsViewState extends State<FriendGroupsView> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('${g.emoji} ${g.name} 멤버',
+                  Text(AppL10n.of(ctx).friendGroupsMembersTitle(g.emoji, g.name),
                       style: const TextStyle(
                           fontSize: 18, fontWeight: FontWeight.w800)),
                   const SizedBox(height: 12),
                   if (friends.isEmpty)
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 24),
-                      child: Text('아직 친구가 없어요',
+                      child: Text(AppL10n.of(ctx).friendGroupsEmptyFriendsBox,
                           style: TextStyle(
                               color: Theme.of(ctx)
                                   .colorScheme
@@ -208,11 +216,11 @@ class _FriendGroupsViewState extends State<FriendGroupsView> {
     return Scaffold(
       backgroundColor: cs.surface,
       appBar: AdaptiveAppBar(
-        title: '친구 그룹',
+        title: AppL10n.of(context).hubFriendGroupsTitle,
         actions: [
           AdaptiveAppBarAction(
             icon: Icons.add_rounded,
-            tooltip: '새 그룹',
+            tooltip: AppL10n.of(context).friendGroupsNewTooltip,
             onPressed: _createGroup,
           ),
           const SizedBox(width: 4),
@@ -229,10 +237,10 @@ class _FriendGroupsViewState extends State<FriendGroupsView> {
                       Icon(Icons.group_outlined,
                           size: 48, color: cs.onSurfaceVariant),
                       const SizedBox(height: 12),
-                      Text('아직 그룹이 없어요',
+                      Text(AppL10n.of(context).friendGroupsEmpty,
                           style: TextStyle(color: cs.onSurfaceVariant)),
                       const SizedBox(height: 4),
-                      Text('상단 + 로 친구를 묶어 보세요',
+                      Text(AppL10n.of(context).friendGroupsEmptyHint,
                           style: TextStyle(
                               fontSize: 12, color: cs.onSurfaceVariant)),
                     ],
@@ -257,7 +265,8 @@ class _FriendGroupsViewState extends State<FriendGroupsView> {
                       ),
                       title: Text(g.name,
                           style: const TextStyle(fontWeight: FontWeight.w700)),
-                      subtitle: Text('${g.memberIds.length}명',
+                      subtitle: Text(
+                          AppL10n.of(context).friendGroupsMemberCount(g.memberIds.length),
                           style: TextStyle(
                               fontSize: 12, color: cs.onSurfaceVariant)),
                       trailing: PopupMenuButton<String>(
@@ -265,13 +274,14 @@ class _FriendGroupsViewState extends State<FriendGroupsView> {
                           if (v == 'members') _editMembers(g);
                           if (v == 'delete') _confirmDelete(g);
                         },
-                        itemBuilder: (_) => const [
+                        itemBuilder: (_) => [
                           PopupMenuItem(
-                              value: 'members', child: Text('멤버 편집')),
+                              value: 'members',
+                              child: Text(AppL10n.of(context).friendGroupsEditMembers)),
                           PopupMenuItem(
                               value: 'delete',
-                              child: Text('삭제',
-                                  style: TextStyle(color: Colors.red))),
+                              child: Text(AppL10n.of(context).friendGroupsDelete,
+                                  style: const TextStyle(color: Colors.red))),
                         ],
                       ),
                       onTap: () => _editMembers(g),

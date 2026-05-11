@@ -48,16 +48,10 @@ class AppL10nZh extends AppL10n {
   String get languageZh => '简体中文';
 
   @override
-  String get languageChangedTitle => '已更改语言';
+  String get languageChangedTitle => '已保存语言';
 
   @override
-  String get languageChangedBody => '要完全应用新语言,需要重启应用。现在重启吗?';
-
-  @override
-  String get languageRestartNow => '重启';
-
-  @override
-  String get languageRestartLater => '稍后';
+  String get languageChangedBody => '要完全应用新语言,请在应用切换器中向上滑动关闭应用,然后重新打开。';
 
   @override
   String get routeUnitHour => '小时';
@@ -234,6 +228,31 @@ class AppL10nZh extends AppL10n {
 
   @override
   String get whatsNewPage8Body => '按类型开关通知,\n位置只分享给特定群组。\n安全与隐私由你掌控。';
+
+  @override
+  String get whatsNewPage9Title => '路线一站搞定';
+
+  @override
+  String get whatsNewPage9Body => '地铁、公交、步行合为一体。\n换乘、实时到达、车站出口\n都在同一个画面。';
+
+  @override
+  String get whatsNewPage10Title => '一日行程，自动生成';
+
+  @override
+  String get whatsNewPage10Body => '用收藏地点为你安排一天。\n高效路线、悠闲漫步、美食路线，\n三种风格任选。';
+
+  @override
+  String get whatsNewPage11Title => '支持四种语言';
+
+  @override
+  String get whatsNewPage11Body => '中文、韩文、英文、日文。\nAI 助手也用同一种语言回应。\n自动跟随设备语言。';
+
+  @override
+  String get whatsNewPage12Title => '用嘴问，用嘴答';
+
+  @override
+  String get whatsNewPage12Body =>
+      '和 AI 助手自然语音对话。\n搜索、导航、推荐都能用语音。\nGemini Live 即听即答。';
 
   @override
   String get profileCategoryFavorites => '收藏';
@@ -879,15 +898,15 @@ class AppL10nZh extends AppL10n {
   String get settingsThemeDark => '深色';
 
   @override
-  String get settingsThemeChangedTitle => '已更改主题';
+  String get settingsThemeChangedTitle => '已保存主题';
 
   @override
   String settingsThemeChangedBody(String theme) {
-    return '要完全应用 $theme 模式,需要重启应用。现在重启吗?';
+    return '要完全应用 $theme 模式,请在应用切换器中向上滑动关闭应用,然后重新打开。';
   }
 
   @override
-  String get settingsRestartConfirm => '重启';
+  String get settingsRestartConfirm => '好';
 
   @override
   String get settingsMapHome => '地图首页起点';
@@ -2051,6 +2070,438 @@ class AppL10nZh extends AppL10n {
 
   @override
   String get searchCloseTooltip => '关闭导航';
+
+  @override
+  String get searchPlaceholder => '搜索地点·公交·地铁';
+
+  @override
+  String get searchClearLabel => '清除搜索';
+
+  @override
+  String get searchRecentTitle => '最近搜索';
+
+  @override
+  String get searchRecentClearAll => '全部删除';
+
+  @override
+  String get searchRecentRoutesTitle => '最近导航';
+
+  @override
+  String get searchBusTypeTrunk => '干线';
+
+  @override
+  String get searchBusTypeBranch => '支线';
+
+  @override
+  String get searchBusTypeCircular => '环线';
+
+  @override
+  String get searchBusTypeMetro => '广域';
+
+  @override
+  String get searchBusTypeIncheon => '仁川';
+
+  @override
+  String get searchBusTypeGyeonggi => '京畿';
+
+  @override
+  String get searchBusTypeDefault => '公交';
+
+  @override
+  String get searchCatFood => '餐饮';
+
+  @override
+  String get searchCatCafe => '咖啡';
+
+  @override
+  String get searchCatPark => '公园';
+
+  @override
+  String get searchCatShopping => '购物';
+
+  @override
+  String get searchCatMedical => '医疗';
+
+  @override
+  String get searchCatEducation => '教育';
+
+  @override
+  String get searchCatLodging => '住宿';
+
+  @override
+  String get searchCatFinance => '金融';
+
+  @override
+  String get searchCatTransit => '交通';
+
+  @override
+  String get searchCatAddress => '地址';
+
+  @override
+  String get searchCatCity => '城市';
+
+  @override
+  String get searchCatNeighborhood => '街区';
+
+  @override
+  String get searchCatRoad => '道路';
+
+  @override
+  String liveBadgePeerTrack(String nickname, String track) {
+    return '$nickname 正在听 $track';
+  }
+
+  @override
+  String liveBadgeSharing(int count) {
+    return '正在与 $count 人共享位置';
+  }
+
+  @override
+  String get liveBadgeStopped => '已停止位置共享';
+
+  @override
+  String get seoulLiveStartTitle => 'Seoul Live 已开启';
+
+  @override
+  String get seoulLiveStartBody => '地图已扩展到世界';
+
+  @override
+  String get seoulLiveStep2Title => '好友的图钉出现在地图上';
+
+  @override
+  String get seoulLiveStep2Body => '同一房间的成员以图钉 (昵称 + 表情) 实时显示。好友移动时图钉也会跟着移动。';
+
+  @override
+  String get seoulLiveStep3Title => '用房间代码集合';
+
+  @override
+  String get seoulLiveStep3Body =>
+      '在 资料 → Seoul Live → 房间 创建新房间或用 6 位邀请码加入。容量 8 人。';
+
+  @override
+  String get seoulLiveStep4Title => '50m 以内有相遇通知';
+
+  @override
+  String get seoulLiveStep4Body => '与好友靠近时会震动并通知。聊天也会自动记录。';
+
+  @override
+  String get seoulLiveStep5Title => '随时切换隐身模式';
+
+  @override
+  String get seoulLiveStep5Body => '点击顶部「位置共享」徽章可立即切换到 ghost 模式。退出房间也会自动停止发送。';
+
+  @override
+  String get seoulLivePermTitle => '接收通知';
+
+  @override
+  String get seoulLivePermBody => '当好友申请 / 新消息 / 相遇发生时,我们会通过推送通知告诉你。请点击下方「允许」。';
+
+  @override
+  String get seoulLivePermAllowed => '✓ 已允许通知';
+
+  @override
+  String get seoulLivePermDenied => '已拒绝 — 可在设置中手动允许';
+
+  @override
+  String get seoulLivePermRequesting => '请求中……';
+
+  @override
+  String get seoulLivePermAllow => '允许通知';
+
+  @override
+  String get roomMembersEmpty => '暂无在一起的好友';
+
+  @override
+  String roomMembersWithCount(int count) {
+    return '一起的好友 $count 人';
+  }
+
+  @override
+  String get roomMembersGhost => '隐身';
+
+  @override
+  String get roomMembersDisconnected => '未连接';
+
+  @override
+  String get roomMembersRealtime => '实时';
+
+  @override
+  String get roomMembersStale => '暂时离开';
+
+  @override
+  String get dmListAgoJust => '刚刚';
+
+  @override
+  String dmListAgoMin(int min) {
+    return '$min 分';
+  }
+
+  @override
+  String dmListAgoHour(int hour) {
+    return '$hour 小时';
+  }
+
+  @override
+  String dmListAgoDay(int day) {
+    return '$day 天';
+  }
+
+  @override
+  String get dmListKindVoice => '🎙 语音';
+
+  @override
+  String get dmListKindImage => '🖼 照片';
+
+  @override
+  String get dmListKindPlace => '📍 地点';
+
+  @override
+  String get dmListKindSpotify => '🎵 歌曲';
+
+  @override
+  String get dmListEmpty => '暂无私信';
+
+  @override
+  String get dmListEmptyHint => '在好友页点击消息按钮开始';
+
+  @override
+  String get friendGroupsNewTitle => '新建分组';
+
+  @override
+  String get friendGroupsNewTooltip => '新建分组';
+
+  @override
+  String get friendGroupsEmpty => '暂无分组';
+
+  @override
+  String get friendGroupsEmptyHint => '点击上方 + 把好友分组';
+
+  @override
+  String get friendGroupsEmptyHintAlt => '点击右上角的 + 按钮创建分组以管理好友。';
+
+  @override
+  String get friendGroupsNamePlaceholder => '例如:家人、公司、社团';
+
+  @override
+  String get friendGroupsCreate => '创建';
+
+  @override
+  String get friendGroupsCreated => '已创建分组';
+
+  @override
+  String friendGroupsFailure(String error) {
+    return '失败:$error';
+  }
+
+  @override
+  String friendGroupsDeleteTitle(String emoji, String name) {
+    return '删除 $emoji $name';
+  }
+
+  @override
+  String get friendGroupsDeleteBody => '只删除分组,好友保留。';
+
+  @override
+  String get friendGroupsDelete => '删除';
+
+  @override
+  String get friendGroupsName => '名称';
+
+  @override
+  String get friendGroupsIcon => '图标';
+
+  @override
+  String friendGroupsMemberCount(int count) {
+    return '$count 人';
+  }
+
+  @override
+  String get friendGroupsNoFriendsPrompt => '请先添加好友。';
+
+  @override
+  String get friendGroupsVisibilityHint => '用于分组可见性 / 聊天';
+
+  @override
+  String friendGroupsMembersTitle(String emoji, String name) {
+    return '$emoji $name 的成员';
+  }
+
+  @override
+  String get friendGroupsEditMembers => '编辑成员';
+
+  @override
+  String get friendGroupsEmptyFriendsBox => '暂无好友';
+
+  @override
+  String get loginRequiredTitle => '需要登录';
+
+  @override
+  String get loginRequiredBody =>
+      '多人功能仅限正式登录用户使用。\n访客 (匿名) 账号 30 天未使用会自动删除,\n好友·房间信息可能丢失。';
+
+  @override
+  String get loginRequiredCta => '去登录';
+
+  @override
+  String get reportReasonSpam => '垃圾/广告';
+
+  @override
+  String get reportReasonHate => '辱骂/仇恨表达';
+
+  @override
+  String get reportReasonSexual => '色情/不适当内容';
+
+  @override
+  String get reportReasonHarass => '骚扰/跟踪';
+
+  @override
+  String get reportReasonFakeLocation => '虚假位置/冒充';
+
+  @override
+  String get reportReasonMinorAbuse => '侵犯未成年人保护';
+
+  @override
+  String get reportReasonOther => '其他';
+
+  @override
+  String get reportSelectReason => '请选择原因。';
+
+  @override
+  String get reportSubmitted => '已收到举报,将在 24 小时内审核。';
+
+  @override
+  String reportTitleUser(String label) {
+    return '举报 $label';
+  }
+
+  @override
+  String get reportTitleMessage => '举报消息';
+
+  @override
+  String get reportNote => '运营团队会在 24 小时内审核并处理。';
+
+  @override
+  String get reportExtraPlaceholder => '补充说明 (可选)';
+
+  @override
+  String get reportSubmit => '举报';
+
+  @override
+  String get reportSubmitting => '发送中……';
+
+  @override
+  String get reportFallbackUser => '用户';
+
+  @override
+  String get blockedUsersTitle => '屏蔽列表';
+
+  @override
+  String get blockedUsersEmpty => '暂无屏蔽用户';
+
+  @override
+  String blockedUsersUnblockTitle(String name) {
+    return '取消屏蔽 $name';
+  }
+
+  @override
+  String get blockedUsersUnblockBody => '取消屏蔽后可再次相遇,消息也会显示。';
+
+  @override
+  String get blockedUsersUnblockConfirm => '取消屏蔽';
+
+  @override
+  String get activityTitle => '活动分析';
+
+  @override
+  String get activityCatMeetup => '🎉 相遇';
+
+  @override
+  String get activityCatFriend => '🤝 好友';
+
+  @override
+  String get activityCatRoomJoined => '🚪 加入房间';
+
+  @override
+  String get activityCatPlaceShared => '📍 位置分享';
+
+  @override
+  String get activityCatDestination => '🎯 目的地';
+
+  @override
+  String get activityAgoJust => '刚刚';
+
+  @override
+  String activityAgoMin(int min) {
+    return '$min 分钟前';
+  }
+
+  @override
+  String activityAgoHour(int hour) {
+    return '$hour 小时前';
+  }
+
+  @override
+  String activityAgoDay(int day) {
+    return '$day 天前';
+  }
+
+  @override
+  String get activityRanking => '好友排名';
+
+  @override
+  String get activityRecent => '最近活动';
+
+  @override
+  String get activityEmpty => '暂无活动记录';
+
+  @override
+  String activityCode(String code) {
+    return '代码 $code';
+  }
+
+  @override
+  String get activityThisWeek => '本周活动';
+
+  @override
+  String activityTotalCount(int count) {
+    return '共 $count 条';
+  }
+
+  @override
+  String get activityWeekdayMon => '一';
+
+  @override
+  String get activityWeekdayTue => '二';
+
+  @override
+  String get activityWeekdayWed => '三';
+
+  @override
+  String get activityWeekdayThu => '四';
+
+  @override
+  String get activityWeekdayFri => '五';
+
+  @override
+  String get activityWeekdaySat => '六';
+
+  @override
+  String get activityWeekdaySun => '日';
+
+  @override
+  String get peerNowPlayingBtnFriend => '已是好友 ✓';
+
+  @override
+  String get peerNowPlayingBtnRequested => '已申请';
+
+  @override
+  String get peerNowPlayingBtnAccept => '接受好友申请';
+
+  @override
+  String get peerNowPlayingBtnSendRequest => '发送好友申请';
+
+  @override
+  String get peerNowPlayingOpenInSpotify => '在 Spotify 中收听';
 
   @override
   String get mapNoLocationPermission => '没有位置权限,好友看不到我的图钉。请在 设置 → 位置 中允许。';

@@ -48,17 +48,11 @@ class AppL10nEn extends AppL10n {
   String get languageZh => '简体中文';
 
   @override
-  String get languageChangedTitle => 'Language changed';
+  String get languageChangedTitle => 'Language saved';
 
   @override
   String get languageChangedBody =>
-      'Restart the app to fully apply the new language. Restart now?';
-
-  @override
-  String get languageRestartNow => 'Restart';
-
-  @override
-  String get languageRestartLater => 'Later';
+      'To fully apply the new language, please close the app (swipe up from the app switcher) and reopen it.';
 
   @override
   String get routeUnitHour => 'h';
@@ -240,6 +234,34 @@ class AppL10nEn extends AppL10n {
   @override
   String get whatsNewPage8Body =>
       'Toggle notifications by type,\nshare your location with only certain groups.\nSafety and privacy stay with you.';
+
+  @override
+  String get whatsNewPage9Title => 'Routes, end to end';
+
+  @override
+  String get whatsNewPage9Body =>
+      'Subway, bus, and walking — all in one.\nTransfers, live arrivals, and station exits\nshow up where you need them.';
+
+  @override
+  String get whatsNewPage10Title => 'Day plans, made for you';
+
+  @override
+  String get whatsNewPage10Body =>
+      'Turn your saved places into a day.\nEfficient, leisurely, or food-focused —\npick a style and go.';
+
+  @override
+  String get whatsNewPage11Title => 'Speaks your language';
+
+  @override
+  String get whatsNewPage11Body =>
+      'Korean, English, Japanese, Chinese.\nThe AI assistant replies in the same.\nIt follows your device language.';
+
+  @override
+  String get whatsNewPage12Title => 'Just ask out loud';
+
+  @override
+  String get whatsNewPage12Body =>
+      'Talk to the AI naturally.\nSearch, navigate, get picks — by voice.\nGemini Live listens and answers live.';
 
   @override
   String get profileCategoryFavorites => 'Favorites';
@@ -898,15 +920,15 @@ class AppL10nEn extends AppL10n {
   String get settingsThemeDark => 'Dark';
 
   @override
-  String get settingsThemeChangedTitle => 'Theme changed';
+  String get settingsThemeChangedTitle => 'Theme saved';
 
   @override
   String settingsThemeChangedBody(String theme) {
-    return 'Restart to fully apply $theme mode. Restart now?';
+    return 'To fully apply $theme mode, please close the app (swipe up from the app switcher) and reopen it.';
   }
 
   @override
-  String get settingsRestartConfirm => 'Restart';
+  String get settingsRestartConfirm => 'OK';
 
   @override
   String get settingsMapHome => 'Map home start';
@@ -2102,6 +2124,466 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get searchCloseTooltip => 'Close directions';
+
+  @override
+  String get searchPlaceholder => 'Search places · bus · subway';
+
+  @override
+  String get searchClearLabel => 'Clear search';
+
+  @override
+  String get searchRecentTitle => 'Recent searches';
+
+  @override
+  String get searchRecentClearAll => 'Clear all';
+
+  @override
+  String get searchRecentRoutesTitle => 'Recent directions';
+
+  @override
+  String get searchBusTypeTrunk => 'Trunk';
+
+  @override
+  String get searchBusTypeBranch => 'Branch';
+
+  @override
+  String get searchBusTypeCircular => 'Circular';
+
+  @override
+  String get searchBusTypeMetro => 'Metro';
+
+  @override
+  String get searchBusTypeIncheon => 'Incheon';
+
+  @override
+  String get searchBusTypeGyeonggi => 'Gyeonggi';
+
+  @override
+  String get searchBusTypeDefault => 'Bus';
+
+  @override
+  String get searchCatFood => 'Food';
+
+  @override
+  String get searchCatCafe => 'Café';
+
+  @override
+  String get searchCatPark => 'Park';
+
+  @override
+  String get searchCatShopping => 'Shopping';
+
+  @override
+  String get searchCatMedical => 'Medical';
+
+  @override
+  String get searchCatEducation => 'Education';
+
+  @override
+  String get searchCatLodging => 'Lodging';
+
+  @override
+  String get searchCatFinance => 'Finance';
+
+  @override
+  String get searchCatTransit => 'Transit';
+
+  @override
+  String get searchCatAddress => 'Address';
+
+  @override
+  String get searchCatCity => 'City';
+
+  @override
+  String get searchCatNeighborhood => 'Neighborhood';
+
+  @override
+  String get searchCatRoad => 'Road';
+
+  @override
+  String liveBadgePeerTrack(String nickname, String track) {
+    return '$nickname is listening to $track';
+  }
+
+  @override
+  String liveBadgeSharing(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'people',
+      one: 'person',
+    );
+    return 'Sharing with $count $_temp0';
+  }
+
+  @override
+  String get liveBadgeStopped => 'Stopped location sharing';
+
+  @override
+  String get seoulLiveStartTitle => 'Seoul Live started';
+
+  @override
+  String get seoulLiveStartBody => 'Your map just expanded to the world.';
+
+  @override
+  String get seoulLiveStep2Title => 'Your friends\' pins appear on the map';
+
+  @override
+  String get seoulLiveStep2Body =>
+      'Members of the same friend room show up as pins (nickname + emoji) in real time. Their pin moves as they move.';
+
+  @override
+  String get seoulLiveStep3Title => 'Meet up by friend room code';
+
+  @override
+  String get seoulLiveStep3Body =>
+      'Open Profile → Seoul Live → Friend Room to create a new room or join with a 6-digit invite code. Capacity is 8.';
+
+  @override
+  String get seoulLiveStep4Title => 'Meetup alerts within 50m';
+
+  @override
+  String get seoulLiveStep4Body =>
+      'Haptics and a notification fire when you get close. Auto-logged to chat.';
+
+  @override
+  String get seoulLiveStep5Title => 'Go private anytime';
+
+  @override
+  String get seoulLiveStep5Body =>
+      'Tap the \"Sharing\" badge at the top to switch to ghost mode instantly. Leaving a friend room also stops sending.';
+
+  @override
+  String get seoulLivePermTitle => 'Get notifications';
+
+  @override
+  String get seoulLivePermBody =>
+      'We\'ll send a push when friend requests, new messages, or meetups happen. Tap \"Allow\" below.';
+
+  @override
+  String get seoulLivePermAllowed => '✓ Notifications allowed';
+
+  @override
+  String get seoulLivePermDenied => 'Denied — you can allow it from Settings';
+
+  @override
+  String get seoulLivePermRequesting => 'Requesting…';
+
+  @override
+  String get seoulLivePermAllow => 'Allow notifications';
+
+  @override
+  String get roomMembersEmpty => 'No one nearby yet';
+
+  @override
+  String roomMembersWithCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'friends',
+      one: 'friend',
+    );
+    return '$count $_temp0 here';
+  }
+
+  @override
+  String get roomMembersGhost => 'Private';
+
+  @override
+  String get roomMembersDisconnected => 'Disconnected';
+
+  @override
+  String get roomMembersRealtime => 'Live';
+
+  @override
+  String get roomMembersStale => 'Briefly out';
+
+  @override
+  String get dmListAgoJust => 'Now';
+
+  @override
+  String dmListAgoMin(int min) {
+    return '${min}m';
+  }
+
+  @override
+  String dmListAgoHour(int hour) {
+    return '${hour}h';
+  }
+
+  @override
+  String dmListAgoDay(int day) {
+    return '${day}d';
+  }
+
+  @override
+  String get dmListKindVoice => '🎙 Voice';
+
+  @override
+  String get dmListKindImage => '🖼 Photo';
+
+  @override
+  String get dmListKindPlace => '📍 Place';
+
+  @override
+  String get dmListKindSpotify => '🎵 Track';
+
+  @override
+  String get dmListEmpty => 'No DMs yet';
+
+  @override
+  String get dmListEmptyHint =>
+      'Open a friend and tap the message button to start';
+
+  @override
+  String get friendGroupsNewTitle => 'New group';
+
+  @override
+  String get friendGroupsNewTooltip => 'New group';
+
+  @override
+  String get friendGroupsEmpty => 'No groups yet';
+
+  @override
+  String get friendGroupsEmptyHint => 'Tap + above to group your friends';
+
+  @override
+  String get friendGroupsEmptyHintAlt =>
+      'Create a group with + in the top-right to organize friends.';
+
+  @override
+  String get friendGroupsNamePlaceholder => 'e.g. Family, Work, Club';
+
+  @override
+  String get friendGroupsCreate => 'Create';
+
+  @override
+  String get friendGroupsCreated => 'Group created';
+
+  @override
+  String friendGroupsFailure(String error) {
+    return 'Failed: $error';
+  }
+
+  @override
+  String friendGroupsDeleteTitle(String emoji, String name) {
+    return 'Delete $emoji $name';
+  }
+
+  @override
+  String get friendGroupsDeleteBody =>
+      'The group is deleted but friends are kept.';
+
+  @override
+  String get friendGroupsDelete => 'Delete';
+
+  @override
+  String get friendGroupsName => 'Name';
+
+  @override
+  String get friendGroupsIcon => 'Icon';
+
+  @override
+  String friendGroupsMemberCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'members',
+      one: 'member',
+    );
+    return '$count $_temp0';
+  }
+
+  @override
+  String get friendGroupsNoFriendsPrompt => 'Add friends first.';
+
+  @override
+  String get friendGroupsVisibilityHint =>
+      'Used for group-based visibility / chat';
+
+  @override
+  String friendGroupsMembersTitle(String emoji, String name) {
+    return '$emoji $name members';
+  }
+
+  @override
+  String get friendGroupsEditMembers => 'Edit members';
+
+  @override
+  String get friendGroupsEmptyFriendsBox => 'No friends yet';
+
+  @override
+  String get loginRequiredTitle => 'Sign-in required';
+
+  @override
+  String get loginRequiredBody =>
+      'Multiplayer is for signed-in users only.\nGuest (anonymous) accounts auto-delete after 30 days of inactivity,\nso friend/room data may be lost.';
+
+  @override
+  String get loginRequiredCta => 'Sign in';
+
+  @override
+  String get reportReasonSpam => 'Spam / Ads';
+
+  @override
+  String get reportReasonHate => 'Abuse / hate speech';
+
+  @override
+  String get reportReasonSexual => 'Sexual / disturbing content';
+
+  @override
+  String get reportReasonHarass => 'Harassment / stalking';
+
+  @override
+  String get reportReasonFakeLocation => 'Fake location / impersonation';
+
+  @override
+  String get reportReasonMinorAbuse => 'Minor safety violation';
+
+  @override
+  String get reportReasonOther => 'Other';
+
+  @override
+  String get reportSelectReason => 'Please pick a reason.';
+
+  @override
+  String get reportSubmitted => 'Report received. Reviewed within 24h.';
+
+  @override
+  String reportTitleUser(String label) {
+    return 'Report $label';
+  }
+
+  @override
+  String get reportTitleMessage => 'Report message';
+
+  @override
+  String get reportNote =>
+      'Our ops team reviews and takes action within 24 hours.';
+
+  @override
+  String get reportExtraPlaceholder => 'Add details (optional)';
+
+  @override
+  String get reportSubmit => 'Submit report';
+
+  @override
+  String get reportSubmitting => 'Sending…';
+
+  @override
+  String get reportFallbackUser => 'user';
+
+  @override
+  String get blockedUsersTitle => 'Blocked';
+
+  @override
+  String get blockedUsersEmpty => 'No blocked users';
+
+  @override
+  String blockedUsersUnblockTitle(String name) {
+    return 'Unblock $name';
+  }
+
+  @override
+  String get blockedUsersUnblockBody =>
+      'Unblocking lets you meet them again and see their messages.';
+
+  @override
+  String get blockedUsersUnblockConfirm => 'Unblock';
+
+  @override
+  String get activityTitle => 'Activity';
+
+  @override
+  String get activityCatMeetup => '🎉 Meetup';
+
+  @override
+  String get activityCatFriend => '🤝 Friend';
+
+  @override
+  String get activityCatRoomJoined => '🚪 Room joined';
+
+  @override
+  String get activityCatPlaceShared => '📍 Place shared';
+
+  @override
+  String get activityCatDestination => '🎯 Destination';
+
+  @override
+  String get activityAgoJust => 'Now';
+
+  @override
+  String activityAgoMin(int min) {
+    return '$min min ago';
+  }
+
+  @override
+  String activityAgoHour(int hour) {
+    return '${hour}h ago';
+  }
+
+  @override
+  String activityAgoDay(int day) {
+    return '${day}d ago';
+  }
+
+  @override
+  String get activityRanking => 'Friend ranking';
+
+  @override
+  String get activityRecent => 'Recent activity';
+
+  @override
+  String get activityEmpty => 'No activity recorded yet';
+
+  @override
+  String activityCode(String code) {
+    return 'Code $code';
+  }
+
+  @override
+  String get activityThisWeek => 'This week\'s activity';
+
+  @override
+  String activityTotalCount(int count) {
+    return '$count total';
+  }
+
+  @override
+  String get activityWeekdayMon => 'Mon';
+
+  @override
+  String get activityWeekdayTue => 'Tue';
+
+  @override
+  String get activityWeekdayWed => 'Wed';
+
+  @override
+  String get activityWeekdayThu => 'Thu';
+
+  @override
+  String get activityWeekdayFri => 'Fri';
+
+  @override
+  String get activityWeekdaySat => 'Sat';
+
+  @override
+  String get activityWeekdaySun => 'Sun';
+
+  @override
+  String get peerNowPlayingBtnFriend => 'Friends ✓';
+
+  @override
+  String get peerNowPlayingBtnRequested => 'Requested';
+
+  @override
+  String get peerNowPlayingBtnAccept => 'Accept request';
+
+  @override
+  String get peerNowPlayingBtnSendRequest => 'Send friend request';
+
+  @override
+  String get peerNowPlayingOpenInSpotify => 'Open in Spotify';
 
   @override
   String get mapNoLocationPermission =>
