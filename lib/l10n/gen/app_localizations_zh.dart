@@ -2051,4 +2051,384 @@ class AppL10nZh extends AppL10n {
 
   @override
   String get searchCloseTooltip => '关闭导航';
+
+  @override
+  String get mapNoLocationPermission => '没有位置权限,好友看不到我的图钉。请在 设置 → 位置 中允许。';
+
+  @override
+  String get mapLeftRoom => '已退出好友房间';
+
+  @override
+  String mapShowOnMap(String name) {
+    return '在地图查看 \"$name\"';
+  }
+
+  @override
+  String mapBuildingInside(String name) {
+    return '🏢 你正在 $name 内';
+  }
+
+  @override
+  String get mapLocationChecking => '正在确认位置……';
+
+  @override
+  String get mapLocationPermissionDenied =>
+      '位置权限被拒绝 → iOS 设置 → Seoul Vista → 位置';
+
+  @override
+  String get mapLocationServiceOff => 'iOS 设置 → 隐私 → 位置服务 已关闭';
+
+  @override
+  String get mapMyLocationMoved => '已移动到我的位置';
+
+  @override
+  String mapLocationFetchFailed(String error) {
+    return '获取位置失败:$error';
+  }
+
+  @override
+  String get mapMapAppUnavailable => '无法打开地图应用';
+
+  @override
+  String get mapTabRecommend => '推荐';
+
+  @override
+  String get mapTabSave => '保存';
+
+  @override
+  String get mapTabMap => '地图';
+
+  @override
+  String get mapTabWorld => '世界';
+
+  @override
+  String get mapTabTrip => '旅行';
+
+  @override
+  String get mapDirectionsRoadFetching => '正在加载驾车路线……';
+
+  @override
+  String get mapDirectionsWalkFetching => '正在加载步行路线……';
+
+  @override
+  String get mapNoCoords => '未能找到出发/到达坐标';
+
+  @override
+  String get mapDirectionsFailed => '未能加载路线';
+
+  @override
+  String mapInsufficientSavedPlaces(int min) {
+    return '需要更多地点 — 收藏/访问记录达到 $min 个以上将自动生成路线';
+  }
+
+  @override
+  String get subwayPanelExpand => '展开面板';
+
+  @override
+  String get subwayPanelCollapse => '收起面板';
+
+  @override
+  String subwayPanelDelayedTrains(int count) {
+    return '延误列车 $count 列';
+  }
+
+  @override
+  String subwayPanelMinutes(int min) {
+    return '$min 分钟';
+  }
+
+  @override
+  String subwayPanelOthersCount(int count) {
+    return '另外 $count 列……';
+  }
+
+  @override
+  String get subwayPanelOffTapToStart => 'OFF — 点击开始';
+
+  @override
+  String get subwayPanelMode => '模式';
+
+  @override
+  String get subwayPanelDemoLabel => '演示 (不使用 API)';
+
+  @override
+  String get subwayPanelLiveLabel => '实时';
+
+  @override
+  String get subwayPanelTrainsLabel => '列车数';
+
+  @override
+  String subwayPanelTrainsValue(int count) {
+    return '$count 列';
+  }
+
+  @override
+  String get subwayPanelUpdate => '更新';
+
+  @override
+  String get subwayPanelToggleRoutes => '线路';
+
+  @override
+  String get subwayPanelToggleTrains => '列车位置';
+
+  @override
+  String get subwayPanelToggleStations => '站点';
+
+  @override
+  String get subwayPanelToggleCongestion => '拥挤度';
+
+  @override
+  String get subwayPanelRouteFilter => '线路筛选';
+
+  @override
+  String get subwayPanelAll => '全部';
+
+  @override
+  String get subwayPanelToggleOn => '开启地铁可视化';
+
+  @override
+  String get subwayPanelToggleOff => '关闭地铁可视化';
+
+  @override
+  String get subwayPanelNoArrivalInfo => '无到达信息';
+
+  @override
+  String subwayPanelTrainDirection(String destination, String type) {
+    return '开往 $destination · $type';
+  }
+
+  @override
+  String get subwayPanelCloseDetail => '关闭列车详情';
+
+  @override
+  String subwayPanelTrainNo(String no) {
+    return '列车 #$no';
+  }
+
+  @override
+  String subwayPanelDelayedBadge(int min) {
+    return '延误 $min 分钟';
+  }
+
+  @override
+  String get subwayPanelLastTrainBadge => '末班车';
+
+  @override
+  String subwayPanelTerminalDestination(String terminal) {
+    return '开往 $terminal';
+  }
+
+  @override
+  String get subwayPanelPrevStation => '上一站';
+
+  @override
+  String get subwayPanelDepartureStation => '起点站';
+
+  @override
+  String get subwayPanelCurrentStation => '当前站';
+
+  @override
+  String get subwayPanelNextStation => '下一站';
+
+  @override
+  String get subwayPanelStateArriving => '即将到达';
+
+  @override
+  String get subwayPanelStateStopped => '停车中';
+
+  @override
+  String get subwayPanelStateDeparted => '已出发';
+
+  @override
+  String get subwayPanelStateMoving => '行驶中';
+
+  @override
+  String get subwayPanelStateOperating => '运营中';
+
+  @override
+  String get subwayPanelDirInnerLoop => '内环';
+
+  @override
+  String get subwayPanelDirOuterLoop => '外环';
+
+  @override
+  String get subwayPanelDirUp => '上行';
+
+  @override
+  String get subwayPanelDirDown => '下行';
+
+  @override
+  String get subwayPanelTrainTypeExpress => '急行';
+
+  @override
+  String get subwayPanelTrainTypeSpecial => '特快';
+
+  @override
+  String get subwayPanelTrainTypeRegular => '普通';
+
+  @override
+  String get searchTileSubway => '地铁';
+
+  @override
+  String get profileEditNicknameInvalid => '昵称请输入 1~20 个字符。';
+
+  @override
+  String get profileEditBirthInvalid => '请准确输入出生年份 (YYYY)。';
+
+  @override
+  String get profileEditAgeRestriction => '14 岁以下无法使用多人功能。';
+
+  @override
+  String get profileEditTitle => '资料设置';
+
+  @override
+  String get profileEditSubtitle => '决定在房间里向他人显示的样子。';
+
+  @override
+  String get profileEditNicknameLabel => '昵称 (允许重复)';
+
+  @override
+  String get profileEditNicknamePlaceholder => '例如:首尔探险家';
+
+  @override
+  String get profileEditBirthLabel => '出生年份 (满 14 岁以上)';
+
+  @override
+  String get profileEditBirthPlaceholder => '例如:2000';
+
+  @override
+  String get profileEditEmojiLabel => '图钉表情';
+
+  @override
+  String get profileEditColorLabel => '图钉颜色';
+
+  @override
+  String get profileEditVisibilityLabel => '位置公开范围';
+
+  @override
+  String get profileEditVisibilityGhost => '隐身';
+
+  @override
+  String get profileEditVisibilityFriends => '房间';
+
+  @override
+  String get profileEditVisibilityGroup => '仅分组';
+
+  @override
+  String get profileEditVisibilityPublic => '公开';
+
+  @override
+  String get profileEditSaving => '保存中……';
+
+  @override
+  String get profileEditSave => '保存';
+
+  @override
+  String get profileEditPublicDialogTitle => '切换到公开';
+
+  @override
+  String get profileEditPublicDialogBody =>
+      '你的位置将实时显示给所有 Seoul Live 用户,包括陌生人。\n\n• 请注意不当相遇/跟踪风险\n• 随时可恢复为隐身/房间\n• 屏蔽/举报可在好友资料或聊天菜单中操作';
+
+  @override
+  String get profileEditPublicDialogConfirm => '继续';
+
+  @override
+  String get profileEditVisibilityGhostDesc => '不发送位置。也看不到其他人的位置。';
+
+  @override
+  String get profileEditVisibilityFriendsDesc => '仅在房间里时,同房成员可见你的位置。';
+
+  @override
+  String get profileEditVisibilityGroupDesc => '只有所选分组的好友能看到你的位置。';
+
+  @override
+  String get profileEditVisibilityPublicDesc =>
+      '⚠️ 任何 Seoul Live 用户都能看到你的位置。房间里也会同样发送。';
+
+  @override
+  String get profileEditNoGroups => '暂无分组。请在 好友 → 分组 中创建。';
+
+  @override
+  String get adminMonitorTitle => '运营监控';
+
+  @override
+  String get adminRefresh => '刷新';
+
+  @override
+  String get adminTabMetrics => '指标';
+
+  @override
+  String get adminTabAbuse => '滥用';
+
+  @override
+  String get adminTabReports => '举报';
+
+  @override
+  String get adminMetricAllProfiles => '全部资料';
+
+  @override
+  String get adminMetricActiveRooms => '活跃房间';
+
+  @override
+  String get adminMetricTodayMeetups => '今日相遇';
+
+  @override
+  String get adminMetricTodayBlocks => '今日屏蔽';
+
+  @override
+  String get adminMetricTodayReports => '今日举报';
+
+  @override
+  String get adminNoSuspiciousSignals => '无可疑信号 (24 小时内被 3 次以上屏蔽的用户 X)';
+
+  @override
+  String adminRecentBlockCount(int count) {
+    return '24h 内被 $count 人屏蔽';
+  }
+
+  @override
+  String get adminReportStatusPending => '待处理';
+
+  @override
+  String get adminReportStatusReviewed => '已审核';
+
+  @override
+  String get adminReportStatusActioned => '已处理';
+
+  @override
+  String get adminReportStatusDismissed => '已驳回';
+
+  @override
+  String get adminNoReports => '暂无举报';
+
+  @override
+  String get adminReportTypeMessage => '消息举报';
+
+  @override
+  String get adminReportTypeUser => '用户举报';
+
+  @override
+  String get adminReportActionReview => '审核';
+
+  @override
+  String get adminReportActionAction => '处理';
+
+  @override
+  String get adminReportActionDismiss => '驳回';
+
+  @override
+  String adminAgoMin(int min) {
+    return '$min 分钟前';
+  }
+
+  @override
+  String adminAgoHour(int hour) {
+    return '$hour 小时前';
+  }
+
+  @override
+  String adminAgoDay(int day) {
+    return '$day 天前';
+  }
 }

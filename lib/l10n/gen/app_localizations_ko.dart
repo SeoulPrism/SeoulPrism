@@ -2063,4 +2063,388 @@ class AppL10nKo extends AppL10n {
 
   @override
   String get searchCloseTooltip => '길찾기 닫기';
+
+  @override
+  String get mapNoLocationPermission =>
+      '위치 권한이 없어서 친구가 내 핀을 못 봐요. 설정 → 위치 에서 허용해주세요.';
+
+  @override
+  String get mapLeftRoom => '친구방에서 나가졌어요';
+
+  @override
+  String mapShowOnMap(String name) {
+    return '지도에서 \"$name\" 보기';
+  }
+
+  @override
+  String mapBuildingInside(String name) {
+    return '🏢 $name 안에 있어요';
+  }
+
+  @override
+  String get mapLocationChecking => '위치 확인 중...';
+
+  @override
+  String get mapLocationPermissionDenied =>
+      '위치 권한 거부됨 → iOS 설정 → Seoul Vista → 위치';
+
+  @override
+  String get mapLocationServiceOff => 'iOS 설정 → 개인정보 → 위치 서비스 가 꺼져있어요';
+
+  @override
+  String get mapMyLocationMoved => '내 위치로 이동했어요';
+
+  @override
+  String mapLocationFetchFailed(String error) {
+    return '위치 가져오기 실패: $error';
+  }
+
+  @override
+  String get mapMapAppUnavailable => '지도 앱을 열 수 없어요';
+
+  @override
+  String get mapTabRecommend => '추천';
+
+  @override
+  String get mapTabSave => '저장';
+
+  @override
+  String get mapTabMap => '지도';
+
+  @override
+  String get mapTabWorld => '세계';
+
+  @override
+  String get mapTabTrip => '여행';
+
+  @override
+  String get mapDirectionsRoadFetching => '자동차 경로 불러오는 중...';
+
+  @override
+  String get mapDirectionsWalkFetching => '도보 경로 불러오는 중...';
+
+  @override
+  String get mapNoCoords => '출발/도착 좌표를 찾을 수 없어요';
+
+  @override
+  String get mapDirectionsFailed => '경로를 불러오지 못했어요';
+
+  @override
+  String mapInsufficientSavedPlaces(int min) {
+    return '장소가 더 필요해요 — 즐겨찾기/방문 기록 $min곳 이상이면 자동 생성돼요';
+  }
+
+  @override
+  String get subwayPanelExpand => '패널 펼치기';
+
+  @override
+  String get subwayPanelCollapse => '패널 접기';
+
+  @override
+  String subwayPanelDelayedTrains(int count) {
+    return '지연 열차 $count대';
+  }
+
+  @override
+  String subwayPanelMinutes(int min) {
+    return '$min분';
+  }
+
+  @override
+  String subwayPanelOthersCount(int count) {
+    return '외 $count대...';
+  }
+
+  @override
+  String get subwayPanelOffTapToStart => 'OFF - 탭하여 시작';
+
+  @override
+  String get subwayPanelMode => '모드';
+
+  @override
+  String get subwayPanelDemoLabel => '데모 (API 미사용)';
+
+  @override
+  String get subwayPanelLiveLabel => '실시간';
+
+  @override
+  String get subwayPanelTrainsLabel => '열차 수';
+
+  @override
+  String subwayPanelTrainsValue(int count) {
+    return '$count대';
+  }
+
+  @override
+  String get subwayPanelUpdate => '갱신';
+
+  @override
+  String get subwayPanelToggleRoutes => '노선 경로';
+
+  @override
+  String get subwayPanelToggleTrains => '열차 위치';
+
+  @override
+  String get subwayPanelToggleStations => '역 표시';
+
+  @override
+  String get subwayPanelToggleCongestion => '혼잡도';
+
+  @override
+  String get subwayPanelRouteFilter => '노선 필터';
+
+  @override
+  String get subwayPanelAll => '전체';
+
+  @override
+  String get subwayPanelToggleOn => '지하철 시각화 켜기';
+
+  @override
+  String get subwayPanelToggleOff => '지하철 시각화 끄기';
+
+  @override
+  String get subwayPanelNoArrivalInfo => '도착 정보 없음';
+
+  @override
+  String subwayPanelTrainDirection(String destination, String type) {
+    return '$destination행 $type';
+  }
+
+  @override
+  String get subwayPanelCloseDetail => '열차 상세 닫기';
+
+  @override
+  String subwayPanelTrainNo(String no) {
+    return '열차 #$no';
+  }
+
+  @override
+  String subwayPanelDelayedBadge(int min) {
+    return '$min분 지연';
+  }
+
+  @override
+  String get subwayPanelLastTrainBadge => '막차';
+
+  @override
+  String subwayPanelTerminalDestination(String terminal) {
+    return '$terminal행';
+  }
+
+  @override
+  String get subwayPanelPrevStation => '이전역';
+
+  @override
+  String get subwayPanelDepartureStation => '출발역';
+
+  @override
+  String get subwayPanelCurrentStation => '현재역';
+
+  @override
+  String get subwayPanelNextStation => '다음역';
+
+  @override
+  String get subwayPanelStateArriving => '곧 도착';
+
+  @override
+  String get subwayPanelStateStopped => '정차중';
+
+  @override
+  String get subwayPanelStateDeparted => '출발';
+
+  @override
+  String get subwayPanelStateMoving => '이동중';
+
+  @override
+  String get subwayPanelStateOperating => '운행';
+
+  @override
+  String get subwayPanelDirInnerLoop => '내선 순환';
+
+  @override
+  String get subwayPanelDirOuterLoop => '외선 순환';
+
+  @override
+  String get subwayPanelDirUp => '상행';
+
+  @override
+  String get subwayPanelDirDown => '하행';
+
+  @override
+  String get subwayPanelTrainTypeExpress => '급행';
+
+  @override
+  String get subwayPanelTrainTypeSpecial => '특급';
+
+  @override
+  String get subwayPanelTrainTypeRegular => '보통';
+
+  @override
+  String get searchTileSubway => '지하철';
+
+  @override
+  String get profileEditNicknameInvalid => '닉네임은 1~20자로 입력해주세요.';
+
+  @override
+  String get profileEditBirthInvalid => '출생연도(YYYY) 를 정확히 입력해주세요.';
+
+  @override
+  String get profileEditAgeRestriction => '14세 미만은 멀티플레이를 이용할 수 없습니다.';
+
+  @override
+  String get profileEditTitle => '프로필 설정';
+
+  @override
+  String get profileEditSubtitle => '친구방에서 다른 사람에게 보여질 모습을 정해주세요.';
+
+  @override
+  String get profileEditNicknameLabel => '닉네임 (중복 허용)';
+
+  @override
+  String get profileEditNicknamePlaceholder => '예: 서울탐험가';
+
+  @override
+  String get profileEditBirthLabel => '출생연도 (만 14세 이상만 가입)';
+
+  @override
+  String get profileEditBirthPlaceholder => '예: 2000';
+
+  @override
+  String get profileEditEmojiLabel => '핀 이모지';
+
+  @override
+  String get profileEditColorLabel => '핀 색상';
+
+  @override
+  String get profileEditVisibilityLabel => '위치 공개 범위';
+
+  @override
+  String get profileEditVisibilityGhost => '비공개';
+
+  @override
+  String get profileEditVisibilityFriends => '친구방';
+
+  @override
+  String get profileEditVisibilityGroup => '그룹만';
+
+  @override
+  String get profileEditVisibilityPublic => '전체';
+
+  @override
+  String get profileEditSaving => '저장 중...';
+
+  @override
+  String get profileEditSave => '저장';
+
+  @override
+  String get profileEditPublicDialogTitle => '전체 공개로 전환';
+
+  @override
+  String get profileEditPublicDialogBody =>
+      '내 위치가 모르는 사람을 포함한 모든 Seoul Live 사용자에게 실시간으로 보여집니다.\n\n• 부적절한 만남 / 스토킹 위험에 유의하세요\n• 언제든 비공개/친구방으로 되돌릴 수 있어요\n• 차단/신고는 친구 프로필 또는 채팅 메뉴에서';
+
+  @override
+  String get profileEditPublicDialogConfirm => '계속';
+
+  @override
+  String get profileEditVisibilityGhostDesc =>
+      '위치를 보내지 않습니다. 다른 사람의 위치도 볼 수 없어요.';
+
+  @override
+  String get profileEditVisibilityFriendsDesc =>
+      '친구방에 입장한 동안만 같은 방 멤버에게 위치가 보여요.';
+
+  @override
+  String get profileEditVisibilityGroupDesc =>
+      '아래에서 선택한 그룹의 친구만 내 위치를 볼 수 있어요.';
+
+  @override
+  String get profileEditVisibilityPublicDesc =>
+      '⚠️ Seoul Live 사용자 누구나 내 위치를 볼 수 있어요. 친구방에서도 동일하게 송신돼요.';
+
+  @override
+  String get profileEditNoGroups => '그룹이 없어요. 친구 → 그룹 에서 만들어주세요.';
+
+  @override
+  String get adminMonitorTitle => '운영 모니터';
+
+  @override
+  String get adminRefresh => '새로고침';
+
+  @override
+  String get adminTabMetrics => '지표';
+
+  @override
+  String get adminTabAbuse => '어뷰즈';
+
+  @override
+  String get adminTabReports => '신고';
+
+  @override
+  String get adminMetricAllProfiles => '전체 프로필';
+
+  @override
+  String get adminMetricActiveRooms => '활성 친구방';
+
+  @override
+  String get adminMetricTodayMeetups => '오늘 만남';
+
+  @override
+  String get adminMetricTodayBlocks => '오늘 차단';
+
+  @override
+  String get adminMetricTodayReports => '오늘 신고';
+
+  @override
+  String get adminNoSuspiciousSignals => '의심 신호 없음 (24시간 내 3건 이상 차단당한 사용자 X)';
+
+  @override
+  String adminRecentBlockCount(int count) {
+    return '24h 내 $count명에게 차단됨';
+  }
+
+  @override
+  String get adminReportStatusPending => '대기';
+
+  @override
+  String get adminReportStatusReviewed => '검토됨';
+
+  @override
+  String get adminReportStatusActioned => '조치됨';
+
+  @override
+  String get adminReportStatusDismissed => '기각';
+
+  @override
+  String get adminNoReports => '표시할 신고가 없어요';
+
+  @override
+  String get adminReportTypeMessage => '메시지 신고';
+
+  @override
+  String get adminReportTypeUser => '사용자 신고';
+
+  @override
+  String get adminReportActionReview => '검토';
+
+  @override
+  String get adminReportActionAction => '조치';
+
+  @override
+  String get adminReportActionDismiss => '기각';
+
+  @override
+  String adminAgoMin(int min) {
+    return '$min분 전';
+  }
+
+  @override
+  String adminAgoHour(int hour) {
+    return '$hour시간 전';
+  }
+
+  @override
+  String adminAgoDay(int day) {
+    return '$day일 전';
+  }
 }

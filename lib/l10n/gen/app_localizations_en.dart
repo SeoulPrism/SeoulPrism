@@ -2102,4 +2102,394 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get searchCloseTooltip => 'Close directions';
+
+  @override
+  String get mapNoLocationPermission =>
+      'Without location permission, friends can\'t see your pin. Open Settings → Location to allow.';
+
+  @override
+  String get mapLeftRoom => 'You left the friend room';
+
+  @override
+  String mapShowOnMap(String name) {
+    return 'Show \"$name\" on the map';
+  }
+
+  @override
+  String mapBuildingInside(String name) {
+    return '🏢 You\'re inside $name';
+  }
+
+  @override
+  String get mapLocationChecking => 'Locating…';
+
+  @override
+  String get mapLocationPermissionDenied =>
+      'Location permission denied → iOS Settings → Seoul Vista → Location';
+
+  @override
+  String get mapLocationServiceOff =>
+      'iOS Settings → Privacy → Location services is off';
+
+  @override
+  String get mapMyLocationMoved => 'Moved to your location';
+
+  @override
+  String mapLocationFetchFailed(String error) {
+    return 'Couldn\'t get location: $error';
+  }
+
+  @override
+  String get mapMapAppUnavailable => 'Couldn\'t open the maps app';
+
+  @override
+  String get mapTabRecommend => 'Explore';
+
+  @override
+  String get mapTabSave => 'Saved';
+
+  @override
+  String get mapTabMap => 'Map';
+
+  @override
+  String get mapTabWorld => 'World';
+
+  @override
+  String get mapTabTrip => 'Trip';
+
+  @override
+  String get mapDirectionsRoadFetching => 'Loading driving route…';
+
+  @override
+  String get mapDirectionsWalkFetching => 'Loading walking route…';
+
+  @override
+  String get mapNoCoords => 'Couldn\'t find start/end coordinates';
+
+  @override
+  String get mapDirectionsFailed => 'Couldn\'t load the route';
+
+  @override
+  String mapInsufficientSavedPlaces(int min) {
+    return 'Need more places — once favorites/visits reach $min+, a course is generated automatically';
+  }
+
+  @override
+  String get subwayPanelExpand => 'Expand panel';
+
+  @override
+  String get subwayPanelCollapse => 'Collapse panel';
+
+  @override
+  String subwayPanelDelayedTrains(int count) {
+    return 'Delayed trains $count';
+  }
+
+  @override
+  String subwayPanelMinutes(int min) {
+    return '$min min';
+  }
+
+  @override
+  String subwayPanelOthersCount(int count) {
+    return 'and $count more…';
+  }
+
+  @override
+  String get subwayPanelOffTapToStart => 'OFF — tap to start';
+
+  @override
+  String get subwayPanelMode => 'Mode';
+
+  @override
+  String get subwayPanelDemoLabel => 'Demo (no API)';
+
+  @override
+  String get subwayPanelLiveLabel => 'Live';
+
+  @override
+  String get subwayPanelTrainsLabel => 'Trains';
+
+  @override
+  String subwayPanelTrainsValue(int count) {
+    return '$count';
+  }
+
+  @override
+  String get subwayPanelUpdate => 'Updated';
+
+  @override
+  String get subwayPanelToggleRoutes => 'Routes';
+
+  @override
+  String get subwayPanelToggleTrains => 'Train positions';
+
+  @override
+  String get subwayPanelToggleStations => 'Stations';
+
+  @override
+  String get subwayPanelToggleCongestion => 'Congestion';
+
+  @override
+  String get subwayPanelRouteFilter => 'Route filter';
+
+  @override
+  String get subwayPanelAll => 'All';
+
+  @override
+  String get subwayPanelToggleOn => 'Turn on subway visualization';
+
+  @override
+  String get subwayPanelToggleOff => 'Turn off subway visualization';
+
+  @override
+  String get subwayPanelNoArrivalInfo => 'No arrival info';
+
+  @override
+  String subwayPanelTrainDirection(String destination, String type) {
+    return '$destination · $type';
+  }
+
+  @override
+  String get subwayPanelCloseDetail => 'Close train detail';
+
+  @override
+  String subwayPanelTrainNo(String no) {
+    return 'Train #$no';
+  }
+
+  @override
+  String subwayPanelDelayedBadge(int min) {
+    return '$min min delay';
+  }
+
+  @override
+  String get subwayPanelLastTrainBadge => 'Last train';
+
+  @override
+  String subwayPanelTerminalDestination(String terminal) {
+    return 'To $terminal';
+  }
+
+  @override
+  String get subwayPanelPrevStation => 'Previous';
+
+  @override
+  String get subwayPanelDepartureStation => 'Departure';
+
+  @override
+  String get subwayPanelCurrentStation => 'Current';
+
+  @override
+  String get subwayPanelNextStation => 'Next';
+
+  @override
+  String get subwayPanelStateArriving => 'Arriving';
+
+  @override
+  String get subwayPanelStateStopped => 'Stopped';
+
+  @override
+  String get subwayPanelStateDeparted => 'Departed';
+
+  @override
+  String get subwayPanelStateMoving => 'Moving';
+
+  @override
+  String get subwayPanelStateOperating => 'In service';
+
+  @override
+  String get subwayPanelDirInnerLoop => 'Inner loop';
+
+  @override
+  String get subwayPanelDirOuterLoop => 'Outer loop';
+
+  @override
+  String get subwayPanelDirUp => 'Up';
+
+  @override
+  String get subwayPanelDirDown => 'Down';
+
+  @override
+  String get subwayPanelTrainTypeExpress => 'Express';
+
+  @override
+  String get subwayPanelTrainTypeSpecial => 'Special';
+
+  @override
+  String get subwayPanelTrainTypeRegular => 'Regular';
+
+  @override
+  String get searchTileSubway => 'Subway';
+
+  @override
+  String get profileEditNicknameInvalid =>
+      'Please enter a nickname (1–20 chars).';
+
+  @override
+  String get profileEditBirthInvalid =>
+      'Please enter a valid 4-digit birth year (YYYY).';
+
+  @override
+  String get profileEditAgeRestriction =>
+      'Multiplayer is not available for users under 14.';
+
+  @override
+  String get profileEditTitle => 'Edit profile';
+
+  @override
+  String get profileEditSubtitle => 'This is how others see you in rooms.';
+
+  @override
+  String get profileEditNicknameLabel => 'Nickname (duplicates allowed)';
+
+  @override
+  String get profileEditNicknamePlaceholder => 'e.g. SeoulExplorer';
+
+  @override
+  String get profileEditBirthLabel => 'Birth year (14+ only)';
+
+  @override
+  String get profileEditBirthPlaceholder => 'e.g. 2000';
+
+  @override
+  String get profileEditEmojiLabel => 'Pin emoji';
+
+  @override
+  String get profileEditColorLabel => 'Pin color';
+
+  @override
+  String get profileEditVisibilityLabel => 'Location visibility';
+
+  @override
+  String get profileEditVisibilityGhost => 'Private';
+
+  @override
+  String get profileEditVisibilityFriends => 'Room';
+
+  @override
+  String get profileEditVisibilityGroup => 'Groups only';
+
+  @override
+  String get profileEditVisibilityPublic => 'Public';
+
+  @override
+  String get profileEditSaving => 'Saving…';
+
+  @override
+  String get profileEditSave => 'Save';
+
+  @override
+  String get profileEditPublicDialogTitle => 'Switch to public';
+
+  @override
+  String get profileEditPublicDialogBody =>
+      'Your location becomes visible to all Seoul Live users in real time, including strangers.\n\n• Beware of inappropriate meetups / stalking risks\n• You can revert to Private/Room at any time\n• Block/report from the friend profile or chat menu';
+
+  @override
+  String get profileEditPublicDialogConfirm => 'Continue';
+
+  @override
+  String get profileEditVisibilityGhostDesc =>
+      'Your location isn\'t sent. You can\'t see others\' locations either.';
+
+  @override
+  String get profileEditVisibilityFriendsDesc =>
+      'Location is visible only to same-room members while you\'re in a room.';
+
+  @override
+  String get profileEditVisibilityGroupDesc =>
+      'Only friends in the groups you pick can see your location.';
+
+  @override
+  String get profileEditVisibilityPublicDesc =>
+      '⚠️ Any Seoul Live user can see your location. Also sent in rooms.';
+
+  @override
+  String get profileEditNoGroups =>
+      'No groups yet. Create one in Friends → Groups.';
+
+  @override
+  String get adminMonitorTitle => 'Ops monitor';
+
+  @override
+  String get adminRefresh => 'Refresh';
+
+  @override
+  String get adminTabMetrics => 'Metrics';
+
+  @override
+  String get adminTabAbuse => 'Abuse';
+
+  @override
+  String get adminTabReports => 'Reports';
+
+  @override
+  String get adminMetricAllProfiles => 'All profiles';
+
+  @override
+  String get adminMetricActiveRooms => 'Active rooms';
+
+  @override
+  String get adminMetricTodayMeetups => 'Meetups today';
+
+  @override
+  String get adminMetricTodayBlocks => 'Blocks today';
+
+  @override
+  String get adminMetricTodayReports => 'Reports today';
+
+  @override
+  String get adminNoSuspiciousSignals =>
+      'No suspicious signals (no user blocked by 3+ in 24h)';
+
+  @override
+  String adminRecentBlockCount(int count) {
+    return 'Blocked by $count in 24h';
+  }
+
+  @override
+  String get adminReportStatusPending => 'Pending';
+
+  @override
+  String get adminReportStatusReviewed => 'Reviewed';
+
+  @override
+  String get adminReportStatusActioned => 'Actioned';
+
+  @override
+  String get adminReportStatusDismissed => 'Dismissed';
+
+  @override
+  String get adminNoReports => 'No reports to show';
+
+  @override
+  String get adminReportTypeMessage => 'Message report';
+
+  @override
+  String get adminReportTypeUser => 'User report';
+
+  @override
+  String get adminReportActionReview => 'Review';
+
+  @override
+  String get adminReportActionAction => 'Action';
+
+  @override
+  String get adminReportActionDismiss => 'Dismiss';
+
+  @override
+  String adminAgoMin(int min) {
+    return '$min min ago';
+  }
+
+  @override
+  String adminAgoHour(int hour) {
+    return '${hour}h ago';
+  }
+
+  @override
+  String adminAgoDay(int day) {
+    return '${day}d ago';
+  }
 }

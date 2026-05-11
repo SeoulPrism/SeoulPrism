@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../models/bus_models.dart';
 import '../../models/subway_models.dart';
 import '../../services/place_search_service.dart';
@@ -82,9 +83,9 @@ class StationTile extends StatelessWidget {
               ShaderMask(
                 shaderCallback: (bounds) =>
                     LinearGradient(colors: allColors).createShader(bounds),
-                child: const Text(
-                  '지하철',
-                  style: TextStyle(
+                child: Text(
+                  AppL10n.of(context).searchTileSubway,
+                  style: const TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w800,
                     color: Colors.white,
@@ -135,7 +136,7 @@ class CurrentLocationTile extends StatelessWidget {
             const SizedBox(width: AppSpacing.md),
             Expanded(
               child: Text(
-                '내 위치',
+                AppL10n.of(context).chatMyLocation,
                 style: AppTypography.bodyMd.copyWith(
                   fontWeight: FontWeight.w600,
                   color: Theme.of(context).colorScheme.onSurface,

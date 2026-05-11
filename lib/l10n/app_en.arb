@@ -974,5 +974,176 @@
   "searchDepartureFieldHint": "From",
   "searchArrivalFieldHint": "To",
   "searchSwapDepArr": "Swap from/to",
-  "searchCloseTooltip": "Close directions"
+  "searchCloseTooltip": "Close directions",
+
+  "mapNoLocationPermission": "Without location permission, friends can't see your pin. Open Settings → Location to allow.",
+  "mapLeftRoom": "You left the friend room",
+  "mapShowOnMap": "Show \"{name}\" on the map",
+  "@mapShowOnMap": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "mapBuildingInside": "🏢 You're inside {name}",
+  "@mapBuildingInside": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "mapLocationChecking": "Locating…",
+  "mapLocationPermissionDenied": "Location permission denied → iOS Settings → Seoul Vista → Location",
+  "mapLocationServiceOff": "iOS Settings → Privacy → Location services is off",
+  "mapMyLocationMoved": "Moved to your location",
+  "mapLocationFetchFailed": "Couldn't get location: {error}",
+  "@mapLocationFetchFailed": {
+    "placeholders": { "error": { "type": "String" } }
+  },
+  "mapMapAppUnavailable": "Couldn't open the maps app",
+  "mapTabRecommend": "Explore",
+  "mapTabSave": "Saved",
+  "mapTabMap": "Map",
+  "mapTabWorld": "World",
+  "mapTabTrip": "Trip",
+  "mapDirectionsRoadFetching": "Loading driving route…",
+  "mapDirectionsWalkFetching": "Loading walking route…",
+  "mapNoCoords": "Couldn't find start/end coordinates",
+  "mapDirectionsFailed": "Couldn't load the route",
+  "mapInsufficientSavedPlaces": "Need more places — once favorites/visits reach {min}+, a course is generated automatically",
+  "@mapInsufficientSavedPlaces": {
+    "placeholders": { "min": { "type": "int" } }
+  },
+
+  "subwayPanelExpand": "Expand panel",
+  "subwayPanelCollapse": "Collapse panel",
+  "subwayPanelDelayedTrains": "Delayed trains {count}",
+  "@subwayPanelDelayedTrains": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "subwayPanelMinutes": "{min} min",
+  "@subwayPanelMinutes": {
+    "placeholders": { "min": { "type": "int" } }
+  },
+  "subwayPanelOthersCount": "and {count} more…",
+  "@subwayPanelOthersCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "subwayPanelOffTapToStart": "OFF — tap to start",
+  "subwayPanelMode": "Mode",
+  "subwayPanelDemoLabel": "Demo (no API)",
+  "subwayPanelLiveLabel": "Live",
+  "subwayPanelTrainsLabel": "Trains",
+  "subwayPanelTrainsValue": "{count}",
+  "@subwayPanelTrainsValue": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "subwayPanelUpdate": "Updated",
+  "subwayPanelToggleRoutes": "Routes",
+  "subwayPanelToggleTrains": "Train positions",
+  "subwayPanelToggleStations": "Stations",
+  "subwayPanelToggleCongestion": "Congestion",
+  "subwayPanelRouteFilter": "Route filter",
+  "subwayPanelAll": "All",
+  "subwayPanelToggleOn": "Turn on subway visualization",
+  "subwayPanelToggleOff": "Turn off subway visualization",
+  "subwayPanelNoArrivalInfo": "No arrival info",
+  "subwayPanelTrainDirection": "{destination} · {type}",
+  "@subwayPanelTrainDirection": {
+    "placeholders": {
+      "destination": { "type": "String" },
+      "type": { "type": "String" }
+    }
+  },
+  "subwayPanelCloseDetail": "Close train detail",
+  "subwayPanelTrainNo": "Train #{no}",
+  "@subwayPanelTrainNo": {
+    "placeholders": { "no": { "type": "String" } }
+  },
+  "subwayPanelDelayedBadge": "{min} min delay",
+  "@subwayPanelDelayedBadge": {
+    "placeholders": { "min": { "type": "int" } }
+  },
+  "subwayPanelLastTrainBadge": "Last train",
+  "subwayPanelTerminalDestination": "To {terminal}",
+  "@subwayPanelTerminalDestination": {
+    "placeholders": { "terminal": { "type": "String" } }
+  },
+  "subwayPanelPrevStation": "Previous",
+  "subwayPanelDepartureStation": "Departure",
+  "subwayPanelCurrentStation": "Current",
+  "subwayPanelNextStation": "Next",
+  "subwayPanelStateArriving": "Arriving",
+  "subwayPanelStateStopped": "Stopped",
+  "subwayPanelStateDeparted": "Departed",
+  "subwayPanelStateMoving": "Moving",
+  "subwayPanelStateOperating": "In service",
+  "subwayPanelDirInnerLoop": "Inner loop",
+  "subwayPanelDirOuterLoop": "Outer loop",
+  "subwayPanelDirUp": "Up",
+  "subwayPanelDirDown": "Down",
+  "subwayPanelTrainTypeExpress": "Express",
+  "subwayPanelTrainTypeSpecial": "Special",
+  "subwayPanelTrainTypeRegular": "Regular",
+
+  "searchTileSubway": "Subway",
+
+  "profileEditNicknameInvalid": "Please enter a nickname (1–20 chars).",
+  "profileEditBirthInvalid": "Please enter a valid 4-digit birth year (YYYY).",
+  "profileEditAgeRestriction": "Multiplayer is not available for users under 14.",
+  "profileEditTitle": "Edit profile",
+  "profileEditSubtitle": "This is how others see you in rooms.",
+  "profileEditNicknameLabel": "Nickname (duplicates allowed)",
+  "profileEditNicknamePlaceholder": "e.g. SeoulExplorer",
+  "profileEditBirthLabel": "Birth year (14+ only)",
+  "profileEditBirthPlaceholder": "e.g. 2000",
+  "profileEditEmojiLabel": "Pin emoji",
+  "profileEditColorLabel": "Pin color",
+  "profileEditVisibilityLabel": "Location visibility",
+  "profileEditVisibilityGhost": "Private",
+  "profileEditVisibilityFriends": "Room",
+  "profileEditVisibilityGroup": "Groups only",
+  "profileEditVisibilityPublic": "Public",
+  "profileEditSaving": "Saving…",
+  "profileEditSave": "Save",
+  "profileEditPublicDialogTitle": "Switch to public",
+  "profileEditPublicDialogBody": "Your location becomes visible to all Seoul Live users in real time, including strangers.\n\n• Beware of inappropriate meetups / stalking risks\n• You can revert to Private/Room at any time\n• Block/report from the friend profile or chat menu",
+  "profileEditPublicDialogConfirm": "Continue",
+  "profileEditVisibilityGhostDesc": "Your location isn't sent. You can't see others' locations either.",
+  "profileEditVisibilityFriendsDesc": "Location is visible only to same-room members while you're in a room.",
+  "profileEditVisibilityGroupDesc": "Only friends in the groups you pick can see your location.",
+  "profileEditVisibilityPublicDesc": "⚠️ Any Seoul Live user can see your location. Also sent in rooms.",
+  "profileEditNoGroups": "No groups yet. Create one in Friends → Groups.",
+
+  "adminMonitorTitle": "Ops monitor",
+  "adminRefresh": "Refresh",
+  "adminTabMetrics": "Metrics",
+  "adminTabAbuse": "Abuse",
+  "adminTabReports": "Reports",
+  "adminMetricAllProfiles": "All profiles",
+  "adminMetricActiveRooms": "Active rooms",
+  "adminMetricTodayMeetups": "Meetups today",
+  "adminMetricTodayBlocks": "Blocks today",
+  "adminMetricTodayReports": "Reports today",
+  "adminNoSuspiciousSignals": "No suspicious signals (no user blocked by 3+ in 24h)",
+  "adminRecentBlockCount": "Blocked by {count} in 24h",
+  "@adminRecentBlockCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "adminReportStatusPending": "Pending",
+  "adminReportStatusReviewed": "Reviewed",
+  "adminReportStatusActioned": "Actioned",
+  "adminReportStatusDismissed": "Dismissed",
+  "adminNoReports": "No reports to show",
+  "adminReportTypeMessage": "Message report",
+  "adminReportTypeUser": "User report",
+  "adminReportActionReview": "Review",
+  "adminReportActionAction": "Action",
+  "adminReportActionDismiss": "Dismiss",
+  "adminAgoMin": "{min} min ago",
+  "@adminAgoMin": {
+    "placeholders": { "min": { "type": "int" } }
+  },
+  "adminAgoHour": "{hour}h ago",
+  "@adminAgoHour": {
+    "placeholders": { "hour": { "type": "int" } }
+  },
+  "adminAgoDay": "{day}d ago",
+  "@adminAgoDay": {
+    "placeholders": { "day": { "type": "int" } }
+  }
 }

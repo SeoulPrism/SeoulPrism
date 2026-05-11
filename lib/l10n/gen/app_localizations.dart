@@ -3796,6 +3796,696 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Close directions'**
   String get searchCloseTooltip;
+
+  /// No description provided for @mapNoLocationPermission.
+  ///
+  /// In en, this message translates to:
+  /// **'Without location permission, friends can\'t see your pin. Open Settings → Location to allow.'**
+  String get mapNoLocationPermission;
+
+  /// No description provided for @mapLeftRoom.
+  ///
+  /// In en, this message translates to:
+  /// **'You left the friend room'**
+  String get mapLeftRoom;
+
+  /// No description provided for @mapShowOnMap.
+  ///
+  /// In en, this message translates to:
+  /// **'Show \"{name}\" on the map'**
+  String mapShowOnMap(String name);
+
+  /// No description provided for @mapBuildingInside.
+  ///
+  /// In en, this message translates to:
+  /// **'🏢 You\'re inside {name}'**
+  String mapBuildingInside(String name);
+
+  /// No description provided for @mapLocationChecking.
+  ///
+  /// In en, this message translates to:
+  /// **'Locating…'**
+  String get mapLocationChecking;
+
+  /// No description provided for @mapLocationPermissionDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Location permission denied → iOS Settings → Seoul Vista → Location'**
+  String get mapLocationPermissionDenied;
+
+  /// No description provided for @mapLocationServiceOff.
+  ///
+  /// In en, this message translates to:
+  /// **'iOS Settings → Privacy → Location services is off'**
+  String get mapLocationServiceOff;
+
+  /// No description provided for @mapMyLocationMoved.
+  ///
+  /// In en, this message translates to:
+  /// **'Moved to your location'**
+  String get mapMyLocationMoved;
+
+  /// No description provided for @mapLocationFetchFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t get location: {error}'**
+  String mapLocationFetchFailed(String error);
+
+  /// No description provided for @mapMapAppUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t open the maps app'**
+  String get mapMapAppUnavailable;
+
+  /// No description provided for @mapTabRecommend.
+  ///
+  /// In en, this message translates to:
+  /// **'Explore'**
+  String get mapTabRecommend;
+
+  /// No description provided for @mapTabSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved'**
+  String get mapTabSave;
+
+  /// No description provided for @mapTabMap.
+  ///
+  /// In en, this message translates to:
+  /// **'Map'**
+  String get mapTabMap;
+
+  /// No description provided for @mapTabWorld.
+  ///
+  /// In en, this message translates to:
+  /// **'World'**
+  String get mapTabWorld;
+
+  /// No description provided for @mapTabTrip.
+  ///
+  /// In en, this message translates to:
+  /// **'Trip'**
+  String get mapTabTrip;
+
+  /// No description provided for @mapDirectionsRoadFetching.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading driving route…'**
+  String get mapDirectionsRoadFetching;
+
+  /// No description provided for @mapDirectionsWalkFetching.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading walking route…'**
+  String get mapDirectionsWalkFetching;
+
+  /// No description provided for @mapNoCoords.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t find start/end coordinates'**
+  String get mapNoCoords;
+
+  /// No description provided for @mapDirectionsFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load the route'**
+  String get mapDirectionsFailed;
+
+  /// No description provided for @mapInsufficientSavedPlaces.
+  ///
+  /// In en, this message translates to:
+  /// **'Need more places — once favorites/visits reach {min}+, a course is generated automatically'**
+  String mapInsufficientSavedPlaces(int min);
+
+  /// No description provided for @subwayPanelExpand.
+  ///
+  /// In en, this message translates to:
+  /// **'Expand panel'**
+  String get subwayPanelExpand;
+
+  /// No description provided for @subwayPanelCollapse.
+  ///
+  /// In en, this message translates to:
+  /// **'Collapse panel'**
+  String get subwayPanelCollapse;
+
+  /// No description provided for @subwayPanelDelayedTrains.
+  ///
+  /// In en, this message translates to:
+  /// **'Delayed trains {count}'**
+  String subwayPanelDelayedTrains(int count);
+
+  /// No description provided for @subwayPanelMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{min} min'**
+  String subwayPanelMinutes(int min);
+
+  /// No description provided for @subwayPanelOthersCount.
+  ///
+  /// In en, this message translates to:
+  /// **'and {count} more…'**
+  String subwayPanelOthersCount(int count);
+
+  /// No description provided for @subwayPanelOffTapToStart.
+  ///
+  /// In en, this message translates to:
+  /// **'OFF — tap to start'**
+  String get subwayPanelOffTapToStart;
+
+  /// No description provided for @subwayPanelMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Mode'**
+  String get subwayPanelMode;
+
+  /// No description provided for @subwayPanelDemoLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Demo (no API)'**
+  String get subwayPanelDemoLabel;
+
+  /// No description provided for @subwayPanelLiveLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Live'**
+  String get subwayPanelLiveLabel;
+
+  /// No description provided for @subwayPanelTrainsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Trains'**
+  String get subwayPanelTrainsLabel;
+
+  /// No description provided for @subwayPanelTrainsValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}'**
+  String subwayPanelTrainsValue(int count);
+
+  /// No description provided for @subwayPanelUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'Updated'**
+  String get subwayPanelUpdate;
+
+  /// No description provided for @subwayPanelToggleRoutes.
+  ///
+  /// In en, this message translates to:
+  /// **'Routes'**
+  String get subwayPanelToggleRoutes;
+
+  /// No description provided for @subwayPanelToggleTrains.
+  ///
+  /// In en, this message translates to:
+  /// **'Train positions'**
+  String get subwayPanelToggleTrains;
+
+  /// No description provided for @subwayPanelToggleStations.
+  ///
+  /// In en, this message translates to:
+  /// **'Stations'**
+  String get subwayPanelToggleStations;
+
+  /// No description provided for @subwayPanelToggleCongestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Congestion'**
+  String get subwayPanelToggleCongestion;
+
+  /// No description provided for @subwayPanelRouteFilter.
+  ///
+  /// In en, this message translates to:
+  /// **'Route filter'**
+  String get subwayPanelRouteFilter;
+
+  /// No description provided for @subwayPanelAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get subwayPanelAll;
+
+  /// No description provided for @subwayPanelToggleOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on subway visualization'**
+  String get subwayPanelToggleOn;
+
+  /// No description provided for @subwayPanelToggleOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn off subway visualization'**
+  String get subwayPanelToggleOff;
+
+  /// No description provided for @subwayPanelNoArrivalInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'No arrival info'**
+  String get subwayPanelNoArrivalInfo;
+
+  /// No description provided for @subwayPanelTrainDirection.
+  ///
+  /// In en, this message translates to:
+  /// **'{destination} · {type}'**
+  String subwayPanelTrainDirection(String destination, String type);
+
+  /// No description provided for @subwayPanelCloseDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Close train detail'**
+  String get subwayPanelCloseDetail;
+
+  /// No description provided for @subwayPanelTrainNo.
+  ///
+  /// In en, this message translates to:
+  /// **'Train #{no}'**
+  String subwayPanelTrainNo(String no);
+
+  /// No description provided for @subwayPanelDelayedBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'{min} min delay'**
+  String subwayPanelDelayedBadge(int min);
+
+  /// No description provided for @subwayPanelLastTrainBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Last train'**
+  String get subwayPanelLastTrainBadge;
+
+  /// No description provided for @subwayPanelTerminalDestination.
+  ///
+  /// In en, this message translates to:
+  /// **'To {terminal}'**
+  String subwayPanelTerminalDestination(String terminal);
+
+  /// No description provided for @subwayPanelPrevStation.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous'**
+  String get subwayPanelPrevStation;
+
+  /// No description provided for @subwayPanelDepartureStation.
+  ///
+  /// In en, this message translates to:
+  /// **'Departure'**
+  String get subwayPanelDepartureStation;
+
+  /// No description provided for @subwayPanelCurrentStation.
+  ///
+  /// In en, this message translates to:
+  /// **'Current'**
+  String get subwayPanelCurrentStation;
+
+  /// No description provided for @subwayPanelNextStation.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get subwayPanelNextStation;
+
+  /// No description provided for @subwayPanelStateArriving.
+  ///
+  /// In en, this message translates to:
+  /// **'Arriving'**
+  String get subwayPanelStateArriving;
+
+  /// No description provided for @subwayPanelStateStopped.
+  ///
+  /// In en, this message translates to:
+  /// **'Stopped'**
+  String get subwayPanelStateStopped;
+
+  /// No description provided for @subwayPanelStateDeparted.
+  ///
+  /// In en, this message translates to:
+  /// **'Departed'**
+  String get subwayPanelStateDeparted;
+
+  /// No description provided for @subwayPanelStateMoving.
+  ///
+  /// In en, this message translates to:
+  /// **'Moving'**
+  String get subwayPanelStateMoving;
+
+  /// No description provided for @subwayPanelStateOperating.
+  ///
+  /// In en, this message translates to:
+  /// **'In service'**
+  String get subwayPanelStateOperating;
+
+  /// No description provided for @subwayPanelDirInnerLoop.
+  ///
+  /// In en, this message translates to:
+  /// **'Inner loop'**
+  String get subwayPanelDirInnerLoop;
+
+  /// No description provided for @subwayPanelDirOuterLoop.
+  ///
+  /// In en, this message translates to:
+  /// **'Outer loop'**
+  String get subwayPanelDirOuterLoop;
+
+  /// No description provided for @subwayPanelDirUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Up'**
+  String get subwayPanelDirUp;
+
+  /// No description provided for @subwayPanelDirDown.
+  ///
+  /// In en, this message translates to:
+  /// **'Down'**
+  String get subwayPanelDirDown;
+
+  /// No description provided for @subwayPanelTrainTypeExpress.
+  ///
+  /// In en, this message translates to:
+  /// **'Express'**
+  String get subwayPanelTrainTypeExpress;
+
+  /// No description provided for @subwayPanelTrainTypeSpecial.
+  ///
+  /// In en, this message translates to:
+  /// **'Special'**
+  String get subwayPanelTrainTypeSpecial;
+
+  /// No description provided for @subwayPanelTrainTypeRegular.
+  ///
+  /// In en, this message translates to:
+  /// **'Regular'**
+  String get subwayPanelTrainTypeRegular;
+
+  /// No description provided for @searchTileSubway.
+  ///
+  /// In en, this message translates to:
+  /// **'Subway'**
+  String get searchTileSubway;
+
+  /// No description provided for @profileEditNicknameInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a nickname (1–20 chars).'**
+  String get profileEditNicknameInvalid;
+
+  /// No description provided for @profileEditBirthInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a valid 4-digit birth year (YYYY).'**
+  String get profileEditBirthInvalid;
+
+  /// No description provided for @profileEditAgeRestriction.
+  ///
+  /// In en, this message translates to:
+  /// **'Multiplayer is not available for users under 14.'**
+  String get profileEditAgeRestriction;
+
+  /// No description provided for @profileEditTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit profile'**
+  String get profileEditTitle;
+
+  /// No description provided for @profileEditSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This is how others see you in rooms.'**
+  String get profileEditSubtitle;
+
+  /// No description provided for @profileEditNicknameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Nickname (duplicates allowed)'**
+  String get profileEditNicknameLabel;
+
+  /// No description provided for @profileEditNicknamePlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. SeoulExplorer'**
+  String get profileEditNicknamePlaceholder;
+
+  /// No description provided for @profileEditBirthLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Birth year (14+ only)'**
+  String get profileEditBirthLabel;
+
+  /// No description provided for @profileEditBirthPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. 2000'**
+  String get profileEditBirthPlaceholder;
+
+  /// No description provided for @profileEditEmojiLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Pin emoji'**
+  String get profileEditEmojiLabel;
+
+  /// No description provided for @profileEditColorLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Pin color'**
+  String get profileEditColorLabel;
+
+  /// No description provided for @profileEditVisibilityLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Location visibility'**
+  String get profileEditVisibilityLabel;
+
+  /// No description provided for @profileEditVisibilityGhost.
+  ///
+  /// In en, this message translates to:
+  /// **'Private'**
+  String get profileEditVisibilityGhost;
+
+  /// No description provided for @profileEditVisibilityFriends.
+  ///
+  /// In en, this message translates to:
+  /// **'Room'**
+  String get profileEditVisibilityFriends;
+
+  /// No description provided for @profileEditVisibilityGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Groups only'**
+  String get profileEditVisibilityGroup;
+
+  /// No description provided for @profileEditVisibilityPublic.
+  ///
+  /// In en, this message translates to:
+  /// **'Public'**
+  String get profileEditVisibilityPublic;
+
+  /// No description provided for @profileEditSaving.
+  ///
+  /// In en, this message translates to:
+  /// **'Saving…'**
+  String get profileEditSaving;
+
+  /// No description provided for @profileEditSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get profileEditSave;
+
+  /// No description provided for @profileEditPublicDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch to public'**
+  String get profileEditPublicDialogTitle;
+
+  /// No description provided for @profileEditPublicDialogBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your location becomes visible to all Seoul Live users in real time, including strangers.\n\n• Beware of inappropriate meetups / stalking risks\n• You can revert to Private/Room at any time\n• Block/report from the friend profile or chat menu'**
+  String get profileEditPublicDialogBody;
+
+  /// No description provided for @profileEditPublicDialogConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get profileEditPublicDialogConfirm;
+
+  /// No description provided for @profileEditVisibilityGhostDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Your location isn\'t sent. You can\'t see others\' locations either.'**
+  String get profileEditVisibilityGhostDesc;
+
+  /// No description provided for @profileEditVisibilityFriendsDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Location is visible only to same-room members while you\'re in a room.'**
+  String get profileEditVisibilityFriendsDesc;
+
+  /// No description provided for @profileEditVisibilityGroupDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Only friends in the groups you pick can see your location.'**
+  String get profileEditVisibilityGroupDesc;
+
+  /// No description provided for @profileEditVisibilityPublicDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'⚠️ Any Seoul Live user can see your location. Also sent in rooms.'**
+  String get profileEditVisibilityPublicDesc;
+
+  /// No description provided for @profileEditNoGroups.
+  ///
+  /// In en, this message translates to:
+  /// **'No groups yet. Create one in Friends → Groups.'**
+  String get profileEditNoGroups;
+
+  /// No description provided for @adminMonitorTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Ops monitor'**
+  String get adminMonitorTitle;
+
+  /// No description provided for @adminRefresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh'**
+  String get adminRefresh;
+
+  /// No description provided for @adminTabMetrics.
+  ///
+  /// In en, this message translates to:
+  /// **'Metrics'**
+  String get adminTabMetrics;
+
+  /// No description provided for @adminTabAbuse.
+  ///
+  /// In en, this message translates to:
+  /// **'Abuse'**
+  String get adminTabAbuse;
+
+  /// No description provided for @adminTabReports.
+  ///
+  /// In en, this message translates to:
+  /// **'Reports'**
+  String get adminTabReports;
+
+  /// No description provided for @adminMetricAllProfiles.
+  ///
+  /// In en, this message translates to:
+  /// **'All profiles'**
+  String get adminMetricAllProfiles;
+
+  /// No description provided for @adminMetricActiveRooms.
+  ///
+  /// In en, this message translates to:
+  /// **'Active rooms'**
+  String get adminMetricActiveRooms;
+
+  /// No description provided for @adminMetricTodayMeetups.
+  ///
+  /// In en, this message translates to:
+  /// **'Meetups today'**
+  String get adminMetricTodayMeetups;
+
+  /// No description provided for @adminMetricTodayBlocks.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocks today'**
+  String get adminMetricTodayBlocks;
+
+  /// No description provided for @adminMetricTodayReports.
+  ///
+  /// In en, this message translates to:
+  /// **'Reports today'**
+  String get adminMetricTodayReports;
+
+  /// No description provided for @adminNoSuspiciousSignals.
+  ///
+  /// In en, this message translates to:
+  /// **'No suspicious signals (no user blocked by 3+ in 24h)'**
+  String get adminNoSuspiciousSignals;
+
+  /// No description provided for @adminRecentBlockCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocked by {count} in 24h'**
+  String adminRecentBlockCount(int count);
+
+  /// No description provided for @adminReportStatusPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get adminReportStatusPending;
+
+  /// No description provided for @adminReportStatusReviewed.
+  ///
+  /// In en, this message translates to:
+  /// **'Reviewed'**
+  String get adminReportStatusReviewed;
+
+  /// No description provided for @adminReportStatusActioned.
+  ///
+  /// In en, this message translates to:
+  /// **'Actioned'**
+  String get adminReportStatusActioned;
+
+  /// No description provided for @adminReportStatusDismissed.
+  ///
+  /// In en, this message translates to:
+  /// **'Dismissed'**
+  String get adminReportStatusDismissed;
+
+  /// No description provided for @adminNoReports.
+  ///
+  /// In en, this message translates to:
+  /// **'No reports to show'**
+  String get adminNoReports;
+
+  /// No description provided for @adminReportTypeMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Message report'**
+  String get adminReportTypeMessage;
+
+  /// No description provided for @adminReportTypeUser.
+  ///
+  /// In en, this message translates to:
+  /// **'User report'**
+  String get adminReportTypeUser;
+
+  /// No description provided for @adminReportActionReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Review'**
+  String get adminReportActionReview;
+
+  /// No description provided for @adminReportActionAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Action'**
+  String get adminReportActionAction;
+
+  /// No description provided for @adminReportActionDismiss.
+  ///
+  /// In en, this message translates to:
+  /// **'Dismiss'**
+  String get adminReportActionDismiss;
+
+  /// No description provided for @adminAgoMin.
+  ///
+  /// In en, this message translates to:
+  /// **'{min} min ago'**
+  String adminAgoMin(int min);
+
+  /// No description provided for @adminAgoHour.
+  ///
+  /// In en, this message translates to:
+  /// **'{hour}h ago'**
+  String adminAgoHour(int hour);
+
+  /// No description provided for @adminAgoDay.
+  ///
+  /// In en, this message translates to:
+  /// **'{day}d ago'**
+  String adminAgoDay(int day);
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {
