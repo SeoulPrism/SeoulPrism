@@ -2894,7 +2894,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
           final station = _resolveStation(stationName);
           if (station != null) {
             // AI 닫고 → 카메라 줌 이동 → 역 선택
-            _dismissAi();
             Future.delayed(const Duration(milliseconds: 600), () {
               _mapController?.moveTo(
                 station.lat,
@@ -2914,7 +2913,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
         final stationName = event.params['stationName'] as String?;
         if (stationName != null) {
           final station = _resolveStation(stationName);
-          _dismissAi();
           Future.delayed(const Duration(milliseconds: 600), () {
             if (station != null) {
               _mapController?.moveTo(
@@ -2950,7 +2948,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
       case AiAction.searchPlace:
         final query = event.params['query'] as String?;
         if (query != null) {
-          _dismissAi();
           Future.delayed(const Duration(milliseconds: 600), () {
             _searchBarKey.currentState?.performSearch(query);
           });
@@ -2959,7 +2956,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
       case AiAction.findRoute:
         // from 은 현재 위치 고정 (앱 길찾기가 user location 기반).
         final to = event.params['to'] as String?;
-        _dismissAi();
         Future.delayed(const Duration(milliseconds: 600), () {
           if (to != null) _startNavWithArrival(to);
         });
@@ -2972,7 +2968,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
         _handleAiAddFavorite(event.params['placeName'] as String?);
         break;
       case AiAction.openRecommendation:
-        _dismissAi();
         Future.delayed(const Duration(milliseconds: 600), () {
           setState(() {
             _recommendOpen = true;
@@ -2981,7 +2976,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
         });
         break;
       case AiAction.openSaved:
-        _dismissAi();
         Future.delayed(const Duration(milliseconds: 600), () {
           setState(() {
             _savedOpen = true;
@@ -2993,7 +2987,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
         final lat = (event.params['lat'] as num?)?.toDouble();
         final lng = (event.params['lng'] as num?)?.toDouble();
         if (lat != null && lng != null) {
-          _dismissAi();
           Future.delayed(const Duration(milliseconds: 600), () {
             _mapController?.moveTo(lat, lng, zoom: 15.0);
           });
@@ -3003,13 +2996,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
         _handleAiApplyTheme(event.params['theme_id'] as String? ?? '');
         break;
       case AiAction.planFromSaved:
-        _dismissAi();
         Future.delayed(const Duration(milliseconds: 600), () {
           if (mounted) _buildPlanFromSavedPlaces();
         });
         break;
       case AiAction.openTravel:
-        _dismissAi();
         Future.delayed(const Duration(milliseconds: 600), () {
           if (!mounted) return;
           setState(() {
@@ -3019,7 +3010,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
         });
         break;
       case AiAction.openMultiplayer:
-        _dismissAi();
         Future.delayed(const Duration(milliseconds: 600), () {
           if (!mounted) return;
           Navigator.of(context).push(
@@ -3028,7 +3018,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
         });
         break;
       case AiAction.openSpotify:
-        _dismissAi();
         Future.delayed(const Duration(milliseconds: 600), () {
           if (!mounted) return;
           Navigator.of(context).push(
@@ -3092,7 +3081,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
       (t) => t.id == themeId,
       orElse: () => kTravelThemes.first,
     );
-    _dismissAi();
     Future.delayed(const Duration(milliseconds: 600), () {
       if (!mounted) return;
       setState(() {
@@ -3115,7 +3103,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
         final dayPlanService = DayPlanService.instance;
         final plans = await dayPlanService.generatePlans(geoPlaces);
         if (plans.isNotEmpty && mounted) {
-          _dismissAi();
           Future.delayed(const Duration(milliseconds: 600), () {
             setState(() => _dayPlans = plans);
           });
@@ -3131,7 +3118,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     try {
       final plans = await DayPlanService.instance.generatePlans(places);
       if (plans.isNotEmpty && mounted) {
-        _dismissAi();
         Future.delayed(const Duration(milliseconds: 600), () {
           if (mounted) setState(() => _dayPlans = plans);
         });
@@ -3155,7 +3141,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
       if (!mounted) return;
       final plans = await DayPlanService.instance.generatePlans(geoPlaces);
       if (plans.isEmpty || !mounted) return;
-      _dismissAi();
       Future.delayed(const Duration(milliseconds: 600), () {
         if (mounted) setState(() => _dayPlans = plans);
       });

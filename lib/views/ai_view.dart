@@ -693,26 +693,29 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        // 1. Glow 애니메이션 (배경) — RepaintBoundary 로 형제 위젯과 분리.
-        RepaintBoundary(
-          child: AnimatedBuilder(
-            animation: Listenable.merge([
-              _spreadController,
-              _deformController,
-              ..._layerControllers,
-            ]),
-            builder: (context, _) {
-              return CustomPaint(
-                painter: _AiGlowPainter(
-                  layerStops: _layerCurrentStops,
-                  spreadProgress: _spreadController.value,
-                  deformPhase: _deformController.value * 2 * pi,
-                  strokeBoost: _glowStrokeBoost,
-                  brightnessMultiplier: _glowBrightnessMultiplier,
-                ),
-                size: Size.infinite,
-              );
-            },
+        // 1. Glow 애니메이션 (배경) — IgnorePointer 로 hit-test 통과
+        //    덕분에 AI 가 떠있어도 빈 영역 터치는 지도/위젯으로 전달됨.
+        IgnorePointer(
+          child: RepaintBoundary(
+            child: AnimatedBuilder(
+              animation: Listenable.merge([
+                _spreadController,
+                _deformController,
+                ..._layerControllers,
+              ]),
+              builder: (context, _) {
+                return CustomPaint(
+                  painter: _AiGlowPainter(
+                    layerStops: _layerCurrentStops,
+                    spreadProgress: _spreadController.value,
+                    deformPhase: _deformController.value * 2 * pi,
+                    strokeBoost: _glowStrokeBoost,
+                    brightnessMultiplier: _glowBrightnessMultiplier,
+                  ),
+                  size: Size.infinite,
+                );
+              },
+            ),
           ),
         ),
 
