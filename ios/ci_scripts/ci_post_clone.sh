@@ -65,12 +65,17 @@ class ApiKeys {
 }
 DART
 
-# 4. GoogleService-Info.plist 생성 (환경변수에서 디코딩)
+# 4. GoogleService-Info.plist 생성 (환경변수에서 디코딩).
+# Xcode 빌드 단계가 이 파일을 직접 참조하므로 누락 시 즉시 실패시킴
+# (firebase_options.dart 와 동일한 정책).
 if [ -n "$GOOGLE_SERVICE_INFO_BASE64" ]; then
   echo "$GOOGLE_SERVICE_INFO_BASE64" | base64 -D > ios/Runner/GoogleService-Info.plist
   echo "GoogleService-Info.plist generated from env"
 else
-  echo "warning: GOOGLE_SERVICE_INFO_BASE64 not set, Firebase may not work"
+  echo "error: GOOGLE_SERVICE_INFO_BASE64 not set — Xcode 빌드가 ios/Runner/GoogleService-Info.plist 를 못 찾음"
+  echo "       App Store Connect → Xcode Cloud → Workflow → Environment Variables 에서 secret 으로 추가하세요"
+  echo "       로컬에서 인코딩: base64 -i ios/Runner/GoogleService-Info.plist | pbcopy"
+  exit 1
 fi
 
 # 4-1. firebase_options.dart 생성 (gitignore 되어 있으므로 CI 에서 환경변수로 복원).

@@ -47,6 +47,17 @@ post_install do |installer|
         config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'
       end
       config.build_settings['ENABLE_USER_SCRIPT_SANDBOXING'] = 'NO'
+      # permission_handler 매크로 — 명시 안 하면 iOS 에서 해당 권한 요청 코드가
+      # 컴파일에서 제거되어 request() 가 즉시 denied 리턴. 명시 후에야 native
+      # dialog 동작.
+      config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= ['$(inherited)']
+      config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] += [
+        'PERMISSION_LOCATION=1',
+        'PERMISSION_NOTIFICATIONS=1',
+        'PERMISSION_CAMERA=1',
+        'PERMISSION_PHOTOS=1',
+        'PERMISSION_MICROPHONE=1',
+      ]
     end
   end
 
