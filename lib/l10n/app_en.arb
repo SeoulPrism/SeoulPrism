@@ -1,0 +1,30 @@
+{
+  "@@locale": "en",
+  "appTitle": "Seoul Vista",
+  "@appTitle": {
+    "description": "Application name shown in OS task switcher and onGenerateTitle."
+  },
+
+  "commonCancel": "Cancel",
+  "commonConfirm": "Confirm",
+  "commonOk": "OK",
+  "commonSave": "Save",
+  "commonClose": "Close",
+  "commonLater": "Later",
+
+  "settingsAppLanguageTitle": "Language",
+  "@settingsAppLanguageTitle": {
+    "description": "Label for the app-wide UI language picker in settings."
+  },
+
+  "languageSystem": "System default",
+  "languageKo": "한국어",
+  "languageEn": "English",
+  "languageJa": "日本語",
+  "languageZh": "简体中文",
+
+  "languageChangedTitle": "Language changed",
+  "languageChangedBody": "Restart the app to fully apply the new language. Restart now?",
+  "languageRestartNow": "Restart",
+  "languageRestartLater": "Later"
+}

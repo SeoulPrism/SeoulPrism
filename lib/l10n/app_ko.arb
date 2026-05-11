@@ -1,0 +1,24 @@
+{
+  "@@locale": "ko",
+  "appTitle": "Seoul Vista",
+
+  "commonCancel": "취소",
+  "commonConfirm": "확인",
+  "commonOk": "확인",
+  "commonSave": "저장",
+  "commonClose": "닫기",
+  "commonLater": "나중에",
+
+  "settingsAppLanguageTitle": "언어",
+
+  "languageSystem": "시스템 설정",
+  "languageKo": "한국어",
+  "languageEn": "English",
+  "languageJa": "日本語",
+  "languageZh": "简体中文",
+
+  "languageChangedTitle": "언어가 변경되었어요",
+  "languageChangedBody": "새 언어를 완전히 적용하려면 앱을 재시작해야 해요. 지금 재시작할까요?",
+  "languageRestartNow": "재시작",
+  "languageRestartLater": "나중에"
+}

@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../data/ai_languages.dart';
+import '../l10n/gen/app_localizations.dart';
 import '../main.dart';
 import '../services/onboarding_service.dart';
 import '../services/settings_service.dart';
@@ -13,6 +15,7 @@ import '../services/visit_history_service.dart';
 import '../widgets/adaptive/adaptive.dart';
 import '../widgets/app_snackbar.dart';
 import 'auth_view.dart';
+import 'settings/quality_preset_preview.dart';
 import 'whats_new_sheet.dart';
 
 class SettingsView extends StatefulWidget {
@@ -27,8 +30,22 @@ class _SettingsViewState extends State<SettingsView> {
   bool _autoRotate = false;
   bool _alwaysMyLocation = true;
   String _themeMode = SettingsService.instance.themeMode == 'light' ? '라이트' : '다크';
-  String _language = '한국어';
+  String _language = aiLanguageByCode(SettingsService.instance.aiLanguage).label;
+  String _appLangCode = SettingsService.instance.appLanguage;
   String _mapHome = '기본';
+
+  static const _appLangCodes = ['system', 'ko', 'en', 'ja', 'zh'];
+
+  String _appLangLabel(BuildContext ctx, String code) {
+    final l = AppL10n.of(ctx);
+    return switch (code) {
+      'ko' => l.languageKo,
+      'en' => l.languageEn,
+      'ja' => l.languageJa,
+      'zh' => l.languageZh,
+      _ => l.languageSystem,
+    };
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -66,24 +83,19 @@ class _SettingsViewState extends State<SettingsView> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         child: Column(
           children: [
-            // 품질 프리셋 — 헤더 없이 맨 위. 사용자가 자주 만지는 항목이라 한 탭으로 접근.
+            // 품질 프리셋 — 미리보기 + 인라인 세그먼트 컨트롤이 한 카드 안에 통합.
+            // 카드 surface 톤에 맞춰 preview 가 자연스럽게 이어짐.
             AdaptiveSectionCard(
               children: [
-                _TrailingTextItem(
-                  label: '품질 프리셋',
-                  trailing:
-                      '${_qualityLabel(SettingsService.instance.qualityPreset)} >',
-                  onTap: () => _showPicker(
-                    title: '품질 프리셋',
-                    options: const ['고품질', '부드러움', '배터리 절약'],
-                    selected:
-                        _qualityLabel(SettingsService.instance.qualityPreset),
-                    onSelected: (v) {
-                      SettingsService.instance
-                          .setQualityPreset(_qualityKey(v));
-                      setState(() {});
-                    },
-                  ),
+                QualityPresetPreview(
+                  preset: SettingsService.instance.qualityPreset,
+                ),
+                QualityPresetSegmented(
+                  selected: SettingsService.instance.qualityPreset,
+                  onChanged: (key) {
+                    SettingsService.instance.setQualityPreset(key);
+                    setState(() {});
+                  },
                 ),
               ],
             ),
@@ -192,28 +204,6 @@ class _SettingsViewState extends State<SettingsView> {
             ),
             const SizedBox(height: 16),
 
-            // Section 1.7: 성능 — 품질 프리셋
-            _SectionHeader(label: '성능'),
-            AdaptiveSectionCard(
-              children: [
-                _TrailingTextItem(
-                  label: '품질 프리셋',
-                  trailing: '${_qualityLabel(SettingsService.instance.qualityPreset)} >',
-                  onTap: () => _showPicker(
-                    title: '품질 프리셋',
-                    options: const ['고품질', '부드러움', '배터리 절약'],
-                    selected: _qualityLabel(SettingsService.instance.qualityPreset),
-                    onSelected: (v) {
-                      SettingsService.instance
-                          .setQualityPreset(_qualityKey(v));
-                      setState(() {});
-                    },
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-
             // Section 1.8: 라이팅
             _SectionHeader(label: '라이팅'),
             AdaptiveSectionCard(
@@ -262,13 +252,54 @@ class _SettingsViewState extends State<SettingsView> {
             AdaptiveSectionCard(
               children: [
                 _TrailingTextItem(
-                  label: '언어',
+                  label: AppL10n.of(context).settingsAppLanguageTitle,
+                  trailing: '${_appLangLabel(context, _appLangCode)} >',
+                  onTap: () {
+                    final labels = _appLangCodes
+                        .map((c) => _appLangLabel(context, c))
+                        .toList();
+                    _showPicker(
+                      title: AppL10n.of(context).settingsAppLanguageTitle,
+                      options: labels,
+                      selected: _appLangLabel(context, _appLangCode),
+                      onSelected: (label) {
+                        final idx = labels.indexOf(label);
+                        if (idx < 0) return;
+                        final picked = _appLangCodes[idx];
+                        if (picked == _appLangCode) return;
+                        setState(() => _appLangCode = picked);
+                        SeoulPrismApp.setAppLanguage(context, picked);
+                        final l = AppL10n.of(context);
+                        showAdaptiveConfirmDialog(
+                          context: context,
+                          title: l.languageChangedTitle,
+                          content: l.languageChangedBody,
+                          confirmText: l.languageRestartNow,
+                          cancelText: l.languageRestartLater,
+                          onConfirm: () => SeoulPrismApp.restartApp(context),
+                        );
+                      },
+                    );
+                  },
+                ),
+                const _ItemDivider(),
+                _TrailingTextItem(
+                  label: 'AI 비서 언어',
                   trailing: '$_language >',
                   onTap: () => _showPicker(
-                    title: '언어',
-                    options: ['한국어', 'English', '日本語', '中文'],
+                    title: 'AI 비서 언어',
+                    options: kAiLanguages.map((l) => l.label).toList(),
                     selected: _language,
-                    onSelected: (v) => setState(() => _language = v),
+                    onSelected: (v) {
+                      if (v == _language) return;
+                      final picked = kAiLanguages.firstWhere(
+                        (l) => l.label == v,
+                        orElse: () => kAiLanguages.first,
+                      );
+                      setState(() => _language = picked.label);
+                      // 다음 세션부터 적용 — 현재 세션은 그대로 유지.
+                      SettingsService.instance.setAiLanguage(picked.code);
+                    },
                   ),
                 ),
                 const _ItemDivider(),
@@ -667,19 +698,8 @@ class _SettingsViewState extends State<SettingsView> {
     );
   }
 
-  // ── 품질 / 라이트 라벨 매핑 ──
-  static String _qualityLabel(String key) => switch (key) {
-        'high' => '고품질',
-        'medium' => '부드러움',
-        'low' => '배터리 절약',
-        _ => key,
-      };
-  static String _qualityKey(String label) => switch (label) {
-        '고품질' => 'high',
-        '부드러움' => 'medium',
-        '배터리 절약' => 'low',
-        _ => label,
-      };
+  // 품질 프리셋은 QualityPresetSegmented 가 직접 처리 — 매핑 함수 불필요.
+
   void _confirmResetTutorial() {
     showAdaptiveConfirmDialog(
       context: context,

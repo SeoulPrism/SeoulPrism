@@ -15,6 +15,16 @@ class SettingsService {
     final prefs = await SharedPreferences.getInstance();
     _instance = SettingsService._(prefs);
     DebugLog.enabled = prefs.getBool(_kDebugLogs) ?? false;
+    // 1회 마이그레이션: 온보딩이 잘못 저장한 selected_lines='1001' 만 있는 경우
+    // 사용자가 의도해서 1호선만 본 게 아닐 확률이 높으므로 null (전체) 로 리셋.
+    const migKey = '_mig_v1_selected_lines';
+    if (!(prefs.getBool(migKey) ?? false)) {
+      final cur = prefs.getString(_kSelectedLines);
+      if (cur == '1001') {
+        await prefs.remove(_kSelectedLines);
+      }
+      await prefs.setBool(migKey, true);
+    }
     return _instance!;
   }
 
@@ -42,6 +52,10 @@ class SettingsService {
   static const _kShowBuses = 'show_buses';
   static const _kShowRiverBus = 'show_river_bus';
   static const _kShowFlights = 'show_flights';
+  static const _kAiLanguage = 'ai_language'; // 'ko' | 'en' | 'ja'
+  // UI 표시 언어. 'system' = OS 설정 추종, 그 외 'ko'|'en'|'ja'|'zh'.
+  // aiLanguage 는 Gemini 응답 언어로 별개 (의도적 분리: 영문 UI + 한국어 AI 같은 조합 허용).
+  static const _kAppLanguage = 'app_language';
 
   // ── Getters ──
   bool get showRoutes => _prefs.getBool(_kShowRoutes) ?? true;
@@ -60,6 +74,8 @@ class SettingsService {
   bool get showBuses => _prefs.getBool(_kShowBuses) ?? true;
   bool get showRiverBus => _prefs.getBool(_kShowRiverBus) ?? true;
   bool get showFlights => _prefs.getBool(_kShowFlights) ?? true;
+  String get aiLanguage => _prefs.getString(_kAiLanguage) ?? 'ko';
+  String get appLanguage => _prefs.getString(_kAppLanguage) ?? 'system';
 
   Set<String>? get selectedLines {
     final val = _prefs.getString(_kSelectedLines);
@@ -85,6 +101,8 @@ class SettingsService {
   Future<void> setShowBuses(bool v) => _prefs.setBool(_kShowBuses, v);
   Future<void> setShowRiverBus(bool v) => _prefs.setBool(_kShowRiverBus, v);
   Future<void> setShowFlights(bool v) => _prefs.setBool(_kShowFlights, v);
+  Future<void> setAiLanguage(String v) => _prefs.setString(_kAiLanguage, v);
+  Future<void> setAppLanguage(String v) => _prefs.setString(_kAppLanguage, v);
 
   Future<void> setSelectedLines(Set<String>? lines) async {
     if (lines == null) {
