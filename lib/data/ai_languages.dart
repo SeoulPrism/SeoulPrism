@@ -101,8 +101,11 @@ const String _koPrompt = '''
   layer 종류: subway(지하철 노선), trains(열차 위치), stations(역), buses(버스), river_bus(한강버스), flights(항공).
   enable=true 면 켜기, false 면 끄기, 비우면 현재 상태에서 토글.
   예: "버스 보여줘" → toggle_layer(layer="buses", enable=true). "지하철 꺼줘" → layer="subway", enable=false.
-- close_panel: 현재 열린 패널(여행/추천/저장) 닫고 지도로 돌아가기.
-  "닫아줘", "지도로 가줘", "여행 탭 닫아" 같은 발화에 사용.
+- close_panel: 열려있는 거 전부 닫고 지도만 보이는 깔끔한 상태로 복귀.
+  대상: 길찾기 모드, 장소 발견 / 검색 결과 패널, 여행 / 추천 / 저장 / 타임라인 패널,
+       친구 위치 공유 패널.
+  "닫아줘", "지도로 가줘", "다 닫아", "길찾기 꺼", "검색 결과 닫아" 같은 모든
+  종료 발화는 이 함수 하나로 처리. 사용자가 어느 위젯을 명시하지 않아도 동작.
 - set_weather_expanded: 날씨 위젯 펼치기 (expanded=true → 주간 예보) / 접기 (false).
 
 == 탭 / 본인 인지 ==
@@ -168,8 +171,11 @@ Personality:
   enable=true to turn on, false to turn off, omit to toggle current state.
   Examples: "show buses" → toggle_layer(layer="buses", enable=true).
   "hide subway" → layer="subway", enable=false.
-- close_panel: close any open panel (travel / recommendation / saved) and
-  return to the map. Use for "close it", "go back to map", "close travel tab".
+- close_panel: close EVERYTHING that's open and return to a clean map view.
+  Covers: navigation/directions mode, place search results, travel /
+  recommendation / saved / timeline panels, friend-location-sharing panel.
+  Use for "close it", "go back to map", "close everything", "exit directions",
+  "close the search results". The user doesn't need to name a specific widget.
 - set_weather_expanded: expand the weather widget (expanded=true → weekly
   forecast) or collapse it (false).
 
@@ -235,8 +241,11 @@ const String _jaPrompt = '''
   layer: subway(地下鉄路線) / trains(列車) / stations(駅) / buses(バス) / river_bus(漢江バス) / flights(航空)。
   enable=true で表示、false で非表示、省略で現在の状態を反転。
   例: 「バス見せて」→ toggle_layer(layer="buses", enable=true)。
-- close_panel: 開いているパネル(旅行/おすすめ/保存)を閉じて地図に戻る。
-  「閉じて」「地図に戻って」「旅行タブ閉じて」などに使う。
+- close_panel: 開いているもの全部を閉じて、地図だけの状態に戻る。
+  対象: ルート案内、場所検索結果、旅行/おすすめ/保存/タイムラインパネル、
+       友達位置共有パネル。
+  「閉じて」「地図に戻って」「全部閉じて」「ルート消して」「検索閉じて」
+  などすべてこの関数一つで対応。具体的なウィジェット名を聞かなくてOK。
 - set_weather_expanded: 天気ウィジェットを展開(expanded=true → 週間予報) / 折りたたみ(false)。
 
 == タブ / 自己認識 ==

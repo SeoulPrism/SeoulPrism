@@ -621,6 +621,20 @@ class UnifiedSearchBarState extends State<UnifiedSearchBar>
     });
   }
 
+  /// 외부 (AI close_panel 등) 에서 검색 결과 패널을 닫기 위한 public alias.
+  void cancelSearch() => _cancelSearch();
+
+  /// 외부에서 길찾기 모드 종료. nav 진입 중일 때만 동작.
+  void exitNav() {
+    if (_isNavMode) _exitNav();
+  }
+
+  bool get isNavMode => _isNavMode;
+  bool get hasSearchResults =>
+      _searchResults.isNotEmpty ||
+      _placeResults.isNotEmpty ||
+      _busResults.isNotEmpty;
+
   // ── 길찾기 ──
   void _enterNav() {
     setState(() {

@@ -5,6 +5,7 @@ import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import '../widgets/adaptive/adaptive.dart';
@@ -3112,18 +3113,37 @@ class _DashboardScreenState extends State<DashboardScreen> {
     if (mounted) setState(() {});
   }
 
-  /// AI: 현재 열린 패널 (여행/추천/저장/타임라인) 닫고 지도로 복귀.
+  /// AI: 열려있는 모든 UI 닫고 지도만 보이는 상태로 복귀.
+  ///   - 길찾기 모드
+  ///   - 장소 발견 / 검색 결과 패널
+  ///   - 여행 / 추천 / 저장 / 타임라인 패널
+  ///   - 친구 위치 공유 패널
   void _handleAiClosePanel() {
-    final wasOpen =
-        _travelOpen || _recommendOpen || _savedOpen || _timelineOpen;
-    if (!wasOpen) return;
-    setState(() {
-      _travelOpen = false;
-      _recommendOpen = false;
-      _savedOpen = false;
-      _timelineOpen = false;
-    });
-    _delayShowButton();
+    bool changed = false;
+    final sb = _searchBarKey.currentState;
+    if (sb?.isNavMode ?? false) {
+      sb!.exitNav();
+      changed = true;
+    }
+    if (sb?.hasSearchResults ?? false) {
+      sb!.cancelSearch();
+      changed = true;
+    }
+    if (_membersPanelOpen) {
+      setState(() => _membersPanelOpen = false);
+      changed = true;
+    }
+    if (_travelOpen || _recommendOpen || _savedOpen || _timelineOpen) {
+      setState(() {
+        _travelOpen = false;
+        _recommendOpen = false;
+        _savedOpen = false;
+        _timelineOpen = false;
+      });
+      _delayShowButton();
+      changed = true;
+    }
+    if (changed) HapticFeedback.lightImpact();
   }
 
   /// AI: 날씨 위젯 펼치기 / 접기.
