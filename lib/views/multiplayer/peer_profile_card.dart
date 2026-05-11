@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../l10n/gen/app_localizations.dart';
 import '../../models/multiplayer_models.dart';
 import '../../services/multiplayer_service.dart';
 import '../../widgets/adaptive/adaptive.dart';
@@ -175,6 +176,7 @@ class _BodyState extends State<_Body> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final l = AppL10n.of(context);
     final p = _profile;
     final inset = MediaQuery.of(context).viewInsets.bottom;
     final state = _friendState;
@@ -214,11 +216,11 @@ class _BodyState extends State<_Body> {
                   color: cs.onSurface)),
           const SizedBox(height: 4),
           if (_distanceM != null)
-            Text(_formatDistance(_distanceM!),
+            Text(_formatDistance(context, _distanceM!),
                 style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
           if (p.friendCode != null) ...[
             const SizedBox(height: 2),
-            Text('친구 코드 ${p.friendCode}',
+            Text(l.peerFriendCode(p.friendCode!),
                 style: TextStyle(
                     fontSize: 11,
                     color: cs.onSurfaceVariant.withValues(alpha: 0.6))),
@@ -232,7 +234,7 @@ class _BodyState extends State<_Body> {
           const SizedBox(height: 24),
 
           if (isMe)
-            Text('나의 핀이에요',
+            Text(l.peerOwnPin,
                 style: TextStyle(
                     fontSize: 13, color: cs.onSurfaceVariant))
           else ...[
@@ -249,7 +251,7 @@ class _BodyState extends State<_Body> {
                           nickname: p.nickname);
                     },
                     icon: const Icon(Icons.flag_outlined, size: 18),
-                    label: const Text('신고'),
+                    label: Text(l.peerReport),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.orange,
                       padding: const EdgeInsets.symmetric(vertical: 12),
@@ -263,16 +265,16 @@ class _BodyState extends State<_Body> {
                       Navigator.pop(context);
                       showAdaptiveConfirmDialog(
                         context: context,
-                        title: '${p.nickname} 차단',
-                        content: '차단하면 같은 방에서 강퇴되고 메시지/핀이 보이지 않아요.',
-                        confirmText: '차단',
+                        title: l.peerBlockDialogTitle(p.nickname),
+                        content: l.peerBlockDialogBody,
+                        confirmText: l.peerBlockConfirm,
                         isDestructive: true,
                         onConfirm: () =>
                             MultiplayerService.instance.blockUser(widget.userId),
                       );
                     },
                     icon: const Icon(Icons.block_rounded, size: 18),
-                    label: const Text('차단'),
+                    label: Text(l.peerBlock),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: cs.error,
                       padding: const EdgeInsets.symmetric(vertical: 12),
@@ -288,24 +290,26 @@ class _BodyState extends State<_Body> {
   }
 
   Widget _primaryAction(_FriendState state, MultiplayerProfile p) {
+    final l = AppL10n.of(context);
     return switch (state) {
       _FriendState.friend => AdaptiveGlassButton(
-          label: '친구입니다 ✓',
+          label: l.peerIsFriend,
           onPressed: null,
         ),
       _FriendState.requested => AdaptiveGlassButton(
-          label: _busy ? '...' : '신청 취소',
+          label: _busy ? '...' : l.peerCancelRequest,
           onPressed: _busy
               ? null
               : () => _runWithBusy(() async {
                     await MultiplayerService.instance
                         .cancelFriendRequest(widget.userId);
                     if (!mounted) return;
-                    showAppSnackBar('${p.nickname} 에게 보낸 신청 취소함');
+                    showAppSnackBar(
+                        AppL10n.of(context).peerRequestCanceled(p.nickname));
                   }),
         ),
       _FriendState.incoming => AdaptiveGlassButton(
-          label: _busy ? '...' : '친구 신청 수락',
+          label: _busy ? '...' : l.peerAcceptRequest,
           onPressed: _busy
               ? null
               : () => _runWithBusy(() async {
@@ -314,7 +318,8 @@ class _BodyState extends State<_Body> {
                         .firstWhere((x) => x.otherSide(svc.myId ?? '') == widget.userId);
                     await svc.acceptFriendRequest(f);
                     if (!mounted) return;
-                    showAppSnackBar('${p.nickname} 와 친구가 됐어요');
+                    showAppSnackBar(
+                        AppL10n.of(context).peerNowFriend(p.nickname));
                   }),
         ),
       _FriendState.none => _buildNoneAction(p),
@@ -322,31 +327,34 @@ class _BodyState extends State<_Body> {
   }
 
   Widget _buildNoneAction(MultiplayerProfile p) {
+    final l = AppL10n.of(context);
     // cooldown 활성 — 7일 안에 보낸 신청이 거절돼서 잠금. 사용자에게 명시.
     final cd = _cooldownUntil;
     if (cd != null && cd.isAfter(DateTime.now())) {
       final remaining = cd.difference(DateTime.now());
       final label = remaining.inHours >= 24
-          ? '${remaining.inDays + 1}일 후 재신청 가능'
-          : '${remaining.inHours + 1}시간 후 재신청 가능';
+          ? l.peerCanRequestInDays(remaining.inDays + 1)
+          : l.peerCanRequestInHours(remaining.inHours + 1);
       return AdaptiveGlassButton(label: label, onPressed: null);
     }
     return AdaptiveGlassButton(
-      label: _busy ? '...' : '친구 신청 보내기',
+      label: _busy ? '...' : l.peerSendRequest,
       onPressed: _busy
           ? null
           : () => _runWithBusy(() async {
                 await MultiplayerService.instance
                     .sendFriendRequest(widget.userId);
                 if (!mounted) return;
-                showAppSnackBar('${p.nickname} 에게 신청을 보냈어요');
+                showAppSnackBar(
+                    AppL10n.of(context).peerRequestSent(p.nickname));
               }),
     );
   }
 
-  String _formatDistance(double meters) {
-    if (meters < 1000) return '${meters.round()}m 거리';
-    return '${(meters / 1000).toStringAsFixed(1)}km 거리';
+  String _formatDistance(BuildContext ctx, double meters) {
+    final l = AppL10n.of(ctx);
+    if (meters < 1000) return l.peerDistanceMeters(meters.round());
+    return l.peerDistanceKm((meters / 1000).toStringAsFixed(1));
   }
 }
 

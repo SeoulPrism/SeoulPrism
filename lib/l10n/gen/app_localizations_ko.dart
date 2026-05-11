@@ -338,4 +338,335 @@ class AppL10nKo extends AppL10n {
   String profileRecentPlaceCount(int count) {
     return '최근 $count곳';
   }
+
+  @override
+  String chatSendFailed(String error) {
+    return '전송 실패: $error';
+  }
+
+  @override
+  String get chatRoomDestSet => '🎯 방 목적지로 설정됨';
+
+  @override
+  String chatActionFailed(String error) {
+    return '실패: $error';
+  }
+
+  @override
+  String get chatMapAppUnavailable => '지도 앱을 열 수 없어요';
+
+  @override
+  String get chatMicPermissionRequired => '마이크 권한이 필요해요';
+
+  @override
+  String chatRecordStartFailed(String error) {
+    return '녹음 시작 실패: $error';
+  }
+
+  @override
+  String get chatRecordTooShort => '너무 짧아요 — 길게 눌러 녹음';
+
+  @override
+  String chatRecordStopFailed(String error) {
+    return '녹음 종료 실패: $error';
+  }
+
+  @override
+  String chatPhotoSendFailed(String error) {
+    return '사진 전송 실패: $error';
+  }
+
+  @override
+  String get chatSpotifyClientIdMissing =>
+      'Spotify 설정 필요 — 개발자가 SPOTIFY_CLIENT_ID 를 추가해야 해요';
+
+  @override
+  String get chatSpotifyAuthRetryHint => 'Spotify 인증 후 다시 눌러주세요';
+
+  @override
+  String chatSpotifyAuthFailed(String error) {
+    return 'Spotify 연결 실패: $error';
+  }
+
+  @override
+  String get chatMyLocation => '내 위치';
+
+  @override
+  String get chatLocationUnavailable => '위치를 가져올 수 없어요';
+
+  @override
+  String get chatDefaultRoomName => '친구방';
+
+  @override
+  String chatMembersInRoom(int count) {
+    return '$count 명 참여 중';
+  }
+
+  @override
+  String get chatRecordingHint => '녹음 중... 손 떼면 전송 / 위로 드래그 시 취소';
+
+  @override
+  String get chatRecordingPlaceholder => '🎙 녹음 중';
+
+  @override
+  String get chatMessageHint => '메시지 입력';
+
+  @override
+  String get chatActionMap => '지도';
+
+  @override
+  String get chatActionDirections => '길찾기';
+
+  @override
+  String get chatActionRoomDest => '🎯 방 목적지로';
+
+  @override
+  String chatVoiceLabel(int seconds) {
+    return '${seconds}s 음성';
+  }
+
+  @override
+  String chatPlaybackFailed(String error) {
+    return '재생 실패: $error';
+  }
+
+  @override
+  String chatEmptyTitleNamed(String roomName) {
+    return '$roomName 방이 시작됐어요';
+  }
+
+  @override
+  String get chatEmptyTitleDefault => '친구방이 시작됐어요';
+
+  @override
+  String get chatEmptyBody => '여기서 친구들과 만나서 인사하고, 위치도 공유하고,\n같이 갈 곳도 정해보세요.';
+
+  @override
+  String get chatStart => '대화 시작';
+
+  @override
+  String get chatReport => '이 메시지 신고';
+
+  @override
+  String chatBlockDialogTitle(String nickname) {
+    return '$nickname 차단';
+  }
+
+  @override
+  String get chatBlockDialogBody => '차단하면 같은 방에서 즉시 강퇴되고 메시지도 보이지 않아요.';
+
+  @override
+  String get chatBlockConfirm => '차단';
+
+  @override
+  String get chatUnknownUser => '사용자';
+
+  @override
+  String get spotifyOpenInApp => 'Spotify 에서 열기';
+
+  @override
+  String spotifyShareFailed(String error) {
+    return '공유 실패: $error';
+  }
+
+  @override
+  String get spotifyNoTrack => '재생 중인 곡이 없어요';
+
+  @override
+  String get dmAccessDenied => '대화에 접근할 수 없어요';
+
+  @override
+  String dmSendFailed(String error) {
+    return '전송 실패: $error';
+  }
+
+  @override
+  String get dmDefaultPeer => '친구';
+
+  @override
+  String get dmEmptyHint => '첫 메시지를 보내보세요';
+
+  @override
+  String get dmMessageHint => '메시지';
+
+  @override
+  String get friendCodeLengthError => '8자리 코드를 입력해주세요.';
+
+  @override
+  String get friendCodeNotFound => '코드와 일치하는 사용자를 찾을 수 없어요.';
+
+  @override
+  String friendRequestSent(String nickname) {
+    return '$nickname 님에게 친구 신청을 보냈어요.';
+  }
+
+  @override
+  String get friendShareSubject => 'Seoul Live 친구 추가';
+
+  @override
+  String friendShareBody(String nickname, String code) {
+    return '$nickname 님이 Seoul Live 친구 코드를 보냈어요!\n\n코드: $code\n바로 추가: com.seoul.prism://friend/$code';
+  }
+
+  @override
+  String get friendShareCopied => '공유 텍스트를 복사했어요';
+
+  @override
+  String get friendCodeTitle => '친구 코드';
+
+  @override
+  String get friendCodeSubtitle => '내 코드를 공유하거나, 친구 코드로 추가하세요.';
+
+  @override
+  String get friendMyCode => '내 친구 코드';
+
+  @override
+  String get friendCodeCopied => '코드 복사됨';
+
+  @override
+  String get friendQrHint => '친구가 카메라로 스캔하면 바로 추가돼요';
+
+  @override
+  String get friendShareButton => '공유하기';
+
+  @override
+  String get friendAddByCodeTitle => '친구 코드로 친구 추가';
+
+  @override
+  String get friendAddByCodeHint => '받은 8글자 코드를 입력하거나 QR 을 스캔하세요';
+
+  @override
+  String get friendCodePlaceholder => '예: AB12CD34';
+
+  @override
+  String get friendSendRequest => '친구 신청 보내기';
+
+  @override
+  String peerFriendCode(String code) {
+    return '친구 코드 $code';
+  }
+
+  @override
+  String get peerOwnPin => '나의 핀이에요';
+
+  @override
+  String get peerReport => '신고';
+
+  @override
+  String peerBlockDialogTitle(String nickname) {
+    return '$nickname 차단';
+  }
+
+  @override
+  String get peerBlockDialogBody => '차단하면 같은 방에서 강퇴되고 메시지/핀이 보이지 않아요.';
+
+  @override
+  String get peerBlockConfirm => '차단';
+
+  @override
+  String get peerBlock => '차단';
+
+  @override
+  String get peerIsFriend => '친구입니다 ✓';
+
+  @override
+  String get peerCancelRequest => '신청 취소';
+
+  @override
+  String peerRequestCanceled(String nickname) {
+    return '$nickname 에게 보낸 신청 취소함';
+  }
+
+  @override
+  String get peerAcceptRequest => '친구 신청 수락';
+
+  @override
+  String peerNowFriend(String nickname) {
+    return '$nickname 와 친구가 됐어요';
+  }
+
+  @override
+  String peerCanRequestInDays(int days) {
+    return '$days일 후 재신청 가능';
+  }
+
+  @override
+  String peerCanRequestInHours(int hours) {
+    return '$hours시간 후 재신청 가능';
+  }
+
+  @override
+  String get peerSendRequest => '친구 신청 보내기';
+
+  @override
+  String peerRequestSent(String nickname) {
+    return '$nickname 에게 신청을 보냈어요';
+  }
+
+  @override
+  String peerDistanceMeters(int meters) {
+    return '${meters}m 거리';
+  }
+
+  @override
+  String peerDistanceKm(String km) {
+    return '${km}km 거리';
+  }
+
+  @override
+  String get spotifyRoomRequired => '친구방에 입장한 뒤 다시 시도해주세요';
+
+  @override
+  String get spotifyShareSuccess => '🎵 친구방에 공유했어요';
+
+  @override
+  String get spotifyDisconnectTitle => 'Spotify 연결 해제';
+
+  @override
+  String get spotifyDisconnectBody => '저장된 토큰을 삭제하고 친구에게 곡 공유가 중단돼요.';
+
+  @override
+  String get spotifyDisconnectConfirm => '해제';
+
+  @override
+  String get spotifyDisconnected => 'Spotify 해제됨';
+
+  @override
+  String get spotifyAuthRetryHint => 'Spotify 인증 후 자동으로 돌아와요';
+
+  @override
+  String spotifyConnectFailed(String error) {
+    return '연결 실패: $error';
+  }
+
+  @override
+  String get spotifyClientIdMissing => '개발자 SPOTIFY_CLIENT_ID 미설정';
+
+  @override
+  String get spotifyTokenExpired => '연결이 만료됐어요. 다시 로그인해주세요.';
+
+  @override
+  String get spotifyReconnect => 'Spotify 다시 연결';
+
+  @override
+  String get spotifyConnect => 'Spotify 연결';
+
+  @override
+  String get spotifyConnectDescription =>
+      '연결하면 친구방 채팅에 듣고 있는 곡을\n공유할 수 있고, 친구도 내가 듣는 곡을 봐요.';
+
+  @override
+  String get spotifyLoginButton => 'Spotify 로 로그인';
+
+  @override
+  String get spotifyShareToRoom => '친구방에 공유';
+
+  @override
+  String get spotifyDisconnect => '연결 해제';
+
+  @override
+  String get spotifyConnectedNoTrack => 'Spotify 연결됨 (재생 없음)';
+
+  @override
+  String get spotifyNowPlaying => '지금 듣는 곡';
 }

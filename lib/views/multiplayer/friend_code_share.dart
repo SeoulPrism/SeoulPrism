@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../../l10n/gen/app_localizations.dart';
 import '../../services/multiplayer_service.dart';
 import '../../widgets/adaptive/adaptive.dart';
 import '../../widgets/app_snackbar.dart';
@@ -70,8 +71,9 @@ class _FriendCodeShareSheetState extends State<FriendCodeShareSheet> {
 
   Future<void> _addByCode() async {
     final code = _codeCtrl.text.toUpperCase().trim();
+    final l = AppL10n.of(context);
     if (code.length != 8) {
-      setState(() => _error = '8자리 코드를 입력해주세요.');
+      setState(() => _error = l.friendCodeLengthError);
       return;
     }
     setState(() {
@@ -84,7 +86,7 @@ class _FriendCodeShareSheetState extends State<FriendCodeShareSheet> {
       if (p == null) {
         setState(() {
           _busy = false;
-          _error = '코드와 일치하는 사용자를 찾을 수 없어요.';
+          _error = l.friendCodeNotFound;
         });
         return;
       }
@@ -92,7 +94,7 @@ class _FriendCodeShareSheetState extends State<FriendCodeShareSheet> {
       if (!mounted) return;
       setState(() {
         _busy = false;
-        _info = '${p.nickname} 님에게 친구 신청을 보냈어요.';
+        _info = l.friendRequestSent(p.nickname);
       });
     } catch (e) {
       setState(() {
@@ -110,26 +112,26 @@ class _FriendCodeShareSheetState extends State<FriendCodeShareSheet> {
   }
 
   Future<void> _shareCode(String code, String nickname) async {
-    final text =
-        '$nickname 님이 Seoul Live 친구 코드를 보냈어요!\n\n코드: $code\n'
-        '바로 추가: com.seoul.prism://friend/$code';
+    final l = AppL10n.of(context);
+    final text = l.friendShareBody(nickname, code);
     final box = context.findRenderObject() as RenderBox?;
     try {
       await SharePlus.instance.share(ShareParams(
         text: text,
-        subject: 'Seoul Live 친구 추가',
+        subject: l.friendShareSubject,
         sharePositionOrigin:
             box != null ? box.localToGlobal(Offset.zero) & box.size : null,
       ));
     } catch (_) {
       await Clipboard.setData(ClipboardData(text: text));
-      if (mounted) showAppSnackBar('공유 텍스트를 복사했어요');
+      if (mounted) showAppSnackBar(AppL10n.of(context).friendShareCopied);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final l = AppL10n.of(context);
     final me = MultiplayerService.instance.myProfile;
     final myCode = me?.friendCode ?? '--------';
     final inset = MediaQuery.of(context).viewInsets.bottom;
@@ -141,13 +143,13 @@ class _FriendCodeShareSheetState extends State<FriendCodeShareSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('친구 코드',
+            Text(l.friendCodeTitle,
                 style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.w800,
                     color: cs.onSurface)),
             const SizedBox(height: 4),
-            Text('내 코드를 공유하거나, 친구 코드로 추가하세요.',
+            Text(l.friendCodeSubtitle,
                 style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
             const SizedBox(height: 20),
 
@@ -158,7 +160,7 @@ class _FriendCodeShareSheetState extends State<FriendCodeShareSheet> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('내 친구 코드',
+                  Text(l.friendMyCode,
                       style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
@@ -181,7 +183,7 @@ class _FriendCodeShareSheetState extends State<FriendCodeShareSheet> {
                           await Clipboard.setData(
                               ClipboardData(text: myCode));
                           if (!mounted) return;
-                          showAppSnackBar('코드 복사됨');
+                          showAppSnackBar(AppL10n.of(context).friendCodeCopied);
                         },
                       ),
                     ],
@@ -207,7 +209,7 @@ class _FriendCodeShareSheetState extends State<FriendCodeShareSheet> {
                     const SizedBox(height: 6),
                     Center(
                       child: Text(
-                        '친구가 카메라로 스캔하면 바로 추가돼요',
+                        l.friendQrHint,
                         style: TextStyle(
                             fontSize: 11, color: cs.onSurfaceVariant),
                       ),
@@ -215,7 +217,7 @@ class _FriendCodeShareSheetState extends State<FriendCodeShareSheet> {
                   ],
                   const SizedBox(height: 12),
                   AdaptiveGlassButton(
-                    label: '공유하기',
+                    label: l.friendShareButton,
                     onPressed: me == null
                         ? null
                         : () => _shareCode(myCode, me.nickname),
@@ -227,18 +229,18 @@ class _FriendCodeShareSheetState extends State<FriendCodeShareSheet> {
             const SizedBox(height: 24),
 
             // 친구 코드 입력.
-            Text('친구 코드로 친구 추가',
+            Text(l.friendAddByCodeTitle,
                 style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w800,
                     color: cs.onSurface)),
             const SizedBox(height: 4),
-            Text('받은 8글자 코드를 입력하거나 QR 을 스캔하세요',
+            Text(l.friendAddByCodeHint,
                 style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
             const SizedBox(height: 12),
             AdaptiveTextField(
               controller: _codeCtrl,
-              placeholder: '예: AB12CD34',
+              placeholder: l.friendCodePlaceholder,
               padding: const EdgeInsets.symmetric(
                   horizontal: 16, vertical: 14),
               onChanged: _onCodeChanged,
@@ -248,7 +250,7 @@ class _FriendCodeShareSheetState extends State<FriendCodeShareSheet> {
               children: [
                 Expanded(
                   child: AdaptiveGlassButton(
-                    label: _busy ? '...' : '친구 신청 보내기',
+                    label: _busy ? '...' : l.friendSendRequest,
                     onPressed: _busy ? null : _addByCode,
                   ),
                 ),

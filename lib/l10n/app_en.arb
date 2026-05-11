@@ -189,5 +189,181 @@
   "profileRecentPlaceCount": "Last {count} places",
   "@profileRecentPlaceCount": {
     "placeholders": { "count": { "type": "int" } }
-  }
+  },
+
+  "chatSendFailed": "Send failed: {error}",
+  "@chatSendFailed": {
+    "placeholders": { "error": { "type": "String" } }
+  },
+  "chatRoomDestSet": "🎯 Set as room destination",
+  "chatActionFailed": "Failed: {error}",
+  "@chatActionFailed": {
+    "placeholders": { "error": { "type": "String" } }
+  },
+  "chatMapAppUnavailable": "Couldn't open the maps app",
+  "chatMicPermissionRequired": "Microphone permission required",
+  "chatRecordStartFailed": "Couldn't start recording: {error}",
+  "@chatRecordStartFailed": {
+    "placeholders": { "error": { "type": "String" } }
+  },
+  "chatRecordTooShort": "Too short — press and hold to record",
+  "chatRecordStopFailed": "Couldn't stop recording: {error}",
+  "@chatRecordStopFailed": {
+    "placeholders": { "error": { "type": "String" } }
+  },
+  "chatPhotoSendFailed": "Couldn't send photo: {error}",
+  "@chatPhotoSendFailed": {
+    "placeholders": { "error": { "type": "String" } }
+  },
+  "chatSpotifyClientIdMissing": "Spotify not set up — developer must add SPOTIFY_CLIENT_ID",
+  "chatSpotifyAuthRetryHint": "Tap again after Spotify auth",
+  "chatSpotifyAuthFailed": "Spotify connection failed: {error}",
+  "@chatSpotifyAuthFailed": {
+    "placeholders": { "error": { "type": "String" } }
+  },
+  "chatMyLocation": "My location",
+  "chatLocationUnavailable": "Couldn't fetch your location",
+  "chatDefaultRoomName": "Friend room",
+  "chatMembersInRoom": "{count} in the room",
+  "@chatMembersInRoom": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "chatRecordingHint": "Recording… release to send, drag up to cancel",
+  "chatRecordingPlaceholder": "🎙 Recording",
+  "chatMessageHint": "Type a message",
+  "chatActionMap": "Map",
+  "chatActionDirections": "Directions",
+  "chatActionRoomDest": "🎯 Room destination",
+  "chatVoiceLabel": "{seconds}s voice",
+  "@chatVoiceLabel": {
+    "placeholders": { "seconds": { "type": "int" } }
+  },
+  "chatPlaybackFailed": "Playback failed: {error}",
+  "@chatPlaybackFailed": {
+    "placeholders": { "error": { "type": "String" } }
+  },
+  "chatEmptyTitleNamed": "{roomName} has started",
+  "@chatEmptyTitleNamed": {
+    "placeholders": { "roomName": { "type": "String" } }
+  },
+  "chatEmptyTitleDefault": "The friend room is on",
+  "chatEmptyBody": "Say hi to your friends here, share your location,\nand plan where to go together.",
+  "chatStart": "Start the chat",
+  "chatReport": "Report this message",
+  "chatBlockDialogTitle": "Block {nickname}",
+  "@chatBlockDialogTitle": {
+    "placeholders": { "nickname": { "type": "String" } }
+  },
+  "chatBlockDialogBody": "Blocking removes them from the room and hides their messages.",
+  "chatBlockConfirm": "Block",
+  "chatUnknownUser": "User",
+  "spotifyOpenInApp": "Open in Spotify",
+  "spotifyShareFailed": "Share failed: {error}",
+  "@spotifyShareFailed": {
+    "placeholders": { "error": { "type": "String" } }
+  },
+  "spotifyNoTrack": "Nothing playing right now",
+
+  "dmAccessDenied": "Can't access this conversation",
+  "dmSendFailed": "Send failed: {error}",
+  "@dmSendFailed": {
+    "placeholders": { "error": { "type": "String" } }
+  },
+  "dmDefaultPeer": "Friend",
+  "dmEmptyHint": "Send the first message",
+  "dmMessageHint": "Message",
+
+  "friendCodeLengthError": "Please enter an 8-character code.",
+  "friendCodeNotFound": "No user matches that code.",
+  "friendRequestSent": "Friend request sent to {nickname}.",
+  "@friendRequestSent": {
+    "placeholders": { "nickname": { "type": "String" } }
+  },
+  "friendShareSubject": "Add me on Seoul Live",
+  "friendShareBody": "{nickname} sent you a Seoul Live friend code!\n\nCode: {code}\nAdd instantly: com.seoul.prism://friend/{code}",
+  "@friendShareBody": {
+    "placeholders": {
+      "nickname": { "type": "String" },
+      "code": { "type": "String" }
+    }
+  },
+  "friendShareCopied": "Share text copied",
+  "friendCodeTitle": "Friend code",
+  "friendCodeSubtitle": "Share your code, or add a friend's.",
+  "friendMyCode": "My friend code",
+  "friendCodeCopied": "Code copied",
+  "friendQrHint": "Friends can scan with their camera to add you",
+  "friendShareButton": "Share",
+  "friendAddByCodeTitle": "Add a friend by code",
+  "friendAddByCodeHint": "Enter an 8-character code or scan a QR",
+  "friendCodePlaceholder": "e.g. AB12CD34",
+  "friendSendRequest": "Send friend request",
+
+  "peerFriendCode": "Friend code {code}",
+  "@peerFriendCode": {
+    "placeholders": { "code": { "type": "String" } }
+  },
+  "peerOwnPin": "That's your own pin",
+  "peerReport": "Report",
+  "peerBlockDialogTitle": "Block {nickname}",
+  "@peerBlockDialogTitle": {
+    "placeholders": { "nickname": { "type": "String" } }
+  },
+  "peerBlockDialogBody": "Blocking removes them from this room and hides their messages and pins.",
+  "peerBlockConfirm": "Block",
+  "peerBlock": "Block",
+  "peerIsFriend": "Friends ✓",
+  "peerCancelRequest": "Cancel request",
+  "peerRequestCanceled": "Canceled the request to {nickname}",
+  "@peerRequestCanceled": {
+    "placeholders": { "nickname": { "type": "String" } }
+  },
+  "peerAcceptRequest": "Accept friend request",
+  "peerNowFriend": "You're now friends with {nickname}",
+  "@peerNowFriend": {
+    "placeholders": { "nickname": { "type": "String" } }
+  },
+  "peerCanRequestInDays": "Can request again in {days}d",
+  "@peerCanRequestInDays": {
+    "placeholders": { "days": { "type": "int" } }
+  },
+  "peerCanRequestInHours": "Can request again in {hours}h",
+  "@peerCanRequestInHours": {
+    "placeholders": { "hours": { "type": "int" } }
+  },
+  "peerSendRequest": "Send friend request",
+  "peerRequestSent": "Friend request sent to {nickname}",
+  "@peerRequestSent": {
+    "placeholders": { "nickname": { "type": "String" } }
+  },
+  "peerDistanceMeters": "{meters} m away",
+  "@peerDistanceMeters": {
+    "placeholders": { "meters": { "type": "int" } }
+  },
+  "peerDistanceKm": "{km} km away",
+  "@peerDistanceKm": {
+    "placeholders": { "km": { "type": "String" } }
+  },
+
+  "spotifyRoomRequired": "Join a friend room and try again",
+  "spotifyShareSuccess": "🎵 Shared with the room",
+  "spotifyDisconnectTitle": "Disconnect Spotify",
+  "spotifyDisconnectBody": "This deletes the saved token and stops sharing tracks with friends.",
+  "spotifyDisconnectConfirm": "Disconnect",
+  "spotifyDisconnected": "Spotify disconnected",
+  "spotifyAuthRetryHint": "We'll return automatically after Spotify auth",
+  "spotifyConnectFailed": "Connection failed: {error}",
+  "@spotifyConnectFailed": {
+    "placeholders": { "error": { "type": "String" } }
+  },
+  "spotifyClientIdMissing": "Developer hasn't set SPOTIFY_CLIENT_ID",
+  "spotifyTokenExpired": "Connection expired. Please log in again.",
+  "spotifyReconnect": "Reconnect Spotify",
+  "spotifyConnect": "Connect Spotify",
+  "spotifyConnectDescription": "Connect to share what you're listening to in friend rooms,\nand see what your friends are playing.",
+  "spotifyLoginButton": "Log in with Spotify",
+  "spotifyShareToRoom": "Share with room",
+  "spotifyDisconnect": "Disconnect",
+  "spotifyConnectedNoTrack": "Spotify connected (no playback)",
+  "spotifyNowPlaying": "Now playing"
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/gen/app_localizations.dart';
 import '../../models/multiplayer_models.dart';
 import '../../services/multiplayer_service.dart';
 import '../../widgets/adaptive/adaptive.dart';
@@ -54,8 +55,8 @@ class _DmThreadViewState extends State<DmThreadView> {
     } catch (e) {
       if (!mounted) return;
       // RLS / 네트워크 / 권한 거부 — 명시적 안내 후 빠져나감.
-      showAppSnackBar('대화에 접근할 수 없어요');
-      Navigator.of(context).pop();
+      if (mounted) showAppSnackBar(AppL10n.of(context).dmAccessDenied);
+      if (mounted) Navigator.of(context).pop();
     }
   }
 
@@ -85,7 +86,9 @@ class _DmThreadViewState extends State<DmThreadView> {
     try {
       await MultiplayerService.instance.sendDm(widget.threadId, t);
     } catch (e) {
-      showAppSnackBar('전송 실패: $e');
+      if (mounted) {
+        showAppSnackBar(AppL10n.of(context).dmSendFailed(e.toString()));
+      }
     }
   }
 
@@ -96,9 +99,10 @@ class _DmThreadViewState extends State<DmThreadView> {
     final p = svc.peerProfile(widget.otherUserId);
     final myId = svc.myId;
 
+    final l = AppL10n.of(context);
     return Scaffold(
       backgroundColor: cs.surface,
-      appBar: AdaptiveAppBar(title: p?.nickname ?? '친구'),
+      appBar: AdaptiveAppBar(title: p?.nickname ?? l.dmDefaultPeer),
       body: SafeArea(
         child: Column(
           children: [
@@ -107,7 +111,7 @@ class _DmThreadViewState extends State<DmThreadView> {
                   ? const Center(child: CircularProgressIndicator())
                   : _msgs.isEmpty
                       ? Center(
-                          child: Text('첫 메시지를 보내보세요',
+                          child: Text(l.dmEmptyHint,
                               style: TextStyle(color: cs.onSurfaceVariant)),
                         )
                       : ListView.builder(
@@ -156,7 +160,7 @@ class _DmThreadViewState extends State<DmThreadView> {
                   Expanded(
                     child: AdaptiveTextField(
                       controller: _ctrl,
-                      placeholder: '메시지',
+                      placeholder: l.dmMessageHint,
                       onSubmitted: (_) => _send(),
                       padding: const EdgeInsets.symmetric(
                           horizontal: 14, vertical: 12),

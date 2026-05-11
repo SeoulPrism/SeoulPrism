@@ -670,6 +670,564 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Last {count} places'**
   String profileRecentPlaceCount(int count);
+
+  /// No description provided for @chatSendFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Send failed: {error}'**
+  String chatSendFailed(String error);
+
+  /// No description provided for @chatRoomDestSet.
+  ///
+  /// In en, this message translates to:
+  /// **'🎯 Set as room destination'**
+  String get chatRoomDestSet;
+
+  /// No description provided for @chatActionFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed: {error}'**
+  String chatActionFailed(String error);
+
+  /// No description provided for @chatMapAppUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t open the maps app'**
+  String get chatMapAppUnavailable;
+
+  /// No description provided for @chatMicPermissionRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Microphone permission required'**
+  String get chatMicPermissionRequired;
+
+  /// No description provided for @chatRecordStartFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t start recording: {error}'**
+  String chatRecordStartFailed(String error);
+
+  /// No description provided for @chatRecordTooShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Too short — press and hold to record'**
+  String get chatRecordTooShort;
+
+  /// No description provided for @chatRecordStopFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t stop recording: {error}'**
+  String chatRecordStopFailed(String error);
+
+  /// No description provided for @chatPhotoSendFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t send photo: {error}'**
+  String chatPhotoSendFailed(String error);
+
+  /// No description provided for @chatSpotifyClientIdMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Spotify not set up — developer must add SPOTIFY_CLIENT_ID'**
+  String get chatSpotifyClientIdMissing;
+
+  /// No description provided for @chatSpotifyAuthRetryHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap again after Spotify auth'**
+  String get chatSpotifyAuthRetryHint;
+
+  /// No description provided for @chatSpotifyAuthFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Spotify connection failed: {error}'**
+  String chatSpotifyAuthFailed(String error);
+
+  /// No description provided for @chatMyLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'My location'**
+  String get chatMyLocation;
+
+  /// No description provided for @chatLocationUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t fetch your location'**
+  String get chatLocationUnavailable;
+
+  /// No description provided for @chatDefaultRoomName.
+  ///
+  /// In en, this message translates to:
+  /// **'Friend room'**
+  String get chatDefaultRoomName;
+
+  /// No description provided for @chatMembersInRoom.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} in the room'**
+  String chatMembersInRoom(int count);
+
+  /// No description provided for @chatRecordingHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Recording… release to send, drag up to cancel'**
+  String get chatRecordingHint;
+
+  /// No description provided for @chatRecordingPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'🎙 Recording'**
+  String get chatRecordingPlaceholder;
+
+  /// No description provided for @chatMessageHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Type a message'**
+  String get chatMessageHint;
+
+  /// No description provided for @chatActionMap.
+  ///
+  /// In en, this message translates to:
+  /// **'Map'**
+  String get chatActionMap;
+
+  /// No description provided for @chatActionDirections.
+  ///
+  /// In en, this message translates to:
+  /// **'Directions'**
+  String get chatActionDirections;
+
+  /// No description provided for @chatActionRoomDest.
+  ///
+  /// In en, this message translates to:
+  /// **'🎯 Room destination'**
+  String get chatActionRoomDest;
+
+  /// No description provided for @chatVoiceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'{seconds}s voice'**
+  String chatVoiceLabel(int seconds);
+
+  /// No description provided for @chatPlaybackFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Playback failed: {error}'**
+  String chatPlaybackFailed(String error);
+
+  /// No description provided for @chatEmptyTitleNamed.
+  ///
+  /// In en, this message translates to:
+  /// **'{roomName} has started'**
+  String chatEmptyTitleNamed(String roomName);
+
+  /// No description provided for @chatEmptyTitleDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'The friend room is on'**
+  String get chatEmptyTitleDefault;
+
+  /// No description provided for @chatEmptyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Say hi to your friends here, share your location,\nand plan where to go together.'**
+  String get chatEmptyBody;
+
+  /// No description provided for @chatStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start the chat'**
+  String get chatStart;
+
+  /// No description provided for @chatReport.
+  ///
+  /// In en, this message translates to:
+  /// **'Report this message'**
+  String get chatReport;
+
+  /// No description provided for @chatBlockDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Block {nickname}'**
+  String chatBlockDialogTitle(String nickname);
+
+  /// No description provided for @chatBlockDialogBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocking removes them from the room and hides their messages.'**
+  String get chatBlockDialogBody;
+
+  /// No description provided for @chatBlockConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Block'**
+  String get chatBlockConfirm;
+
+  /// No description provided for @chatUnknownUser.
+  ///
+  /// In en, this message translates to:
+  /// **'User'**
+  String get chatUnknownUser;
+
+  /// No description provided for @spotifyOpenInApp.
+  ///
+  /// In en, this message translates to:
+  /// **'Open in Spotify'**
+  String get spotifyOpenInApp;
+
+  /// No description provided for @spotifyShareFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Share failed: {error}'**
+  String spotifyShareFailed(String error);
+
+  /// No description provided for @spotifyNoTrack.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing playing right now'**
+  String get spotifyNoTrack;
+
+  /// No description provided for @dmAccessDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t access this conversation'**
+  String get dmAccessDenied;
+
+  /// No description provided for @dmSendFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Send failed: {error}'**
+  String dmSendFailed(String error);
+
+  /// No description provided for @dmDefaultPeer.
+  ///
+  /// In en, this message translates to:
+  /// **'Friend'**
+  String get dmDefaultPeer;
+
+  /// No description provided for @dmEmptyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Send the first message'**
+  String get dmEmptyHint;
+
+  /// No description provided for @dmMessageHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Message'**
+  String get dmMessageHint;
+
+  /// No description provided for @friendCodeLengthError.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter an 8-character code.'**
+  String get friendCodeLengthError;
+
+  /// No description provided for @friendCodeNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No user matches that code.'**
+  String get friendCodeNotFound;
+
+  /// No description provided for @friendRequestSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Friend request sent to {nickname}.'**
+  String friendRequestSent(String nickname);
+
+  /// No description provided for @friendShareSubject.
+  ///
+  /// In en, this message translates to:
+  /// **'Add me on Seoul Live'**
+  String get friendShareSubject;
+
+  /// No description provided for @friendShareBody.
+  ///
+  /// In en, this message translates to:
+  /// **'{nickname} sent you a Seoul Live friend code!\n\nCode: {code}\nAdd instantly: com.seoul.prism://friend/{code}'**
+  String friendShareBody(String nickname, String code);
+
+  /// No description provided for @friendShareCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Share text copied'**
+  String get friendShareCopied;
+
+  /// No description provided for @friendCodeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Friend code'**
+  String get friendCodeTitle;
+
+  /// No description provided for @friendCodeSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Share your code, or add a friend\'s.'**
+  String get friendCodeSubtitle;
+
+  /// No description provided for @friendMyCode.
+  ///
+  /// In en, this message translates to:
+  /// **'My friend code'**
+  String get friendMyCode;
+
+  /// No description provided for @friendCodeCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Code copied'**
+  String get friendCodeCopied;
+
+  /// No description provided for @friendQrHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Friends can scan with their camera to add you'**
+  String get friendQrHint;
+
+  /// No description provided for @friendShareButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Share'**
+  String get friendShareButton;
+
+  /// No description provided for @friendAddByCodeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a friend by code'**
+  String get friendAddByCodeTitle;
+
+  /// No description provided for @friendAddByCodeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter an 8-character code or scan a QR'**
+  String get friendAddByCodeHint;
+
+  /// No description provided for @friendCodePlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. AB12CD34'**
+  String get friendCodePlaceholder;
+
+  /// No description provided for @friendSendRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'Send friend request'**
+  String get friendSendRequest;
+
+  /// No description provided for @peerFriendCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Friend code {code}'**
+  String peerFriendCode(String code);
+
+  /// No description provided for @peerOwnPin.
+  ///
+  /// In en, this message translates to:
+  /// **'That\'s your own pin'**
+  String get peerOwnPin;
+
+  /// No description provided for @peerReport.
+  ///
+  /// In en, this message translates to:
+  /// **'Report'**
+  String get peerReport;
+
+  /// No description provided for @peerBlockDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Block {nickname}'**
+  String peerBlockDialogTitle(String nickname);
+
+  /// No description provided for @peerBlockDialogBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocking removes them from this room and hides their messages and pins.'**
+  String get peerBlockDialogBody;
+
+  /// No description provided for @peerBlockConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Block'**
+  String get peerBlockConfirm;
+
+  /// No description provided for @peerBlock.
+  ///
+  /// In en, this message translates to:
+  /// **'Block'**
+  String get peerBlock;
+
+  /// No description provided for @peerIsFriend.
+  ///
+  /// In en, this message translates to:
+  /// **'Friends ✓'**
+  String get peerIsFriend;
+
+  /// No description provided for @peerCancelRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel request'**
+  String get peerCancelRequest;
+
+  /// No description provided for @peerRequestCanceled.
+  ///
+  /// In en, this message translates to:
+  /// **'Canceled the request to {nickname}'**
+  String peerRequestCanceled(String nickname);
+
+  /// No description provided for @peerAcceptRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept friend request'**
+  String get peerAcceptRequest;
+
+  /// No description provided for @peerNowFriend.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re now friends with {nickname}'**
+  String peerNowFriend(String nickname);
+
+  /// No description provided for @peerCanRequestInDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Can request again in {days}d'**
+  String peerCanRequestInDays(int days);
+
+  /// No description provided for @peerCanRequestInHours.
+  ///
+  /// In en, this message translates to:
+  /// **'Can request again in {hours}h'**
+  String peerCanRequestInHours(int hours);
+
+  /// No description provided for @peerSendRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'Send friend request'**
+  String get peerSendRequest;
+
+  /// No description provided for @peerRequestSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Friend request sent to {nickname}'**
+  String peerRequestSent(String nickname);
+
+  /// No description provided for @peerDistanceMeters.
+  ///
+  /// In en, this message translates to:
+  /// **'{meters} m away'**
+  String peerDistanceMeters(int meters);
+
+  /// No description provided for @peerDistanceKm.
+  ///
+  /// In en, this message translates to:
+  /// **'{km} km away'**
+  String peerDistanceKm(String km);
+
+  /// No description provided for @spotifyRoomRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Join a friend room and try again'**
+  String get spotifyRoomRequired;
+
+  /// No description provided for @spotifyShareSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'🎵 Shared with the room'**
+  String get spotifyShareSuccess;
+
+  /// No description provided for @spotifyDisconnectTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnect Spotify'**
+  String get spotifyDisconnectTitle;
+
+  /// No description provided for @spotifyDisconnectBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This deletes the saved token and stops sharing tracks with friends.'**
+  String get spotifyDisconnectBody;
+
+  /// No description provided for @spotifyDisconnectConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnect'**
+  String get spotifyDisconnectConfirm;
+
+  /// No description provided for @spotifyDisconnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Spotify disconnected'**
+  String get spotifyDisconnected;
+
+  /// No description provided for @spotifyAuthRetryHint.
+  ///
+  /// In en, this message translates to:
+  /// **'We\'ll return automatically after Spotify auth'**
+  String get spotifyAuthRetryHint;
+
+  /// No description provided for @spotifyConnectFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection failed: {error}'**
+  String spotifyConnectFailed(String error);
+
+  /// No description provided for @spotifyClientIdMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Developer hasn\'t set SPOTIFY_CLIENT_ID'**
+  String get spotifyClientIdMissing;
+
+  /// No description provided for @spotifyTokenExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection expired. Please log in again.'**
+  String get spotifyTokenExpired;
+
+  /// No description provided for @spotifyReconnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Reconnect Spotify'**
+  String get spotifyReconnect;
+
+  /// No description provided for @spotifyConnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect Spotify'**
+  String get spotifyConnect;
+
+  /// No description provided for @spotifyConnectDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect to share what you\'re listening to in friend rooms,\nand see what your friends are playing.'**
+  String get spotifyConnectDescription;
+
+  /// No description provided for @spotifyLoginButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Log in with Spotify'**
+  String get spotifyLoginButton;
+
+  /// No description provided for @spotifyShareToRoom.
+  ///
+  /// In en, this message translates to:
+  /// **'Share with room'**
+  String get spotifyShareToRoom;
+
+  /// No description provided for @spotifyDisconnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnect'**
+  String get spotifyDisconnect;
+
+  /// No description provided for @spotifyConnectedNoTrack.
+  ///
+  /// In en, this message translates to:
+  /// **'Spotify connected (no playback)'**
+  String get spotifyConnectedNoTrack;
+
+  /// No description provided for @spotifyNowPlaying.
+  ///
+  /// In en, this message translates to:
+  /// **'Now playing'**
+  String get spotifyNowPlaying;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

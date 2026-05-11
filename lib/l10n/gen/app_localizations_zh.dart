@@ -334,4 +334,334 @@ class AppL10nZh extends AppL10n {
   String profileRecentPlaceCount(int count) {
     return '最近 $count 个地点';
   }
+
+  @override
+  String chatSendFailed(String error) {
+    return '发送失败:$error';
+  }
+
+  @override
+  String get chatRoomDestSet => '🎯 已设为房间目的地';
+
+  @override
+  String chatActionFailed(String error) {
+    return '失败:$error';
+  }
+
+  @override
+  String get chatMapAppUnavailable => '无法打开地图应用';
+
+  @override
+  String get chatMicPermissionRequired => '需要麦克风权限';
+
+  @override
+  String chatRecordStartFailed(String error) {
+    return '录音开始失败:$error';
+  }
+
+  @override
+  String get chatRecordTooShort => '太短了 — 长按以录音';
+
+  @override
+  String chatRecordStopFailed(String error) {
+    return '录音结束失败:$error';
+  }
+
+  @override
+  String chatPhotoSendFailed(String error) {
+    return '照片发送失败:$error';
+  }
+
+  @override
+  String get chatSpotifyClientIdMissing =>
+      'Spotify 未配置 — 开发者需添加 SPOTIFY_CLIENT_ID';
+
+  @override
+  String get chatSpotifyAuthRetryHint => 'Spotify 认证后请再点一次';
+
+  @override
+  String chatSpotifyAuthFailed(String error) {
+    return 'Spotify 连接失败:$error';
+  }
+
+  @override
+  String get chatMyLocation => '我的位置';
+
+  @override
+  String get chatLocationUnavailable => '无法获取位置';
+
+  @override
+  String get chatDefaultRoomName => '好友房间';
+
+  @override
+  String chatMembersInRoom(int count) {
+    return '$count 人在房间';
+  }
+
+  @override
+  String get chatRecordingHint => '录音中… 松开发送,向上拖动取消';
+
+  @override
+  String get chatRecordingPlaceholder => '🎙 录音中';
+
+  @override
+  String get chatMessageHint => '输入消息';
+
+  @override
+  String get chatActionMap => '地图';
+
+  @override
+  String get chatActionDirections => '导航';
+
+  @override
+  String get chatActionRoomDest => '🎯 设为房间目的地';
+
+  @override
+  String chatVoiceLabel(int seconds) {
+    return '$seconds 秒 语音';
+  }
+
+  @override
+  String chatPlaybackFailed(String error) {
+    return '播放失败:$error';
+  }
+
+  @override
+  String chatEmptyTitleNamed(String roomName) {
+    return '$roomName 已开启';
+  }
+
+  @override
+  String get chatEmptyTitleDefault => '好友房间已开启';
+
+  @override
+  String get chatEmptyBody => '在这里和朋友打招呼、共享位置,\n一起定下要去的地方吧。';
+
+  @override
+  String get chatStart => '开始聊天';
+
+  @override
+  String get chatReport => '举报此消息';
+
+  @override
+  String chatBlockDialogTitle(String nickname) {
+    return '屏蔽 $nickname';
+  }
+
+  @override
+  String get chatBlockDialogBody => '屏蔽后会被踢出同一房间,且消息也不可见。';
+
+  @override
+  String get chatBlockConfirm => '屏蔽';
+
+  @override
+  String get chatUnknownUser => '用户';
+
+  @override
+  String get spotifyOpenInApp => '在 Spotify 中打开';
+
+  @override
+  String spotifyShareFailed(String error) {
+    return '分享失败:$error';
+  }
+
+  @override
+  String get spotifyNoTrack => '目前没有正在播放的曲目';
+
+  @override
+  String get dmAccessDenied => '无法访问此对话';
+
+  @override
+  String dmSendFailed(String error) {
+    return '发送失败:$error';
+  }
+
+  @override
+  String get dmDefaultPeer => '好友';
+
+  @override
+  String get dmEmptyHint => '发送第一条消息吧';
+
+  @override
+  String get dmMessageHint => '消息';
+
+  @override
+  String get friendCodeLengthError => '请输入 8 位代码。';
+
+  @override
+  String get friendCodeNotFound => '找不到对应代码的用户。';
+
+  @override
+  String friendRequestSent(String nickname) {
+    return '已向 $nickname 发送好友申请。';
+  }
+
+  @override
+  String get friendShareSubject => 'Seoul Live 加好友';
+
+  @override
+  String friendShareBody(String nickname, String code) {
+    return '$nickname 给你发来 Seoul Live 好友代码!\n\n代码:$code\n直接添加:com.seoul.prism://friend/$code';
+  }
+
+  @override
+  String get friendShareCopied => '已复制分享文本';
+
+  @override
+  String get friendCodeTitle => '好友代码';
+
+  @override
+  String get friendCodeSubtitle => '分享你的代码,或者用好友代码加好友。';
+
+  @override
+  String get friendMyCode => '我的好友代码';
+
+  @override
+  String get friendCodeCopied => '已复制代码';
+
+  @override
+  String get friendQrHint => '好友用相机扫描就能直接添加';
+
+  @override
+  String get friendShareButton => '分享';
+
+  @override
+  String get friendAddByCodeTitle => '通过代码加好友';
+
+  @override
+  String get friendAddByCodeHint => '输入收到的 8 位代码或扫描 QR';
+
+  @override
+  String get friendCodePlaceholder => '例如:AB12CD34';
+
+  @override
+  String get friendSendRequest => '发送好友申请';
+
+  @override
+  String peerFriendCode(String code) {
+    return '好友代码 $code';
+  }
+
+  @override
+  String get peerOwnPin => '这是你自己的图钉';
+
+  @override
+  String get peerReport => '举报';
+
+  @override
+  String peerBlockDialogTitle(String nickname) {
+    return '屏蔽 $nickname';
+  }
+
+  @override
+  String get peerBlockDialogBody => '屏蔽后会被踢出同一房间,消息和图钉都不再显示。';
+
+  @override
+  String get peerBlockConfirm => '屏蔽';
+
+  @override
+  String get peerBlock => '屏蔽';
+
+  @override
+  String get peerIsFriend => '已是好友 ✓';
+
+  @override
+  String get peerCancelRequest => '取消申请';
+
+  @override
+  String peerRequestCanceled(String nickname) {
+    return '已取消向 $nickname 发送的申请';
+  }
+
+  @override
+  String get peerAcceptRequest => '接受好友申请';
+
+  @override
+  String peerNowFriend(String nickname) {
+    return '已和 $nickname 成为好友';
+  }
+
+  @override
+  String peerCanRequestInDays(int days) {
+    return '$days 天后可再申请';
+  }
+
+  @override
+  String peerCanRequestInHours(int hours) {
+    return '$hours 小时后可再申请';
+  }
+
+  @override
+  String get peerSendRequest => '发送好友申请';
+
+  @override
+  String peerRequestSent(String nickname) {
+    return '已向 $nickname 发送申请';
+  }
+
+  @override
+  String peerDistanceMeters(int meters) {
+    return '${meters}m';
+  }
+
+  @override
+  String peerDistanceKm(String km) {
+    return '${km}km';
+  }
+
+  @override
+  String get spotifyRoomRequired => '请进入好友房间后再试';
+
+  @override
+  String get spotifyShareSuccess => '🎵 已分享到房间';
+
+  @override
+  String get spotifyDisconnectTitle => '断开 Spotify';
+
+  @override
+  String get spotifyDisconnectBody => '将删除已保存的令牌,并停止向好友分享曲目。';
+
+  @override
+  String get spotifyDisconnectConfirm => '断开';
+
+  @override
+  String get spotifyDisconnected => '已断开 Spotify';
+
+  @override
+  String get spotifyAuthRetryHint => 'Spotify 认证后会自动返回';
+
+  @override
+  String spotifyConnectFailed(String error) {
+    return '连接失败:$error';
+  }
+
+  @override
+  String get spotifyClientIdMissing => '开发者未设置 SPOTIFY_CLIENT_ID';
+
+  @override
+  String get spotifyTokenExpired => '连接已过期。请重新登录。';
+
+  @override
+  String get spotifyReconnect => '重新连接 Spotify';
+
+  @override
+  String get spotifyConnect => '连接 Spotify';
+
+  @override
+  String get spotifyConnectDescription => '连接后可以在好友房间聊天里分享正在听的歌,\n好友也能看到你在听什么。';
+
+  @override
+  String get spotifyLoginButton => '用 Spotify 登录';
+
+  @override
+  String get spotifyShareToRoom => '分享到房间';
+
+  @override
+  String get spotifyDisconnect => '断开连接';
+
+  @override
+  String get spotifyConnectedNoTrack => 'Spotify 已连接 (无播放)';
+
+  @override
+  String get spotifyNowPlaying => '正在播放';
 }

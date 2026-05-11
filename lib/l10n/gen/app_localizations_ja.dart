@@ -339,4 +339,335 @@ class AppL10nJa extends AppL10n {
   String profileRecentPlaceCount(int count) {
     return '最近の $count ヶ所';
   }
+
+  @override
+  String chatSendFailed(String error) {
+    return '送信に失敗しました: $error';
+  }
+
+  @override
+  String get chatRoomDestSet => '🎯 ルームの目的地に設定しました';
+
+  @override
+  String chatActionFailed(String error) {
+    return '失敗: $error';
+  }
+
+  @override
+  String get chatMapAppUnavailable => 'マップアプリを開けませんでした';
+
+  @override
+  String get chatMicPermissionRequired => 'マイクの権限が必要です';
+
+  @override
+  String chatRecordStartFailed(String error) {
+    return '録音を開始できませんでした: $error';
+  }
+
+  @override
+  String get chatRecordTooShort => '短すぎます — 長押しで録音';
+
+  @override
+  String chatRecordStopFailed(String error) {
+    return '録音を終了できませんでした: $error';
+  }
+
+  @override
+  String chatPhotoSendFailed(String error) {
+    return '写真を送信できませんでした: $error';
+  }
+
+  @override
+  String get chatSpotifyClientIdMissing =>
+      'Spotify 未設定 — 開発者が SPOTIFY_CLIENT_ID を追加する必要があります';
+
+  @override
+  String get chatSpotifyAuthRetryHint => 'Spotify 認証後にもう一度押してください';
+
+  @override
+  String chatSpotifyAuthFailed(String error) {
+    return 'Spotify 接続に失敗: $error';
+  }
+
+  @override
+  String get chatMyLocation => '現在地';
+
+  @override
+  String get chatLocationUnavailable => '位置情報を取得できませんでした';
+
+  @override
+  String get chatDefaultRoomName => 'ルーム';
+
+  @override
+  String chatMembersInRoom(int count) {
+    return '$count 人が参加中';
+  }
+
+  @override
+  String get chatRecordingHint => '録音中… 離すと送信、上にドラッグでキャンセル';
+
+  @override
+  String get chatRecordingPlaceholder => '🎙 録音中';
+
+  @override
+  String get chatMessageHint => 'メッセージを入力';
+
+  @override
+  String get chatActionMap => 'マップ';
+
+  @override
+  String get chatActionDirections => 'ルート';
+
+  @override
+  String get chatActionRoomDest => '🎯 ルームの目的地';
+
+  @override
+  String chatVoiceLabel(int seconds) {
+    return '$seconds秒 音声';
+  }
+
+  @override
+  String chatPlaybackFailed(String error) {
+    return '再生に失敗: $error';
+  }
+
+  @override
+  String chatEmptyTitleNamed(String roomName) {
+    return '$roomName が始まりました';
+  }
+
+  @override
+  String get chatEmptyTitleDefault => 'ルームが始まりました';
+
+  @override
+  String get chatEmptyBody => 'ここで友だちにあいさつしたり、位置を共有したり、\n行き先を一緒に決めたりしましょう。';
+
+  @override
+  String get chatStart => '会話を始める';
+
+  @override
+  String get chatReport => 'このメッセージを報告';
+
+  @override
+  String chatBlockDialogTitle(String nickname) {
+    return '$nickname をブロック';
+  }
+
+  @override
+  String get chatBlockDialogBody => 'ブロックすると、同じルームから即時退出させられ、メッセージも見えなくなります。';
+
+  @override
+  String get chatBlockConfirm => 'ブロック';
+
+  @override
+  String get chatUnknownUser => 'ユーザー';
+
+  @override
+  String get spotifyOpenInApp => 'Spotify で開く';
+
+  @override
+  String spotifyShareFailed(String error) {
+    return '共有に失敗: $error';
+  }
+
+  @override
+  String get spotifyNoTrack => '再生中の曲はありません';
+
+  @override
+  String get dmAccessDenied => 'この会話にアクセスできません';
+
+  @override
+  String dmSendFailed(String error) {
+    return '送信に失敗: $error';
+  }
+
+  @override
+  String get dmDefaultPeer => '友だち';
+
+  @override
+  String get dmEmptyHint => '最初のメッセージを送ってみましょう';
+
+  @override
+  String get dmMessageHint => 'メッセージ';
+
+  @override
+  String get friendCodeLengthError => '8 桁のコードを入力してください。';
+
+  @override
+  String get friendCodeNotFound => 'コードに一致するユーザーが見つかりません。';
+
+  @override
+  String friendRequestSent(String nickname) {
+    return '$nickname さんに友だち申請を送りました。';
+  }
+
+  @override
+  String get friendShareSubject => 'Seoul Live で友だち追加';
+
+  @override
+  String friendShareBody(String nickname, String code) {
+    return '$nickname さんから Seoul Live の友だちコードが届きました!\n\nコード: $code\nそのまま追加: com.seoul.prism://friend/$code';
+  }
+
+  @override
+  String get friendShareCopied => '共有テキストをコピーしました';
+
+  @override
+  String get friendCodeTitle => '友だちコード';
+
+  @override
+  String get friendCodeSubtitle => '自分のコードを共有するか、友だちのコードで追加できます。';
+
+  @override
+  String get friendMyCode => 'マイ友だちコード';
+
+  @override
+  String get friendCodeCopied => 'コードをコピーしました';
+
+  @override
+  String get friendQrHint => '友だちがカメラでスキャンするとすぐ追加できます';
+
+  @override
+  String get friendShareButton => '共有する';
+
+  @override
+  String get friendAddByCodeTitle => 'コードで友だち追加';
+
+  @override
+  String get friendAddByCodeHint => '受け取った 8 桁のコードを入力するか QR をスキャン';
+
+  @override
+  String get friendCodePlaceholder => '例: AB12CD34';
+
+  @override
+  String get friendSendRequest => '友だち申請を送る';
+
+  @override
+  String peerFriendCode(String code) {
+    return '友だちコード $code';
+  }
+
+  @override
+  String get peerOwnPin => '自分のピンです';
+
+  @override
+  String get peerReport => '報告';
+
+  @override
+  String peerBlockDialogTitle(String nickname) {
+    return '$nickname をブロック';
+  }
+
+  @override
+  String get peerBlockDialogBody => 'ブロックすると同じルームから退出させられ、メッセージとピンが表示されなくなります。';
+
+  @override
+  String get peerBlockConfirm => 'ブロック';
+
+  @override
+  String get peerBlock => 'ブロック';
+
+  @override
+  String get peerIsFriend => '友だちです ✓';
+
+  @override
+  String get peerCancelRequest => '申請を取り消す';
+
+  @override
+  String peerRequestCanceled(String nickname) {
+    return '$nickname への申請を取り消しました';
+  }
+
+  @override
+  String get peerAcceptRequest => '友だち申請を承認';
+
+  @override
+  String peerNowFriend(String nickname) {
+    return '$nickname と友だちになりました';
+  }
+
+  @override
+  String peerCanRequestInDays(int days) {
+    return '$days 日後に再申請可能';
+  }
+
+  @override
+  String peerCanRequestInHours(int hours) {
+    return '$hours 時間後に再申請可能';
+  }
+
+  @override
+  String get peerSendRequest => '友だち申請を送る';
+
+  @override
+  String peerRequestSent(String nickname) {
+    return '$nickname に申請を送りました';
+  }
+
+  @override
+  String peerDistanceMeters(int meters) {
+    return '${meters}m 先';
+  }
+
+  @override
+  String peerDistanceKm(String km) {
+    return '${km}km 先';
+  }
+
+  @override
+  String get spotifyRoomRequired => 'ルームに参加してからもう一度お試しください';
+
+  @override
+  String get spotifyShareSuccess => '🎵 ルームに共有しました';
+
+  @override
+  String get spotifyDisconnectTitle => 'Spotify 連携を解除';
+
+  @override
+  String get spotifyDisconnectBody => '保存されたトークンを削除し、友だちへの曲の共有が止まります。';
+
+  @override
+  String get spotifyDisconnectConfirm => '解除';
+
+  @override
+  String get spotifyDisconnected => 'Spotify を解除しました';
+
+  @override
+  String get spotifyAuthRetryHint => 'Spotify 認証後、自動的に戻ります';
+
+  @override
+  String spotifyConnectFailed(String error) {
+    return '接続に失敗: $error';
+  }
+
+  @override
+  String get spotifyClientIdMissing => '開発者の SPOTIFY_CLIENT_ID 未設定';
+
+  @override
+  String get spotifyTokenExpired => '接続の有効期限が切れました。再度ログインしてください。';
+
+  @override
+  String get spotifyReconnect => 'Spotify を再接続';
+
+  @override
+  String get spotifyConnect => 'Spotify を接続';
+
+  @override
+  String get spotifyConnectDescription =>
+      '接続すると、ルームのチャットで\n聴いている曲を共有でき、友だちが聴いている曲も見られます。';
+
+  @override
+  String get spotifyLoginButton => 'Spotify でログイン';
+
+  @override
+  String get spotifyShareToRoom => 'ルームに共有';
+
+  @override
+  String get spotifyDisconnect => '連携を解除';
+
+  @override
+  String get spotifyConnectedNoTrack => 'Spotify 接続中 (再生なし)';
+
+  @override
+  String get spotifyNowPlaying => '再生中の曲';
 }

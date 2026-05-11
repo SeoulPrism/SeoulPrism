@@ -341,4 +341,342 @@ class AppL10nEn extends AppL10n {
   String profileRecentPlaceCount(int count) {
     return 'Last $count places';
   }
+
+  @override
+  String chatSendFailed(String error) {
+    return 'Send failed: $error';
+  }
+
+  @override
+  String get chatRoomDestSet => '🎯 Set as room destination';
+
+  @override
+  String chatActionFailed(String error) {
+    return 'Failed: $error';
+  }
+
+  @override
+  String get chatMapAppUnavailable => 'Couldn\'t open the maps app';
+
+  @override
+  String get chatMicPermissionRequired => 'Microphone permission required';
+
+  @override
+  String chatRecordStartFailed(String error) {
+    return 'Couldn\'t start recording: $error';
+  }
+
+  @override
+  String get chatRecordTooShort => 'Too short — press and hold to record';
+
+  @override
+  String chatRecordStopFailed(String error) {
+    return 'Couldn\'t stop recording: $error';
+  }
+
+  @override
+  String chatPhotoSendFailed(String error) {
+    return 'Couldn\'t send photo: $error';
+  }
+
+  @override
+  String get chatSpotifyClientIdMissing =>
+      'Spotify not set up — developer must add SPOTIFY_CLIENT_ID';
+
+  @override
+  String get chatSpotifyAuthRetryHint => 'Tap again after Spotify auth';
+
+  @override
+  String chatSpotifyAuthFailed(String error) {
+    return 'Spotify connection failed: $error';
+  }
+
+  @override
+  String get chatMyLocation => 'My location';
+
+  @override
+  String get chatLocationUnavailable => 'Couldn\'t fetch your location';
+
+  @override
+  String get chatDefaultRoomName => 'Friend room';
+
+  @override
+  String chatMembersInRoom(int count) {
+    return '$count in the room';
+  }
+
+  @override
+  String get chatRecordingHint =>
+      'Recording… release to send, drag up to cancel';
+
+  @override
+  String get chatRecordingPlaceholder => '🎙 Recording';
+
+  @override
+  String get chatMessageHint => 'Type a message';
+
+  @override
+  String get chatActionMap => 'Map';
+
+  @override
+  String get chatActionDirections => 'Directions';
+
+  @override
+  String get chatActionRoomDest => '🎯 Room destination';
+
+  @override
+  String chatVoiceLabel(int seconds) {
+    return '${seconds}s voice';
+  }
+
+  @override
+  String chatPlaybackFailed(String error) {
+    return 'Playback failed: $error';
+  }
+
+  @override
+  String chatEmptyTitleNamed(String roomName) {
+    return '$roomName has started';
+  }
+
+  @override
+  String get chatEmptyTitleDefault => 'The friend room is on';
+
+  @override
+  String get chatEmptyBody =>
+      'Say hi to your friends here, share your location,\nand plan where to go together.';
+
+  @override
+  String get chatStart => 'Start the chat';
+
+  @override
+  String get chatReport => 'Report this message';
+
+  @override
+  String chatBlockDialogTitle(String nickname) {
+    return 'Block $nickname';
+  }
+
+  @override
+  String get chatBlockDialogBody =>
+      'Blocking removes them from the room and hides their messages.';
+
+  @override
+  String get chatBlockConfirm => 'Block';
+
+  @override
+  String get chatUnknownUser => 'User';
+
+  @override
+  String get spotifyOpenInApp => 'Open in Spotify';
+
+  @override
+  String spotifyShareFailed(String error) {
+    return 'Share failed: $error';
+  }
+
+  @override
+  String get spotifyNoTrack => 'Nothing playing right now';
+
+  @override
+  String get dmAccessDenied => 'Can\'t access this conversation';
+
+  @override
+  String dmSendFailed(String error) {
+    return 'Send failed: $error';
+  }
+
+  @override
+  String get dmDefaultPeer => 'Friend';
+
+  @override
+  String get dmEmptyHint => 'Send the first message';
+
+  @override
+  String get dmMessageHint => 'Message';
+
+  @override
+  String get friendCodeLengthError => 'Please enter an 8-character code.';
+
+  @override
+  String get friendCodeNotFound => 'No user matches that code.';
+
+  @override
+  String friendRequestSent(String nickname) {
+    return 'Friend request sent to $nickname.';
+  }
+
+  @override
+  String get friendShareSubject => 'Add me on Seoul Live';
+
+  @override
+  String friendShareBody(String nickname, String code) {
+    return '$nickname sent you a Seoul Live friend code!\n\nCode: $code\nAdd instantly: com.seoul.prism://friend/$code';
+  }
+
+  @override
+  String get friendShareCopied => 'Share text copied';
+
+  @override
+  String get friendCodeTitle => 'Friend code';
+
+  @override
+  String get friendCodeSubtitle => 'Share your code, or add a friend\'s.';
+
+  @override
+  String get friendMyCode => 'My friend code';
+
+  @override
+  String get friendCodeCopied => 'Code copied';
+
+  @override
+  String get friendQrHint => 'Friends can scan with their camera to add you';
+
+  @override
+  String get friendShareButton => 'Share';
+
+  @override
+  String get friendAddByCodeTitle => 'Add a friend by code';
+
+  @override
+  String get friendAddByCodeHint => 'Enter an 8-character code or scan a QR';
+
+  @override
+  String get friendCodePlaceholder => 'e.g. AB12CD34';
+
+  @override
+  String get friendSendRequest => 'Send friend request';
+
+  @override
+  String peerFriendCode(String code) {
+    return 'Friend code $code';
+  }
+
+  @override
+  String get peerOwnPin => 'That\'s your own pin';
+
+  @override
+  String get peerReport => 'Report';
+
+  @override
+  String peerBlockDialogTitle(String nickname) {
+    return 'Block $nickname';
+  }
+
+  @override
+  String get peerBlockDialogBody =>
+      'Blocking removes them from this room and hides their messages and pins.';
+
+  @override
+  String get peerBlockConfirm => 'Block';
+
+  @override
+  String get peerBlock => 'Block';
+
+  @override
+  String get peerIsFriend => 'Friends ✓';
+
+  @override
+  String get peerCancelRequest => 'Cancel request';
+
+  @override
+  String peerRequestCanceled(String nickname) {
+    return 'Canceled the request to $nickname';
+  }
+
+  @override
+  String get peerAcceptRequest => 'Accept friend request';
+
+  @override
+  String peerNowFriend(String nickname) {
+    return 'You\'re now friends with $nickname';
+  }
+
+  @override
+  String peerCanRequestInDays(int days) {
+    return 'Can request again in ${days}d';
+  }
+
+  @override
+  String peerCanRequestInHours(int hours) {
+    return 'Can request again in ${hours}h';
+  }
+
+  @override
+  String get peerSendRequest => 'Send friend request';
+
+  @override
+  String peerRequestSent(String nickname) {
+    return 'Friend request sent to $nickname';
+  }
+
+  @override
+  String peerDistanceMeters(int meters) {
+    return '$meters m away';
+  }
+
+  @override
+  String peerDistanceKm(String km) {
+    return '$km km away';
+  }
+
+  @override
+  String get spotifyRoomRequired => 'Join a friend room and try again';
+
+  @override
+  String get spotifyShareSuccess => '🎵 Shared with the room';
+
+  @override
+  String get spotifyDisconnectTitle => 'Disconnect Spotify';
+
+  @override
+  String get spotifyDisconnectBody =>
+      'This deletes the saved token and stops sharing tracks with friends.';
+
+  @override
+  String get spotifyDisconnectConfirm => 'Disconnect';
+
+  @override
+  String get spotifyDisconnected => 'Spotify disconnected';
+
+  @override
+  String get spotifyAuthRetryHint =>
+      'We\'ll return automatically after Spotify auth';
+
+  @override
+  String spotifyConnectFailed(String error) {
+    return 'Connection failed: $error';
+  }
+
+  @override
+  String get spotifyClientIdMissing =>
+      'Developer hasn\'t set SPOTIFY_CLIENT_ID';
+
+  @override
+  String get spotifyTokenExpired => 'Connection expired. Please log in again.';
+
+  @override
+  String get spotifyReconnect => 'Reconnect Spotify';
+
+  @override
+  String get spotifyConnect => 'Connect Spotify';
+
+  @override
+  String get spotifyConnectDescription =>
+      'Connect to share what you\'re listening to in friend rooms,\nand see what your friends are playing.';
+
+  @override
+  String get spotifyLoginButton => 'Log in with Spotify';
+
+  @override
+  String get spotifyShareToRoom => 'Share with room';
+
+  @override
+  String get spotifyDisconnect => 'Disconnect';
+
+  @override
+  String get spotifyConnectedNoTrack => 'Spotify connected (no playback)';
+
+  @override
+  String get spotifyNowPlaying => 'Now playing';
 }

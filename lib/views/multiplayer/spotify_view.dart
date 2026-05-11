@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../l10n/gen/app_localizations.dart';
 import '../../services/multiplayer_service.dart';
 import '../../services/spotify_service.dart';
 import '../../widgets/adaptive/adaptive.dart';
@@ -41,37 +42,40 @@ class _SpotifyViewState extends State<SpotifyView> {
   }
 
   Future<void> _shareToRoom() async {
+    final l = AppL10n.of(context);
     final svc = SpotifyService.instance;
     final t = svc.currentTrack;
     if (t == null) {
-      showAppSnackBar('재생 중인 곡이 없어요');
+      showAppSnackBar(l.spotifyNoTrack);
       return;
     }
     final mp = MultiplayerService.instance;
     if (mp.currentRoom == null) {
-      showAppSnackBar('친구방에 입장한 뒤 다시 시도해주세요');
+      showAppSnackBar(l.spotifyRoomRequired);
       return;
     }
     try {
       await mp.sendMessage(t.toChatBody(), kind: 'spotify');
-      if (mounted) showAppSnackBar('🎵 친구방에 공유했어요');
+      if (mounted) showAppSnackBar(AppL10n.of(context).spotifyShareSuccess);
     } catch (e) {
       if (mounted) {
-        showAppSnackBar('공유 실패: ${e.toString().replaceFirst('Exception: ', '')}');
+        showAppSnackBar(AppL10n.of(context).spotifyShareFailed(
+            e.toString().replaceFirst('Exception: ', '')));
       }
     }
   }
 
   Future<void> _disconnect() async {
+    final l = AppL10n.of(context);
     showAdaptiveConfirmDialog(
       context: context,
-      title: 'Spotify 연결 해제',
-      content: '저장된 토큰을 삭제하고 친구에게 곡 공유가 중단돼요.',
-      confirmText: '해제',
+      title: l.spotifyDisconnectTitle,
+      content: l.spotifyDisconnectBody,
+      confirmText: l.spotifyDisconnectConfirm,
       isDestructive: true,
       onConfirm: () async {
         await SpotifyService.instance.disconnect();
-        if (mounted) showAppSnackBar('Spotify 해제됨');
+        if (mounted) showAppSnackBar(AppL10n.of(context).spotifyDisconnected);
       },
     );
   }
@@ -80,16 +84,20 @@ class _SpotifyViewState extends State<SpotifyView> {
     try {
       await SpotifyService.instance.connect();
       if (mounted) {
-        showAppSnackBar('Spotify 인증 후 자동으로 돌아와요');
+        showAppSnackBar(AppL10n.of(context).spotifyAuthRetryHint);
       }
     } catch (e) {
-      if (mounted) showAppSnackBar('연결 실패: $e');
+      if (mounted) {
+        showAppSnackBar(
+            AppL10n.of(context).spotifyConnectFailed(e.toString()));
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final l = AppL10n.of(context);
     final spotify = SpotifyService.instance;
     final t = spotify.currentTrack;
     return Scaffold(
@@ -104,13 +112,13 @@ class _SpotifyViewState extends State<SpotifyView> {
               if (!spotify.isConfigured)
                 _Notice(
                   icon: Icons.warning_amber_rounded,
-                  text: '개발자 SPOTIFY_CLIENT_ID 미설정',
+                  text: l.spotifyClientIdMissing,
                 ),
               if (spotify.isConfigured && !spotify.isConnected) ...[
                 if (spotify.tokenInvalidated)
                   _Notice(
                     icon: Icons.warning_amber_rounded,
-                    text: '연결이 만료됐어요. 다시 로그인해주세요.',
+                    text: l.spotifyTokenExpired,
                   ),
                 const Spacer(),
                 Center(
@@ -127,7 +135,8 @@ class _SpotifyViewState extends State<SpotifyView> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                Text(spotify.tokenInvalidated ? 'Spotify 다시 연결' : 'Spotify 연결',
+                Text(
+                    spotify.tokenInvalidated ? l.spotifyReconnect : l.spotifyConnect,
                     textAlign: TextAlign.center,
                     style: TextStyle(
                         fontSize: 22,
@@ -135,13 +144,13 @@ class _SpotifyViewState extends State<SpotifyView> {
                         color: cs.onSurface)),
                 const SizedBox(height: 8),
                 Text(
-                    '연결하면 친구방 채팅에 듣고 있는 곡을\n공유할 수 있고, 친구도 내가 듣는 곡을 봐요.',
+                    l.spotifyConnectDescription,
                     textAlign: TextAlign.center,
                     style: TextStyle(
                         fontSize: 13, color: cs.onSurfaceVariant)),
                 const Spacer(),
                 AdaptiveGlassButton(
-                  label: 'Spotify 로 로그인',
+                  label: l.spotifyLoginButton,
                   onPressed: _connect,
                 ),
               ],
@@ -184,7 +193,7 @@ class _SpotifyViewState extends State<SpotifyView> {
                         Icon(Icons.pause_circle_outline_rounded,
                             size: 56, color: cs.onSurfaceVariant),
                         const SizedBox(height: 12),
-                        Text('재생 중인 곡이 없어요',
+                        Text(l.spotifyNoTrack,
                             style: TextStyle(color: cs.onSurfaceVariant)),
                       ],
                     ),
@@ -192,7 +201,7 @@ class _SpotifyViewState extends State<SpotifyView> {
                 ],
                 const Spacer(),
                 AdaptiveGlassButton(
-                  label: '친구방에 공유',
+                  label: l.spotifyShareToRoom,
                   onPressed: t == null ? null : _shareToRoom,
                 ),
                 const SizedBox(height: 8),
@@ -202,13 +211,13 @@ class _SpotifyViewState extends State<SpotifyView> {
                         launchUrl(Uri.parse(t!.externalUrl!),
                             mode: LaunchMode.externalApplication),
                     icon: const Icon(Icons.open_in_new_rounded, size: 16),
-                    label: const Text('Spotify 에서 열기'),
+                    label: Text(l.spotifyOpenInApp),
                   ),
                 const SizedBox(height: 4),
                 TextButton(
                   onPressed: _disconnect,
                   style: TextButton.styleFrom(foregroundColor: cs.error),
-                  child: const Text('연결 해제'),
+                  child: Text(l.spotifyDisconnect),
                 ),
               ],
             ],
@@ -226,6 +235,7 @@ class _ConnectedHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final l = AppL10n.of(context);
     return Row(
       children: [
         Container(
@@ -236,7 +246,7 @@ class _ConnectedHeader extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 6),
-        Text(track == null ? 'Spotify 연결됨 (재생 없음)' : '지금 듣는 곡',
+        Text(track == null ? l.spotifyConnectedNoTrack : l.spotifyNowPlaying,
             style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w700,

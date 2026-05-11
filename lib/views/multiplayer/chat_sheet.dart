@@ -6,6 +6,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../l10n/gen/app_localizations.dart';
 import '../../models/multiplayer_models.dart';
 import '../../services/multiplayer_service.dart';
 import '../../services/spotify_service.dart';
@@ -108,7 +109,8 @@ class _ChatSheetState extends State<ChatSheet> {
       // 실패 시 입력값 복원 + 안내. 사용자가 재시도 가능.
       if (!mounted) return;
       _ctrl.text = text;
-      showAppSnackBar('전송 실패: ${e.toString().replaceFirst('Exception: ', '')}');
+      showAppSnackBar(AppL10n.of(context).chatSendFailed(
+          e.toString().replaceFirst('Exception: ', '')));
     }
   }
 
@@ -150,9 +152,11 @@ class _ChatSheetState extends State<ChatSheet> {
       await MultiplayerService.instance.setRoomDestination(
         name: name, lat: lat, lng: lng,
       );
-      if (mounted) showAppSnackBar('🎯 방 목적지로 설정됨');
+      if (mounted) showAppSnackBar(AppL10n.of(context).chatRoomDestSet);
     } catch (e) {
-      if (mounted) showAppSnackBar('실패: $e');
+      if (mounted) {
+        showAppSnackBar(AppL10n.of(context).chatActionFailed(e.toString()));
+      }
     }
   }
 
@@ -175,13 +179,15 @@ class _ChatSheetState extends State<ChatSheet> {
         }
       } catch (_) {}
     }
-    if (mounted) showAppSnackBar('지도 앱을 열 수 없어요');
+    if (mounted) showAppSnackBar(AppL10n.of(context).chatMapAppUnavailable);
   }
 
   Future<void> _startRecording() async {
     try {
       if (!await _recorder.hasPermission()) {
-        showAppSnackBar('마이크 권한이 필요해요');
+        if (mounted) {
+          showAppSnackBar(AppL10n.of(context).chatMicPermissionRequired);
+        }
         return;
       }
       final dir = await getTemporaryDirectory();
@@ -197,7 +203,9 @@ class _ChatSheetState extends State<ChatSheet> {
         _recordStartedAt = DateTime.now();
       });
     } catch (e) {
-      showAppSnackBar('녹음 시작 실패: $e');
+      if (mounted) {
+        showAppSnackBar(AppL10n.of(context).chatRecordStartFailed(e.toString()));
+      }
     }
   }
 
@@ -213,12 +221,14 @@ class _ChatSheetState extends State<ChatSheet> {
       if (cancel || path == null || startedAt == null) return;
       final ms = DateTime.now().difference(startedAt).inMilliseconds;
       if (ms < 500) {
-        showAppSnackBar('너무 짧아요 — 길게 눌러 녹음');
+        if (mounted) showAppSnackBar(AppL10n.of(context).chatRecordTooShort);
         return;
       }
       await MultiplayerService.instance.sendVoiceMessage(path, ms);
     } catch (e) {
-      showAppSnackBar('녹음 종료 실패: $e');
+      if (mounted) {
+        showAppSnackBar(AppL10n.of(context).chatRecordStopFailed(e.toString()));
+      }
     }
   }
 
@@ -233,28 +243,36 @@ class _ChatSheetState extends State<ChatSheet> {
       if (x == null) return;
       await MultiplayerService.instance.sendImageMessage(x.path);
     } catch (e) {
-      showAppSnackBar('사진 전송 실패: $e');
+      if (mounted) {
+        showAppSnackBar(AppL10n.of(context).chatPhotoSendFailed(e.toString()));
+      }
     }
   }
 
   Future<void> _shareSpotifyTrack() async {
+    final l = AppL10n.of(context);
     final svc = SpotifyService.instance;
     if (!svc.isConfigured) {
-      showAppSnackBar('Spotify 설정 필요 — 개발자가 SPOTIFY_CLIENT_ID 를 추가해야 해요');
+      showAppSnackBar(l.chatSpotifyClientIdMissing);
       return;
     }
     if (!svc.isConnected) {
       try {
         await svc.connect();
-        showAppSnackBar('Spotify 인증 후 다시 눌러주세요');
+        if (mounted) {
+          showAppSnackBar(AppL10n.of(context).chatSpotifyAuthRetryHint);
+        }
       } catch (e) {
-        showAppSnackBar('Spotify 연결 실패: $e');
+        if (mounted) {
+          showAppSnackBar(
+              AppL10n.of(context).chatSpotifyAuthFailed(e.toString()));
+        }
       }
       return;
     }
     final track = await svc.fetchCurrentlyPlaying();
     if (track == null) {
-      if (mounted) showAppSnackBar('재생 중인 곡이 없어요');
+      if (mounted) showAppSnackBar(AppL10n.of(context).spotifyNoTrack);
       return;
     }
     try {
@@ -262,12 +280,14 @@ class _ChatSheetState extends State<ChatSheet> {
           kind: 'spotify');
     } catch (e) {
       if (mounted) {
-        showAppSnackBar('공유 실패: ${e.toString().replaceFirst('Exception: ', '')}');
+        showAppSnackBar(AppL10n.of(context).spotifyShareFailed(
+            e.toString().replaceFirst('Exception: ', '')));
       }
     }
   }
 
   Future<void> _shareMyLocation() async {
+    final l = AppL10n.of(context);
     try {
       final pos = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
@@ -276,22 +296,23 @@ class _ChatSheetState extends State<ChatSheet> {
         ),
       );
       await MultiplayerService.instance.sharePlaceToRoom(
-        name: '내 위치',
+        name: l.chatMyLocation,
         lat: pos.latitude,
         lng: pos.longitude,
       );
     } catch (_) {
       if (!mounted) return;
-      showAppSnackBar('위치를 가져올 수 없어요');
+      showAppSnackBar(AppL10n.of(context).chatLocationUnavailable);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final l = AppL10n.of(context);
     final svc = MultiplayerService.instance;
     final messages = svc.messages;
-    final roomName = svc.currentRoom?.name ?? '친구방';
+    final roomName = svc.currentRoom?.name ?? l.chatDefaultRoomName;
     final memberCount = svc.currentRoomMembers.length;
 
     return Scaffold(
@@ -308,7 +329,7 @@ class _ChatSheetState extends State<ChatSheet> {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: Row(
               children: [
-                Text('$memberCount 명 참여 중',
+                Text(l.chatMembersInRoom(memberCount),
                     style:
                         TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
                 const Spacer(),
@@ -367,7 +388,7 @@ class _ChatSheetState extends State<ChatSheet> {
                   Icon(Icons.mic_rounded, size: 18, color: cs.error),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: Text('녹음 중... 손 떼면 전송 / 위로 드래그 시 취소',
+                    child: Text(l.chatRecordingHint,
                         style: TextStyle(
                             fontSize: 12, color: cs.onErrorContainer)),
                   ),
@@ -396,7 +417,8 @@ class _ChatSheetState extends State<ChatSheet> {
                 Expanded(
                   child: AdaptiveTextField(
                     controller: _ctrl,
-                    placeholder: _recording ? '🎙 녹음 중' : '메시지 입력',
+                    placeholder:
+                        _recording ? l.chatRecordingPlaceholder : l.chatMessageHint,
                     onSubmitted: (_) => _send(),
                     padding: const EdgeInsets.symmetric(
                         horizontal: 14, vertical: 12),
@@ -428,6 +450,7 @@ class _ChatSheetState extends State<ChatSheet> {
 
   Widget _placeCard(RoomMessage m, MultiplayerProfile? p, bool isMe) {
     final cs = Theme.of(context).colorScheme;
+    final l = AppL10n.of(context);
     final parts = m.body.split('|');
     if (parts.length < 3) {
       // 형식 깨진 메시지 — 그냥 텍스트로 fallback.
@@ -499,7 +522,7 @@ class _ChatSheetState extends State<ChatSheet> {
                       Expanded(
                         child: _placeAction(
                           icon: Icons.map_outlined,
-                          label: '지도',
+                          label: l.chatActionMap,
                           onTap: () {
                             MultiplayerService.instance.requestMapJump(
                                 lat: lat, lng: lng, name: name);
@@ -511,7 +534,7 @@ class _ChatSheetState extends State<ChatSheet> {
                       Expanded(
                         child: _placeAction(
                           icon: Icons.directions_outlined,
-                          label: '길찾기',
+                          label: l.chatActionDirections,
                           onTap: () => _openExternalDirections(name, lat, lng),
                         ),
                       ),
@@ -520,7 +543,7 @@ class _ChatSheetState extends State<ChatSheet> {
                   const SizedBox(height: 6),
                   _placeAction(
                     icon: Icons.flag_rounded,
-                    label: '🎯 방 목적지로',
+                    label: l.chatActionRoomDest,
                     onTap: () => _setRoomDestination(name, lat, lng),
                   ),
                 ],
@@ -559,7 +582,7 @@ class _ChatSheetState extends State<ChatSheet> {
                   Icon(Icons.play_circle_fill_rounded,
                       size: 28, color: cs.primary),
                   const SizedBox(width: 8),
-                  Text('${secs}s 음성',
+                  Text(AppL10n.of(context).chatVoiceLabel(secs),
                       style: TextStyle(
                           fontSize: 13,
                           color:
@@ -580,7 +603,9 @@ class _ChatSheetState extends State<ChatSheet> {
       final src = await s.loadUrl(url);
       await s.play(src);
     } catch (e) {
-      showAppSnackBar('재생 실패: $e');
+      if (mounted) {
+        showAppSnackBar(AppL10n.of(context).chatPlaybackFailed(e.toString()));
+      }
     }
   }
 
@@ -710,7 +735,7 @@ class _ChatSheetState extends State<ChatSheet> {
                                   color: cs.onSurfaceVariant)),
                           if (url.isNotEmpty) ...[
                             const SizedBox(height: 2),
-                            Text('Spotify 에서 듣기',
+                            Text(AppL10n.of(context).spotifyOpenInApp,
                                 style: TextStyle(
                                     fontSize: 10,
                                     color: const Color(0xFF1DB954),
@@ -746,7 +771,7 @@ class _ChatSheetState extends State<ChatSheet> {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 8),
         child: Center(
-          child: Text('대화 시작',
+          child: Text(AppL10n.of(context).chatStart,
               style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
         ),
       );
@@ -848,6 +873,8 @@ class _ChatSheetState extends State<ChatSheet> {
   }
 
   void _showMessageMenu(RoomMessage m, String? senderNickname) {
+    final l = AppL10n.of(context);
+    final senderLabel = senderNickname ?? l.chatUnknownUser;
     showModalBottomSheet(
       context: context,
       showDragHandle: true,
@@ -857,8 +884,8 @@ class _ChatSheetState extends State<ChatSheet> {
           children: [
             ListTile(
               leading: const Icon(Icons.flag_outlined, color: Colors.red),
-              title: const Text('이 메시지 신고',
-                  style: TextStyle(color: Colors.red)),
+              title: Text(l.chatReport,
+                  style: const TextStyle(color: Colors.red)),
               onTap: () {
                 Navigator.pop(context);
                 ReportSheet.showForMessage(context, m.id, preview: m.body);
@@ -866,14 +893,14 @@ class _ChatSheetState extends State<ChatSheet> {
             ),
             ListTile(
               leading: const Icon(Icons.person_off_outlined),
-              title: Text('${senderNickname ?? '사용자'} 차단'),
+              title: Text(l.chatBlockDialogTitle(senderLabel)),
               onTap: () {
                 Navigator.pop(context);
                 showAdaptiveConfirmDialog(
                   context: context,
-                  title: '${senderNickname ?? '사용자'} 차단',
-                  content: '차단하면 같은 방에서 즉시 강퇴되고 메시지도 보이지 않아요.',
-                  confirmText: '차단',
+                  title: l.chatBlockDialogTitle(senderLabel),
+                  content: l.chatBlockDialogBody,
+                  confirmText: l.chatBlockConfirm,
                   isDestructive: true,
                   onConfirm: () =>
                       MultiplayerService.instance.blockUser(m.userId),
@@ -916,6 +943,7 @@ class _ChatGreetingHero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final l = AppL10n.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(32, 24, 32, 24),
       child: Column(
@@ -936,7 +964,9 @@ class _ChatGreetingHero extends StatelessWidget {
           ),
           const SizedBox(height: 28),
           Text(
-            roomName != null ? '$roomName 방이 시작됐어요' : '친구방이 시작됐어요',
+            roomName != null
+                ? l.chatEmptyTitleNamed(roomName!)
+                : l.chatEmptyTitleDefault,
             style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.w900,
@@ -946,7 +976,7 @@ class _ChatGreetingHero extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            '여기서 친구들과 만나서 인사하고, 위치도 공유하고,\n같이 갈 곳도 정해보세요.',
+            l.chatEmptyBody,
             style: TextStyle(
               fontSize: 13,
               height: 1.5,
