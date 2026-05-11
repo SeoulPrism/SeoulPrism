@@ -102,7 +102,14 @@ class _ChatSheetState extends State<ChatSheet> {
     final text = body ?? _ctrl.text;
     if (text.trim().isEmpty) return;
     _ctrl.clear();
-    await MultiplayerService.instance.sendMessage(text, kind: kind);
+    try {
+      await MultiplayerService.instance.sendMessage(text, kind: kind);
+    } catch (e) {
+      // 실패 시 입력값 복원 + 안내. 사용자가 재시도 가능.
+      if (!mounted) return;
+      _ctrl.text = text;
+      showAppSnackBar('전송 실패: ${e.toString().replaceFirst('Exception: ', '')}');
+    }
   }
 
   Widget _placeAction(
@@ -250,8 +257,14 @@ class _ChatSheetState extends State<ChatSheet> {
       if (mounted) showAppSnackBar('재생 중인 곡이 없어요');
       return;
     }
-    await MultiplayerService.instance.sendMessage(track.toChatBody(),
-        kind: 'spotify');
+    try {
+      await MultiplayerService.instance.sendMessage(track.toChatBody(),
+          kind: 'spotify');
+    } catch (e) {
+      if (mounted) {
+        showAppSnackBar('공유 실패: ${e.toString().replaceFirst('Exception: ', '')}');
+      }
+    }
   }
 
   Future<void> _shareMyLocation() async {

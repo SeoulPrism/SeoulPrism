@@ -33,6 +33,21 @@ class FriendCodeShareSheet extends StatefulWidget {
 class _FriendCodeShareSheetState extends State<FriendCodeShareSheet> {
   final _codeCtrl = TextEditingController();
 
+  /// 입력값을 영숫자 대문자 + 8글자로 정규화. 사용자가 소문자/공백/하이픈 등을
+  /// 입력해도 친구 코드 포맷에 맞춰 보정한다.
+  void _onCodeChanged(String value) {
+    final cleaned = value
+        .toUpperCase()
+        .replaceAll(RegExp(r'[^A-Z0-9]'), '');
+    final clamped =
+        cleaned.length > 8 ? cleaned.substring(0, 8) : cleaned;
+    if (clamped == _codeCtrl.text) return;
+    _codeCtrl.value = TextEditingValue(
+      text: clamped,
+      selection: TextSelection.collapsed(offset: clamped.length),
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -218,14 +233,15 @@ class _FriendCodeShareSheetState extends State<FriendCodeShareSheet> {
                     fontWeight: FontWeight.w800,
                     color: cs.onSurface)),
             const SizedBox(height: 4),
-            Text('받은 8자리 코드를 입력하거나 QR 을 스캔하세요',
+            Text('받은 8글자 코드를 입력하거나 QR 을 스캔하세요',
                 style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
             const SizedBox(height: 12),
             AdaptiveTextField(
               controller: _codeCtrl,
-              placeholder: '예: ABC12345',
+              placeholder: '예: AB12CD34',
               padding: const EdgeInsets.symmetric(
                   horizontal: 16, vertical: 14),
+              onChanged: _onCodeChanged,
             ),
             const SizedBox(height: 10),
             Row(

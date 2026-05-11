@@ -1,5 +1,7 @@
 // 멀티플레이어 데이터 모델 (Supabase row 1:1 매핑).
 
+import 'dart:ui' show Color;
+
 class MultiplayerProfile {
   final String userId;
   final String nickname;
@@ -40,6 +42,21 @@ class MultiplayerProfile {
         'visibility': visibility,
         'birth_year': birthYear,
       };
+
+  /// pinColor 가 잘못된 hex (#GG0000, 빈 문자열 등) 일 때도 죽지 않게 fallback.
+  Color get safePinColor {
+    try {
+      final s = pinColor.startsWith('#') ? pinColor.substring(1) : pinColor;
+      if (s.length != 6) return const Color(0xFF7C5CFF);
+      return Color(0xFF000000 | int.parse(s, radix: 16));
+    } catch (_) {
+      return const Color(0xFF7C5CFF);
+    }
+  }
+
+  /// 표시용 닉네임 — 빈 문자열이면 fallback.
+  String get displayNickname =>
+      nickname.trim().isEmpty ? '익명' : nickname;
 }
 
 /// 친구가 지금 듣는 곡 (profiles.current_track jsonb 미러).
@@ -48,22 +65,39 @@ class PeerTrack {
   final String artist;
   final String? albumImageUrl;
   final String? externalUrl;
+  /// 곡 정보 마지막 갱신 시각 — Spotify polling 이 sync 한 시각.
+  /// 너무 오래된 정보 (예: 1시간 이상) 면 UI 가 흐릿하게 표시.
+  final DateTime? updatedAt;
+
   const PeerTrack({
     required this.name,
     required this.artist,
     this.albumImageUrl,
     this.externalUrl,
+    this.updatedAt,
   });
+
   static PeerTrack? tryFromJson(dynamic j) {
     if (j is! Map) return null;
     final name = j['name'] as String?;
     if (name == null || name.isEmpty) return null;
+    DateTime? updatedAt;
+    final ts = j['updated_at'];
+    if (ts is String) updatedAt = DateTime.tryParse(ts);
     return PeerTrack(
       name: name,
       artist: (j['artist'] as String?) ?? '',
       albumImageUrl: j['album_image_url'] as String?,
       externalUrl: j['external_url'] as String?,
+      updatedAt: updatedAt,
     );
+  }
+
+  /// 1시간 이상 갱신 없으면 stale — UI 가 시각적 구분 (흐림/오래된 표시).
+  bool get isStale {
+    final at = updatedAt;
+    if (at == null) return false;
+    return DateTime.now().difference(at).inMinutes > 60;
   }
 }
 
@@ -173,22 +207,34 @@ class PeerLocation {
     required this.timestamp,
   });
 
+  /// 송신/수신 클라이언트 시계 어긋남 보정 — abs() 로 negative 일 때도 측정.
+  int get _ageSeconds =>
+      DateTime.now().difference(timestamp).inSeconds.abs();
+
   /// 30초 이상 업데이트 X 면 stale (지도에 흐릿하게).
-  bool get isStale =>
-      DateTime.now().difference(timestamp).inSeconds > 30;
+  bool get isStale => _ageSeconds > 30;
 
   /// 60초 이상이면 사실상 오프라인 (핀 제거 또는 심하게 흐리게).
-  bool get isOffline =>
-      DateTime.now().difference(timestamp).inSeconds > 60;
+  bool get isOffline => _ageSeconds > 60;
 
-  factory PeerLocation.fromPresence(String userId, Map<String, dynamic> p) =>
-      PeerLocation(
-        userId: userId,
-        lat: (p['lat'] as num).toDouble(),
-        lng: (p['lng'] as num).toDouble(),
-        heading: (p['heading'] as num?)?.toDouble(),
-        timestamp: DateTime.fromMillisecondsSinceEpoch((p['ts'] as num).toInt()),
-      );
+  factory PeerLocation.fromPresence(String userId, Map<String, dynamic> p) {
+    // ts 가 비정상 (현재 ± 1년 이상) 이면 now() 로 fallback. 잘못된 단위
+    // (nanosecond, future timestamp) 로 들어와도 staleness 계산 망가지지 않음.
+    final rawTs = (p['ts'] as num?)?.toInt();
+    final now = DateTime.now().millisecondsSinceEpoch;
+    const yearMs = 365 * 24 * 60 * 60 * 1000;
+    final ts = (rawTs == null || (rawTs - now).abs() > yearMs) ? now : rawTs;
+    return PeerLocation(
+      userId: userId,
+      lat: (p['lat'] as num).toDouble(),
+      lng: (p['lng'] as num).toDouble(),
+      // heading: payload 에 key 없으면 null, 0 이면 0.0. 둘 다 의미 다름.
+      heading: p.containsKey('heading')
+          ? (p['heading'] as num?)?.toDouble()
+          : null,
+      timestamp: DateTime.fromMillisecondsSinceEpoch(ts),
+    );
+  }
 
   Map<String, dynamic> toPayload() => {
         'lat': lat,

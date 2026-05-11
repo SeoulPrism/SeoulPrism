@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../models/multiplayer_models.dart';
 import '../../services/multiplayer_service.dart';
@@ -25,33 +24,39 @@ class _DmThreadViewState extends State<DmThreadView> {
   final _scroll = ScrollController();
   List<DmMessage> _msgs = [];
   bool _loading = true;
-  RealtimeChannel? _channel;
 
   @override
   void initState() {
     super.initState();
     _load();
-    _channel = MultiplayerService.instance.subscribeDm(widget.threadId, _onNew);
+    MultiplayerService.instance.subscribeDm(widget.threadId, _onNew);
   }
 
   @override
   void dispose() {
-    _channel?.unsubscribe();
+    MultiplayerService.instance.unsubscribeDm(widget.threadId);
     _ctrl.dispose();
     _scroll.dispose();
     super.dispose();
   }
 
   Future<void> _load() async {
-    final msgs =
-        await MultiplayerService.instance.loadDmMessages(widget.threadId);
-    if (!mounted) return;
-    setState(() {
-      _msgs = msgs;
-      _loading = false;
-    });
-    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollBottom());
-    MultiplayerService.instance.markDmRead(widget.threadId);
+    try {
+      final msgs =
+          await MultiplayerService.instance.loadDmMessages(widget.threadId);
+      if (!mounted) return;
+      setState(() {
+        _msgs = msgs;
+        _loading = false;
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_) => _scrollBottom());
+      MultiplayerService.instance.markDmRead(widget.threadId);
+    } catch (e) {
+      if (!mounted) return;
+      // RLS / 네트워크 / 권한 거부 — 명시적 안내 후 빠져나감.
+      showAppSnackBar('대화에 접근할 수 없어요');
+      Navigator.of(context).pop();
+    }
   }
 
   void _onNew(DmMessage m) {

@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -14,11 +16,15 @@ class PeerProfileCard extends StatelessWidget {
   const PeerProfileCard({super.key, required this.userId});
 
   static Future<void> show(BuildContext context, String userId) {
+    final isIOS = Platform.isIOS;
     return showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      showDragHandle: true,
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      // iOS = 글라스 배경을 컨텐츠가 직접 그림 (배경 투명).
+      // Android = M3 surfaceContainerHigh (시트 자체가 그림).
+      showDragHandle: !isIOS,
+      backgroundColor:
+          isIOS ? Colors.transparent : Theme.of(context).colorScheme.surfaceContainerHigh,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -28,7 +34,63 @@ class PeerProfileCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _Body(userId: userId);
+    final body = _Body(userId: userId);
+    if (!Platform.isIOS) return body;
+
+    // iOS — 글라스 + 그라데이션 + 자체 드래그 핸들.
+    final isLight = Theme.of(context).brightness == Brightness.light;
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius:
+                const BorderRadius.vertical(top: Radius.circular(24)),
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: isLight
+                  ? [
+                      Colors.white.withValues(alpha: 0.78),
+                      Colors.white.withValues(alpha: 0.88),
+                    ]
+                  : [
+                      Colors.black.withValues(alpha: 0.45),
+                      Colors.black.withValues(alpha: 0.65),
+                    ],
+            ),
+            border: Border(
+              top: BorderSide(
+                color: (isLight ? Colors.black : Colors.white)
+                    .withValues(alpha: 0.10),
+                width: 0.5,
+              ),
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(top: 12, bottom: 4),
+                child: Center(
+                  child: Container(
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(2),
+                      color: (isLight ? Colors.black : Colors.white)
+                          .withValues(alpha: 0.25),
+                    ),
+                  ),
+                ),
+              ),
+              body,
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 
@@ -44,6 +106,7 @@ class _BodyState extends State<_Body> {
   MultiplayerProfile? _profile;
   double? _distanceM;
   bool _busy = false;
+  DateTime? _cooldownUntil;
 
   @override
   void initState() {
@@ -75,10 +138,13 @@ class _BodyState extends State<_Body> {
             me.latitude, me.longitude, loc.lat, loc.lng);
       } catch (_) {}
     }
+    // 친구 신청 cooldown 조회 — P0008 받기 전에 사용자에게 안내.
+    final cooldown = await svc.friendRequestCooldownUntil(widget.userId);
     if (!mounted) return;
     setState(() {
       _profile = p;
       _distanceM = dist;
+      _cooldownUntil = cooldown;
     });
   }
 
@@ -125,8 +191,7 @@ class _BodyState extends State<_Body> {
       );
     }
 
-    final v = int.parse(p.pinColor.substring(1), radix: 16);
-    final color = Color(0xFF000000 | v);
+    final color = p.safePinColor;
 
     return Padding(
       padding: EdgeInsets.fromLTRB(20, 8, 20, inset + 24),
@@ -142,7 +207,7 @@ class _BodyState extends State<_Body> {
             child: Text(p.pinEmoji, style: const TextStyle(fontSize: 40)),
           ),
           const SizedBox(height: 12),
-          Text(p.nickname,
+          Text(p.displayNickname,
               style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.w800,
@@ -229,8 +294,15 @@ class _BodyState extends State<_Body> {
           onPressed: null,
         ),
       _FriendState.requested => AdaptiveGlassButton(
-          label: '신청 보냄',
-          onPressed: null,
+          label: _busy ? '...' : '신청 취소',
+          onPressed: _busy
+              ? null
+              : () => _runWithBusy(() async {
+                    await MultiplayerService.instance
+                        .cancelFriendRequest(widget.userId);
+                    if (!mounted) return;
+                    showAppSnackBar('${p.nickname} 에게 보낸 신청 취소함');
+                  }),
         ),
       _FriendState.incoming => AdaptiveGlassButton(
           label: _busy ? '...' : '친구 신청 수락',
@@ -245,17 +317,31 @@ class _BodyState extends State<_Body> {
                     showAppSnackBar('${p.nickname} 와 친구가 됐어요');
                   }),
         ),
-      _FriendState.none => AdaptiveGlassButton(
-          label: _busy ? '...' : '친구 신청 보내기',
-          onPressed: _busy
-              ? null
-              : () => _runWithBusy(() async {
-                    await MultiplayerService.instance.sendFriendRequest(widget.userId);
-                    if (!mounted) return;
-                    showAppSnackBar('${p.nickname} 에게 신청을 보냈어요');
-                  }),
-        ),
+      _FriendState.none => _buildNoneAction(p),
     };
+  }
+
+  Widget _buildNoneAction(MultiplayerProfile p) {
+    // cooldown 활성 — 7일 안에 보낸 신청이 거절돼서 잠금. 사용자에게 명시.
+    final cd = _cooldownUntil;
+    if (cd != null && cd.isAfter(DateTime.now())) {
+      final remaining = cd.difference(DateTime.now());
+      final label = remaining.inHours >= 24
+          ? '${remaining.inDays + 1}일 후 재신청 가능'
+          : '${remaining.inHours + 1}시간 후 재신청 가능';
+      return AdaptiveGlassButton(label: label, onPressed: null);
+    }
+    return AdaptiveGlassButton(
+      label: _busy ? '...' : '친구 신청 보내기',
+      onPressed: _busy
+          ? null
+          : () => _runWithBusy(() async {
+                await MultiplayerService.instance
+                    .sendFriendRequest(widget.userId);
+                if (!mounted) return;
+                showAppSnackBar('${p.nickname} 에게 신청을 보냈어요');
+              }),
+    );
   }
 
   String _formatDistance(double meters) {

@@ -52,8 +52,14 @@ class _SpotifyViewState extends State<SpotifyView> {
       showAppSnackBar('친구방에 입장한 뒤 다시 시도해주세요');
       return;
     }
-    await mp.sendMessage(t.toChatBody(), kind: 'spotify');
-    if (mounted) showAppSnackBar('🎵 친구방에 공유했어요');
+    try {
+      await mp.sendMessage(t.toChatBody(), kind: 'spotify');
+      if (mounted) showAppSnackBar('🎵 친구방에 공유했어요');
+    } catch (e) {
+      if (mounted) {
+        showAppSnackBar('공유 실패: ${e.toString().replaceFirst('Exception: ', '')}');
+      }
+    }
   }
 
   Future<void> _disconnect() async {
@@ -101,6 +107,11 @@ class _SpotifyViewState extends State<SpotifyView> {
                   text: '개발자 SPOTIFY_CLIENT_ID 미설정',
                 ),
               if (spotify.isConfigured && !spotify.isConnected) ...[
+                if (spotify.tokenInvalidated)
+                  _Notice(
+                    icon: Icons.warning_amber_rounded,
+                    text: '연결이 만료됐어요. 다시 로그인해주세요.',
+                  ),
                 const Spacer(),
                 Center(
                   child: Container(
@@ -116,7 +127,7 @@ class _SpotifyViewState extends State<SpotifyView> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                Text('Spotify 연결',
+                Text(spotify.tokenInvalidated ? 'Spotify 다시 연결' : 'Spotify 연결',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                         fontSize: 22,
