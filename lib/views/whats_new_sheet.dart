@@ -46,10 +46,18 @@ class _WhatsNewViewState extends State<WhatsNewView> {
       emoji: '🎉',
       title: 'v$kAppVersion — 다시 만나서 반가워요',
       body:
-          'Seoul Live 가 한 단계 더 풍성해졌어요.\n'
-          '친구와 만나고, 같이 가고, 추억으로 남기는\n'
-          '13개의 새 기능을 만나보세요.',
+          '이번엔 여행이 더 너답게 바뀌었어요.\n'
+          '여행 무드부터 친구·기록까지\n'
+          '14개의 새 기능을 만나보세요.',
       gradient: [Color(0xFF7C5CFF), Color(0xFF5CC8FF)],
+    ),
+    _WnPage(
+      emoji: '✨',
+      title: '당신의 여행 무드',
+      body: '쉬어가기·놀기·역사·섞어서 중 하나를 고르면\n'
+          'AI 톤, 추천 코스, 여행 탭이\n'
+          '그 무드에 맞춰 바뀌어요.',
+      gradient: [Color(0xFFBC82F3), Color(0xFFFF6B9D)],
     ),
     _WnPage(
       emoji: '🎯',

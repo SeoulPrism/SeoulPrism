@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:app_links/app_links.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../main.dart' show rootNavigatorKey;
 import '../views/multiplayer/friend_code_share.dart';
@@ -39,6 +40,10 @@ class DeepLinkRouter {
     _started = false;
   }
 
+  // 룸 코드(6자) / 친구 코드(8자) — 영숫자 화이트리스트. unicode homoglyph 차단.
+  static final RegExp _roomCodeRe = RegExp(r'^[A-Z0-9]{4,8}$');
+  static final RegExp _friendCodeRe = RegExp(r'^[A-Z0-9]{4,12}$');
+
   void _handle(Uri uri) {
     if (uri.scheme != 'com.seoul.prism') return;
     debugPrint('[DeepLink] $uri');
@@ -47,19 +52,23 @@ class DeepLinkRouter {
         SpotifyService.instance.handleCallback(uri);
         return;
       case 'room':
-        final code = uri.pathSegments.isNotEmpty
+        final raw = uri.pathSegments.isNotEmpty
             ? uri.pathSegments.first.toUpperCase()
             : null;
-        if (code != null && code.isNotEmpty) {
-          _enterRoom(code);
+        if (raw != null && _roomCodeRe.hasMatch(raw)) {
+          _enterRoom(raw);
+        } else {
+          debugPrint('[DeepLink] 잘못된 룸 코드 — 무시: $raw');
         }
         return;
       case 'friend':
-        final code = uri.pathSegments.isNotEmpty
+        final raw = uri.pathSegments.isNotEmpty
             ? uri.pathSegments.first.toUpperCase()
             : null;
-        if (code != null && code.isNotEmpty) {
-          _showFriendCode(code);
+        if (raw != null && _friendCodeRe.hasMatch(raw)) {
+          _showFriendCode(raw);
+        } else {
+          debugPrint('[DeepLink] 잘못된 친구 코드 — 무시: $raw');
         }
         return;
     }
@@ -70,6 +79,12 @@ class DeepLinkRouter {
     final nav = rootNavigatorKey.currentState;
     if (nav == null) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _enterRoom(code));
+      return;
+    }
+    // 익명 사용자는 룸 입장 불가 — 명시적 안내.
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null || user.isAnonymous) {
+      showAppSnackBar('정식 로그인 후 방에 입장할 수 있어요');
       return;
     }
     try {

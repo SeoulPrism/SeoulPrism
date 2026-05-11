@@ -5,8 +5,16 @@ import 'package:flutter/material.dart';
 class AiModeView extends StatefulWidget {
   final VoidCallback? onClose;
   final bool closing;
+  /// 글로우 컬러 팔레트. 정확히 7개 색 (마지막 = 첫 번째, wrap).
+  /// null 이면 기본 Apple Intelligence 팔레트.
+  final List<Color>? palette;
 
-  const AiModeView({super.key, this.onClose, this.closing = false});
+  const AiModeView({
+    super.key,
+    this.onClose,
+    this.closing = false,
+    this.palette,
+  });
 
   @override
   State<AiModeView> createState() => _AiModeViewState();
@@ -18,6 +26,7 @@ class _AiModeViewState extends State<AiModeView>
 
   // 4개 레이어, 각각 독립 AnimationController (스태거 핵심)
   late List<AnimationController> _layerControllers;
+  late List<VoidCallback> _layerListeners;
   late List<List<double>> _layerCurrentStops;
   late List<List<double>> _layerFromStops;
   List<double> _targetStops = [0.0, 0.17, 0.33, 0.5, 0.67, 0.83, 1.0];
@@ -53,12 +62,15 @@ class _AiModeViewState extends State<AiModeView>
     _layerCurrentStops = List.generate(4, (_) => List.from(initialStops));
     _layerFromStops = List.generate(4, (_) => List.from(initialStops));
 
+    _layerListeners = <VoidCallback>[];
     _layerControllers = List.generate(4, (i) {
       final ctrl = AnimationController(
         vsync: this,
         duration: Duration(milliseconds: _layerDurations[i]),
       );
-      ctrl.addListener(() => _interpolateLayer(i));
+      void l() => _interpolateLayer(i);
+      _layerListeners.add(l);
+      ctrl.addListener(l);
       return ctrl;
     });
 
@@ -121,8 +133,9 @@ class _AiModeViewState extends State<AiModeView>
     _updateTimer?.cancel();
     _spreadController.dispose();
     _deformController.dispose();
-    for (final c in _layerControllers) {
-      c.dispose();
+    for (var i = 0; i < _layerControllers.length; i++) {
+      _layerControllers[i].removeListener(_layerListeners[i]);
+      _layerControllers[i].dispose();
     }
     super.dispose();
   }
@@ -144,6 +157,7 @@ class _AiModeViewState extends State<AiModeView>
                 layerStops: _layerCurrentStops,
                 spreadProgress: _spreadController.value,
                 deformPhase: _deformController.value * 2 * pi,
+                palette: widget.palette,
               ),
               size: Size.infinite,
             ),
@@ -162,15 +176,17 @@ class _AppleIntelligenceGlowPainter extends CustomPainter {
   final List<List<double>> layerStops; // 4개 레이어 각각의 현재 stops
   final double spreadProgress;
   final double deformPhase; // path 진동용
+  final List<Color>? palette; // 외부에서 컬러 팔레트 오버라이드
 
   _AppleIntelligenceGlowPainter({
     required this.layerStops,
     required this.spreadProgress,
     required this.deformPhase,
+    this.palette,
   });
 
-  // Apple 실제 팔레트
-  static const _colors = [
+  // Apple 기본 팔레트 (palette 미지정 시)
+  static const _defaultColors = [
     Color(0xFFBC82F3), // purple
     Color(0xFFF5B9EA), // pink
     Color(0xFF8D9FFF), // blue
@@ -179,6 +195,8 @@ class _AppleIntelligenceGlowPainter extends CustomPainter {
     Color(0xFFC686FF), // lavender
     Color(0xFFBC82F3), // purple (wrap)
   ];
+
+  List<Color> get _colors => palette ?? _defaultColors;
 
   // 레이어별: [strokeWidth, blurSigma]
   // Flutter에서는 iOS보다 값을 키워야 동일한 시각적 효과
@@ -414,4 +432,14 @@ class _AppleIntelligenceGlowPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _AppleIntelligenceGlowPainter oldDelegate) => true;
+}
+
+/// 팔레트 사이를 부드럽게 보간한 결과를 반환.
+/// 두 팔레트 모두 7개 색이라고 가정.
+List<Color> lerpPalette(List<Color> from, List<Color> to, double t) {
+  final n = to.length;
+  return [
+    for (int i = 0; i < n; i++)
+      Color.lerp(from[i % from.length], to[i], t.clamp(0.0, 1.0))!,
+  ];
 }

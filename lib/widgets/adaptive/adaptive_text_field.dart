@@ -1,7 +1,7 @@
 import 'dart:io';
+import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'adaptive_glass_container.dart';
 
 /// iOS: CupertinoTextField (glass=true 면 LiquidGlassContainer 로 래핑)
 /// Android: Material 3 TextField (filled tonal)
@@ -61,13 +61,18 @@ class AdaptiveTextField extends StatelessWidget {
         onChanged: onChanged,
         onSubmitted: onSubmitted,
       );
-      if (glass) {
-        return AdaptiveGlassContainer.rect(
-          cornerRadius: glassRadius,
-          child: field,
-        );
+      if (!glass) {
+        return SizedBox(width: double.infinity, child: field);
       }
-      return field;
+      // 텍스트 필드는 LiquidGlass 네이티브 컨테이너를 안 쓴다 — UiKitView 기반
+      // 이라 첫 빌드는 child 직접 반환하다가, 두 번째 빌드에서 Stack(passthrough)
+      // 로 전환되면서 placeholder 폭으로 collapse 되는 버그가 있다. 동일한
+      // 글라스 룩을 ClipRRect + BackdropFilter 로 직접 그려 사이즈를 확정한다.
+      return _GlassTextFieldFrame(
+        cornerRadius: glassRadius,
+        isDark: isDark,
+        child: field,
+      );
     }
 
     // Android: Material 3 TextField (컴팩트)
@@ -75,30 +80,73 @@ class AdaptiveTextField extends StatelessWidget {
     final bgColor = decoration?.color ?? cs.surfaceContainerHighest;
     final radius = decoration?.borderRadius as BorderRadius? ?? BorderRadius.circular(12);
 
-    return TextField(
-      controller: controller,
-      focusNode: focusNode,
-      style: style,
-      cursorColor: cs.primary,
-      onChanged: onChanged,
-      onSubmitted: onSubmitted,
-      decoration: InputDecoration(
-        hintText: placeholder,
-        hintStyle: placeholderStyle ??
-            TextStyle(color: cs.onSurfaceVariant.withValues(alpha: 0.6)),
-        contentPadding: padding,
-        filled: true,
-        fillColor: bgColor,
-        border: OutlineInputBorder(
-          borderRadius: radius,
-          borderSide: BorderSide.none,
+    return SizedBox(
+      width: double.infinity,
+      child: TextField(
+        controller: controller,
+        focusNode: focusNode,
+        style: style,
+        cursorColor: cs.primary,
+        onChanged: onChanged,
+        onSubmitted: onSubmitted,
+        decoration: InputDecoration(
+          hintText: placeholder,
+          hintStyle: placeholderStyle ??
+              TextStyle(color: cs.onSurfaceVariant.withValues(alpha: 0.6)),
+          contentPadding: padding,
+          filled: true,
+          fillColor: bgColor,
+          border: OutlineInputBorder(
+            borderRadius: radius,
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: radius,
+            borderSide: BorderSide(color: cs.primary, width: 1.5),
+          ),
+          isDense: true,
+          isCollapsed: true,
         ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: radius,
-          borderSide: BorderSide(color: cs.primary, width: 1.5),
+      ),
+    );
+  }
+}
+
+/// iOS 텍스트 필드용 글라스 프레임 — LiquidGlass 네이티브 컨테이너의 Stack
+/// passthrough 사이즈 버그를 우회. 풀폭 고정 + BackdropFilter 로 글라스 룩.
+class _GlassTextFieldFrame extends StatelessWidget {
+  final Widget child;
+  final double cornerRadius;
+  final bool isDark;
+  const _GlassTextFieldFrame({
+    required this.child,
+    required this.cornerRadius,
+    required this.isDark,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final fill = isDark
+        ? Colors.white.withValues(alpha: 0.10)
+        : Colors.black.withValues(alpha: 0.04);
+    final border = isDark
+        ? Colors.white.withValues(alpha: 0.18)
+        : Colors.black.withValues(alpha: 0.10);
+    return SizedBox(
+      width: double.infinity,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(cornerRadius),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(cornerRadius),
+              color: fill,
+              border: Border.all(color: border, width: 0.5),
+            ),
+            child: child,
+          ),
         ),
-        isDense: true,
-        isCollapsed: true,
       ),
     );
   }

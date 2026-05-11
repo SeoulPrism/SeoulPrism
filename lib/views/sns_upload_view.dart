@@ -336,29 +336,37 @@ class _SnsUploadViewState extends State<SnsUploadView> {
   }
 
   Widget _imageAddButton(IconData icon, String label, VoidCallback onTap, bool bright, ColorScheme cs) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 80,
-        height: 100,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          color: bright ? Colors.white.withValues(alpha: 0.40) : Colors.white.withValues(alpha: 0.08),
-          border: Border.all(
-            color: bright ? Colors.black.withValues(alpha: 0.10) : Colors.white.withValues(alpha: 0.15),
-            width: 1,
+    return Material(
+      color: bright
+          ? Colors.white.withValues(alpha: 0.40)
+          : Colors.white.withValues(alpha: 0.08),
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        splashColor: cs.primary.withValues(alpha: 0.18),
+        highlightColor: cs.primary.withValues(alpha: 0.08),
+        child: Container(
+          width: 80,
+          height: 100,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: bright ? Colors.black.withValues(alpha: 0.10) : Colors.white.withValues(alpha: 0.15),
+              width: 1,
+            ),
           ),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 24, color: bright ? Colors.black54 : Colors.white60),
-            const SizedBox(height: 4),
-            Text(label, style: TextStyle(
-              fontSize: 11,
-              color: bright ? Colors.black54 : Colors.white60,
-            )),
-          ],
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 24, color: bright ? Colors.black54 : Colors.white60),
+              const SizedBox(height: 4),
+              Text(label, style: TextStyle(
+                fontSize: 11,
+                color: bright ? Colors.black54 : Colors.white60,
+              )),
+            ],
+          ),
         ),
       ),
     );

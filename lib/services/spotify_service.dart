@@ -182,6 +182,10 @@ class SpotifyService extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// 토큰이 영구적으로 무효 (4xx) — UI 가 "다시 연결" 안내. true 면 isConnected 도 false.
+  bool _tokenInvalidated = false;
+  bool get tokenInvalidated => _tokenInvalidated;
+
   Future<void> _maybeRefresh() async {
     if (_refreshToken == null) return;
     if (_expiresAt != null && _expiresAt!.isAfter(DateTime.now())) return;
@@ -202,11 +206,67 @@ class SpotifyService extends ChangeNotifier {
           refresh: body['refresh_token'] as String?,
           expiresIn: (body['expires_in'] as num).toInt(),
         );
+        _tokenInvalidated = false;
       } else {
         debugPrint('[Spotify] refresh 실패: ${res.statusCode}');
+        // 4xx — refresh token 무효 (사용자가 Spotify 측에서 권한 회수 / 비번 변경 등).
+        // 5xx / 네트워크 일시 오류는 retry 가능하므로 invalidated 처리 X.
+        if (res.statusCode >= 400 && res.statusCode < 500) {
+          _tokenInvalidated = true;
+          // 토큰 클리어 — 다음번 isConnected 가 false.
+          _accessToken = null;
+          _refreshToken = null;
+          _expiresAt = null;
+          await _storage.delete(key: _kAccessKey);
+          await _storage.delete(key: _kRefreshKey);
+          await _storage.delete(key: _kExpiresKey);
+          notifyListeners();
+        }
       }
     } catch (e) {
       debugPrint('[Spotify] refresh 에러: $e');
+    }
+  }
+
+  /// trackId → AudioFeatures 메모리 캐시 (per-track 1회만 호출). FIFO cap.
+  final Map<String, SpotifyAudioFeatures?> _featuresCache = {};
+  static const int _kMaxFeaturesCacheSize = 1000;
+
+  void _putFeatureCache(String trackId, SpotifyAudioFeatures? f) {
+    if (_featuresCache.length >= _kMaxFeaturesCacheSize) {
+      _featuresCache.remove(_featuresCache.keys.first);
+    }
+    _featuresCache[trackId] = f;
+  }
+
+  /// 현재 트랙의 분위기 메트릭. 미연결/실패면 null.
+  Future<SpotifyAudioFeatures?> getAudioFeatures(String trackId) async {
+    if (!isConnected) return null;
+    if (_featuresCache.containsKey(trackId)) return _featuresCache[trackId];
+    await _maybeRefresh();
+    try {
+      final res = await http.get(
+        Uri.parse('https://api.spotify.com/v1/audio-features/$trackId'),
+        headers: {'Authorization': 'Bearer $_accessToken'},
+      ).timeout(const Duration(seconds: 4));
+      if (res.statusCode != 200) {
+        debugPrint('[Spotify] audio-features ${res.statusCode}');
+        _putFeatureCache(trackId, null);
+        return null;
+      }
+      final body = jsonDecode(res.body) as Map<String, dynamic>;
+      final f = SpotifyAudioFeatures(
+        valence: (body['valence'] as num? ?? 0.5).toDouble(),
+        energy: (body['energy'] as num? ?? 0.5).toDouble(),
+        danceability: (body['danceability'] as num? ?? 0.5).toDouble(),
+        tempo: (body['tempo'] as num? ?? 100).toDouble(),
+      );
+      _putFeatureCache(trackId, f);
+      return f;
+    } catch (e) {
+      debugPrint('[Spotify] audio-features 에러: $e');
+      _putFeatureCache(trackId, null);
+      return null;
     }
   }
 
@@ -223,14 +283,29 @@ class SpotifyService extends ChangeNotifier {
         notifyListeners();
         return null;
       }
+      // 401 = 토큰 무효 — 즉시 refresh 시도, 그래도 안 되면 invalidated 처리.
+      // 안 그러면 30초마다 401 계속 받음.
+      if (res.statusCode == 401) {
+        debugPrint('[Spotify] currently-playing 401 — token refresh 강제');
+        _expiresAt = null; // refresh 강제 트리거.
+        await _maybeRefresh();
+        if (!isConnected) {
+          // refresh 도 4xx 였음 → tokenInvalidated 가 set 됐을 것. 폴링 중단.
+          _stopPolling();
+        }
+        return _currentTrack;
+      }
       if (res.statusCode != 200) {
         debugPrint('[Spotify] currently-playing ${res.statusCode}');
         return _currentTrack;
       }
       final body = jsonDecode(res.body) as Map<String, dynamic>;
       final item = body['item'] as Map<String, dynamic>?;
-      final prevName = _currentTrack?.name;
-      if (item == null) {
+      // is_playing=false (일시정지) 면 stale 노출 방지 — null 처리.
+      final isPlaying = body['is_playing'] as bool? ?? false;
+      // name+artist 핑거프린트 — 곡명만 같고 아티스트가 다른 경우(커버/리믹스 등)도 변경으로 본다.
+      final prevFp = _trackFingerprint(_currentTrack);
+      if (item == null || !isPlaying) {
         _currentTrack = null;
       } else {
         final artists = (item['artists'] as List? ?? const [])
@@ -250,7 +325,7 @@ class SpotifyService extends ChangeNotifier {
         );
       }
       // 곡이 변했으면 profiles.current_track 동기화 → realtime 으로 친구에게 전파.
-      if (prevName != _currentTrack?.name) {
+      if (prevFp != _trackFingerprint(_currentTrack)) {
         _syncTrackToProfile(_currentTrack);
       }
       notifyListeners();
@@ -260,6 +335,9 @@ class SpotifyService extends ChangeNotifier {
       return _currentTrack;
     }
   }
+
+  static String? _trackFingerprint(SpotifyTrack? t) =>
+      t == null ? null : '${t.name}${t.artist}';
 
   /// profiles.current_track 에 현재 곡 sync (없으면 null). 친구가 realtime 으로 받음.
   Future<void> _syncTrackToProfile(SpotifyTrack? t) async {
@@ -318,6 +396,31 @@ class SpotifyTrack {
     this.externalUrl,
   });
 
+  /// `spotify:track:abc123` 에서 마지막 segment 만 추출.
+  String? get trackId {
+    final uri = spotifyUri;
+    if (uri == null || !uri.contains(':')) return null;
+    return uri.split(':').last;
+  }
+
   /// chat 메시지 body 직렬화 (`name|artist|external_url`).
   String toChatBody() => '$name|$artist|${externalUrl ?? ''}';
+}
+
+/// Spotify Audio Features — 곡의 분위기 메트릭.
+class SpotifyAudioFeatures {
+  /// 0.0 (슬픔/우울) ~ 1.0 (밝음/긍정).
+  final double valence;
+  /// 0.0 (조용함) ~ 1.0 (격렬함/에너지 ↑).
+  final double energy;
+  /// 0.0 ~ 1.0 — 댄스 적합성.
+  final double danceability;
+  /// BPM (대략 60~200).
+  final double tempo;
+  const SpotifyAudioFeatures({
+    required this.valence,
+    required this.energy,
+    required this.danceability,
+    required this.tempo,
+  });
 }

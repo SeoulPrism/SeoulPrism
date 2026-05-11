@@ -9,6 +9,7 @@ import '../services/directions_service.dart';
 import '../data/river_bus_data.dart';
 import 'package:cupertino_native_better/cupertino_native_better.dart';
 import 'adaptive/adaptive.dart';
+import 'app_snackbar.dart';
 import 'search_bar/glass_search_field.dart';
 import 'search_bar/recent_routes_panel.dart';
 import 'search_bar/search_tiles.dart';
@@ -265,6 +266,35 @@ class UnifiedSearchBarState extends State<UnifiedSearchBar>
     _navCtrl.forward();
     widget.onNavModeChanged?.call(true);
     _findPath();
+  }
+
+  /// 외부에서 미리 계산된 [route] 를 주입해 길찾기 모드 진입.
+  /// 하루 플랜 "전체 길찾기" 처럼 multi-leg 경로를 검색바에서 다시 안 풀고
+  /// 그대로 결과 패널에 띄울 때 사용 — _findPath() 호출 안 함.
+  void enterNavWithRoute(
+    PathResult route, {
+    double? depLat,
+    double? depLng,
+    double? arrLat,
+    double? arrLng,
+  }) {
+    setState(() {
+      _isNavMode = true;
+      _cancelSearch();
+      _depStation = route.departure;
+      _depCtrl.text = route.departure;
+      _depLat = depLat;
+      _depLng = depLng;
+      _arrStation = route.arrival;
+      _arrCtrl.text = route.arrival;
+      _arrLat = arrLat;
+      _arrLng = arrLng;
+      _pathResult = route;
+      _searchType = route.searchType;
+      _allRoutes = {route.searchType: route};
+    });
+    _navCtrl.forward();
+    widget.onNavModeChanged?.call(true);
   }
 
   /// 외부에서 길찾기 모드 진입 + 도착지 설정.
@@ -756,6 +786,8 @@ class UnifiedSearchBarState extends State<UnifiedSearchBar>
 
   Future<void> _findPath() async {
     if (_depStation == null || _arrStation == null) return;
+    // 이미 로딩 중이면 중복 호출 차단 — 사용자가 칩/최근경로 연타해도 1번만.
+    if (_isPathLoading) return;
     await _ensureCurrentLocationCoords();
     if (_depStation == null || _arrStation == null) return;
 
@@ -833,6 +865,11 @@ class UnifiedSearchBarState extends State<UnifiedSearchBar>
       _pathResult = selected;
       _isPathLoading = false;
     });
+    // 셋 다 실패 — 사용자에게 안내. 그렇지 않으면 로딩만 사라지고 무반응.
+    if (selected == null && mounted) {
+      showAppSnackBar('경로를 찾지 못했어요. 출발지/도착지를 확인해 주세요.');
+      return;
+    }
     if (selected != null) {
       widget.onRouteFound?.call(selected);
       // 최근 길찾기 페어 저장. '내 위치' 출발은 매번 좌표가 다르므로 페어로 의미 없어 제외.
@@ -887,7 +924,7 @@ class UnifiedSearchBarState extends State<UnifiedSearchBar>
       if (autoFind && _depStation != null && _arrStation != null) {
         _findPath();
       }
-    } catch (_) {
+    } catch (e) {
       if (!mounted) return;
       setState(() {
         if (field == _NavField.departure) {
@@ -898,6 +935,9 @@ class UnifiedSearchBarState extends State<UnifiedSearchBar>
           _arrCtrl.clear();
         }
       });
+      // 사용자에게 안내 — 위치 권한 거부 / GPS off / timeout 등의 원인을
+      // 모르고 그냥 필드만 비워지면 "지도가 멈춤"으로 인식됨.
+      showAppSnackBar('현재 위치를 가져올 수 없어요. 위치 권한과 GPS 를 확인해 주세요.');
     }
   }
 
