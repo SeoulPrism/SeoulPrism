@@ -72,14 +72,22 @@ class _LiveSharingBadgeState extends State<LiveSharingBadge> {
   @override
   Widget build(BuildContext context) {
     final svc = MultiplayerService.instance;
-    final shouldShow = svc.currentRoom != null &&
-        (svc.myProfile?.visibility ?? 'ghost') != 'ghost';
+    final vis = svc.myProfile?.visibility ?? 'ghost';
+    final inRoom = svc.currentRoom != null;
+    final isPublic = vis == 'public';
+    // 친구방 안이거나 public 모드면 표시 (ghost 만 숨김).
+    final shouldShow = vis != 'ghost' && (inRoom || isPublic);
     if (!shouldShow) return const SizedBox.shrink();
 
     final cs = Theme.of(context).colorScheme;
-    final memberCount = (svc.currentRoomMembers.length - 1).clamp(0, 7);
+    final roomCount = (svc.currentRoomMembers.length - 1).clamp(0, 7);
+    final worldCount = svc.worldPeerLocations.length;
     final isFlash = _flashMessage != null;
     final textColor = Platform.isIOS ? Colors.white : cs.onPrimaryContainer;
+    // 친구방 안: 룸 멤버 수 / 친구방 밖 public: world peer 수.
+    final badgeText = inRoom
+        ? AppL10n.of(context).liveBadgeSharing(roomCount)
+        : AppL10n.of(context).liveBadgeSharingPublic(worldCount);
 
     final inner = Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -113,9 +121,7 @@ class _LiveSharingBadgeState extends State<LiveSharingBadge> {
               key: ValueKey(_flashMessage ?? '__base__'),
               constraints: const BoxConstraints(maxWidth: 240),
               child: Text(
-                isFlash
-                    ? _flashMessage!
-                    : AppL10n.of(context).liveBadgeSharing(memberCount),
+                isFlash ? _flashMessage! : badgeText,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(

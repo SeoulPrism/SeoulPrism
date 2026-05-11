@@ -2242,6 +2242,27 @@ class AppL10nKo extends AppL10n {
   String get roomMembersGhost => '비공개';
 
   @override
+  String roomMembersNearbyHeader(int count) {
+    return '주변 ${count}명 (500m 이내)';
+  }
+
+  @override
+  String get roomMembersPublicSectionHeader => '전체 공개 사용자';
+
+  @override
+  String roomMembersSeeAllPublic(int count) {
+    return '전체 보기 (${count}명)';
+  }
+
+  @override
+  String get roomMembersHidePublic => '전체 숨기기';
+
+  @override
+  String liveBadgeSharingPublic(int count) {
+    return '${count}명에게 공개 중';
+  }
+
+  @override
   String get roomMembersDisconnected => '연결 안됨';
 
   @override

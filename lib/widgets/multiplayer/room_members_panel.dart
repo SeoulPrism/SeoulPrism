@@ -27,7 +27,10 @@ class RoomMembersPanel extends StatefulWidget {
 }
 
 class _RoomMembersPanelState extends State<RoomMembersPanel> {
+  static const double _kNearbyRadiusMeters = 500.0;
+
   Position? _myPos;
+  bool _showAllPublic = false;
 
   @override
   void initState() {
@@ -39,7 +42,10 @@ class _RoomMembersPanelState extends State<RoomMembersPanel> {
   @override
   void didUpdateWidget(RoomMembersPanel old) {
     super.didUpdateWidget(old);
-    if (widget.open && !old.open) _refreshMyPos();
+    if (widget.open && !old.open) {
+      _refreshMyPos();
+      _showAllPublic = false;
+    }
   }
 
   @override
@@ -59,10 +65,15 @@ class _RoomMembersPanelState extends State<RoomMembersPanel> {
     } catch (_) {}
   }
 
-  String _distanceLabel(double lat, double lng) {
+  double? _distanceMeters(double lat, double lng) {
     final me = _myPos;
-    if (me == null) return '';
-    final m = Geolocator.distanceBetween(me.latitude, me.longitude, lat, lng);
+    if (me == null) return null;
+    return Geolocator.distanceBetween(me.latitude, me.longitude, lat, lng);
+  }
+
+  String _distanceLabel(double lat, double lng) {
+    final m = _distanceMeters(lat, lng);
+    if (m == null) return '';
     if (m < 1000) return '${m.round()}m';
     return '${(m / 1000).toStringAsFixed(1)}km';
   }
@@ -72,10 +83,25 @@ class _RoomMembersPanelState extends State<RoomMembersPanel> {
     final svc = MultiplayerService.instance;
     final cs = Theme.of(context).colorScheme;
     final myId = svc.myId;
+
     final memberIds =
         svc.currentRoomMembers.where((id) => id != myId).toList();
 
-    // 슬라이드 + 페이드 애니메이션 — 닫혀있을 땐 0 으로 collapse.
+    // 룸 멤버를 제외한 public peers — 500m 이내 / 밖으로 분류.
+    final memberIdSet = memberIds.toSet();
+    final nearby = <String>[];
+    final farther = <String>[];
+    svc.worldPeerLocations.forEach((uid, loc) {
+      if (uid == myId || memberIdSet.contains(uid)) return;
+      if (svc.isBlocked(uid)) return;
+      final dist = _distanceMeters(loc.lat, loc.lng);
+      if (dist != null && dist <= _kNearbyRadiusMeters) {
+        nearby.add(uid);
+      } else {
+        farther.add(uid);
+      }
+    });
+
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 280),
       switchInCurve: Curves.easeOutCubic,
@@ -92,6 +118,11 @@ class _RoomMembersPanelState extends State<RoomMembersPanel> {
           : _Panel(
               key: const ValueKey('panel-open'),
               memberIds: memberIds,
+              nearbyPublicIds: nearby,
+              fartherPublicIds: farther,
+              showAllPublic: _showAllPublic,
+              onTogglePublic: () =>
+                  setState(() => _showAllPublic = !_showAllPublic),
               cs: cs,
               distanceFor: _distanceLabel,
               onPeerTap: widget.onPeerTap,
@@ -103,6 +134,10 @@ class _RoomMembersPanelState extends State<RoomMembersPanel> {
 
 class _Panel extends StatelessWidget {
   final List<String> memberIds;
+  final List<String> nearbyPublicIds;
+  final List<String> fartherPublicIds;
+  final bool showAllPublic;
+  final VoidCallback onTogglePublic;
   final ColorScheme cs;
   final String Function(double, double) distanceFor;
   final void Function(String, double, double) onPeerTap;
@@ -111,6 +146,10 @@ class _Panel extends StatelessWidget {
   const _Panel({
     super.key,
     required this.memberIds,
+    required this.nearbyPublicIds,
+    required this.fartherPublicIds,
+    required this.showAllPublic,
+    required this.onTogglePublic,
     required this.cs,
     required this.distanceFor,
     required this.onPeerTap,
@@ -120,6 +159,20 @@ class _Panel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final svc = MultiplayerService.instance;
+    final l = AppL10n.of(context);
+    final isIOS = Platform.isIOS;
+    final dim = isIOS ? Colors.white.withValues(alpha: 0.65) : cs.onSurfaceVariant;
+
+    Widget peerRow(String uid) => _MemberRow(
+          userId: uid,
+          cs: cs,
+          distanceFor: distanceFor,
+          onTap: (lat, lng) {
+            onPeerTap(uid, lat, lng);
+            onDismiss();
+          },
+        );
+
     final inner = Padding(
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
       child: Column(
@@ -131,12 +184,12 @@ class _Panel extends StatelessWidget {
               Expanded(
                 child: Text(
                   memberIds.isEmpty
-                      ? AppL10n.of(context).roomMembersEmpty
-                      : AppL10n.of(context).roomMembersWithCount(memberIds.length),
+                      ? l.roomMembersEmpty
+                      : l.roomMembersWithCount(memberIds.length),
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w800,
-                    color: Platform.isIOS
+                    color: isIOS
                         ? Colors.white.withValues(alpha: 0.85)
                         : cs.onSurfaceVariant,
                   ),
@@ -147,14 +200,14 @@ class _Panel extends StatelessWidget {
                   await svc.setVisibility('ghost');
                   onDismiss();
                   if (context.mounted) {
-                    showAppSnackBar(AppL10n.of(context).liveBadgeStopped);
+                    showAppSnackBar(l.liveBadgeStopped);
                   }
                 },
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                       horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Platform.isIOS
+                    color: isIOS
                         ? Colors.white.withValues(alpha: 0.15)
                         : cs.surfaceContainerHigh,
                     borderRadius: BorderRadius.circular(10),
@@ -164,15 +217,13 @@ class _Panel extends StatelessWidget {
                     children: [
                       Icon(Icons.visibility_off_rounded,
                           size: 12,
-                          color: Platform.isIOS
-                              ? Colors.white
-                              : cs.onSurfaceVariant),
+                          color: isIOS ? Colors.white : cs.onSurfaceVariant),
                       const SizedBox(width: 4),
-                      Text(AppL10n.of(context).roomMembersGhost,
+                      Text(l.roomMembersGhost,
                           style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w700,
-                              color: Platform.isIOS
+                              color: isIOS
                                   ? Colors.white
                                   : cs.onSurfaceVariant)),
                     ],
@@ -182,15 +233,39 @@ class _Panel extends StatelessWidget {
             ],
           ),
           if (memberIds.isNotEmpty) const SizedBox(height: 8),
-          ...memberIds.map((uid) => _MemberRow(
-                userId: uid,
-                cs: cs,
-                distanceFor: distanceFor,
-                onTap: (lat, lng) {
-                  onPeerTap(uid, lat, lng);
-                  onDismiss();
-                },
-              )),
+          ...memberIds.map(peerRow),
+
+          // 주변 (500m 이내) 전체 공개 사용자.
+          if (nearbyPublicIds.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            _SectionLabel(
+                text: l.roomMembersNearbyHeader(nearbyPublicIds.length),
+                color: dim),
+            const SizedBox(height: 2),
+            ...nearbyPublicIds.map(peerRow),
+          ],
+
+          // 500m 밖 public — 토글로 펼침.
+          if (fartherPublicIds.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            _ExpandButton(
+              label: showAllPublic
+                  ? l.roomMembersHidePublic
+                  : l.roomMembersSeeAllPublic(fartherPublicIds.length),
+              expanded: showAllPublic,
+              onTap: onTogglePublic,
+              color: dim,
+              isIOS: isIOS,
+              cs: cs,
+            ),
+            if (showAllPublic) ...[
+              const SizedBox(height: 2),
+              _SectionLabel(
+                  text: l.roomMembersPublicSectionHeader, color: dim),
+              const SizedBox(height: 2),
+              ...fartherPublicIds.map(peerRow),
+            ],
+          ],
         ],
       ),
     );
@@ -229,6 +304,86 @@ class _Panel extends StatelessWidget {
               ),
               child: inner,
             ),
+    );
+  }
+}
+
+class _SectionLabel extends StatelessWidget {
+  final String text;
+  final Color color;
+  const _SectionLabel({required this.text, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4, top: 4, bottom: 2),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w800,
+          letterSpacing: 0.2,
+          color: color,
+        ),
+      ),
+    );
+  }
+}
+
+class _ExpandButton extends StatelessWidget {
+  final String label;
+  final bool expanded;
+  final VoidCallback onTap;
+  final Color color;
+  final bool isIOS;
+  final ColorScheme cs;
+
+  const _ExpandButton({
+    required this.label,
+    required this.expanded,
+    required this.onTap,
+    required this.color,
+    required this.isIOS,
+    required this.cs,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(10),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          decoration: BoxDecoration(
+            color: isIOS
+                ? Colors.white.withValues(alpha: 0.08)
+                : cs.surfaceContainerHigh.withValues(alpha: 0.6),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                expanded ? Icons.expand_less_rounded : Icons.expand_more_rounded,
+                size: 16,
+                color: color,
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: color,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

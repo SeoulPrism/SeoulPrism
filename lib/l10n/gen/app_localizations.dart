@@ -4121,6 +4121,36 @@ abstract class AppL10n {
   /// **'Private'**
   String get roomMembersGhost;
 
+  /// No description provided for @roomMembersNearbyHeader.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} nearby (within 500m)'**
+  String roomMembersNearbyHeader(int count);
+
+  /// No description provided for @roomMembersPublicSectionHeader.
+  ///
+  /// In en, this message translates to:
+  /// **'Public users'**
+  String get roomMembersPublicSectionHeader;
+
+  /// No description provided for @roomMembersSeeAllPublic.
+  ///
+  /// In en, this message translates to:
+  /// **'See all ({count})'**
+  String roomMembersSeeAllPublic(int count);
+
+  /// No description provided for @roomMembersHidePublic.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide all'**
+  String get roomMembersHidePublic;
+
+  /// No description provided for @liveBadgeSharingPublic.
+  ///
+  /// In en, this message translates to:
+  /// **'Visible to {count} people'**
+  String liveBadgeSharingPublic(int count);
+
   /// No description provided for @roomMembersDisconnected.
   ///
   /// In en, this message translates to:

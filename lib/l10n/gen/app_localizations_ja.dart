@@ -2241,6 +2241,27 @@ class AppL10nJa extends AppL10n {
   String get roomMembersGhost => '非公開';
 
   @override
+  String roomMembersNearbyHeader(int count) {
+    return '周辺 ${count}人 (500m 以内)';
+  }
+
+  @override
+  String get roomMembersPublicSectionHeader => '全体公開ユーザー';
+
+  @override
+  String roomMembersSeeAllPublic(int count) {
+    return '全体を見る (${count}人)';
+  }
+
+  @override
+  String get roomMembersHidePublic => '全体を隠す';
+
+  @override
+  String liveBadgeSharingPublic(int count) {
+    return '${count}人に公開中';
+  }
+
+  @override
   String get roomMembersDisconnected => '未接続';
 
   @override

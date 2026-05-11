@@ -2293,6 +2293,33 @@ class AppL10nEn extends AppL10n {
   String get roomMembersGhost => 'Private';
 
   @override
+  String roomMembersNearbyHeader(int count) {
+    return '${count} nearby (within 500m)';
+  }
+
+  @override
+  String get roomMembersPublicSectionHeader => 'Public users';
+
+  @override
+  String roomMembersSeeAllPublic(int count) {
+    return 'See all (${count})';
+  }
+
+  @override
+  String get roomMembersHidePublic => 'Hide all';
+
+  @override
+  String liveBadgeSharingPublic(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'people',
+      one: 'person',
+    );
+    return 'Visible to ${count} ${_temp0}';
+  }
+
+  @override
   String get roomMembersDisconnected => 'Disconnected';
 
   @override

@@ -2223,6 +2223,27 @@ class AppL10nZh extends AppL10n {
   String get roomMembersGhost => '隐身';
 
   @override
+  String roomMembersNearbyHeader(int count) {
+    return '附近 ${count} 人 (500m 内)';
+  }
+
+  @override
+  String get roomMembersPublicSectionHeader => '公开用户';
+
+  @override
+  String roomMembersSeeAllPublic(int count) {
+    return '查看全部 (${count} 人)';
+  }
+
+  @override
+  String get roomMembersHidePublic => '隐藏全部';
+
+  @override
+  String liveBadgeSharingPublic(int count) {
+    return '对 ${count} 人公开中';
+  }
+
+  @override
   String get roomMembersDisconnected => '未连接';
 
   @override

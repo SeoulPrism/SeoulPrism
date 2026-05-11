@@ -79,6 +79,10 @@ class MultiplayerService with WidgetsBindingObserver {
     return Map.unmodifiable(merged);
   }
 
+  /// 전 세계 공개 모드 peers 만 (룸 멤버 제외).
+  Map<String, PeerLocation> get worldPeerLocations =>
+      Map.unmodifiable(_worldPeerLocations);
+
   final List<RoomMessage> _messages = [];
   List<RoomMessage> get messages => List.unmodifiable(_messages);
 
