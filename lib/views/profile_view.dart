@@ -3,20 +3,23 @@ import 'dart:ui';
 
 import '../widgets/adaptive/adaptive.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../main.dart';
 import '../core/api_keys.dart';
 import '../l10n/gen/app_localizations.dart';
 import '../services/favorites_service.dart';
+import '../services/user_avatar_service.dart';
 import '../services/visit_history_service.dart';
+import '../widgets/app_snackbar.dart';
+import '../widgets/profile_avatar.dart';
 import 'notifications_view.dart';
+import 'profile/avatar_picker.dart';
 import 'settings_view.dart';
 import 'multiplayer/multiplayer_consent_view.dart';
 import 'multiplayer/multiplayer_hub_view.dart';
 import '../services/multiplayer_service.dart';
-import '../widgets/multiplayer/profile_avatar.dart';
-import 'multiplayer/profile_edit_sheet.dart';
 
 class ProfileView extends StatefulWidget {
   const ProfileView({super.key});
@@ -30,21 +33,69 @@ class _ProfileViewState extends State<ProfileView> {
 
   static const _kCategoryCount = 3;
 
-  @override
-  void initState() {
-    super.initState();
-    // 멀티플레이어 프로필이 바뀌면 (아바타 업로드 포함) 헤더가 즉시 반응하도록.
-    MultiplayerService.instance.addListener(_onMultiplayerChanged);
+  /// 아바타 업로드 중 — 카메라 뱃지에 progress spinner 노출.
+  bool _uploadingAvatar = false;
+
+  Future<void> _openAvatarPicker() async {
+    if (_uploadingAvatar) return;
+    final user = supabase.auth.currentUser;
+    if (user == null || user.isAnonymous) return;
+
+    final action = await AvatarPicker.show(
+      context,
+      hasExisting: UserAvatarService.instance.currentAvatarUrl != null,
+    );
+    if (action == null || !mounted) return;
+
+    switch (action) {
+      case AvatarAction.gallery:
+        await _pickAndUpload(ImageSource.gallery);
+      case AvatarAction.camera:
+        await _pickAndUpload(ImageSource.camera);
+      case AvatarAction.remove:
+        await _confirmRemove();
+    }
   }
 
-  @override
-  void dispose() {
-    MultiplayerService.instance.removeListener(_onMultiplayerChanged);
-    super.dispose();
+  Future<void> _pickAndUpload(ImageSource source) async {
+    final l = AppL10n.of(context);
+    try {
+      final picker = ImagePicker();
+      final picked = await picker.pickImage(
+        source: source,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 80,
+      );
+      if (picked == null || !mounted) return;
+      setState(() => _uploadingAvatar = true);
+      await UserAvatarService.instance.uploadAvatar(File(picked.path));
+      if (!mounted) return;
+      setState(() => _uploadingAvatar = false);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _uploadingAvatar = false);
+      showAppSnackBar(l.profileEditAvatarFailed);
+    }
   }
 
-  void _onMultiplayerChanged() {
-    if (mounted) setState(() {});
+  Future<void> _confirmRemove() async {
+    final l = AppL10n.of(context);
+    await showAdaptiveConfirmDialog(
+      context: context,
+      title: l.profileEditAvatarRemoveConfirmTitle,
+      content: l.profileEditAvatarRemoveConfirmBody,
+      confirmText: l.profileEditAvatarRemove,
+      isDestructive: true,
+      onConfirm: () async {
+        try {
+          await UserAvatarService.instance.removeAvatar();
+          if (mounted) setState(() {});
+        } catch (_) {
+          if (mounted) showAppSnackBar(AppL10n.of(context).profileEditAvatarFailed);
+        }
+      },
+    );
   }
 
   String _categoryLabel(BuildContext ctx, int index) {
@@ -151,32 +202,32 @@ class _ProfileViewState extends State<ProfileView> {
 
   Widget _buildUserInfo() {
     final cs = Theme.of(context).colorScheme;
-    final isM3 = Platform.isAndroid;
-    final mpProfile = MultiplayerService.instance.myProfile;
     final user = supabase.auth.currentUser;
-    final initial = (user?.userMetadata?['username'] as String?)?.isNotEmpty == true
-        ? user!.userMetadata!['username'] as String
-        : (user?.email ?? '');
+    final isGuest = user?.isAnonymous ?? true;
+    final usernameMeta = user?.userMetadata?['username'] as String?;
+    final fallbackName =
+        (usernameMeta != null && usernameMeta.isNotEmpty) ? usernameMeta : (user?.email ?? '');
 
     return Center(
       child: Column(
         children: [
-          ProfileAvatar(
-            profile: mpProfile,
-            fallbackInitial: initial,
-            size: 80,
-            emojiSize: 40,
-            borderColor: isM3
-                ? cs.outlineVariant
-                : Colors.white.withValues(alpha: 0.15),
-            // 멀티플레이어 프로필이 있을 때만 탭으로 사진 변경 (edit sheet).
-            // 없으면 아래 Seoul Live 카드를 통해 먼저 가입을 유도.
-            onTap: mpProfile == null
-                ? null
-                : () async {
-                    await MultiplayerProfileEditSheet.show(context);
-                    if (mounted) setState(() {});
-                  },
+          // 게스트는 사진 못 올림 — 탭 비활성화.
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              UserProfileAvatar(
+                avatarUrl: UserAvatarService.instance.currentAvatarUrl,
+                fallbackName: fallbackName,
+                size: 80,
+                onTap: isGuest ? null : _openAvatarPicker,
+              ),
+              if (!isGuest)
+                Positioned(
+                  right: -2,
+                  bottom: -2,
+                  child: _CameraBadge(uploading: _uploadingAvatar),
+                ),
+            ],
           ),
           const SizedBox(height: 14),
           Builder(
@@ -851,6 +902,71 @@ class _ProfileViewState extends State<ProfileView> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ─── Camera Badge (avatar 우하단) ──────────────────────────────
+// iOS = 글라스 배경 + 화이트 카메라 글리프
+// Android = M3 primary container + onPrimary 글리프
+
+class _CameraBadge extends StatelessWidget {
+  final bool uploading;
+  const _CameraBadge({required this.uploading});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final isM3 = Platform.isAndroid;
+
+    final glyph = uploading
+        ? SizedBox(
+            width: 14,
+            height: 14,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: isM3 ? cs.onPrimaryContainer : Colors.white,
+            ),
+          )
+        : Icon(
+            Icons.camera_alt_rounded,
+            size: 16,
+            color: isM3 ? cs.onPrimaryContainer : Colors.white,
+          );
+
+    if (isM3) {
+      return Container(
+        width: 30,
+        height: 30,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: cs.primaryContainer,
+          border: Border.all(color: cs.surface, width: 2),
+        ),
+        alignment: Alignment.center,
+        child: glyph,
+      );
+    }
+
+    // iOS — 글라스 컨테이너로 카메라 뱃지.
+    return ClipOval(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+        child: Container(
+          width: 30,
+          height: 30,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.black.withValues(alpha: 0.55),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.35),
+              width: 1,
+            ),
+          ),
+          alignment: Alignment.center,
+          child: glyph,
+        ),
       ),
     );
   }

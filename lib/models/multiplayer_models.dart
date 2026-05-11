@@ -11,8 +11,6 @@ class MultiplayerProfile {
   final int birthYear;
   final String? friendCode; // 8자리, 평생.
   final PeerTrack? currentTrack; // Spotify 듣는 곡 (B26).
-  /// Supabase Storage `avatars` bucket 의 public URL. null 이면 이모지 fallback.
-  final String? avatarUrl;
 
   const MultiplayerProfile({
     required this.userId,
@@ -23,7 +21,6 @@ class MultiplayerProfile {
     required this.birthYear,
     this.friendCode,
     this.currentTrack,
-    this.avatarUrl,
   });
 
   factory MultiplayerProfile.fromJson(Map<String, dynamic> j) => MultiplayerProfile(
@@ -35,13 +32,8 @@ class MultiplayerProfile {
         birthYear: (j['birth_year'] as num).toInt(),
         friendCode: j['friend_code'] as String?,
         currentTrack: PeerTrack.tryFromJson(j['current_track']),
-        avatarUrl: (j['avatar_url'] as String?)?.trim().isEmpty == true
-            ? null
-            : j['avatar_url'] as String?,
       );
 
-  // avatar_url 은 별도 upload 경로에서 set — toUpsert 에는 포함하지 않음
-  // (닉네임 저장 시 실수로 사진을 null 로 덮어쓰지 않도록).
   Map<String, dynamic> toUpsert() => {
         'user_id': userId,
         'nickname': nickname,

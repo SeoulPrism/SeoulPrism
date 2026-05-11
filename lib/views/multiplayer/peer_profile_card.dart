@@ -8,7 +8,6 @@ import '../../l10n/gen/app_localizations.dart';
 import '../../models/multiplayer_models.dart';
 import '../../services/multiplayer_service.dart';
 import '../../widgets/adaptive/adaptive.dart';
-import '../../widgets/multiplayer/profile_avatar.dart';
 import 'report_sheet.dart';
 import '../../widgets/app_snackbar.dart';
 
@@ -194,16 +193,20 @@ class _BodyState extends State<_Body> {
       );
     }
 
+    final color = p.safePinColor;
+
     return Padding(
       padding: EdgeInsets.fromLTRB(20, 8, 20, inset + 24),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // 아바타 — 사진 있으면 NetworkImage, 없으면 이모지 fallback.
-          ProfileAvatar(
-            profile: p,
-            size: 80,
-            emojiSize: 40,
+          // 아바타.
+          Container(
+            width: 80,
+            height: 80,
+            decoration: BoxDecoration(shape: BoxShape.circle, color: color),
+            alignment: Alignment.center,
+            child: Text(p.pinEmoji, style: const TextStyle(fontSize: 40)),
           ),
           const SizedBox(height: 12),
           Text(p.displayNickname,
