@@ -664,4 +664,125 @@ class AppL10nZh extends AppL10n {
 
   @override
   String get spotifyNowPlaying => '正在播放';
+
+  @override
+  String get departureTimePickerTitle => '出发时间';
+
+  @override
+  String get departureTimePickerHint => '将以指定时间为基础计算到达时间。';
+
+  @override
+  String get departureTimeNow => '现在';
+
+  @override
+  String get departureTime30min => '30 分钟后';
+
+  @override
+  String get departureTime1hour => '1 小时后';
+
+  @override
+  String get departureTimeCustom => '自定义';
+
+  @override
+  String get placeActionDepart => '出发';
+
+  @override
+  String get placeActionArrive => '到达';
+
+  @override
+  String get placeActionInfo => '信息';
+
+  @override
+  String get placeDetailTapHint => '点击查看照片·评价·营业时间';
+
+  @override
+  String get savedPanelTitle => '已保存';
+
+  @override
+  String get savedEmptyFavorites => '暂无已保存的地点';
+
+  @override
+  String get savedRemoveFavoriteTooltip => '取消收藏';
+
+  @override
+  String get travelThemeTitle => '主题推荐';
+
+  @override
+  String get travelThemeSubtitle => '一键自动生成路线';
+
+  @override
+  String get travelTitle => '旅行';
+
+  @override
+  String get travelSubtitle => '从景福宫到汉江夜景,为你规划一日行程';
+
+  @override
+  String get travelEventsTitle => '本周活动';
+
+  @override
+  String get travelEventsSubtitle => '首尔进行中的文化活动';
+
+  @override
+  String travelEventsCount(int count) {
+    return '$count 个';
+  }
+
+  @override
+  String get travelEventsLoadError => '无法加载活动信息。向下拉动重试。';
+
+  @override
+  String get travelAiTitle => 'AI 为你安排日程';
+
+  @override
+  String get travelAiSubtitle => '自动考虑时间·天气·动线';
+
+  @override
+  String get travelFromSavedTitle => '用已保存的地点生成';
+
+  @override
+  String get travelFromSavedSubtitle => '基于收藏 + 访问记录的路线';
+
+  @override
+  String get travelYourTheme => '你的主题';
+
+  @override
+  String get travelStartWithMood => '用这个心情开始路线';
+
+  @override
+  String get travelEventBadgeOngoing => '进行中';
+
+  @override
+  String get travelEventBadgeFree => '免费';
+
+  @override
+  String travelThemeStops(int count) {
+    return '$count 个地点';
+  }
+
+  @override
+  String get travelMoodAnalyzing => '正在分析曲目氛围……';
+
+  @override
+  String get travelMoodExcited => '嗨翻的氛围里';
+
+  @override
+  String get travelMoodToday => '今天这样的日子';
+
+  @override
+  String get travelMoodIntense => '强烈的节拍里';
+
+  @override
+  String get travelMoodCalm => '宁静的氛围里';
+
+  @override
+  String get travelTodayMoodLabel => '今天的心情';
+
+  @override
+  String get notificationsTitle => '通知';
+
+  @override
+  String get notificationsEmptyTitle => '暂无通知';
+
+  @override
+  String get notificationsEmptySubtitle => '有新消息时会显示在这里';
 }

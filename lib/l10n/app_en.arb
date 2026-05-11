@@ -365,5 +365,55 @@
   "spotifyShareToRoom": "Share with room",
   "spotifyDisconnect": "Disconnect",
   "spotifyConnectedNoTrack": "Spotify connected (no playback)",
-  "spotifyNowPlaying": "Now playing"
+  "spotifyNowPlaying": "Now playing",
+
+  "departureTimePickerTitle": "Departure time",
+  "departureTimePickerHint": "Arrival time is calculated from this departure time.",
+  "departureTimeNow": "Now",
+  "departureTime30min": "In 30 min",
+  "departureTime1hour": "In 1 hour",
+  "departureTimeCustom": "Custom",
+
+  "placeActionDepart": "Depart",
+  "placeActionArrive": "Arrive",
+  "placeActionInfo": "Info",
+  "placeDetailTapHint": "Tap for photos · reviews · hours",
+
+  "savedPanelTitle": "Saved",
+  "savedEmptyFavorites": "No saved places yet",
+  "savedRemoveFavoriteTooltip": "Remove from favorites",
+
+  "travelThemeTitle": "Theme suggestions",
+  "travelThemeSubtitle": "One tap to generate a course",
+  "travelTitle": "Trip",
+  "travelSubtitle": "From Gyeongbokgung to the Han River — we'll plan your day",
+  "travelEventsTitle": "This week's events",
+  "travelEventsSubtitle": "Cultural events happening in Seoul",
+  "travelEventsCount": "{count}",
+  "@travelEventsCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "travelEventsLoadError": "Couldn't load events. Pull down to retry.",
+  "travelAiTitle": "AI plans your day",
+  "travelAiSubtitle": "Considers time · weather · routes",
+  "travelFromSavedTitle": "Build from saved places",
+  "travelFromSavedSubtitle": "Course based on favorites + visit history",
+  "travelYourTheme": "Your theme",
+  "travelStartWithMood": "Start with this mood",
+  "travelEventBadgeOngoing": "Live",
+  "travelEventBadgeFree": "Free",
+  "travelThemeStops": "{count} stops",
+  "@travelThemeStops": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "travelMoodAnalyzing": "Analyzing track mood…",
+  "travelMoodExcited": "For upbeat vibes,",
+  "travelMoodToday": "On a day like today,",
+  "travelMoodIntense": "For intense beats,",
+  "travelMoodCalm": "For a calm mood,",
+  "travelTodayMoodLabel": "Today's mood",
+
+  "notificationsTitle": "Notifications",
+  "notificationsEmptyTitle": "No notifications",
+  "notificationsEmptySubtitle": "New updates will appear here"
 }

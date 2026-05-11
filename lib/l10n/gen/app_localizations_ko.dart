@@ -669,4 +669,125 @@ class AppL10nKo extends AppL10n {
 
   @override
   String get spotifyNowPlaying => '지금 듣는 곡';
+
+  @override
+  String get departureTimePickerTitle => '출발 시각';
+
+  @override
+  String get departureTimePickerHint => '지정된 시각 기준으로 도착 시각이 계산됩니다.';
+
+  @override
+  String get departureTimeNow => '지금';
+
+  @override
+  String get departureTime30min => '30분 후';
+
+  @override
+  String get departureTime1hour => '1시간 후';
+
+  @override
+  String get departureTimeCustom => '직접 지정';
+
+  @override
+  String get placeActionDepart => '출발';
+
+  @override
+  String get placeActionArrive => '도착';
+
+  @override
+  String get placeActionInfo => '정보';
+
+  @override
+  String get placeDetailTapHint => '탭하여 사진·리뷰·영업시간 보기';
+
+  @override
+  String get savedPanelTitle => '저장';
+
+  @override
+  String get savedEmptyFavorites => '저장한 장소가 없습니다';
+
+  @override
+  String get savedRemoveFavoriteTooltip => '즐겨찾기 해제';
+
+  @override
+  String get travelThemeTitle => '테마 추천';
+
+  @override
+  String get travelThemeSubtitle => '탭 한 번으로 코스 자동 생성';
+
+  @override
+  String get travelTitle => '여행';
+
+  @override
+  String get travelSubtitle => '경복궁부터 한강 야경까지, 하루 코스를 짜드려요';
+
+  @override
+  String get travelEventsTitle => '이번 주 이벤트';
+
+  @override
+  String get travelEventsSubtitle => '서울에서 진행 중인 문화행사';
+
+  @override
+  String travelEventsCount(int count) {
+    return '$count개';
+  }
+
+  @override
+  String get travelEventsLoadError => '행사 정보를 불러오지 못했어요. 아래로 당겨서 다시 시도해 주세요.';
+
+  @override
+  String get travelAiTitle => 'AI 가 일정을 짜드려요';
+
+  @override
+  String get travelAiSubtitle => '시간 · 날씨 · 동선 자동 고려';
+
+  @override
+  String get travelFromSavedTitle => '저장한 장소로 만들기';
+
+  @override
+  String get travelFromSavedSubtitle => '즐겨찾기 + 방문 기록 기반 동선';
+
+  @override
+  String get travelYourTheme => '당신의 테마';
+
+  @override
+  String get travelStartWithMood => '이 무드로 코스 시작';
+
+  @override
+  String get travelEventBadgeOngoing => '진행 중';
+
+  @override
+  String get travelEventBadgeFree => '무료';
+
+  @override
+  String travelThemeStops(int count) {
+    return '$count곳';
+  }
+
+  @override
+  String get travelMoodAnalyzing => '곡 분위기 분석 중...';
+
+  @override
+  String get travelMoodExcited => '신나는 분위기엔';
+
+  @override
+  String get travelMoodToday => '오늘 같은 날엔';
+
+  @override
+  String get travelMoodIntense => '강렬한 비트엔';
+
+  @override
+  String get travelMoodCalm => '차분한 분위기엔';
+
+  @override
+  String get travelTodayMoodLabel => '오늘의 분위기';
+
+  @override
+  String get notificationsTitle => '알림';
+
+  @override
+  String get notificationsEmptyTitle => '알림이 없습니다';
+
+  @override
+  String get notificationsEmptySubtitle => '새로운 소식이 있으면 여기에 표시됩니다';
 }

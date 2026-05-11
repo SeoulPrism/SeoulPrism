@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../l10n/gen/app_localizations.dart';
 import '../../../data/travel_themes.dart';
 import '../../../services/environment_service.dart';
 import '../../../services/spotify_service.dart';
@@ -195,8 +196,8 @@ class _TravelPanelState extends State<TravelPanel> {
                 // 3. 큐레이션 테마 — 8개 미리 만들어둔 코스.
                 SliverToBoxAdapter(
                   child: _buildSectionHeader(
-                    title: '테마 추천',
-                    subtitle: '탭 한 번으로 코스 자동 생성',
+                    title: AppL10n.of(context).travelThemeTitle,
+                    subtitle: AppL10n.of(context).travelThemeSubtitle,
                     txtPrimary: txtPrimary,
                     txtMuted: txtMuted,
                   ),
@@ -292,7 +293,7 @@ class _TravelPanelState extends State<TravelPanel> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '여행',
+            AppL10n.of(context).travelTitle,
             style: TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.w800,
@@ -302,7 +303,7 @@ class _TravelPanelState extends State<TravelPanel> {
           ),
           const SizedBox(height: 6),
           Text(
-            '경복궁부터 한강 야경까지, 하루 코스를 짜드려요',
+            AppL10n.of(context).travelSubtitle,
             style: AppTypography.bodySm.copyWith(
               color: txtMuted,
               height: 1.4,
@@ -354,7 +355,7 @@ class _TravelPanelState extends State<TravelPanel> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '이번 주 이벤트',
+                  AppL10n.of(context).travelEventsTitle,
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w800,
@@ -364,7 +365,7 @@ class _TravelPanelState extends State<TravelPanel> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '서울에서 진행 중인 문화행사',
+                  AppL10n.of(context).travelEventsSubtitle,
                   style: AppTypography.caption.copyWith(color: txtMuted),
                 ),
               ],
@@ -372,7 +373,7 @@ class _TravelPanelState extends State<TravelPanel> {
           ),
           if (_events.isNotEmpty)
             Text(
-              '${_events.length}개',
+              AppL10n.of(context).travelEventsCount(_events.length),
               style: AppTypography.caption
                   .copyWith(color: txtMuted, fontWeight: FontWeight.w600),
             ),
@@ -404,7 +405,7 @@ class _TravelPanelState extends State<TravelPanel> {
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
           child: Text(
-            '행사 정보를 불러오지 못했어요. 아래로 당겨서 다시 시도해 주세요.',
+            AppL10n.of(context).travelEventsLoadError,
             style: AppTypography.bodySm.copyWith(color: txtMuted, height: 1.5),
           ),
         ),
@@ -478,9 +479,9 @@ class _HeroAction extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'AI 가 일정을 짜드려요',
-                      style: TextStyle(
+                    Text(
+                      AppL10n.of(context).travelAiTitle,
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w800,
                         color: Colors.white,
@@ -489,7 +490,7 @@ class _HeroAction extends StatelessWidget {
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      '시간 · 날씨 · 동선 자동 고려',
+                      AppL10n.of(context).travelAiSubtitle,
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.white.withValues(alpha: 0.85),
@@ -565,7 +566,7 @@ class _SecondaryAction extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '저장한 장소로 만들기',
+                      AppL10n.of(context).travelFromSavedTitle,
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
@@ -574,7 +575,7 @@ class _SecondaryAction extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      '즐겨찾기 + 방문 기록 기반 동선',
+                      AppL10n.of(context).travelFromSavedSubtitle,
                       style: AppTypography.caption.copyWith(color: txtMuted),
                     ),
                   ],
@@ -667,7 +668,7 @@ class _UserStyleCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      '당신의 테마',
+                      AppL10n.of(context).travelYourTheme,
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
@@ -728,7 +729,7 @@ class _UserStyleCard extends StatelessWidget {
                 Row(
                   children: [
                     Text(
-                      '이 무드로 코스 시작',
+                      AppL10n.of(context).travelStartWithMood,
                       style: TextStyle(
                         fontSize: 12.5,
                         fontWeight: FontWeight.w700,
@@ -845,9 +846,11 @@ class _EventTile extends StatelessWidget {
                     crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
                       if (event.isOngoing)
-                        _Tag(label: '진행 중', color: Colors.green),
+                        _Tag(label: AppL10n.of(context).travelEventBadgeOngoing,
+                            color: Colors.green),
                       if (event.isFree)
-                        _Tag(label: '무료', color: Colors.teal),
+                        _Tag(label: AppL10n.of(context).travelEventBadgeFree,
+                            color: Colors.teal),
                       if (event.shortDate.isNotEmpty)
                         Text(
                           event.shortDate,
@@ -960,7 +963,7 @@ class _ThemeCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
-                    '${theme.stops.length}곳',
+                    AppL10n.of(context).travelThemeStops(theme.stops.length),
                     style: const TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.w700,
@@ -1110,19 +1113,20 @@ class _SpotifyMoodTileState extends State<_SpotifyMoodTile> {
     );
   }
 
-  String _suggestionLine() {
+  String _suggestionLine(BuildContext ctx) {
+    final l = AppL10n.of(ctx);
     final theme = _matched;
-    if (theme == null) return '곡 분위기 분석 중...';
+    if (theme == null) return l.travelMoodAnalyzing;
     final f = _features;
     if (f == null) return '${theme.emoji} ${theme.title}';
     // valence 별 톤 다르게.
     final tone = f.valence >= 0.6
-        ? '신나는 분위기엔'
+        ? l.travelMoodExcited
         : f.valence >= 0.4
-            ? '오늘 같은 날엔'
+            ? l.travelMoodToday
             : f.energy >= 0.6
-                ? '강렬한 비트엔'
-                : '차분한 분위기엔';
+                ? l.travelMoodIntense
+                : l.travelMoodCalm;
     return '$tone ${theme.emoji} ${theme.title}';
   }
 
@@ -1183,7 +1187,7 @@ class _SpotifyMoodTileState extends State<_SpotifyMoodTile> {
                           ),
                           const SizedBox(width: 3),
                           Text(
-                            '오늘의 분위기',
+                            AppL10n.of(context).travelTodayMoodLabel,
                             style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w700,
@@ -1194,7 +1198,7 @@ class _SpotifyMoodTileState extends State<_SpotifyMoodTile> {
                       ),
                       const SizedBox(height: 3),
                       Text(
-                        _suggestionLine(),
+                        _suggestionLine(context),
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w700,

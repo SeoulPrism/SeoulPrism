@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import '../../../l10n/gen/app_localizations.dart';
 import '../../../services/favorites_service.dart';
 import '../../../services/visit_history_service.dart';
 
@@ -29,6 +30,7 @@ class _SavedPanelState extends State<SavedPanel> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final l = AppL10n.of(context);
     final isM3 = Platform.isAndroid;
     final content = Column(
       children: [
@@ -50,7 +52,7 @@ class _SavedPanelState extends State<SavedPanel> {
           child: Row(
             children: [
               Text(
-                '저장',
+                l.savedPanelTitle,
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.w800,
@@ -61,7 +63,7 @@ class _SavedPanelState extends State<SavedPanel> {
               IconButton(
                 icon: Icon(Icons.close, size: 20, color: _ts),
                 onPressed: widget.onClose,
-                tooltip: '닫기',
+                tooltip: l.commonClose,
                 visualDensity: VisualDensity.compact,
               ),
             ],
@@ -77,9 +79,9 @@ class _SavedPanelState extends State<SavedPanel> {
             ),
             child: Row(
               children: [
-                _tabBtn('즐겨찾기', 0),
-                _tabBtn('최근 방문', 1),
-                _tabBtn('자주 방문', 2),
+                _tabBtn(l.profileCategoryFavorites, 0),
+                _tabBtn(l.profileCategoryRecent, 1),
+                _tabBtn(l.profileCategoryFrequent, 2),
               ],
             ),
           ),
@@ -171,10 +173,11 @@ class _SavedPanelState extends State<SavedPanel> {
   }
 
   Widget _buildFavorites() {
+    final l = AppL10n.of(context);
     final items = FavoritesService.instance.favorites;
     if (items.isEmpty) {
       return Center(
-        child: Text('저장한 장소가 없습니다', style: TextStyle(color: _tm)),
+        child: Text(l.savedEmptyFavorites, style: TextStyle(color: _tm)),
       );
     }
     return ListView.builder(
@@ -193,7 +196,7 @@ class _SavedPanelState extends State<SavedPanel> {
               await FavoritesService.instance.remove(f.name);
               setState(() {});
             },
-            tooltip: '즐겨찾기 해제',
+            tooltip: l.savedRemoveFavoriteTooltip,
             visualDensity: VisualDensity.compact,
           ),
         );
@@ -202,10 +205,11 @@ class _SavedPanelState extends State<SavedPanel> {
   }
 
   Widget _buildRecent() {
+    final l = AppL10n.of(context);
     final items = VisitHistoryService.instance.recentVisits;
     if (items.isEmpty) {
       return Center(
-        child: Text('방문 기록이 없습니다', style: TextStyle(color: _tm)),
+        child: Text(l.profileEmptyVisits, style: TextStyle(color: _tm)),
       );
     }
     return ListView.builder(
@@ -215,10 +219,10 @@ class _SavedPanelState extends State<SavedPanel> {
         final r = items[i];
         final ago = DateTime.now().difference(r.visitedAt);
         final s = ago.inDays > 0
-            ? '${ago.inDays}일 전'
+            ? l.profileAgoDays(ago.inDays)
             : ago.inHours > 0
-                ? '${ago.inHours}시간 전'
-                : '방금';
+                ? l.profileAgoHours(ago.inHours)
+                : l.profileAgoNow;
         return _row(
           r.name,
           r.category,
@@ -231,10 +235,11 @@ class _SavedPanelState extends State<SavedPanel> {
   }
 
   Widget _buildFrequent() {
+    final l = AppL10n.of(context);
     final items = VisitHistoryService.instance.frequentVisits;
     if (items.isEmpty) {
       return Center(
-        child: Text('방문 기록이 없습니다', style: TextStyle(color: _tm)),
+        child: Text(l.profileEmptyVisits, style: TextStyle(color: _tm)),
       );
     }
     return ListView.builder(
@@ -248,7 +253,7 @@ class _SavedPanelState extends State<SavedPanel> {
           r.lat,
           r.lng,
           trailing: Text(
-            '${r.visitCount}회',
+            l.profileVisitTimes(r.visitCount),
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w600,

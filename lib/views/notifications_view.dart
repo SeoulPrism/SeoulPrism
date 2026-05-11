@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/gen/app_localizations.dart';
 import '../widgets/adaptive/adaptive.dart';
 
 class NotificationsView extends StatelessWidget {
@@ -7,6 +8,7 @@ class NotificationsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final l = AppL10n.of(context);
 
     return Scaffold(
       backgroundColor: cs.surface,
@@ -25,7 +27,7 @@ class NotificationsView extends StatelessWidget {
           ),
         ),
         title: Text(
-          '알림',
+          l.notificationsTitle,
           style: TextStyle(
             fontSize: 17,
             fontWeight: FontWeight.w600,
@@ -45,7 +47,7 @@ class NotificationsView extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              '알림이 없습니다',
+              l.notificationsEmptyTitle,
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -54,7 +56,7 @@ class NotificationsView extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              '새로운 소식이 있으면 여기에 표시됩니다',
+              l.notificationsEmptySubtitle,
               style: TextStyle(
                 fontSize: 14,
                 color: cs.onSurfaceVariant.withValues(alpha: 0.6),

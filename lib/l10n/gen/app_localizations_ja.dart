@@ -670,4 +670,125 @@ class AppL10nJa extends AppL10n {
 
   @override
   String get spotifyNowPlaying => '再生中の曲';
+
+  @override
+  String get departureTimePickerTitle => '出発時刻';
+
+  @override
+  String get departureTimePickerHint => '指定した時刻を基準に到着時刻を計算します。';
+
+  @override
+  String get departureTimeNow => '今すぐ';
+
+  @override
+  String get departureTime30min => '30 分後';
+
+  @override
+  String get departureTime1hour => '1 時間後';
+
+  @override
+  String get departureTimeCustom => '時刻を指定';
+
+  @override
+  String get placeActionDepart => '出発';
+
+  @override
+  String get placeActionArrive => '到着';
+
+  @override
+  String get placeActionInfo => '詳細';
+
+  @override
+  String get placeDetailTapHint => 'タップして写真・レビュー・営業時間を見る';
+
+  @override
+  String get savedPanelTitle => '保存';
+
+  @override
+  String get savedEmptyFavorites => '保存された場所はありません';
+
+  @override
+  String get savedRemoveFavoriteTooltip => 'お気に入りから外す';
+
+  @override
+  String get travelThemeTitle => 'テーマのおすすめ';
+
+  @override
+  String get travelThemeSubtitle => 'ワンタップでコースを自動生成';
+
+  @override
+  String get travelTitle => '旅';
+
+  @override
+  String get travelSubtitle => '景福宮から漢江の夜景まで、1 日のコースをご提案';
+
+  @override
+  String get travelEventsTitle => '今週のイベント';
+
+  @override
+  String get travelEventsSubtitle => 'ソウルで開催中の文化イベント';
+
+  @override
+  String travelEventsCount(int count) {
+    return '$count件';
+  }
+
+  @override
+  String get travelEventsLoadError => 'イベント情報を取得できませんでした。下に引いて再試行してください。';
+
+  @override
+  String get travelAiTitle => 'AI がスケジュールを組みます';
+
+  @override
+  String get travelAiSubtitle => '時間・天気・動線を自動考慮';
+
+  @override
+  String get travelFromSavedTitle => '保存した場所からつくる';
+
+  @override
+  String get travelFromSavedSubtitle => 'お気に入り + 訪問履歴ベースの動線';
+
+  @override
+  String get travelYourTheme => 'あなたのテーマ';
+
+  @override
+  String get travelStartWithMood => 'このムードでコース開始';
+
+  @override
+  String get travelEventBadgeOngoing => '開催中';
+
+  @override
+  String get travelEventBadgeFree => '無料';
+
+  @override
+  String travelThemeStops(int count) {
+    return '$countヶ所';
+  }
+
+  @override
+  String get travelMoodAnalyzing => '曲の雰囲気を分析中…';
+
+  @override
+  String get travelMoodExcited => 'ノリノリな雰囲気には';
+
+  @override
+  String get travelMoodToday => 'こんな日には';
+
+  @override
+  String get travelMoodIntense => '激しいビートには';
+
+  @override
+  String get travelMoodCalm => '落ち着いた雰囲気には';
+
+  @override
+  String get travelTodayMoodLabel => '今日の気分';
+
+  @override
+  String get notificationsTitle => '通知';
+
+  @override
+  String get notificationsEmptyTitle => '通知はありません';
+
+  @override
+  String get notificationsEmptySubtitle => '新しいお知らせはここに表示されます';
 }

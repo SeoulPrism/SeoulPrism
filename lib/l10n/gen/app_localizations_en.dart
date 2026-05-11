@@ -679,4 +679,129 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get spotifyNowPlaying => 'Now playing';
+
+  @override
+  String get departureTimePickerTitle => 'Departure time';
+
+  @override
+  String get departureTimePickerHint =>
+      'Arrival time is calculated from this departure time.';
+
+  @override
+  String get departureTimeNow => 'Now';
+
+  @override
+  String get departureTime30min => 'In 30 min';
+
+  @override
+  String get departureTime1hour => 'In 1 hour';
+
+  @override
+  String get departureTimeCustom => 'Custom';
+
+  @override
+  String get placeActionDepart => 'Depart';
+
+  @override
+  String get placeActionArrive => 'Arrive';
+
+  @override
+  String get placeActionInfo => 'Info';
+
+  @override
+  String get placeDetailTapHint => 'Tap for photos · reviews · hours';
+
+  @override
+  String get savedPanelTitle => 'Saved';
+
+  @override
+  String get savedEmptyFavorites => 'No saved places yet';
+
+  @override
+  String get savedRemoveFavoriteTooltip => 'Remove from favorites';
+
+  @override
+  String get travelThemeTitle => 'Theme suggestions';
+
+  @override
+  String get travelThemeSubtitle => 'One tap to generate a course';
+
+  @override
+  String get travelTitle => 'Trip';
+
+  @override
+  String get travelSubtitle =>
+      'From Gyeongbokgung to the Han River — we\'ll plan your day';
+
+  @override
+  String get travelEventsTitle => 'This week\'s events';
+
+  @override
+  String get travelEventsSubtitle => 'Cultural events happening in Seoul';
+
+  @override
+  String travelEventsCount(int count) {
+    return '$count';
+  }
+
+  @override
+  String get travelEventsLoadError =>
+      'Couldn\'t load events. Pull down to retry.';
+
+  @override
+  String get travelAiTitle => 'AI plans your day';
+
+  @override
+  String get travelAiSubtitle => 'Considers time · weather · routes';
+
+  @override
+  String get travelFromSavedTitle => 'Build from saved places';
+
+  @override
+  String get travelFromSavedSubtitle =>
+      'Course based on favorites + visit history';
+
+  @override
+  String get travelYourTheme => 'Your theme';
+
+  @override
+  String get travelStartWithMood => 'Start with this mood';
+
+  @override
+  String get travelEventBadgeOngoing => 'Live';
+
+  @override
+  String get travelEventBadgeFree => 'Free';
+
+  @override
+  String travelThemeStops(int count) {
+    return '$count stops';
+  }
+
+  @override
+  String get travelMoodAnalyzing => 'Analyzing track mood…';
+
+  @override
+  String get travelMoodExcited => 'For upbeat vibes,';
+
+  @override
+  String get travelMoodToday => 'On a day like today,';
+
+  @override
+  String get travelMoodIntense => 'For intense beats,';
+
+  @override
+  String get travelMoodCalm => 'For a calm mood,';
+
+  @override
+  String get travelTodayMoodLabel => 'Today\'s mood';
+
+  @override
+  String get notificationsTitle => 'Notifications';
+
+  @override
+  String get notificationsEmptyTitle => 'No notifications';
+
+  @override
+  String get notificationsEmptySubtitle => 'New updates will appear here';
 }

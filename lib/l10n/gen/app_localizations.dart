@@ -1228,6 +1228,240 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Now playing'**
   String get spotifyNowPlaying;
+
+  /// No description provided for @departureTimePickerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Departure time'**
+  String get departureTimePickerTitle;
+
+  /// No description provided for @departureTimePickerHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Arrival time is calculated from this departure time.'**
+  String get departureTimePickerHint;
+
+  /// No description provided for @departureTimeNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Now'**
+  String get departureTimeNow;
+
+  /// No description provided for @departureTime30min.
+  ///
+  /// In en, this message translates to:
+  /// **'In 30 min'**
+  String get departureTime30min;
+
+  /// No description provided for @departureTime1hour.
+  ///
+  /// In en, this message translates to:
+  /// **'In 1 hour'**
+  String get departureTime1hour;
+
+  /// No description provided for @departureTimeCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom'**
+  String get departureTimeCustom;
+
+  /// No description provided for @placeActionDepart.
+  ///
+  /// In en, this message translates to:
+  /// **'Depart'**
+  String get placeActionDepart;
+
+  /// No description provided for @placeActionArrive.
+  ///
+  /// In en, this message translates to:
+  /// **'Arrive'**
+  String get placeActionArrive;
+
+  /// No description provided for @placeActionInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Info'**
+  String get placeActionInfo;
+
+  /// No description provided for @placeDetailTapHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap for photos · reviews · hours'**
+  String get placeDetailTapHint;
+
+  /// No description provided for @savedPanelTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved'**
+  String get savedPanelTitle;
+
+  /// No description provided for @savedEmptyFavorites.
+  ///
+  /// In en, this message translates to:
+  /// **'No saved places yet'**
+  String get savedEmptyFavorites;
+
+  /// No description provided for @savedRemoveFavoriteTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from favorites'**
+  String get savedRemoveFavoriteTooltip;
+
+  /// No description provided for @travelThemeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Theme suggestions'**
+  String get travelThemeTitle;
+
+  /// No description provided for @travelThemeSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'One tap to generate a course'**
+  String get travelThemeSubtitle;
+
+  /// No description provided for @travelTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Trip'**
+  String get travelTitle;
+
+  /// No description provided for @travelSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'From Gyeongbokgung to the Han River — we\'ll plan your day'**
+  String get travelSubtitle;
+
+  /// No description provided for @travelEventsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This week\'s events'**
+  String get travelEventsTitle;
+
+  /// No description provided for @travelEventsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Cultural events happening in Seoul'**
+  String get travelEventsSubtitle;
+
+  /// No description provided for @travelEventsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}'**
+  String travelEventsCount(int count);
+
+  /// No description provided for @travelEventsLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load events. Pull down to retry.'**
+  String get travelEventsLoadError;
+
+  /// No description provided for @travelAiTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'AI plans your day'**
+  String get travelAiTitle;
+
+  /// No description provided for @travelAiSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Considers time · weather · routes'**
+  String get travelAiSubtitle;
+
+  /// No description provided for @travelFromSavedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Build from saved places'**
+  String get travelFromSavedTitle;
+
+  /// No description provided for @travelFromSavedSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Course based on favorites + visit history'**
+  String get travelFromSavedSubtitle;
+
+  /// No description provided for @travelYourTheme.
+  ///
+  /// In en, this message translates to:
+  /// **'Your theme'**
+  String get travelYourTheme;
+
+  /// No description provided for @travelStartWithMood.
+  ///
+  /// In en, this message translates to:
+  /// **'Start with this mood'**
+  String get travelStartWithMood;
+
+  /// No description provided for @travelEventBadgeOngoing.
+  ///
+  /// In en, this message translates to:
+  /// **'Live'**
+  String get travelEventBadgeOngoing;
+
+  /// No description provided for @travelEventBadgeFree.
+  ///
+  /// In en, this message translates to:
+  /// **'Free'**
+  String get travelEventBadgeFree;
+
+  /// No description provided for @travelThemeStops.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} stops'**
+  String travelThemeStops(int count);
+
+  /// No description provided for @travelMoodAnalyzing.
+  ///
+  /// In en, this message translates to:
+  /// **'Analyzing track mood…'**
+  String get travelMoodAnalyzing;
+
+  /// No description provided for @travelMoodExcited.
+  ///
+  /// In en, this message translates to:
+  /// **'For upbeat vibes,'**
+  String get travelMoodExcited;
+
+  /// No description provided for @travelMoodToday.
+  ///
+  /// In en, this message translates to:
+  /// **'On a day like today,'**
+  String get travelMoodToday;
+
+  /// No description provided for @travelMoodIntense.
+  ///
+  /// In en, this message translates to:
+  /// **'For intense beats,'**
+  String get travelMoodIntense;
+
+  /// No description provided for @travelMoodCalm.
+  ///
+  /// In en, this message translates to:
+  /// **'For a calm mood,'**
+  String get travelMoodCalm;
+
+  /// No description provided for @travelTodayMoodLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s mood'**
+  String get travelTodayMoodLabel;
+
+  /// No description provided for @notificationsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get notificationsTitle;
+
+  /// No description provided for @notificationsEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No notifications'**
+  String get notificationsEmptyTitle;
+
+  /// No description provided for @notificationsEmptySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'New updates will appear here'**
+  String get notificationsEmptySubtitle;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

@@ -2,6 +2,8 @@ import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
+import '../../../l10n/gen/app_localizations.dart';
+
 /// 출발 시각 선택 picker 결과.
 /// [changed] = false 면 사용자가 취소 → 부모는 기존 값 유지.
 /// [changed] = true 이면 [time] 으로 갱신 (null = "지금" = 현재 시각 기준).
@@ -30,12 +32,13 @@ Future<DepartureTimeResult> _showIOSPicker(
   required DateTime? current,
 }) async {
   DepartureTimeResult result = const DepartureTimeResult.cancelled();
+  final l = AppL10n.of(context);
   await showCupertinoModalPopup(
     context: context,
     builder: (ctx) => CupertinoActionSheet(
-      title: const Text('출발 시각'),
+      title: Text(l.departureTimePickerTitle),
       message: current != null
-          ? const Text('지정된 시각 기준으로 도착 시각이 계산됩니다.')
+          ? Text(l.departureTimePickerHint)
           : null,
       actions: [
         CupertinoActionSheetAction(
@@ -43,7 +46,7 @@ Future<DepartureTimeResult> _showIOSPicker(
             result = const DepartureTimeResult(null);
             Navigator.pop(ctx);
           },
-          child: const Text('지금'),
+          child: Text(l.departureTimeNow),
         ),
         CupertinoActionSheetAction(
           onPressed: () {
@@ -52,7 +55,7 @@ Future<DepartureTimeResult> _showIOSPicker(
             );
             Navigator.pop(ctx);
           },
-          child: const Text('30분 후'),
+          child: Text(l.departureTime30min),
         ),
         CupertinoActionSheetAction(
           onPressed: () {
@@ -61,21 +64,22 @@ Future<DepartureTimeResult> _showIOSPicker(
             );
             Navigator.pop(ctx);
           },
-          child: const Text('1시간 후'),
+          child: Text(l.departureTime1hour),
         ),
         CupertinoActionSheetAction(
           onPressed: () async {
             Navigator.pop(ctx);
+            if (!context.mounted) return;
             final picked = await _pickCustomTimeIOS(context, current: current);
             if (picked != null) result = DepartureTimeResult(picked);
           },
-          child: const Text('직접 지정'),
+          child: Text(l.departureTimeCustom),
         ),
       ],
       cancelButton: CupertinoActionSheetAction(
         onPressed: () => Navigator.pop(ctx),
         isDefaultAction: true,
-        child: const Text('취소'),
+        child: Text(l.commonCancel),
       ),
     ),
   );
@@ -95,6 +99,7 @@ Future<DepartureTimeResult> _showAndroidPicker(
     ),
     builder: (ctx) {
       final cs = Theme.of(ctx).colorScheme;
+      final l = AppL10n.of(ctx);
       return SafeArea(
         top: false,
         child: Padding(
@@ -106,7 +111,7 @@ Future<DepartureTimeResult> _showAndroidPicker(
               Padding(
                 padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
                 child: Text(
-                  '출발 시각',
+                  l.departureTimePickerTitle,
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w700,
@@ -118,7 +123,7 @@ Future<DepartureTimeResult> _showAndroidPicker(
                 Padding(
                   padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
                   child: Text(
-                    '지정된 시각 기준으로 도착 시각이 계산됩니다.',
+                    l.departureTimePickerHint,
                     style: TextStyle(
                       fontSize: 13,
                       color: cs.onSurfaceVariant,
@@ -127,7 +132,7 @@ Future<DepartureTimeResult> _showAndroidPicker(
                 ),
               ListTile(
                 leading: Icon(Icons.flash_on_rounded, color: cs.primary),
-                title: const Text('지금'),
+                title: Text(l.departureTimeNow),
                 onTap: () {
                   result = const DepartureTimeResult(null);
                   Navigator.pop(ctx);
@@ -135,7 +140,7 @@ Future<DepartureTimeResult> _showAndroidPicker(
               ),
               ListTile(
                 leading: Icon(Icons.av_timer_rounded, color: cs.primary),
-                title: const Text('30분 후'),
+                title: Text(l.departureTime30min),
                 onTap: () {
                   result = DepartureTimeResult(
                     DateTime.now().add(const Duration(minutes: 30)),
@@ -145,7 +150,7 @@ Future<DepartureTimeResult> _showAndroidPicker(
               ),
               ListTile(
                 leading: Icon(Icons.schedule_rounded, color: cs.primary),
-                title: const Text('1시간 후'),
+                title: Text(l.departureTime1hour),
                 onTap: () {
                   result = DepartureTimeResult(
                     DateTime.now().add(const Duration(hours: 1)),
@@ -155,9 +160,10 @@ Future<DepartureTimeResult> _showAndroidPicker(
               ),
               ListTile(
                 leading: Icon(Icons.edit_calendar_rounded, color: cs.primary),
-                title: const Text('직접 지정'),
+                title: Text(l.departureTimeCustom),
                 onTap: () async {
                   Navigator.pop(ctx);
+                  if (!context.mounted) return;
                   final picked =
                       await _pickCustomTimeAndroid(context, current: current);
                   if (picked != null) result = DepartureTimeResult(picked);
@@ -202,7 +208,7 @@ Future<DateTime?> _pickCustomTimeIOS(
                 confirmed = true;
                 Navigator.pop(ctx);
               },
-              child: const Text('확인'),
+              child: Text(AppL10n.of(ctx).commonConfirm),
             ),
           ],
         ),

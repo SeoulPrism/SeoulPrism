@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../l10n/gen/app_localizations.dart';
 import '../../../services/favorites_service.dart';
 import '../../../services/place_search_service.dart';
 import 'place_action_button.dart';
@@ -192,7 +193,7 @@ class _PlaceDetailPanelState extends State<PlaceDetailPanel> {
                 children: [
                   PlaceActionButton(
                     icon: Icons.trip_origin,
-                    label: '출발',
+                    label: AppL10n.of(context).placeActionDepart,
                     color: cs.primary,
                     onTap: () {
                       widget.onClose();
@@ -206,7 +207,7 @@ class _PlaceDetailPanelState extends State<PlaceDetailPanel> {
                   const SizedBox(width: 8),
                   PlaceActionButton(
                     icon: Icons.place,
-                    label: '도착',
+                    label: AppL10n.of(context).placeActionArrive,
                     color: Colors.redAccent,
                     onTap: () {
                       widget.onClose();
@@ -220,7 +221,7 @@ class _PlaceDetailPanelState extends State<PlaceDetailPanel> {
                   const SizedBox(width: 8),
                   PlaceActionButton(
                     icon: Icons.info_outline,
-                    label: '정보',
+                    label: AppL10n.of(context).placeActionInfo,
                     color: cs.tertiary,
                     onTap: () {
                       if (hasUrl) widget.onShowWebView();
@@ -233,7 +234,7 @@ class _PlaceDetailPanelState extends State<PlaceDetailPanel> {
                   padding: const EdgeInsets.only(top: 8),
                   child: Center(
                     child: Text(
-                      '탭하여 사진·리뷰·영업시간 보기',
+                      AppL10n.of(context).placeDetailTapHint,
                       style: TextStyle(
                         fontSize: 11,
                         color: cs.onSurfaceVariant.withValues(alpha: 0.6),
