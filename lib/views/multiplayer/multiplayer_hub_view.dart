@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/gen/app_localizations.dart';
 import '../../models/multiplayer_models.dart';
 import '../../services/multiplayer_service.dart';
 import '../../services/spotify_service.dart';
@@ -59,7 +60,7 @@ class _MultiplayerHubViewState extends State<MultiplayerHubView> {
           if (hasProfile)
             AdaptiveAppBarAction(
               icon: Icons.settings_outlined,
-              tooltip: '설정',
+              tooltip: AppL10n.of(context).hubSettingsTooltip,
               onPressed: () => Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -77,6 +78,7 @@ class _MultiplayerHubViewState extends State<MultiplayerHubView> {
 
   Widget _buildOnboardProfile() {
     final cs = Theme.of(context).colorScheme;
+    final l = AppL10n.of(context);
     return Padding(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -97,15 +99,15 @@ class _MultiplayerHubViewState extends State<MultiplayerHubView> {
                 const Icon(Icons.public_rounded, size: 44, color: Colors.white),
           ),
           const SizedBox(height: 20),
-          const Text('친구와 함께 서울을 탐험하기',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
+          Text(l.hubAuthExploreSeoulTitle,
+              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
           const SizedBox(height: 8),
-          Text('닉네임과 핀을 만들어 시작하세요.',
+          Text(l.hubAuthCreateProfileSubtitle,
               textAlign: TextAlign.center,
               style: TextStyle(color: cs.onSurfaceVariant)),
           const SizedBox(height: 28),
           AdaptiveGlassButton(
-            label: '프로필 만들기',
+            label: l.hubAuthCreateProfileButton,
             onPressed: () async {
               final p = await MultiplayerProfileEditSheet.show(context);
               if (p != null && mounted) setState(() {});
@@ -119,6 +121,7 @@ class _MultiplayerHubViewState extends State<MultiplayerHubView> {
   Widget _buildHub() {
     final svc = MultiplayerService.instance;
     final me = svc.myProfile!;
+    final l = AppL10n.of(context);
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
@@ -139,7 +142,7 @@ class _MultiplayerHubViewState extends State<MultiplayerHubView> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Seoul Live 일시정지 중 — 위치/알림 차단, 채팅은 가능',
+                    l.hubPausedNotice,
                     style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
@@ -148,7 +151,7 @@ class _MultiplayerHubViewState extends State<MultiplayerHubView> {
                 ),
                 TextButton(
                   onPressed: () => svc.setSeoulLivePaused(false),
-                  child: const Text('재개'),
+                  child: Text(l.hubResumeButton),
                 ),
               ],
             ),
@@ -187,10 +190,10 @@ class _MultiplayerHubViewState extends State<MultiplayerHubView> {
           children: [
             _HubItem(
               icon: Icons.meeting_room_rounded,
-              title: '친구방',
+              title: l.hubRoomTitle,
               subtitle: svc.currentRoom == null
-                  ? '새 방을 만들거나 코드로 입장'
-                  : '입장 중 · 코드 ${svc.currentRoom!.inviteCode}',
+                  ? l.hubRoomEmpty
+                  : l.hubRoomCurrent(svc.currentRoom!.inviteCode),
               badge: svc.totalUnread > 0 ? svc.totalUnread.toString() : null,
               onTap: () => Navigator.push(context,
                   MaterialPageRoute(builder: (_) => const RoomView())),
@@ -198,9 +201,9 @@ class _MultiplayerHubViewState extends State<MultiplayerHubView> {
             const _HubDivider(),
             _HubItem(
               icon: Icons.people_alt_rounded,
-              title: '친구',
-              subtitle:
-                  '${svc.acceptedFriends.length}명 · 신청 ${svc.incomingRequests.length}건',
+              title: l.hubFriendsTitle,
+              subtitle: l.hubFriendsSubtitle(
+                  svc.acceptedFriends.length, svc.incomingRequests.length),
               badge: svc.incomingRequests.isNotEmpty
                   ? svc.incomingRequests.length.toString()
                   : null,
@@ -211,22 +214,23 @@ class _MultiplayerHubViewState extends State<MultiplayerHubView> {
             _HubItem(
               icon: Icons.chat_bubble_outline_rounded,
               title: 'DM',
-              subtitle: '친구와 1:1 대화',
+              subtitle: l.hubDmSubtitle,
               onTap: () => Navigator.push(context,
                   MaterialPageRoute(builder: (_) => const DmListView())),
             ),
             const _HubDivider(),
             _HubItem(
               icon: Icons.qr_code_rounded,
-              title: '친구 코드',
-              subtitle: '내 코드 ${svc.myProfile?.friendCode ?? '--------'} 공유 / 입력',
+              title: l.hubFriendCodeTitle,
+              subtitle: l.hubFriendCodeSubtitle(
+                  svc.myProfile?.friendCode ?? '--------'),
               onTap: () => FriendCodeShareSheet.show(context),
             ),
             const _HubDivider(),
             _HubItem(
               icon: Icons.groups_rounded,
-              title: '친구 그룹',
-              subtitle: '${svc.friendGroups.length}개 그룹',
+              title: l.hubFriendGroupsTitle,
+              subtitle: l.hubFriendGroupsSubtitle(svc.friendGroups.length),
               onTap: () => Navigator.push(context,
                   MaterialPageRoute(builder: (_) => const GroupEditorView())),
             ),
@@ -236,8 +240,8 @@ class _MultiplayerHubViewState extends State<MultiplayerHubView> {
               title: 'Spotify',
               subtitle: SpotifyService.instance.isConnected
                   ? (SpotifyService.instance.currentTrack?.name ??
-                      '연결됨 — 재생 없음')
-                  : '듣는 곡을 친구에게 공유',
+                      l.hubSpotifyConnectedNoPlayback)
+                  : l.hubSpotifyShareSubtitle,
               badge: SpotifyService.instance.isConnected ? '✓' : null,
               onTap: () => Navigator.push(context,
                   MaterialPageRoute(builder: (_) => const SpotifyView())),
@@ -294,7 +298,7 @@ class _ProfileSummary extends StatelessWidget {
                           fontWeight: FontWeight.w700,
                           color: cs.onSurface)),
                   const SizedBox(height: 2),
-                  Text(_visibilityLabel(visibility),
+                  Text(_visibilityLabel(context, visibility),
                       style: TextStyle(
                           fontSize: 12, color: cs.onSurfaceVariant)),
                 ],
@@ -307,12 +311,15 @@ class _ProfileSummary extends StatelessWidget {
     );
   }
 
-  String _visibilityLabel(String v) => switch (v) {
-        'ghost' => '비공개 — 송신/수신 모두 X',
-        'friends' => '친구방 — 같은 방 멤버에게만',
-        'public' => '전체 공개 — 모든 Seoul Live 사용자',
-        _ => v,
-      };
+  String _visibilityLabel(BuildContext ctx, String v) {
+    final l = AppL10n.of(ctx);
+    return switch (v) {
+      'ghost' => l.hubVisibilityGhost,
+      'friends' => l.hubVisibilityFriends,
+      'public' => l.hubVisibilityPublic,
+      _ => v,
+    };
+  }
 }
 
 class _HubItem extends StatelessWidget {
@@ -405,6 +412,7 @@ class _ScoreCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final l = AppL10n.of(context);
     return AdaptiveSectionCard(
       children: [
         Padding(
@@ -413,8 +421,8 @@ class _ScoreCard extends StatelessWidget {
             children: [
               Icon(Icons.emoji_events_rounded, size: 20, color: cs.primary),
               const SizedBox(width: 6),
-              const Text('내 활동',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800)),
+              Text(l.hubActivityTitle,
+                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800)),
               const Spacer(),
               Text('${score.totalPoints}p',
                   style: TextStyle(
@@ -429,13 +437,13 @@ class _ScoreCard extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _Stat(label: '만남', value: score.meetupCount.toString()),
-              _Stat(label: '친구', value: score.friendCount.toString()),
+              _Stat(label: l.hubStatMeetups, value: score.meetupCount.toString()),
+              _Stat(label: l.hubStatFriends, value: score.friendCount.toString()),
               _Stat(
-                  label: '연속',
-                  value: '${score.currentStreakDays}일',
+                  label: l.hubStatStreak,
+                  value: l.hubStatStreakValue(score.currentStreakDays),
                   hint: score.longestStreakDays > score.currentStreakDays
-                      ? '최고 ${score.longestStreakDays}'
+                      ? l.hubStatStreakBest(score.longestStreakDays)
                       : null),
             ],
           ),
@@ -479,7 +487,7 @@ class _ScoreCard extends StatelessWidget {
         ] else ...[
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
-            child: Text('첫 친구나 첫 만남으로 뱃지를 모아보세요',
+            child: Text(l.hubBadgesEmptyHint,
                 style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
           ),
         ],
@@ -516,17 +524,19 @@ class _MeetupHistorySection extends StatelessWidget {
   final List<({String userId, DateTime at})> history;
   const _MeetupHistorySection({required this.history});
 
-  String _ago(DateTime t) {
+  String _ago(BuildContext ctx, DateTime t) {
+    final l = AppL10n.of(ctx);
     final d = DateTime.now().difference(t);
-    if (d.inMinutes < 1) return '방금';
-    if (d.inMinutes < 60) return '${d.inMinutes}분 전';
-    if (d.inHours < 24) return '${d.inHours}시간 전';
-    return '${d.inDays}일 전';
+    if (d.inMinutes < 1) return l.hubAgoJust;
+    if (d.inMinutes < 60) return l.hubAgoMin(d.inMinutes);
+    if (d.inHours < 24) return l.hubAgoHour(d.inHours);
+    return l.hubAgoDay(d.inDays);
   }
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final l = AppL10n.of(context);
     final svc = MultiplayerService.instance;
     final shown = history.take(5).toList();
     return AdaptiveSectionCard(
@@ -535,10 +545,10 @@ class _MeetupHistorySection extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(14, 12, 14, 4),
           child: Row(
             children: [
-              const Text('🎉 최근 만남',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+              Text(l.hubRecentMeetupsTitle,
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
               const Spacer(),
-              Text('${history.length}회',
+              Text(l.hubRecentMeetupsCount(history.length),
                   style:
                       TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
             ],
@@ -560,7 +570,7 @@ class _MeetupHistorySection extends StatelessWidget {
                         fontSize: 13, fontWeight: FontWeight.w600),
                   ),
                 ),
-                Text(_ago(m.at),
+                Text(_ago(context, m.at),
                     style: TextStyle(
                         fontSize: 11, color: cs.onSurfaceVariant)),
               ],

@@ -804,4 +804,653 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get notificationsEmptySubtitle => 'New updates will appear here';
+
+  @override
+  String get settingsTitle => 'Settings';
+
+  @override
+  String get settingsSectionRealtime => 'Real-time visualization';
+
+  @override
+  String get settingsLineSubway => 'Subway lines';
+
+  @override
+  String get settingsTrainPos => 'Subway trains';
+
+  @override
+  String get settingsStations => 'Subway stations';
+
+  @override
+  String get settingsBuses => 'City buses';
+
+  @override
+  String get settingsRiverBus => 'Han River bus';
+
+  @override
+  String get settingsFlights => 'Aircraft';
+
+  @override
+  String get settingsSectionDataSource => 'Data source';
+
+  @override
+  String get settingsSubwayMode => 'Subway mode';
+
+  @override
+  String get settingsSubwayModeLive => 'Live';
+
+  @override
+  String get settingsSubwayModeDemo => 'Demo';
+
+  @override
+  String get settingsSeoulApi => 'Seoul Open API (60s)';
+
+  @override
+  String get settingsNaverApi => 'Naver API (5s interp.)';
+
+  @override
+  String get settingsSectionLighting => 'Lighting';
+
+  @override
+  String get settingsAutoLighting => 'Auto (time + weather)';
+
+  @override
+  String get settingsLightPreset => 'Light preset';
+
+  @override
+  String get settingsLightAuto => 'Auto';
+
+  @override
+  String get settingsLightDawn => 'Dawn';
+
+  @override
+  String get settingsLightDay => 'Day';
+
+  @override
+  String get settingsLightDusk => 'Dusk';
+
+  @override
+  String get settingsLightNight => 'Night';
+
+  @override
+  String settingsCountValue(int count) {
+    return '$count';
+  }
+
+  @override
+  String get settingsLabelFavorites => 'Favorites';
+
+  @override
+  String get settingsLabelVisits => 'Visits';
+
+  @override
+  String get settingsLabelRecentSearches => 'Recent searches';
+
+  @override
+  String get settingsAiAssistantLanguage => 'AI assistant language';
+
+  @override
+  String get settingsThemeMode => 'Theme';
+
+  @override
+  String get settingsThemeLight => 'Light';
+
+  @override
+  String get settingsThemeDark => 'Dark';
+
+  @override
+  String get settingsThemeChangedTitle => 'Theme changed';
+
+  @override
+  String settingsThemeChangedBody(String theme) {
+    return 'Restart to fully apply $theme mode. Restart now?';
+  }
+
+  @override
+  String get settingsRestartConfirm => 'Restart';
+
+  @override
+  String get settingsMapHome => 'Map home start';
+
+  @override
+  String get settingsMapHomeDefault => 'Default';
+
+  @override
+  String get settingsMapHomeMyLocation => 'My location';
+
+  @override
+  String get settingsMapHomeRecent => 'Recent search';
+
+  @override
+  String get settingsKeepScreenOn => 'Keep screen on';
+
+  @override
+  String get settingsAutoRotate => 'Auto-rotate screen';
+
+  @override
+  String get settingsAlwaysMyLocation =>
+      'Always start directions from my location';
+
+  @override
+  String get settingsClearHistory => 'Clear all usage history';
+
+  @override
+  String get settingsClearSearchHistory => 'Clear recent searches';
+
+  @override
+  String get settingsConvertAccount => 'Convert to full account';
+
+  @override
+  String get settingsEditNameItem => 'Edit name';
+
+  @override
+  String get settingsChangePassword => 'Change password';
+
+  @override
+  String get settingsLogout => 'Sign out';
+
+  @override
+  String get settingsDeleteAccount => 'Delete account';
+
+  @override
+  String get settingsMapDataLabel => 'Map display & data';
+
+  @override
+  String get settingsSectionDeveloper => 'Developer';
+
+  @override
+  String get settingsDebugLogs => 'Debug log output';
+
+  @override
+  String get settingsResetTutorial => 'Replay tutorial';
+
+  @override
+  String get settingsReplayWhatsNew => 'Replay What\'s New';
+
+  @override
+  String get settingsWhatsNewToast =>
+      'What\'s New will be shown on next app launch';
+
+  @override
+  String get settingsAppVersion => 'App version';
+
+  @override
+  String get settingsPrivacy => 'Privacy policy';
+
+  @override
+  String get settingsLicenses => 'Open source licenses';
+
+  @override
+  String get settingsClearHistoryTitle => 'Clear usage history';
+
+  @override
+  String get settingsClearHistoryBody =>
+      'All usage history will be deleted.\nThis cannot be undone.';
+
+  @override
+  String get commonDelete => 'Delete';
+
+  @override
+  String get settingsClearedHistoryToast =>
+      'All usage history has been deleted';
+
+  @override
+  String get settingsClearSearchTitle => 'Clear search history';
+
+  @override
+  String get settingsClearSearchBody => 'All recent searches will be deleted.';
+
+  @override
+  String get settingsClearedSearchToast => 'Search history has been cleared';
+
+  @override
+  String get settingsEditNameDialogTitle => 'Edit name';
+
+  @override
+  String get settingsEditNameDialogBody => 'Enter a new name.';
+
+  @override
+  String get settingsEditNameConfirm => 'Change';
+
+  @override
+  String get settingsNewNameDialogTitle => 'New name';
+
+  @override
+  String get settingsChangePasswordTitle => 'Change password';
+
+  @override
+  String settingsChangePasswordBody(String email) {
+    return 'We\'ll send the password reset link to $email.';
+  }
+
+  @override
+  String get settingsSendButton => 'Send';
+
+  @override
+  String get settingsPasswordResetSent => 'Reset email has been sent';
+
+  @override
+  String get settingsLogoutTitle => 'Sign out';
+
+  @override
+  String get settingsLogoutBody => 'Sign out now?';
+
+  @override
+  String get settingsLogoutConfirm => 'Sign out';
+
+  @override
+  String get settingsDeleteAccountTitle => 'Delete account';
+
+  @override
+  String get settingsDeleteAccountBody =>
+      'Your account and all data will be permanently deleted.\nThis cannot be undone.';
+
+  @override
+  String get settingsDeleteAccountConfirm => 'Delete';
+
+  @override
+  String get settingsDeleteError => 'An error occurred during account deletion';
+
+  @override
+  String get settingsResetTutorialTitle => 'Replay tutorial';
+
+  @override
+  String get settingsResetTutorialBody =>
+      'Saved progress will be cleared and the tutorial will start over on next launch.';
+
+  @override
+  String get settingsResetTutorialConfirm => 'Replay';
+
+  @override
+  String get settingsMapDisplayTitle => 'Map display & data';
+
+  @override
+  String get settingsSectionMapDisplay => 'Map display';
+
+  @override
+  String get aiStatusSearchingCourse => 'Searching course…';
+
+  @override
+  String aiPlacesFound(int count) {
+    return 'Found $count places! Check below.';
+  }
+
+  @override
+  String get aiStatusFindingInfo => 'Looking it up…';
+
+  @override
+  String get aiStatusAnalyzingImage => 'Analyzing image…';
+
+  @override
+  String get aiNoPlacesFound => 'No places found.';
+
+  @override
+  String aiAnalysisError(String error) {
+    return 'Analysis error: $error';
+  }
+
+  @override
+  String get aiSelectPhotoHint => 'Please select a photo';
+
+  @override
+  String get aiPhotoShoot => 'Take photo';
+
+  @override
+  String get aiStatusConnecting => 'Connecting…';
+
+  @override
+  String get aiStatusListening => 'Listening';
+
+  @override
+  String get aiStatusThinking => 'Thinking…';
+
+  @override
+  String get aiStatusSpeaking => 'Speaking';
+
+  @override
+  String get aiStatusIdle => 'Idle';
+
+  @override
+  String get aiStatusReady => 'Ready';
+
+  @override
+  String aiFoundPlacesHeader(int count) {
+    return 'Found places ($count)';
+  }
+
+  @override
+  String get aiVoiceCommandHint =>
+      '\"Add a cafe\", \"Remove Gyeongbokgung\", \"Confirm this\" — try it';
+
+  @override
+  String aiPlaceStationDistance(String station, int minutes) {
+    return '$station stn · $minutes min';
+  }
+
+  @override
+  String get aiDefaultSearch => 'Seoul travel recommendations';
+
+  @override
+  String get recommendTitle => 'Recommendations';
+
+  @override
+  String recommendSubtitleNearbyArea(String area) {
+    return 'Popular near $area right now';
+  }
+
+  @override
+  String get recommendSubtitleNearbyDefault => 'Popular nearby right now';
+
+  @override
+  String get recommendRefresh => 'Refresh';
+
+  @override
+  String get recommendNoResults => 'No results nearby.\nTry again later.';
+
+  @override
+  String recommendRank(int rank) {
+    return '#$rank';
+  }
+
+  @override
+  String get recommendEventsLoadError =>
+      'Couldn\'t load cultural events.\nTry again later.';
+
+  @override
+  String get recommendStatusUpcoming => 'Upcoming';
+
+  @override
+  String get recommendBadgePaid => 'Paid';
+
+  @override
+  String get recommendUniqueMood => '✨ Your own';
+
+  @override
+  String get recommendTabFood => '🍜 Food';
+
+  @override
+  String get recommendTabCafe => '☕️ Café';
+
+  @override
+  String get recommendTabShopping => '🛍 Shopping';
+
+  @override
+  String get recommendTabOutdoor => '🌳 Parks · Night';
+
+  @override
+  String get recommendTabEvents => '🎭 Culture';
+
+  @override
+  String get authTabSignUp => 'Sign up';
+
+  @override
+  String get authTabSignIn => 'Sign in';
+
+  @override
+  String get authProcessing => 'Processing…';
+
+  @override
+  String get authSignIn => 'Sign in';
+
+  @override
+  String get authSignUp => 'Sign up';
+
+  @override
+  String get authLabelEmail => 'Email';
+
+  @override
+  String get authHintEmail => 'Enter your email';
+
+  @override
+  String get authLabelPassword => 'Password';
+
+  @override
+  String get authHintPassword => 'Enter your password';
+
+  @override
+  String get authFindId => 'Find ID';
+
+  @override
+  String get authFindPassword => 'Find password';
+
+  @override
+  String get authLabelUsername => 'Username';
+
+  @override
+  String get authHintUsername => 'Enter your username';
+
+  @override
+  String get authLabelConfirmPassword => 'Confirm password';
+
+  @override
+  String get authHintConfirmPassword => 'Re-enter password';
+
+  @override
+  String get authSnsLogin => 'Sign in with social';
+
+  @override
+  String get authGoogleAuthFailed => 'Google authentication failed';
+
+  @override
+  String get authGoogleSignInFailed => 'Google sign-in failed';
+
+  @override
+  String get authGuestSignInFailed => 'Guest sign-in failed';
+
+  @override
+  String get authAppleAuthFailed => 'Apple authentication failed';
+
+  @override
+  String get authAppleSignInCanceled => 'Apple sign-in was canceled';
+
+  @override
+  String get authAppleSignInFailed => 'Apple sign-in failed';
+
+  @override
+  String get authEmailAndPasswordRequired => 'Please enter email and password';
+
+  @override
+  String get authUsernameRequired => 'Please enter a username';
+
+  @override
+  String get authPasswordMismatch => 'Passwords don\'t match';
+
+  @override
+  String get authPasswordTooShort => 'Password must be at least 6 characters';
+
+  @override
+  String get authGenericError => 'An error occurred';
+
+  @override
+  String get authErrorInvalidCredentials => 'Email or password is incorrect';
+
+  @override
+  String get authErrorEmailExists => 'This email is already registered';
+
+  @override
+  String get authErrorInvalidEmail => 'Please enter a valid email format';
+
+  @override
+  String get authErrorEmailNotConfirmed =>
+      'Email verification not complete. Check your inbox.';
+
+  @override
+  String get authEmailConfirmRequiredTitle => 'Email verification required';
+
+  @override
+  String authEmailConfirmRequiredBody(String email) {
+    return 'A verification email has been sent to $email.\nCheck your inbox, verify, and then sign in.';
+  }
+
+  @override
+  String get authFindIdResultTitle => 'Find ID result';
+
+  @override
+  String get authFindIdResultBefore => 'Your username is ';
+
+  @override
+  String get authFindIdResultAfter => '.';
+
+  @override
+  String get authFindIdEmailRequired => 'Please enter an email';
+
+  @override
+  String get authFindIdNotFound => 'No account found for that email';
+
+  @override
+  String get authPasswordResetSent =>
+      'Password reset link has been sent to your email';
+
+  @override
+  String get authFindIdFailed => 'Couldn\'t find your ID';
+
+  @override
+  String get authEmailSendFailed => 'Couldn\'t send email';
+
+  @override
+  String get authFindIdTitle => 'Find ID';
+
+  @override
+  String get authFindPasswordTitle => 'Find password';
+
+  @override
+  String get authFindIdBody =>
+      'Enter the email you used to sign up.\nWe\'ll send your ID.';
+
+  @override
+  String get authFindPasswordBody =>
+      'Enter your email and we\'ll send a password reset link.';
+
+  @override
+  String get authFindIdEmailHint => 'Enter your sign-up email';
+
+  @override
+  String get authFindIdSubmit => 'Find ID';
+
+  @override
+  String get authFindPasswordSubmit => 'Send reset link';
+
+  @override
+  String get hubSettingsTooltip => 'Settings';
+
+  @override
+  String get hubAuthExploreSeoulTitle => 'Explore Seoul with friends';
+
+  @override
+  String get hubAuthCreateProfileSubtitle =>
+      'Create a nickname and pin to start.';
+
+  @override
+  String get hubAuthCreateProfileButton => 'Create profile';
+
+  @override
+  String get hubPausedNotice =>
+      'Seoul Live paused — location/notifications blocked, chat OK';
+
+  @override
+  String get hubResumeButton => 'Resume';
+
+  @override
+  String get hubRoomTitle => 'Room';
+
+  @override
+  String get hubRoomEmpty => 'Create or join a room by code';
+
+  @override
+  String hubRoomCurrent(String code) {
+    return 'In room · code $code';
+  }
+
+  @override
+  String get hubFriendsTitle => 'Friends';
+
+  @override
+  String hubFriendsSubtitle(int count, int requests) {
+    return '$count friends · $requests requests';
+  }
+
+  @override
+  String get hubDmSubtitle => '1:1 chats with friends';
+
+  @override
+  String get hubFriendCodeTitle => 'Friend code';
+
+  @override
+  String hubFriendCodeSubtitle(String code) {
+    return 'Share my code $code / enter one';
+  }
+
+  @override
+  String get hubFriendGroupsTitle => 'Friend groups';
+
+  @override
+  String hubFriendGroupsSubtitle(int count) {
+    return '$count groups';
+  }
+
+  @override
+  String get hubSpotifyConnectedNoPlayback => 'Connected — no playback';
+
+  @override
+  String get hubSpotifyShareSubtitle => 'Share your tracks with friends';
+
+  @override
+  String get hubVisibilityGhost => 'Private — no send/receive';
+
+  @override
+  String get hubVisibilityFriends => 'Friend room — same-room members only';
+
+  @override
+  String get hubVisibilityPublic => 'Public — all Seoul Live users';
+
+  @override
+  String get hubActivityTitle => 'My activity';
+
+  @override
+  String get hubStatMeetups => 'Meetups';
+
+  @override
+  String get hubStatFriends => 'Friends';
+
+  @override
+  String get hubStatStreak => 'Streak';
+
+  @override
+  String hubStatStreakValue(int days) {
+    return '${days}d';
+  }
+
+  @override
+  String hubStatStreakBest(int days) {
+    return 'Best $days';
+  }
+
+  @override
+  String get hubBadgesEmptyHint =>
+      'Earn badges with your first friend or first meetup';
+
+  @override
+  String get hubAgoJust => 'Just now';
+
+  @override
+  String hubAgoMin(int min) {
+    return '$min min ago';
+  }
+
+  @override
+  String hubAgoHour(int hour) {
+    return '${hour}h ago';
+  }
+
+  @override
+  String hubAgoDay(int day) {
+    return '${day}d ago';
+  }
+
+  @override
+  String get hubRecentMeetupsTitle => '🎉 Recent meetups';
+
+  @override
+  String hubRecentMeetupsCount(int count) {
+    return '$count';
+  }
 }

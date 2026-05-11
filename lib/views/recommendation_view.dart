@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 import '../core/api_keys.dart';
 import '../data/travel_styles.dart';
+import '../l10n/gen/app_localizations.dart';
 import '../services/environment_service.dart';
 import '../services/place_search_service.dart';
 import '../services/recommendation_service.dart';
@@ -25,23 +26,32 @@ enum _RecommendTab {
 }
 
 /// "당신의 무드" 칩 라벨 — 사용자가 고른 스타일에 따라 동적.
-String _forYouLabel() {
+/// travel_styles 의 title 은 한국어 의존 (예: "쉬어가기 여행") — 데이터 다국어화
+/// 전까지는 한국어 사용자에게만 의미 있는 fallback 으로 두고, 그 외 언어에선
+/// 일반 fallback (recommendUniqueMood) 로 표시.
+String _forYouLabel(BuildContext ctx) {
+  final l = AppL10n.of(ctx);
   final s = travelStyleByKey(
     SettingsService.instance.getString(kTravelStylePrefKey),
   );
-  if (s == null || s.key == 'mixed') return '✨ 너만의';
+  if (s == null || s.key == 'mixed') return l.recommendUniqueMood;
+  final locale = Localizations.localeOf(ctx).languageCode;
+  if (locale != 'ko') return l.recommendUniqueMood;
   return '${s.emoji} ${s.title.replaceAll(' 여행', '')}';
 }
 
 extension on _RecommendTab {
-  String get label => switch (this) {
-        _RecommendTab.forYou => _forYouLabel(),
-        _RecommendTab.food => '🍜 맛집',
-        _RecommendTab.cafe => '☕️ 카페',
-        _RecommendTab.shopping => '🛍 쇼핑',
-        _RecommendTab.outdoor => '🌳 공원·야경',
-        _RecommendTab.events => '🎭 문화',
-      };
+  String label(BuildContext ctx) {
+    final l = AppL10n.of(ctx);
+    return switch (this) {
+      _RecommendTab.forYou => _forYouLabel(ctx),
+      _RecommendTab.food => l.recommendTabFood,
+      _RecommendTab.cafe => l.recommendTabCafe,
+      _RecommendTab.shopping => l.recommendTabShopping,
+      _RecommendTab.outdoor => l.recommendTabOutdoor,
+      _RecommendTab.events => l.recommendTabEvents,
+    };
+  }
 }
 
 /// 추천 패널 — 아래에서 위로 슬라이드업 (설정 패널 스타일)
@@ -289,6 +299,7 @@ class _RecommendationPanelState extends State<RecommendationPanel>
   }
 
   Widget _buildHeader() {
+    final l = AppL10n.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 4, 12, 0),
       child: Row(
@@ -299,7 +310,7 @@ class _RecommendationPanelState extends State<RecommendationPanel>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '추천',
+                  l.recommendTitle,
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.w800,
@@ -310,8 +321,8 @@ class _RecommendationPanelState extends State<RecommendationPanel>
                 const SizedBox(height: 6),
                 Text(
                   _currentArea.isNotEmpty
-                      ? '$_currentArea 근처에서 지금 인기있는 곳'
-                      : '지금 가까이서 인기있는 곳',
+                      ? l.recommendSubtitleNearbyArea(_currentArea)
+                      : l.recommendSubtitleNearbyDefault,
                   style: AppTypography.bodySm.copyWith(
                     color: _panelTextSecondary,
                     height: 1.4,
@@ -336,13 +347,13 @@ class _RecommendationPanelState extends State<RecommendationPanel>
                   _loadPlaceTab(_selectedTab, force: true);
               }
             },
-            tooltip: '새로고침',
+            tooltip: l.recommendRefresh,
             visualDensity: VisualDensity.compact,
           ),
           IconButton(
             icon: Icon(Icons.close, color: _panelTextSecondary, size: 20),
             onPressed: widget.onClose,
-            tooltip: '닫기',
+            tooltip: l.commonClose,
             visualDensity: VisualDensity.compact,
           ),
         ],
@@ -381,7 +392,7 @@ class _RecommendationPanelState extends State<RecommendationPanel>
                 borderRadius: BorderRadius.circular(19),
               ),
               child: Text(
-                tab.label,
+                tab.label(context),
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
@@ -447,7 +458,7 @@ class _RecommendationPanelState extends State<RecommendationPanel>
           Padding(
             padding: const EdgeInsets.all(32),
             child: Text(
-              '주변에 결과가 없어요.\n잠시 후 다시 시도해 주세요.',
+              AppL10n.of(context).recommendNoResults,
               textAlign: TextAlign.center,
               style: AppTypography.bodySm.copyWith(
                 color: _panelTextSecondary,
@@ -631,7 +642,7 @@ class _RecommendationPanelState extends State<RecommendationPanel>
                               size: 12, color: _panelTextMuted),
                           const SizedBox(width: 2),
                           Text(
-                            '$rank위',
+                            AppL10n.of(context).recommendRank(rank),
                             style: AppTypography.caption.copyWith(
                               color: _panelTextMuted,
                               fontWeight: FontWeight.w700,
@@ -753,7 +764,7 @@ class _RecommendationPanelState extends State<RecommendationPanel>
           Padding(
             padding: const EdgeInsets.all(32),
             child: Text(
-              '문화행사 정보를 불러오지 못했어요.\n잠시 후 다시 시도해 주세요.',
+              AppL10n.of(context).recommendEventsLoadError,
               textAlign: TextAlign.center,
               style: AppTypography.bodySm.copyWith(
                 color: _panelTextSecondary,
@@ -839,10 +850,14 @@ class _RecommendationPanelState extends State<RecommendationPanel>
                   Row(
                     children: [
                       if (event.isOngoing)
-                        _buildStatusBadge('진행 중', Colors.green)
+                        _buildStatusBadge(
+                            AppL10n.of(context).travelEventBadgeOngoing,
+                            Colors.green)
                       else if (event.startDate != null &&
                           event.startDate!.isAfter(DateTime.now()))
-                        _buildStatusBadge('예정', Colors.blue),
+                        _buildStatusBadge(
+                            AppL10n.of(context).recommendStatusUpcoming,
+                            Colors.blue),
                       if (event.shortDate.isNotEmpty) ...[
                         const SizedBox(width: 6),
                         Icon(Icons.calendar_today_outlined,
@@ -855,9 +870,13 @@ class _RecommendationPanelState extends State<RecommendationPanel>
                       ],
                       const SizedBox(width: 8),
                       if (event.isFree)
-                        _buildStatusBadge('무료', Colors.teal)
+                        _buildStatusBadge(
+                            AppL10n.of(context).travelEventBadgeFree,
+                            Colors.teal)
                       else
-                        _buildStatusBadge('유료', Colors.deepOrange),
+                        _buildStatusBadge(
+                            AppL10n.of(context).recommendBadgePaid,
+                            Colors.deepOrange),
                     ],
                   ),
                 ],

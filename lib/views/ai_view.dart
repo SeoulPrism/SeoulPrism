@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import '../l10n/gen/app_localizations.dart';
 import '../services/gemini_live_service.dart';
 import '../services/gemini_service.dart';
 import '../services/audio_service.dart';
@@ -500,9 +501,10 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
 
     // 장소가 없으면 AI가 보낸 places 문자열이나 style로 검색
     final placesStr = action.params['places'] as String?;
-    final query = placesStr ?? '서울 여행 추천 코스';
+    final l = AppL10n.of(context);
+    final query = placesStr ?? l.aiDefaultSearch;
 
-    widget.onStatusChanged?.call('코스 검�� 중...');
+    widget.onStatusChanged?.call(l.aiStatusSearchingCourse);
 
     try {
       final content = SnsContent(imagePaths: [], text: query, url: '');
@@ -516,7 +518,8 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
           _extractedPlaces = geoPlaces;
           _showPlacesPanel = true;
         });
-        widget.onStatusChanged?.call('${geoPlaces.length}개 장소를 찾았어요! 아래에서 확인하세요.');
+        widget.onStatusChanged?.call(
+            AppL10n.of(context).aiPlacesFound(geoPlaces.length));
       }
     } catch (e) {
       debugPrint('[AiView] Create plan error: $e');
@@ -529,7 +532,7 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
     if (query.isEmpty) return;
 
     setState(() => _searchingPlaces = true);
-    widget.onStatusChanged?.call('정보 찾는 중...');
+    widget.onStatusChanged?.call(AppL10n.of(context).aiStatusFindingInfo);
 
     try {
       final existing = _extractedPlaces.map((p) => p.name).join(', ');
@@ -578,7 +581,7 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
     if (query.isEmpty) return;
 
     setState(() => _searchingPlaces = true);
-    widget.onStatusChanged?.call('정보 찾는 중...');
+    widget.onStatusChanged?.call(AppL10n.of(context).aiStatusFindingInfo);
 
     try {
       final content = SnsContent(imagePaths: [], text: query, url: '');
@@ -626,7 +629,7 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
     if (picked == null) return;
 
     setState(() => _analyzingImage = true);
-    widget.onStatusChanged?.call('이미지 분석 중...');
+    widget.onStatusChanged?.call(AppL10n.of(context).aiStatusAnalyzingImage);
 
     try {
       final content = SnsContent(imagePaths: [picked.path], text: '', url: '');
@@ -650,12 +653,13 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
         );
       } else {
         setState(() => _analyzingImage = false);
-        widget.onStatusChanged?.call('장소를 찾지 못했어요.');
+        widget.onStatusChanged?.call(AppL10n.of(context).aiNoPlacesFound);
       }
     } catch (e) {
       if (!mounted) return;
       setState(() => _analyzingImage = false);
-      widget.onStatusChanged?.call('분석 오류: $e');
+      widget.onStatusChanged?.call(
+          AppL10n.of(context).aiAnalysisError(e.toString()));
       debugPrint('[AiView] Image analysis error: $e');
     }
   }
@@ -769,7 +773,9 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
                   const CircularProgressIndicator(color: Colors.white70),
                   const SizedBox(height: 12),
                   Text(
-                    _analyzingImage ? '이미지 분석 중...' : '정보 찾는 중...',
+                    _analyzingImage
+                        ? AppL10n.of(context).aiStatusAnalyzingImage
+                        : AppL10n.of(context).aiStatusFindingInfo,
                     style: const TextStyle(
                       color: Colors.white70,
                       fontSize: 14,
@@ -819,7 +825,7 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      '사진을 선택해주세요',
+                      AppL10n.of(context).aiSelectPhotoHint,
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.8),
                         fontSize: 15,
@@ -845,18 +851,18 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
                                 borderRadius: BorderRadius.circular(12),
                                 splashColor: Colors.white.withValues(alpha: 0.18),
                                 highlightColor: Colors.white.withValues(alpha: 0.08),
-                                child: const Padding(
+                                child: Padding(
                                   padding:
-                                      EdgeInsets.symmetric(vertical: 14),
+                                      const EdgeInsets.symmetric(vertical: 14),
                                   child: Row(
                                     mainAxisAlignment:
                                         MainAxisAlignment.center,
                                     children: [
-                                      Icon(Icons.camera_alt_rounded,
+                                      const Icon(Icons.camera_alt_rounded,
                                           color: Colors.white, size: 20),
-                                      SizedBox(width: 8),
-                                      Text('촬영',
-                                          style: TextStyle(
+                                      const SizedBox(width: 8),
+                                      Text(AppL10n.of(context).aiPhotoShoot,
+                                          style: const TextStyle(
                                               color: Colors.white,
                                               fontWeight: FontWeight.w600)),
                                     ],
@@ -891,18 +897,18 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
                                 borderRadius: BorderRadius.circular(12),
                                 splashColor: Colors.white.withValues(alpha: 0.18),
                                 highlightColor: Colors.white.withValues(alpha: 0.08),
-                                child: const Padding(
+                                child: Padding(
                                   padding:
-                                      EdgeInsets.symmetric(vertical: 14),
+                                      const EdgeInsets.symmetric(vertical: 14),
                                   child: Row(
                                     mainAxisAlignment:
                                         MainAxisAlignment.center,
                                     children: [
-                                      Icon(Icons.photo_library_rounded,
+                                      const Icon(Icons.photo_library_rounded,
                                           color: Colors.white, size: 20),
-                                      SizedBox(width: 8),
-                                      Text('갤러리',
-                                          style: TextStyle(
+                                      const SizedBox(width: 8),
+                                      Text(AppL10n.of(context).snsImageGallery,
+                                          style: const TextStyle(
                                               color: Colors.white,
                                               fontWeight: FontWeight.w600)),
                                     ],
@@ -928,38 +934,39 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
 
   /// 상태 표시 인디케이터
   Widget _buildStateIndicator() {
+    final l = AppL10n.of(context);
     String label;
     IconData icon;
     Color color;
 
     switch (_sessionState) {
       case LiveSessionState.connecting:
-        label = '연결 중...';
+        label = l.aiStatusConnecting;
         icon = Icons.wifi;
         color = Colors.orangeAccent;
         break;
       case LiveSessionState.listening:
-        label = '듣고 있어요';
+        label = l.aiStatusListening;
         icon = Icons.mic;
         color = Colors.greenAccent;
         break;
       case LiveSessionState.processing:
-        label = '생각 중...';
+        label = l.aiStatusThinking;
         icon = Icons.auto_awesome;
         color = Colors.purpleAccent;
         break;
       case LiveSessionState.speaking:
-        label = '말하는 중';
+        label = l.aiStatusSpeaking;
         icon = Icons.volume_up;
         color = Colors.blueAccent;
         break;
       case LiveSessionState.idlePrompt:
-        label = '대기 중';
+        label = l.aiStatusIdle;
         icon = Icons.pause_circle_outline;
         color = Colors.white54;
         break;
       default:
-        label = '준비 중';
+        label = l.aiStatusReady;
         icon = Icons.hourglass_empty;
         color = Colors.white38;
     }
@@ -1052,7 +1059,8 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
                   child: Row(
                     children: [
                       Text(
-                        '발견된 장소 (${_extractedPlaces.length})',
+                        AppL10n.of(context)
+                            .aiFoundPlacesHeader(_extractedPlaces.length),
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 17,
@@ -1079,7 +1087,7 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
                 Padding(
                   padding: EdgeInsets.fromLTRB(16, 4, 16, bottomPad + 12),
                   child: Text(
-                    '"카페 추가해줘", "경복궁 빼줘", "이걸로 확정해" 등 말해보세요',
+                    AppL10n.of(context).aiVoiceCommandHint,
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.4),
@@ -1168,7 +1176,8 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
                   ),
                   if (place.nearestStation != null)
                     Text(
-                      '${place.nearestStation}역 · ${place.estimatedMinutes}분',
+                      AppL10n.of(context).aiPlaceStationDistance(
+                          place.nearestStation!, place.estimatedMinutes ?? 0),
                       style: TextStyle(fontSize: 10, color: Colors.white.withValues(alpha: 0.4)),
                     ),
                 ],

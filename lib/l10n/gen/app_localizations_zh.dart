@@ -785,4 +785,638 @@ class AppL10nZh extends AppL10n {
 
   @override
   String get notificationsEmptySubtitle => '有新消息时会显示在这里';
+
+  @override
+  String get settingsTitle => '设置';
+
+  @override
+  String get settingsSectionRealtime => '实时可视化';
+
+  @override
+  String get settingsLineSubway => '地铁线路';
+
+  @override
+  String get settingsTrainPos => '地铁列车位置';
+
+  @override
+  String get settingsStations => '地铁站';
+
+  @override
+  String get settingsBuses => '市内公交';
+
+  @override
+  String get settingsRiverBus => '汉江公交';
+
+  @override
+  String get settingsFlights => '飞机';
+
+  @override
+  String get settingsSectionDataSource => '数据源';
+
+  @override
+  String get settingsSubwayMode => '地铁模式';
+
+  @override
+  String get settingsSubwayModeLive => '实时';
+
+  @override
+  String get settingsSubwayModeDemo => '演示';
+
+  @override
+  String get settingsSeoulApi => '首尔公开 API (60s)';
+
+  @override
+  String get settingsNaverApi => 'Naver API (5s 插值)';
+
+  @override
+  String get settingsSectionLighting => '光照';
+
+  @override
+  String get settingsAutoLighting => '自动 (时段 + 天气)';
+
+  @override
+  String get settingsLightPreset => '光照预设';
+
+  @override
+  String get settingsLightAuto => '自动';
+
+  @override
+  String get settingsLightDawn => '黎明';
+
+  @override
+  String get settingsLightDay => '白天';
+
+  @override
+  String get settingsLightDusk => '黄昏';
+
+  @override
+  String get settingsLightNight => '夜晚';
+
+  @override
+  String settingsCountValue(int count) {
+    return '$count 个';
+  }
+
+  @override
+  String get settingsLabelFavorites => '收藏';
+
+  @override
+  String get settingsLabelVisits => '访问记录';
+
+  @override
+  String get settingsLabelRecentSearches => '最近搜索';
+
+  @override
+  String get settingsAiAssistantLanguage => 'AI 助手语言';
+
+  @override
+  String get settingsThemeMode => '界面主题';
+
+  @override
+  String get settingsThemeLight => '浅色';
+
+  @override
+  String get settingsThemeDark => '深色';
+
+  @override
+  String get settingsThemeChangedTitle => '已更改主题';
+
+  @override
+  String settingsThemeChangedBody(String theme) {
+    return '要完全应用 $theme 模式,需要重启应用。现在重启吗?';
+  }
+
+  @override
+  String get settingsRestartConfirm => '重启';
+
+  @override
+  String get settingsMapHome => '地图首页起点';
+
+  @override
+  String get settingsMapHomeDefault => '默认';
+
+  @override
+  String get settingsMapHomeMyLocation => '我的位置';
+
+  @override
+  String get settingsMapHomeRecent => '最近搜索';
+
+  @override
+  String get settingsKeepScreenOn => '保持屏幕常亮';
+
+  @override
+  String get settingsAutoRotate => '屏幕自动旋转';
+
+  @override
+  String get settingsAlwaysMyLocation => '导航起点始终为我的位置';
+
+  @override
+  String get settingsClearHistory => '清空全部使用记录';
+
+  @override
+  String get settingsClearSearchHistory => '清空最近搜索';
+
+  @override
+  String get settingsConvertAccount => '转为正式账号';
+
+  @override
+  String get settingsEditNameItem => '修改名字';
+
+  @override
+  String get settingsChangePassword => '修改密码';
+
+  @override
+  String get settingsLogout => '退出登录';
+
+  @override
+  String get settingsDeleteAccount => '注销账号';
+
+  @override
+  String get settingsMapDataLabel => '地图显示与数据';
+
+  @override
+  String get settingsSectionDeveloper => '开发者';
+
+  @override
+  String get settingsDebugLogs => '调试日志输出';
+
+  @override
+  String get settingsResetTutorial => '重新查看引导';
+
+  @override
+  String get settingsReplayWhatsNew => '重新查看新功能';
+
+  @override
+  String get settingsWhatsNewToast => '下次启动应用时会再次显示新功能介绍';
+
+  @override
+  String get settingsAppVersion => '应用版本';
+
+  @override
+  String get settingsPrivacy => '隐私政策';
+
+  @override
+  String get settingsLicenses => '开源许可';
+
+  @override
+  String get settingsClearHistoryTitle => '清空使用记录';
+
+  @override
+  String get settingsClearHistoryBody => '所有使用记录将被删除。\n此操作无法撤销。';
+
+  @override
+  String get commonDelete => '删除';
+
+  @override
+  String get settingsClearedHistoryToast => '已删除所有使用记录';
+
+  @override
+  String get settingsClearSearchTitle => '清空搜索记录';
+
+  @override
+  String get settingsClearSearchBody => '最近搜索记录将被全部删除。';
+
+  @override
+  String get settingsClearedSearchToast => '已清空搜索记录';
+
+  @override
+  String get settingsEditNameDialogTitle => '修改名字';
+
+  @override
+  String get settingsEditNameDialogBody => '请输入新的名字。';
+
+  @override
+  String get settingsEditNameConfirm => '修改';
+
+  @override
+  String get settingsNewNameDialogTitle => '新名字';
+
+  @override
+  String get settingsChangePasswordTitle => '修改密码';
+
+  @override
+  String settingsChangePasswordBody(String email) {
+    return '将向 $email 发送密码重置链接。';
+  }
+
+  @override
+  String get settingsSendButton => '发送';
+
+  @override
+  String get settingsPasswordResetSent => '已发送重置邮件';
+
+  @override
+  String get settingsLogoutTitle => '退出登录';
+
+  @override
+  String get settingsLogoutBody => '确定要退出登录吗?';
+
+  @override
+  String get settingsLogoutConfirm => '退出';
+
+  @override
+  String get settingsDeleteAccountTitle => '注销账号';
+
+  @override
+  String get settingsDeleteAccountBody => '账号和所有数据将被永久删除。\n此操作无法撤销。';
+
+  @override
+  String get settingsDeleteAccountConfirm => '注销';
+
+  @override
+  String get settingsDeleteError => '注销过程中发生错误';
+
+  @override
+  String get settingsResetTutorialTitle => '重新查看引导';
+
+  @override
+  String get settingsResetTutorialBody => '将清除已保存的进度,下次启动应用时从头显示引导。';
+
+  @override
+  String get settingsResetTutorialConfirm => '重新查看';
+
+  @override
+  String get settingsMapDisplayTitle => '地图显示与数据';
+
+  @override
+  String get settingsSectionMapDisplay => '地图显示';
+
+  @override
+  String get aiStatusSearchingCourse => '正在搜索路线……';
+
+  @override
+  String aiPlacesFound(int count) {
+    return '找到 $count 个地点!请在下方查看。';
+  }
+
+  @override
+  String get aiStatusFindingInfo => '正在查找信息……';
+
+  @override
+  String get aiStatusAnalyzingImage => '正在分析图片……';
+
+  @override
+  String get aiNoPlacesFound => '未找到地点。';
+
+  @override
+  String aiAnalysisError(String error) {
+    return '分析错误:$error';
+  }
+
+  @override
+  String get aiSelectPhotoHint => '请选择照片';
+
+  @override
+  String get aiPhotoShoot => '拍摄';
+
+  @override
+  String get aiStatusConnecting => '连接中……';
+
+  @override
+  String get aiStatusListening => '正在听';
+
+  @override
+  String get aiStatusThinking => '思考中……';
+
+  @override
+  String get aiStatusSpeaking => '正在说';
+
+  @override
+  String get aiStatusIdle => '待机中';
+
+  @override
+  String get aiStatusReady => '准备中';
+
+  @override
+  String aiFoundPlacesHeader(int count) {
+    return '找到的地点 ($count)';
+  }
+
+  @override
+  String get aiVoiceCommandHint => '可以说「加个咖啡馆」「去掉景福宫」「就用这个」等';
+
+  @override
+  String aiPlaceStationDistance(String station, int minutes) {
+    return '$station站 · $minutes 分钟';
+  }
+
+  @override
+  String get aiDefaultSearch => '首尔旅行推荐路线';
+
+  @override
+  String get recommendTitle => '推荐';
+
+  @override
+  String recommendSubtitleNearbyArea(String area) {
+    return '$area 附近现在最热门的地方';
+  }
+
+  @override
+  String get recommendSubtitleNearbyDefault => '附近现在最热门的地方';
+
+  @override
+  String get recommendRefresh => '刷新';
+
+  @override
+  String get recommendNoResults => '周边暂无结果。\n请稍后再试。';
+
+  @override
+  String recommendRank(int rank) {
+    return '第 $rank 名';
+  }
+
+  @override
+  String get recommendEventsLoadError => '无法加载文化活动信息。\n请稍后再试。';
+
+  @override
+  String get recommendStatusUpcoming => '即将';
+
+  @override
+  String get recommendBadgePaid => '付费';
+
+  @override
+  String get recommendUniqueMood => '✨ 你自己的';
+
+  @override
+  String get recommendTabFood => '🍜 美食';
+
+  @override
+  String get recommendTabCafe => '☕️ 咖啡';
+
+  @override
+  String get recommendTabShopping => '🛍 购物';
+
+  @override
+  String get recommendTabOutdoor => '🌳 公园·夜景';
+
+  @override
+  String get recommendTabEvents => '🎭 文化';
+
+  @override
+  String get authTabSignUp => '注册';
+
+  @override
+  String get authTabSignIn => '登录';
+
+  @override
+  String get authProcessing => '处理中……';
+
+  @override
+  String get authSignIn => '登录';
+
+  @override
+  String get authSignUp => '注册';
+
+  @override
+  String get authLabelEmail => '邮箱';
+
+  @override
+  String get authHintEmail => '请输入邮箱';
+
+  @override
+  String get authLabelPassword => '密码';
+
+  @override
+  String get authHintPassword => '请输入密码';
+
+  @override
+  String get authFindId => '找回 ID';
+
+  @override
+  String get authFindPassword => '找回密码';
+
+  @override
+  String get authLabelUsername => 'ID';
+
+  @override
+  String get authHintUsername => '请输入 ID';
+
+  @override
+  String get authLabelConfirmPassword => '确认密码';
+
+  @override
+  String get authHintConfirmPassword => '请再次输入密码';
+
+  @override
+  String get authSnsLogin => '用社交账号登录';
+
+  @override
+  String get authGoogleAuthFailed => 'Google 认证失败';
+
+  @override
+  String get authGoogleSignInFailed => 'Google 登录失败';
+
+  @override
+  String get authGuestSignInFailed => '访客登录失败';
+
+  @override
+  String get authAppleAuthFailed => 'Apple 认证失败';
+
+  @override
+  String get authAppleSignInCanceled => 'Apple 登录已取消';
+
+  @override
+  String get authAppleSignInFailed => 'Apple 登录失败';
+
+  @override
+  String get authEmailAndPasswordRequired => '请输入邮箱和密码';
+
+  @override
+  String get authUsernameRequired => '请输入 ID';
+
+  @override
+  String get authPasswordMismatch => '密码不一致';
+
+  @override
+  String get authPasswordTooShort => '密码至少需要 6 位';
+
+  @override
+  String get authGenericError => '发生错误';
+
+  @override
+  String get authErrorInvalidCredentials => '邮箱或密码不正确';
+
+  @override
+  String get authErrorEmailExists => '该邮箱已注册';
+
+  @override
+  String get authErrorInvalidEmail => '请输入正确的邮箱格式';
+
+  @override
+  String get authErrorEmailNotConfirmed => '邮箱认证未完成。请查看邮箱。';
+
+  @override
+  String get authEmailConfirmRequiredTitle => '需要邮箱认证';
+
+  @override
+  String authEmailConfirmRequiredBody(String email) {
+    return '已向 $email 发送认证邮件。\n请查看邮箱完成认证后再登录。';
+  }
+
+  @override
+  String get authFindIdResultTitle => '找回 ID 结果';
+
+  @override
+  String get authFindIdResultBefore => '您的 ID 是 ';
+
+  @override
+  String get authFindIdResultAfter => ' 。';
+
+  @override
+  String get authFindIdEmailRequired => '请输入邮箱';
+
+  @override
+  String get authFindIdNotFound => '未找到该邮箱对应的账户';
+
+  @override
+  String get authPasswordResetSent => '密码重置链接已发送到您的邮箱';
+
+  @override
+  String get authFindIdFailed => '找回 ID 失败';
+
+  @override
+  String get authEmailSendFailed => '邮件发送失败';
+
+  @override
+  String get authFindIdTitle => '找回 ID';
+
+  @override
+  String get authFindPasswordTitle => '找回密码';
+
+  @override
+  String get authFindIdBody => '输入注册时使用的邮箱,\n我们将告诉您 ID。';
+
+  @override
+  String get authFindPasswordBody => '输入邮箱后,\n我们会向您发送密码重置链接。';
+
+  @override
+  String get authFindIdEmailHint => '请输入注册时的邮箱';
+
+  @override
+  String get authFindIdSubmit => '找回 ID';
+
+  @override
+  String get authFindPasswordSubmit => '获取重置链接';
+
+  @override
+  String get hubSettingsTooltip => '设置';
+
+  @override
+  String get hubAuthExploreSeoulTitle => '和朋友一起探索首尔';
+
+  @override
+  String get hubAuthCreateProfileSubtitle => '创建昵称和图钉开始体验。';
+
+  @override
+  String get hubAuthCreateProfileButton => '创建资料';
+
+  @override
+  String get hubPausedNotice => 'Seoul Live 已暂停 — 位置/通知已屏蔽,聊天仍可用';
+
+  @override
+  String get hubResumeButton => '恢复';
+
+  @override
+  String get hubRoomTitle => '好友房间';
+
+  @override
+  String get hubRoomEmpty => '新建房间或用代码加入';
+
+  @override
+  String hubRoomCurrent(String code) {
+    return '已加入 · 代码 $code';
+  }
+
+  @override
+  String get hubFriendsTitle => '好友';
+
+  @override
+  String hubFriendsSubtitle(int count, int requests) {
+    return '$count 位 · 申请 $requests 条';
+  }
+
+  @override
+  String get hubDmSubtitle => '与好友 1:1 私聊';
+
+  @override
+  String get hubFriendCodeTitle => '好友代码';
+
+  @override
+  String hubFriendCodeSubtitle(String code) {
+    return '分享我的代码 $code / 输入代码';
+  }
+
+  @override
+  String get hubFriendGroupsTitle => '好友分组';
+
+  @override
+  String hubFriendGroupsSubtitle(int count) {
+    return '$count 个分组';
+  }
+
+  @override
+  String get hubSpotifyConnectedNoPlayback => '已连接 — 无播放';
+
+  @override
+  String get hubSpotifyShareSubtitle => '把你听的歌分享给好友';
+
+  @override
+  String get hubVisibilityGhost => '隐身 — 不收发';
+
+  @override
+  String get hubVisibilityFriends => '好友房间 — 仅同房成员';
+
+  @override
+  String get hubVisibilityPublic => '完全公开 — 所有 Seoul Live 用户';
+
+  @override
+  String get hubActivityTitle => '我的动态';
+
+  @override
+  String get hubStatMeetups => '相遇';
+
+  @override
+  String get hubStatFriends => '好友';
+
+  @override
+  String get hubStatStreak => '连续';
+
+  @override
+  String hubStatStreakValue(int days) {
+    return '$days 天';
+  }
+
+  @override
+  String hubStatStreakBest(int days) {
+    return '最高 $days';
+  }
+
+  @override
+  String get hubBadgesEmptyHint => '通过第一位好友或第一次相遇收集徽章';
+
+  @override
+  String get hubAgoJust => '刚刚';
+
+  @override
+  String hubAgoMin(int min) {
+    return '$min 分钟前';
+  }
+
+  @override
+  String hubAgoHour(int hour) {
+    return '$hour 小时前';
+  }
+
+  @override
+  String hubAgoDay(int day) {
+    return '$day 天前';
+  }
+
+  @override
+  String get hubRecentMeetupsTitle => '🎉 最近的相遇';
+
+  @override
+  String hubRecentMeetupsCount(int count) {
+    return '$count 次';
+  }
 }

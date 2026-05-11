@@ -790,4 +790,642 @@ class AppL10nKo extends AppL10n {
 
   @override
   String get notificationsEmptySubtitle => '새로운 소식이 있으면 여기에 표시됩니다';
+
+  @override
+  String get settingsTitle => '설정';
+
+  @override
+  String get settingsSectionRealtime => '실시간 시각화';
+
+  @override
+  String get settingsLineSubway => '지하철 노선';
+
+  @override
+  String get settingsTrainPos => '지하철 열차 위치';
+
+  @override
+  String get settingsStations => '지하철 역';
+
+  @override
+  String get settingsBuses => '시내버스';
+
+  @override
+  String get settingsRiverBus => '한강버스';
+
+  @override
+  String get settingsFlights => '항공기';
+
+  @override
+  String get settingsSectionDataSource => '데이터 소스';
+
+  @override
+  String get settingsSubwayMode => '지하철 모드';
+
+  @override
+  String get settingsSubwayModeLive => '실시간';
+
+  @override
+  String get settingsSubwayModeDemo => '데모';
+
+  @override
+  String get settingsSeoulApi => '서울시 공공 API (60s)';
+
+  @override
+  String get settingsNaverApi => '네이버 API (5s 단위 보정)';
+
+  @override
+  String get settingsSectionLighting => '라이팅';
+
+  @override
+  String get settingsAutoLighting => '자동 (시간대 + 날씨)';
+
+  @override
+  String get settingsLightPreset => '라이트 프리셋';
+
+  @override
+  String get settingsLightAuto => '자동';
+
+  @override
+  String get settingsLightDawn => '새벽';
+
+  @override
+  String get settingsLightDay => '낮';
+
+  @override
+  String get settingsLightDusk => '저녁';
+
+  @override
+  String get settingsLightNight => '밤';
+
+  @override
+  String settingsCountValue(int count) {
+    return '$count개';
+  }
+
+  @override
+  String get settingsLabelFavorites => '즐겨찾기';
+
+  @override
+  String get settingsLabelVisits => '방문 기록';
+
+  @override
+  String get settingsLabelRecentSearches => '최근 검색';
+
+  @override
+  String get settingsAiAssistantLanguage => 'AI 비서 언어';
+
+  @override
+  String get settingsThemeMode => '화면 테마';
+
+  @override
+  String get settingsThemeLight => '라이트';
+
+  @override
+  String get settingsThemeDark => '다크';
+
+  @override
+  String get settingsThemeChangedTitle => '테마 변경됨';
+
+  @override
+  String settingsThemeChangedBody(String theme) {
+    return '$theme 모드를 완전히 적용하려면 앱을 재시작해야 해요. 지금 재시작할까요?';
+  }
+
+  @override
+  String get settingsRestartConfirm => '재시작';
+
+  @override
+  String get settingsMapHome => '지도 홈 시작';
+
+  @override
+  String get settingsMapHomeDefault => '기본';
+
+  @override
+  String get settingsMapHomeMyLocation => '내 위치';
+
+  @override
+  String get settingsMapHomeRecent => '최근 검색';
+
+  @override
+  String get settingsKeepScreenOn => '화면 자동 잠금 안 함';
+
+  @override
+  String get settingsAutoRotate => '화면 방향 자동 회전';
+
+  @override
+  String get settingsAlwaysMyLocation => '길찾기 출발지를 항상 내위치로';
+
+  @override
+  String get settingsClearHistory => '사용 기록 전체 삭제';
+
+  @override
+  String get settingsClearSearchHistory => '최근 검색 기록 삭제';
+
+  @override
+  String get settingsConvertAccount => '정식 계정으로 전환';
+
+  @override
+  String get settingsEditNameItem => '이름 변경';
+
+  @override
+  String get settingsChangePassword => '비밀번호 변경';
+
+  @override
+  String get settingsLogout => '로그아웃';
+
+  @override
+  String get settingsDeleteAccount => '회원 탈퇴';
+
+  @override
+  String get settingsMapDataLabel => '지도 표시 및 데이터';
+
+  @override
+  String get settingsSectionDeveloper => '개발자';
+
+  @override
+  String get settingsDebugLogs => '디버그 로그 출력';
+
+  @override
+  String get settingsResetTutorial => '튜토리얼 다시 보기';
+
+  @override
+  String get settingsReplayWhatsNew => '새 기능 다시 보기';
+
+  @override
+  String get settingsWhatsNewToast => '다음 앱 실행 시 새 기능 안내가 다시 나와요';
+
+  @override
+  String get settingsAppVersion => '앱 버전';
+
+  @override
+  String get settingsPrivacy => '개인정보처리방침';
+
+  @override
+  String get settingsLicenses => '오픈소스 라이선스';
+
+  @override
+  String get settingsClearHistoryTitle => '사용 기록 삭제';
+
+  @override
+  String get settingsClearHistoryBody => '모든 사용 기록이 삭제됩니다.\n이 작업은 되돌릴 수 없습니다.';
+
+  @override
+  String get commonDelete => '삭제';
+
+  @override
+  String get settingsClearedHistoryToast => '모든 사용 기록이 삭제되었습니다';
+
+  @override
+  String get settingsClearSearchTitle => '검색 기록 삭제';
+
+  @override
+  String get settingsClearSearchBody => '최근 검색 기록이 모두 삭제됩니다.';
+
+  @override
+  String get settingsClearedSearchToast => '검색 기록이 삭제되었습니다';
+
+  @override
+  String get settingsEditNameDialogTitle => '이름 변경';
+
+  @override
+  String get settingsEditNameDialogBody => '변경할 이름을 입력해주세요.';
+
+  @override
+  String get settingsEditNameConfirm => '변경';
+
+  @override
+  String get settingsNewNameDialogTitle => '새 이름';
+
+  @override
+  String get settingsChangePasswordTitle => '비밀번호 변경';
+
+  @override
+  String settingsChangePasswordBody(String email) {
+    return '$email 으로 비밀번호 재설정 링크를 보냅니다.';
+  }
+
+  @override
+  String get settingsSendButton => '발송';
+
+  @override
+  String get settingsPasswordResetSent => '재설정 이메일이 발송되었습니다';
+
+  @override
+  String get settingsLogoutTitle => '로그아웃';
+
+  @override
+  String get settingsLogoutBody => '로그아웃 하시겠습니까?';
+
+  @override
+  String get settingsLogoutConfirm => '로그아웃';
+
+  @override
+  String get settingsDeleteAccountTitle => '회원 탈퇴';
+
+  @override
+  String get settingsDeleteAccountBody =>
+      '계정과 모든 데이터가 영구적으로 삭제됩니다.\n이 작업은 되돌릴 수 없습니다.';
+
+  @override
+  String get settingsDeleteAccountConfirm => '탈퇴';
+
+  @override
+  String get settingsDeleteError => '탈퇴 처리 중 오류가 발생했습니다';
+
+  @override
+  String get settingsResetTutorialTitle => '튜토리얼 다시 보기';
+
+  @override
+  String get settingsResetTutorialBody =>
+      '저장된 진행 상태를 지우고 다음 앱 실행 시 튜토리얼을 처음부터 보여드려요.';
+
+  @override
+  String get settingsResetTutorialConfirm => '다시 보기';
+
+  @override
+  String get settingsMapDisplayTitle => '지도 표시 및 데이터';
+
+  @override
+  String get settingsSectionMapDisplay => '지도 표시';
+
+  @override
+  String get aiStatusSearchingCourse => '코스 검색 중...';
+
+  @override
+  String aiPlacesFound(int count) {
+    return '$count개 장소를 찾았어요! 아래에서 확인하세요.';
+  }
+
+  @override
+  String get aiStatusFindingInfo => '정보 찾는 중...';
+
+  @override
+  String get aiStatusAnalyzingImage => '이미지 분석 중...';
+
+  @override
+  String get aiNoPlacesFound => '장소를 찾지 못했어요.';
+
+  @override
+  String aiAnalysisError(String error) {
+    return '분석 오류: $error';
+  }
+
+  @override
+  String get aiSelectPhotoHint => '사진을 선택해주세요';
+
+  @override
+  String get aiPhotoShoot => '촬영';
+
+  @override
+  String get aiStatusConnecting => '연결 중...';
+
+  @override
+  String get aiStatusListening => '듣고 있어요';
+
+  @override
+  String get aiStatusThinking => '생각 중...';
+
+  @override
+  String get aiStatusSpeaking => '말하는 중';
+
+  @override
+  String get aiStatusIdle => '대기 중';
+
+  @override
+  String get aiStatusReady => '준비 중';
+
+  @override
+  String aiFoundPlacesHeader(int count) {
+    return '발견된 장소 ($count)';
+  }
+
+  @override
+  String get aiVoiceCommandHint =>
+      '\"카페 추가해줘\", \"경복궁 빼줘\", \"이걸로 확정해\" 등 말해보세요';
+
+  @override
+  String aiPlaceStationDistance(String station, int minutes) {
+    return '$station역 · $minutes분';
+  }
+
+  @override
+  String get aiDefaultSearch => '서울 여행 추천 코스';
+
+  @override
+  String get recommendTitle => '추천';
+
+  @override
+  String recommendSubtitleNearbyArea(String area) {
+    return '$area 근처에서 지금 인기있는 곳';
+  }
+
+  @override
+  String get recommendSubtitleNearbyDefault => '지금 가까이서 인기있는 곳';
+
+  @override
+  String get recommendRefresh => '새로고침';
+
+  @override
+  String get recommendNoResults => '주변에 결과가 없어요.\n잠시 후 다시 시도해 주세요.';
+
+  @override
+  String recommendRank(int rank) {
+    return '$rank위';
+  }
+
+  @override
+  String get recommendEventsLoadError =>
+      '문화행사 정보를 불러오지 못했어요.\n잠시 후 다시 시도해 주세요.';
+
+  @override
+  String get recommendStatusUpcoming => '예정';
+
+  @override
+  String get recommendBadgePaid => '유료';
+
+  @override
+  String get recommendUniqueMood => '✨ 너만의';
+
+  @override
+  String get recommendTabFood => '🍜 맛집';
+
+  @override
+  String get recommendTabCafe => '☕️ 카페';
+
+  @override
+  String get recommendTabShopping => '🛍 쇼핑';
+
+  @override
+  String get recommendTabOutdoor => '🌳 공원·야경';
+
+  @override
+  String get recommendTabEvents => '🎭 문화';
+
+  @override
+  String get authTabSignUp => '회원가입';
+
+  @override
+  String get authTabSignIn => '로그인';
+
+  @override
+  String get authProcessing => '처리 중...';
+
+  @override
+  String get authSignIn => '로그인';
+
+  @override
+  String get authSignUp => '회원가입';
+
+  @override
+  String get authLabelEmail => '이메일';
+
+  @override
+  String get authHintEmail => '이메일을 입력해주세요';
+
+  @override
+  String get authLabelPassword => '비밀번호';
+
+  @override
+  String get authHintPassword => '비밀번호를 입력해주세요';
+
+  @override
+  String get authFindId => '아이디 찾기';
+
+  @override
+  String get authFindPassword => '비밀번호 찾기';
+
+  @override
+  String get authLabelUsername => '아이디';
+
+  @override
+  String get authHintUsername => '아이디를 입력해주세요';
+
+  @override
+  String get authLabelConfirmPassword => '비밀번호 확인';
+
+  @override
+  String get authHintConfirmPassword => '비밀번호를 다시 입력해주세요';
+
+  @override
+  String get authSnsLogin => 'SNS 계정으로 로그인';
+
+  @override
+  String get authGoogleAuthFailed => 'Google 인증에 실패했습니다';
+
+  @override
+  String get authGoogleSignInFailed => 'Google 로그인에 실패했습니다';
+
+  @override
+  String get authGuestSignInFailed => '게스트 로그인에 실패했습니다';
+
+  @override
+  String get authAppleAuthFailed => 'Apple 인증에 실패했습니다';
+
+  @override
+  String get authAppleSignInCanceled => 'Apple 로그인이 취소되었습니다';
+
+  @override
+  String get authAppleSignInFailed => 'Apple 로그인에 실패했습니다';
+
+  @override
+  String get authEmailAndPasswordRequired => '이메일과 비밀번호를 입력해주세요';
+
+  @override
+  String get authUsernameRequired => '아이디를 입력해주세요';
+
+  @override
+  String get authPasswordMismatch => '비밀번호가 일치하지 않습니다';
+
+  @override
+  String get authPasswordTooShort => '비밀번호는 6자 이상이어야 합니다';
+
+  @override
+  String get authGenericError => '오류가 발생했습니다';
+
+  @override
+  String get authErrorInvalidCredentials => '이메일 또는 비밀번호가 올바르지 않습니다';
+
+  @override
+  String get authErrorEmailExists => '이미 가입된 이메일입니다';
+
+  @override
+  String get authErrorInvalidEmail => '올바른 이메일 형식을 입력해주세요';
+
+  @override
+  String get authErrorEmailNotConfirmed => '이메일 인증이 완료되지 않았습니다. 메일함을 확인해주세요.';
+
+  @override
+  String get authEmailConfirmRequiredTitle => '이메일 인증 필요';
+
+  @override
+  String authEmailConfirmRequiredBody(String email) {
+    return '$email로 인증 메일을 보냈습니다.\n메일함을 확인하고 인증을 완료한 후 로그인해주세요.';
+  }
+
+  @override
+  String get authFindIdResultTitle => '아이디 찾기 결과';
+
+  @override
+  String get authFindIdResultBefore => '회원님의 아이디는 ';
+
+  @override
+  String get authFindIdResultAfter => ' 입니다.';
+
+  @override
+  String get authFindIdEmailRequired => '이메일을 입력해주세요';
+
+  @override
+  String get authFindIdNotFound => '해당 이메일로 가입된 계정을 찾을 수 없습니다';
+
+  @override
+  String get authPasswordResetSent => '비밀번호 재설정 링크를 이메일로 보냈습니다';
+
+  @override
+  String get authFindIdFailed => '아이디 찾기에 실패했습니다';
+
+  @override
+  String get authEmailSendFailed => '이메일 전송에 실패했습니다';
+
+  @override
+  String get authFindIdTitle => '아이디 찾기';
+
+  @override
+  String get authFindPasswordTitle => '비밀번호 찾기';
+
+  @override
+  String get authFindIdBody => '가입 시 사용한 이메일을 입력하면\n아이디를 알려드립니다.';
+
+  @override
+  String get authFindPasswordBody => '이메일을 입력하면\n비밀번호 재설정 링크를 보내드립니다.';
+
+  @override
+  String get authFindIdEmailHint => '가입한 이메일을 입력해주세요';
+
+  @override
+  String get authFindIdSubmit => '아이디 찾기';
+
+  @override
+  String get authFindPasswordSubmit => '재설정 링크 받기';
+
+  @override
+  String get hubSettingsTooltip => '설정';
+
+  @override
+  String get hubAuthExploreSeoulTitle => '친구와 함께 서울을 탐험하기';
+
+  @override
+  String get hubAuthCreateProfileSubtitle => '닉네임과 핀을 만들어 시작하세요.';
+
+  @override
+  String get hubAuthCreateProfileButton => '프로필 만들기';
+
+  @override
+  String get hubPausedNotice => 'Seoul Live 일시정지 중 — 위치/알림 차단, 채팅은 가능';
+
+  @override
+  String get hubResumeButton => '재개';
+
+  @override
+  String get hubRoomTitle => '친구방';
+
+  @override
+  String get hubRoomEmpty => '새 방을 만들거나 코드로 입장';
+
+  @override
+  String hubRoomCurrent(String code) {
+    return '입장 중 · 코드 $code';
+  }
+
+  @override
+  String get hubFriendsTitle => '친구';
+
+  @override
+  String hubFriendsSubtitle(int count, int requests) {
+    return '$count명 · 신청 $requests건';
+  }
+
+  @override
+  String get hubDmSubtitle => '친구와 1:1 대화';
+
+  @override
+  String get hubFriendCodeTitle => '친구 코드';
+
+  @override
+  String hubFriendCodeSubtitle(String code) {
+    return '내 코드 $code 공유 / 입력';
+  }
+
+  @override
+  String get hubFriendGroupsTitle => '친구 그룹';
+
+  @override
+  String hubFriendGroupsSubtitle(int count) {
+    return '$count개 그룹';
+  }
+
+  @override
+  String get hubSpotifyConnectedNoPlayback => '연결됨 — 재생 없음';
+
+  @override
+  String get hubSpotifyShareSubtitle => '듣는 곡을 친구에게 공유';
+
+  @override
+  String get hubVisibilityGhost => '비공개 — 송신/수신 모두 X';
+
+  @override
+  String get hubVisibilityFriends => '친구방 — 같은 방 멤버에게만';
+
+  @override
+  String get hubVisibilityPublic => '전체 공개 — 모든 Seoul Live 사용자';
+
+  @override
+  String get hubActivityTitle => '내 활동';
+
+  @override
+  String get hubStatMeetups => '만남';
+
+  @override
+  String get hubStatFriends => '친구';
+
+  @override
+  String get hubStatStreak => '연속';
+
+  @override
+  String hubStatStreakValue(int days) {
+    return '$days일';
+  }
+
+  @override
+  String hubStatStreakBest(int days) {
+    return '최고 $days';
+  }
+
+  @override
+  String get hubBadgesEmptyHint => '첫 친구나 첫 만남으로 뱃지를 모아보세요';
+
+  @override
+  String get hubAgoJust => '방금';
+
+  @override
+  String hubAgoMin(int min) {
+    return '$min분 전';
+  }
+
+  @override
+  String hubAgoHour(int hour) {
+    return '$hour시간 전';
+  }
+
+  @override
+  String hubAgoDay(int day) {
+    return '$day일 전';
+  }
+
+  @override
+  String get hubRecentMeetupsTitle => '🎉 최근 만남';
+
+  @override
+  String hubRecentMeetupsCount(int count) {
+    return '$count회';
+  }
 }

@@ -1462,6 +1462,1194 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'New updates will appear here'**
   String get notificationsEmptySubtitle;
+
+  /// No description provided for @settingsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get settingsTitle;
+
+  /// No description provided for @settingsSectionRealtime.
+  ///
+  /// In en, this message translates to:
+  /// **'Real-time visualization'**
+  String get settingsSectionRealtime;
+
+  /// No description provided for @settingsLineSubway.
+  ///
+  /// In en, this message translates to:
+  /// **'Subway lines'**
+  String get settingsLineSubway;
+
+  /// No description provided for @settingsTrainPos.
+  ///
+  /// In en, this message translates to:
+  /// **'Subway trains'**
+  String get settingsTrainPos;
+
+  /// No description provided for @settingsStations.
+  ///
+  /// In en, this message translates to:
+  /// **'Subway stations'**
+  String get settingsStations;
+
+  /// No description provided for @settingsBuses.
+  ///
+  /// In en, this message translates to:
+  /// **'City buses'**
+  String get settingsBuses;
+
+  /// No description provided for @settingsRiverBus.
+  ///
+  /// In en, this message translates to:
+  /// **'Han River bus'**
+  String get settingsRiverBus;
+
+  /// No description provided for @settingsFlights.
+  ///
+  /// In en, this message translates to:
+  /// **'Aircraft'**
+  String get settingsFlights;
+
+  /// No description provided for @settingsSectionDataSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Data source'**
+  String get settingsSectionDataSource;
+
+  /// No description provided for @settingsSubwayMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Subway mode'**
+  String get settingsSubwayMode;
+
+  /// No description provided for @settingsSubwayModeLive.
+  ///
+  /// In en, this message translates to:
+  /// **'Live'**
+  String get settingsSubwayModeLive;
+
+  /// No description provided for @settingsSubwayModeDemo.
+  ///
+  /// In en, this message translates to:
+  /// **'Demo'**
+  String get settingsSubwayModeDemo;
+
+  /// No description provided for @settingsSeoulApi.
+  ///
+  /// In en, this message translates to:
+  /// **'Seoul Open API (60s)'**
+  String get settingsSeoulApi;
+
+  /// No description provided for @settingsNaverApi.
+  ///
+  /// In en, this message translates to:
+  /// **'Naver API (5s interp.)'**
+  String get settingsNaverApi;
+
+  /// No description provided for @settingsSectionLighting.
+  ///
+  /// In en, this message translates to:
+  /// **'Lighting'**
+  String get settingsSectionLighting;
+
+  /// No description provided for @settingsAutoLighting.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto (time + weather)'**
+  String get settingsAutoLighting;
+
+  /// No description provided for @settingsLightPreset.
+  ///
+  /// In en, this message translates to:
+  /// **'Light preset'**
+  String get settingsLightPreset;
+
+  /// No description provided for @settingsLightAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto'**
+  String get settingsLightAuto;
+
+  /// No description provided for @settingsLightDawn.
+  ///
+  /// In en, this message translates to:
+  /// **'Dawn'**
+  String get settingsLightDawn;
+
+  /// No description provided for @settingsLightDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Day'**
+  String get settingsLightDay;
+
+  /// No description provided for @settingsLightDusk.
+  ///
+  /// In en, this message translates to:
+  /// **'Dusk'**
+  String get settingsLightDusk;
+
+  /// No description provided for @settingsLightNight.
+  ///
+  /// In en, this message translates to:
+  /// **'Night'**
+  String get settingsLightNight;
+
+  /// No description provided for @settingsCountValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}'**
+  String settingsCountValue(int count);
+
+  /// No description provided for @settingsLabelFavorites.
+  ///
+  /// In en, this message translates to:
+  /// **'Favorites'**
+  String get settingsLabelFavorites;
+
+  /// No description provided for @settingsLabelVisits.
+  ///
+  /// In en, this message translates to:
+  /// **'Visits'**
+  String get settingsLabelVisits;
+
+  /// No description provided for @settingsLabelRecentSearches.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent searches'**
+  String get settingsLabelRecentSearches;
+
+  /// No description provided for @settingsAiAssistantLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'AI assistant language'**
+  String get settingsAiAssistantLanguage;
+
+  /// No description provided for @settingsThemeMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Theme'**
+  String get settingsThemeMode;
+
+  /// No description provided for @settingsThemeLight.
+  ///
+  /// In en, this message translates to:
+  /// **'Light'**
+  String get settingsThemeLight;
+
+  /// No description provided for @settingsThemeDark.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark'**
+  String get settingsThemeDark;
+
+  /// No description provided for @settingsThemeChangedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Theme changed'**
+  String get settingsThemeChangedTitle;
+
+  /// No description provided for @settingsThemeChangedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Restart to fully apply {theme} mode. Restart now?'**
+  String settingsThemeChangedBody(String theme);
+
+  /// No description provided for @settingsRestartConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Restart'**
+  String get settingsRestartConfirm;
+
+  /// No description provided for @settingsMapHome.
+  ///
+  /// In en, this message translates to:
+  /// **'Map home start'**
+  String get settingsMapHome;
+
+  /// No description provided for @settingsMapHomeDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Default'**
+  String get settingsMapHomeDefault;
+
+  /// No description provided for @settingsMapHomeMyLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'My location'**
+  String get settingsMapHomeMyLocation;
+
+  /// No description provided for @settingsMapHomeRecent.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent search'**
+  String get settingsMapHomeRecent;
+
+  /// No description provided for @settingsKeepScreenOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep screen on'**
+  String get settingsKeepScreenOn;
+
+  /// No description provided for @settingsAutoRotate.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-rotate screen'**
+  String get settingsAutoRotate;
+
+  /// No description provided for @settingsAlwaysMyLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Always start directions from my location'**
+  String get settingsAlwaysMyLocation;
+
+  /// No description provided for @settingsClearHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear all usage history'**
+  String get settingsClearHistory;
+
+  /// No description provided for @settingsClearSearchHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear recent searches'**
+  String get settingsClearSearchHistory;
+
+  /// No description provided for @settingsConvertAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Convert to full account'**
+  String get settingsConvertAccount;
+
+  /// No description provided for @settingsEditNameItem.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit name'**
+  String get settingsEditNameItem;
+
+  /// No description provided for @settingsChangePassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Change password'**
+  String get settingsChangePassword;
+
+  /// No description provided for @settingsLogout.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out'**
+  String get settingsLogout;
+
+  /// No description provided for @settingsDeleteAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete account'**
+  String get settingsDeleteAccount;
+
+  /// No description provided for @settingsMapDataLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Map display & data'**
+  String get settingsMapDataLabel;
+
+  /// No description provided for @settingsSectionDeveloper.
+  ///
+  /// In en, this message translates to:
+  /// **'Developer'**
+  String get settingsSectionDeveloper;
+
+  /// No description provided for @settingsDebugLogs.
+  ///
+  /// In en, this message translates to:
+  /// **'Debug log output'**
+  String get settingsDebugLogs;
+
+  /// No description provided for @settingsResetTutorial.
+  ///
+  /// In en, this message translates to:
+  /// **'Replay tutorial'**
+  String get settingsResetTutorial;
+
+  /// No description provided for @settingsReplayWhatsNew.
+  ///
+  /// In en, this message translates to:
+  /// **'Replay What\'s New'**
+  String get settingsReplayWhatsNew;
+
+  /// No description provided for @settingsWhatsNewToast.
+  ///
+  /// In en, this message translates to:
+  /// **'What\'s New will be shown on next app launch'**
+  String get settingsWhatsNewToast;
+
+  /// No description provided for @settingsAppVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'App version'**
+  String get settingsAppVersion;
+
+  /// No description provided for @settingsPrivacy.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy policy'**
+  String get settingsPrivacy;
+
+  /// No description provided for @settingsLicenses.
+  ///
+  /// In en, this message translates to:
+  /// **'Open source licenses'**
+  String get settingsLicenses;
+
+  /// No description provided for @settingsClearHistoryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear usage history'**
+  String get settingsClearHistoryTitle;
+
+  /// No description provided for @settingsClearHistoryBody.
+  ///
+  /// In en, this message translates to:
+  /// **'All usage history will be deleted.\nThis cannot be undone.'**
+  String get settingsClearHistoryBody;
+
+  /// No description provided for @commonDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get commonDelete;
+
+  /// No description provided for @settingsClearedHistoryToast.
+  ///
+  /// In en, this message translates to:
+  /// **'All usage history has been deleted'**
+  String get settingsClearedHistoryToast;
+
+  /// No description provided for @settingsClearSearchTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear search history'**
+  String get settingsClearSearchTitle;
+
+  /// No description provided for @settingsClearSearchBody.
+  ///
+  /// In en, this message translates to:
+  /// **'All recent searches will be deleted.'**
+  String get settingsClearSearchBody;
+
+  /// No description provided for @settingsClearedSearchToast.
+  ///
+  /// In en, this message translates to:
+  /// **'Search history has been cleared'**
+  String get settingsClearedSearchToast;
+
+  /// No description provided for @settingsEditNameDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit name'**
+  String get settingsEditNameDialogTitle;
+
+  /// No description provided for @settingsEditNameDialogBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a new name.'**
+  String get settingsEditNameDialogBody;
+
+  /// No description provided for @settingsEditNameConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Change'**
+  String get settingsEditNameConfirm;
+
+  /// No description provided for @settingsNewNameDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'New name'**
+  String get settingsNewNameDialogTitle;
+
+  /// No description provided for @settingsChangePasswordTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Change password'**
+  String get settingsChangePasswordTitle;
+
+  /// No description provided for @settingsChangePasswordBody.
+  ///
+  /// In en, this message translates to:
+  /// **'We\'ll send the password reset link to {email}.'**
+  String settingsChangePasswordBody(String email);
+
+  /// No description provided for @settingsSendButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Send'**
+  String get settingsSendButton;
+
+  /// No description provided for @settingsPasswordResetSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset email has been sent'**
+  String get settingsPasswordResetSent;
+
+  /// No description provided for @settingsLogoutTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out'**
+  String get settingsLogoutTitle;
+
+  /// No description provided for @settingsLogoutBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out now?'**
+  String get settingsLogoutBody;
+
+  /// No description provided for @settingsLogoutConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out'**
+  String get settingsLogoutConfirm;
+
+  /// No description provided for @settingsDeleteAccountTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete account'**
+  String get settingsDeleteAccountTitle;
+
+  /// No description provided for @settingsDeleteAccountBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account and all data will be permanently deleted.\nThis cannot be undone.'**
+  String get settingsDeleteAccountBody;
+
+  /// No description provided for @settingsDeleteAccountConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get settingsDeleteAccountConfirm;
+
+  /// No description provided for @settingsDeleteError.
+  ///
+  /// In en, this message translates to:
+  /// **'An error occurred during account deletion'**
+  String get settingsDeleteError;
+
+  /// No description provided for @settingsResetTutorialTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Replay tutorial'**
+  String get settingsResetTutorialTitle;
+
+  /// No description provided for @settingsResetTutorialBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved progress will be cleared and the tutorial will start over on next launch.'**
+  String get settingsResetTutorialBody;
+
+  /// No description provided for @settingsResetTutorialConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Replay'**
+  String get settingsResetTutorialConfirm;
+
+  /// No description provided for @settingsMapDisplayTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Map display & data'**
+  String get settingsMapDisplayTitle;
+
+  /// No description provided for @settingsSectionMapDisplay.
+  ///
+  /// In en, this message translates to:
+  /// **'Map display'**
+  String get settingsSectionMapDisplay;
+
+  /// No description provided for @aiStatusSearchingCourse.
+  ///
+  /// In en, this message translates to:
+  /// **'Searching course…'**
+  String get aiStatusSearchingCourse;
+
+  /// No description provided for @aiPlacesFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Found {count} places! Check below.'**
+  String aiPlacesFound(int count);
+
+  /// No description provided for @aiStatusFindingInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Looking it up…'**
+  String get aiStatusFindingInfo;
+
+  /// No description provided for @aiStatusAnalyzingImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Analyzing image…'**
+  String get aiStatusAnalyzingImage;
+
+  /// No description provided for @aiNoPlacesFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No places found.'**
+  String get aiNoPlacesFound;
+
+  /// No description provided for @aiAnalysisError.
+  ///
+  /// In en, this message translates to:
+  /// **'Analysis error: {error}'**
+  String aiAnalysisError(String error);
+
+  /// No description provided for @aiSelectPhotoHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select a photo'**
+  String get aiSelectPhotoHint;
+
+  /// No description provided for @aiPhotoShoot.
+  ///
+  /// In en, this message translates to:
+  /// **'Take photo'**
+  String get aiPhotoShoot;
+
+  /// No description provided for @aiStatusConnecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting…'**
+  String get aiStatusConnecting;
+
+  /// No description provided for @aiStatusListening.
+  ///
+  /// In en, this message translates to:
+  /// **'Listening'**
+  String get aiStatusListening;
+
+  /// No description provided for @aiStatusThinking.
+  ///
+  /// In en, this message translates to:
+  /// **'Thinking…'**
+  String get aiStatusThinking;
+
+  /// No description provided for @aiStatusSpeaking.
+  ///
+  /// In en, this message translates to:
+  /// **'Speaking'**
+  String get aiStatusSpeaking;
+
+  /// No description provided for @aiStatusIdle.
+  ///
+  /// In en, this message translates to:
+  /// **'Idle'**
+  String get aiStatusIdle;
+
+  /// No description provided for @aiStatusReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready'**
+  String get aiStatusReady;
+
+  /// No description provided for @aiFoundPlacesHeader.
+  ///
+  /// In en, this message translates to:
+  /// **'Found places ({count})'**
+  String aiFoundPlacesHeader(int count);
+
+  /// No description provided for @aiVoiceCommandHint.
+  ///
+  /// In en, this message translates to:
+  /// **'\"Add a cafe\", \"Remove Gyeongbokgung\", \"Confirm this\" — try it'**
+  String get aiVoiceCommandHint;
+
+  /// No description provided for @aiPlaceStationDistance.
+  ///
+  /// In en, this message translates to:
+  /// **'{station} stn · {minutes} min'**
+  String aiPlaceStationDistance(String station, int minutes);
+
+  /// No description provided for @aiDefaultSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Seoul travel recommendations'**
+  String get aiDefaultSearch;
+
+  /// No description provided for @recommendTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Recommendations'**
+  String get recommendTitle;
+
+  /// No description provided for @recommendSubtitleNearbyArea.
+  ///
+  /// In en, this message translates to:
+  /// **'Popular near {area} right now'**
+  String recommendSubtitleNearbyArea(String area);
+
+  /// No description provided for @recommendSubtitleNearbyDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Popular nearby right now'**
+  String get recommendSubtitleNearbyDefault;
+
+  /// No description provided for @recommendRefresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh'**
+  String get recommendRefresh;
+
+  /// No description provided for @recommendNoResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No results nearby.\nTry again later.'**
+  String get recommendNoResults;
+
+  /// No description provided for @recommendRank.
+  ///
+  /// In en, this message translates to:
+  /// **'#{rank}'**
+  String recommendRank(int rank);
+
+  /// No description provided for @recommendEventsLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load cultural events.\nTry again later.'**
+  String get recommendEventsLoadError;
+
+  /// No description provided for @recommendStatusUpcoming.
+  ///
+  /// In en, this message translates to:
+  /// **'Upcoming'**
+  String get recommendStatusUpcoming;
+
+  /// No description provided for @recommendBadgePaid.
+  ///
+  /// In en, this message translates to:
+  /// **'Paid'**
+  String get recommendBadgePaid;
+
+  /// No description provided for @recommendUniqueMood.
+  ///
+  /// In en, this message translates to:
+  /// **'✨ Your own'**
+  String get recommendUniqueMood;
+
+  /// No description provided for @recommendTabFood.
+  ///
+  /// In en, this message translates to:
+  /// **'🍜 Food'**
+  String get recommendTabFood;
+
+  /// No description provided for @recommendTabCafe.
+  ///
+  /// In en, this message translates to:
+  /// **'☕️ Café'**
+  String get recommendTabCafe;
+
+  /// No description provided for @recommendTabShopping.
+  ///
+  /// In en, this message translates to:
+  /// **'🛍 Shopping'**
+  String get recommendTabShopping;
+
+  /// No description provided for @recommendTabOutdoor.
+  ///
+  /// In en, this message translates to:
+  /// **'🌳 Parks · Night'**
+  String get recommendTabOutdoor;
+
+  /// No description provided for @recommendTabEvents.
+  ///
+  /// In en, this message translates to:
+  /// **'🎭 Culture'**
+  String get recommendTabEvents;
+
+  /// No description provided for @authTabSignUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign up'**
+  String get authTabSignUp;
+
+  /// No description provided for @authTabSignIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in'**
+  String get authTabSignIn;
+
+  /// No description provided for @authProcessing.
+  ///
+  /// In en, this message translates to:
+  /// **'Processing…'**
+  String get authProcessing;
+
+  /// No description provided for @authSignIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in'**
+  String get authSignIn;
+
+  /// No description provided for @authSignUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign up'**
+  String get authSignUp;
+
+  /// No description provided for @authLabelEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Email'**
+  String get authLabelEmail;
+
+  /// No description provided for @authHintEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your email'**
+  String get authHintEmail;
+
+  /// No description provided for @authLabelPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get authLabelPassword;
+
+  /// No description provided for @authHintPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your password'**
+  String get authHintPassword;
+
+  /// No description provided for @authFindId.
+  ///
+  /// In en, this message translates to:
+  /// **'Find ID'**
+  String get authFindId;
+
+  /// No description provided for @authFindPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Find password'**
+  String get authFindPassword;
+
+  /// No description provided for @authLabelUsername.
+  ///
+  /// In en, this message translates to:
+  /// **'Username'**
+  String get authLabelUsername;
+
+  /// No description provided for @authHintUsername.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your username'**
+  String get authHintUsername;
+
+  /// No description provided for @authLabelConfirmPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm password'**
+  String get authLabelConfirmPassword;
+
+  /// No description provided for @authHintConfirmPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Re-enter password'**
+  String get authHintConfirmPassword;
+
+  /// No description provided for @authSnsLogin.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with social'**
+  String get authSnsLogin;
+
+  /// No description provided for @authGoogleAuthFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Google authentication failed'**
+  String get authGoogleAuthFailed;
+
+  /// No description provided for @authGoogleSignInFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Google sign-in failed'**
+  String get authGoogleSignInFailed;
+
+  /// No description provided for @authGuestSignInFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Guest sign-in failed'**
+  String get authGuestSignInFailed;
+
+  /// No description provided for @authAppleAuthFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Apple authentication failed'**
+  String get authAppleAuthFailed;
+
+  /// No description provided for @authAppleSignInCanceled.
+  ///
+  /// In en, this message translates to:
+  /// **'Apple sign-in was canceled'**
+  String get authAppleSignInCanceled;
+
+  /// No description provided for @authAppleSignInFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Apple sign-in failed'**
+  String get authAppleSignInFailed;
+
+  /// No description provided for @authEmailAndPasswordRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter email and password'**
+  String get authEmailAndPasswordRequired;
+
+  /// No description provided for @authUsernameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a username'**
+  String get authUsernameRequired;
+
+  /// No description provided for @authPasswordMismatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Passwords don\'t match'**
+  String get authPasswordMismatch;
+
+  /// No description provided for @authPasswordTooShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Password must be at least 6 characters'**
+  String get authPasswordTooShort;
+
+  /// No description provided for @authGenericError.
+  ///
+  /// In en, this message translates to:
+  /// **'An error occurred'**
+  String get authGenericError;
+
+  /// No description provided for @authErrorInvalidCredentials.
+  ///
+  /// In en, this message translates to:
+  /// **'Email or password is incorrect'**
+  String get authErrorInvalidCredentials;
+
+  /// No description provided for @authErrorEmailExists.
+  ///
+  /// In en, this message translates to:
+  /// **'This email is already registered'**
+  String get authErrorEmailExists;
+
+  /// No description provided for @authErrorInvalidEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a valid email format'**
+  String get authErrorInvalidEmail;
+
+  /// No description provided for @authErrorEmailNotConfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'Email verification not complete. Check your inbox.'**
+  String get authErrorEmailNotConfirmed;
+
+  /// No description provided for @authEmailConfirmRequiredTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Email verification required'**
+  String get authEmailConfirmRequiredTitle;
+
+  /// No description provided for @authEmailConfirmRequiredBody.
+  ///
+  /// In en, this message translates to:
+  /// **'A verification email has been sent to {email}.\nCheck your inbox, verify, and then sign in.'**
+  String authEmailConfirmRequiredBody(String email);
+
+  /// No description provided for @authFindIdResultTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Find ID result'**
+  String get authFindIdResultTitle;
+
+  /// No description provided for @authFindIdResultBefore.
+  ///
+  /// In en, this message translates to:
+  /// **'Your username is '**
+  String get authFindIdResultBefore;
+
+  /// No description provided for @authFindIdResultAfter.
+  ///
+  /// In en, this message translates to:
+  /// **'.'**
+  String get authFindIdResultAfter;
+
+  /// No description provided for @authFindIdEmailRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter an email'**
+  String get authFindIdEmailRequired;
+
+  /// No description provided for @authFindIdNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No account found for that email'**
+  String get authFindIdNotFound;
+
+  /// No description provided for @authPasswordResetSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Password reset link has been sent to your email'**
+  String get authPasswordResetSent;
+
+  /// No description provided for @authFindIdFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t find your ID'**
+  String get authFindIdFailed;
+
+  /// No description provided for @authEmailSendFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t send email'**
+  String get authEmailSendFailed;
+
+  /// No description provided for @authFindIdTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Find ID'**
+  String get authFindIdTitle;
+
+  /// No description provided for @authFindPasswordTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Find password'**
+  String get authFindPasswordTitle;
+
+  /// No description provided for @authFindIdBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the email you used to sign up.\nWe\'ll send your ID.'**
+  String get authFindIdBody;
+
+  /// No description provided for @authFindPasswordBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your email and we\'ll send a password reset link.'**
+  String get authFindPasswordBody;
+
+  /// No description provided for @authFindIdEmailHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your sign-up email'**
+  String get authFindIdEmailHint;
+
+  /// No description provided for @authFindIdSubmit.
+  ///
+  /// In en, this message translates to:
+  /// **'Find ID'**
+  String get authFindIdSubmit;
+
+  /// No description provided for @authFindPasswordSubmit.
+  ///
+  /// In en, this message translates to:
+  /// **'Send reset link'**
+  String get authFindPasswordSubmit;
+
+  /// No description provided for @hubSettingsTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get hubSettingsTooltip;
+
+  /// No description provided for @hubAuthExploreSeoulTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Explore Seoul with friends'**
+  String get hubAuthExploreSeoulTitle;
+
+  /// No description provided for @hubAuthCreateProfileSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a nickname and pin to start.'**
+  String get hubAuthCreateProfileSubtitle;
+
+  /// No description provided for @hubAuthCreateProfileButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Create profile'**
+  String get hubAuthCreateProfileButton;
+
+  /// No description provided for @hubPausedNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Seoul Live paused — location/notifications blocked, chat OK'**
+  String get hubPausedNotice;
+
+  /// No description provided for @hubResumeButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Resume'**
+  String get hubResumeButton;
+
+  /// No description provided for @hubRoomTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Room'**
+  String get hubRoomTitle;
+
+  /// No description provided for @hubRoomEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Create or join a room by code'**
+  String get hubRoomEmpty;
+
+  /// No description provided for @hubRoomCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'In room · code {code}'**
+  String hubRoomCurrent(String code);
+
+  /// No description provided for @hubFriendsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Friends'**
+  String get hubFriendsTitle;
+
+  /// No description provided for @hubFriendsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} friends · {requests} requests'**
+  String hubFriendsSubtitle(int count, int requests);
+
+  /// No description provided for @hubDmSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'1:1 chats with friends'**
+  String get hubDmSubtitle;
+
+  /// No description provided for @hubFriendCodeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Friend code'**
+  String get hubFriendCodeTitle;
+
+  /// No description provided for @hubFriendCodeSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Share my code {code} / enter one'**
+  String hubFriendCodeSubtitle(String code);
+
+  /// No description provided for @hubFriendGroupsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Friend groups'**
+  String get hubFriendGroupsTitle;
+
+  /// No description provided for @hubFriendGroupsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} groups'**
+  String hubFriendGroupsSubtitle(int count);
+
+  /// No description provided for @hubSpotifyConnectedNoPlayback.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected — no playback'**
+  String get hubSpotifyConnectedNoPlayback;
+
+  /// No description provided for @hubSpotifyShareSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Share your tracks with friends'**
+  String get hubSpotifyShareSubtitle;
+
+  /// No description provided for @hubVisibilityGhost.
+  ///
+  /// In en, this message translates to:
+  /// **'Private — no send/receive'**
+  String get hubVisibilityGhost;
+
+  /// No description provided for @hubVisibilityFriends.
+  ///
+  /// In en, this message translates to:
+  /// **'Friend room — same-room members only'**
+  String get hubVisibilityFriends;
+
+  /// No description provided for @hubVisibilityPublic.
+  ///
+  /// In en, this message translates to:
+  /// **'Public — all Seoul Live users'**
+  String get hubVisibilityPublic;
+
+  /// No description provided for @hubActivityTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'My activity'**
+  String get hubActivityTitle;
+
+  /// No description provided for @hubStatMeetups.
+  ///
+  /// In en, this message translates to:
+  /// **'Meetups'**
+  String get hubStatMeetups;
+
+  /// No description provided for @hubStatFriends.
+  ///
+  /// In en, this message translates to:
+  /// **'Friends'**
+  String get hubStatFriends;
+
+  /// No description provided for @hubStatStreak.
+  ///
+  /// In en, this message translates to:
+  /// **'Streak'**
+  String get hubStatStreak;
+
+  /// No description provided for @hubStatStreakValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{days}d'**
+  String hubStatStreakValue(int days);
+
+  /// No description provided for @hubStatStreakBest.
+  ///
+  /// In en, this message translates to:
+  /// **'Best {days}'**
+  String hubStatStreakBest(int days);
+
+  /// No description provided for @hubBadgesEmptyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Earn badges with your first friend or first meetup'**
+  String get hubBadgesEmptyHint;
+
+  /// No description provided for @hubAgoJust.
+  ///
+  /// In en, this message translates to:
+  /// **'Just now'**
+  String get hubAgoJust;
+
+  /// No description provided for @hubAgoMin.
+  ///
+  /// In en, this message translates to:
+  /// **'{min} min ago'**
+  String hubAgoMin(int min);
+
+  /// No description provided for @hubAgoHour.
+  ///
+  /// In en, this message translates to:
+  /// **'{hour}h ago'**
+  String hubAgoHour(int hour);
+
+  /// No description provided for @hubAgoDay.
+  ///
+  /// In en, this message translates to:
+  /// **'{day}d ago'**
+  String hubAgoDay(int day);
+
+  /// No description provided for @hubRecentMeetupsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'🎉 Recent meetups'**
+  String get hubRecentMeetupsTitle;
+
+  /// No description provided for @hubRecentMeetupsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}'**
+  String hubRecentMeetupsCount(int count);
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

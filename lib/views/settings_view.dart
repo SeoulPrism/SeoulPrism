@@ -29,10 +29,42 @@ class _SettingsViewState extends State<SettingsView> {
   bool _screenAutoLockOff = false;
   bool _autoRotate = false;
   bool _alwaysMyLocation = true;
-  String _themeMode = SettingsService.instance.themeMode == 'light' ? '라이트' : '다크';
+  // 영문 코드로 정규화 — 'light' | 'dark'. picker 표시 시 현지화 매핑.
+  String _themeModeCode = SettingsService.instance.themeMode;
   String _language = aiLanguageByCode(SettingsService.instance.aiLanguage).label;
   String _appLangCode = SettingsService.instance.appLanguage;
-  String _mapHome = '기본';
+  // 'default' | 'myLocation' | 'recent'. picker 표시 시 현지화 매핑.
+  String _mapHomeCode = 'default';
+
+  String _themeLabel(BuildContext ctx, String code) {
+    final l = AppL10n.of(ctx);
+    return code == 'light' ? l.settingsThemeLight : l.settingsThemeDark;
+  }
+
+  String _mapHomeLabel(BuildContext ctx, String code) {
+    final l = AppL10n.of(ctx);
+    return switch (code) {
+      'myLocation' => l.settingsMapHomeMyLocation,
+      'recent' => l.settingsMapHomeRecent,
+      _ => l.settingsMapHomeDefault,
+    };
+  }
+
+  String _subwayModeLabel(BuildContext ctx, String code) {
+    final l = AppL10n.of(ctx);
+    return code == 'live' ? l.settingsSubwayModeLive : l.settingsSubwayModeDemo;
+  }
+
+  String _lightLabel(BuildContext ctx, String code) {
+    final l = AppL10n.of(ctx);
+    return switch (code) {
+      'dawn' => l.settingsLightDawn,
+      'day' => l.settingsLightDay,
+      'dusk' => l.settingsLightDusk,
+      'night' => l.settingsLightNight,
+      _ => l.settingsLightAuto,
+    };
+  }
 
   static const _appLangCodes = ['system', 'ko', 'en', 'ja', 'zh'];
 
@@ -71,7 +103,7 @@ class _SettingsViewState extends State<SettingsView> {
           ),
         ),
         title: Text(
-          '설정',
+          AppL10n.of(context).settingsTitle,
           style: TextStyle(
             color: Theme.of(context).colorScheme.onSurface,
             fontSize: 17,
@@ -102,11 +134,11 @@ class _SettingsViewState extends State<SettingsView> {
             const SizedBox(height: 16),
 
             // Section 1.5: 실시간 시각화 — 차량/노선 표시
-            _SectionHeader(label: '실시간 시각화'),
+            _SectionHeader(label: AppL10n.of(context).settingsSectionRealtime),
             AdaptiveSectionCard(
               children: [
                 _SwitchItem(
-                  label: '지하철 노선',
+                  label: AppL10n.of(context).settingsLineSubway,
                   value: SettingsService.instance.showRoutes,
                   onChanged: (v) {
                     SettingsService.instance.setShowRoutes(v);
@@ -115,7 +147,7 @@ class _SettingsViewState extends State<SettingsView> {
                 ),
                 const _ItemDivider(),
                 _SwitchItem(
-                  label: '지하철 열차 위치',
+                  label: AppL10n.of(context).settingsTrainPos,
                   value: SettingsService.instance.showTrains,
                   onChanged: (v) {
                     SettingsService.instance.setShowTrains(v);
@@ -124,7 +156,7 @@ class _SettingsViewState extends State<SettingsView> {
                 ),
                 const _ItemDivider(),
                 _SwitchItem(
-                  label: '지하철 역',
+                  label: AppL10n.of(context).settingsStations,
                   value: SettingsService.instance.showStations,
                   onChanged: (v) {
                     SettingsService.instance.setShowStations(v);
@@ -133,7 +165,7 @@ class _SettingsViewState extends State<SettingsView> {
                 ),
                 const _ItemDivider(),
                 _SwitchItem(
-                  label: '시내버스',
+                  label: AppL10n.of(context).settingsBuses,
                   value: SettingsService.instance.showBuses,
                   onChanged: (v) {
                     SettingsService.instance.setShowBuses(v);
@@ -142,7 +174,7 @@ class _SettingsViewState extends State<SettingsView> {
                 ),
                 const _ItemDivider(),
                 _SwitchItem(
-                  label: '한강버스',
+                  label: AppL10n.of(context).settingsRiverBus,
                   value: SettingsService.instance.showRiverBus,
                   onChanged: (v) {
                     SettingsService.instance.setShowRiverBus(v);
@@ -151,7 +183,7 @@ class _SettingsViewState extends State<SettingsView> {
                 ),
                 const _ItemDivider(),
                 _SwitchItem(
-                  label: '항공기',
+                  label: AppL10n.of(context).settingsFlights,
                   value: SettingsService.instance.showFlights,
                   onChanged: (v) {
                     SettingsService.instance.setShowFlights(v);
@@ -164,27 +196,34 @@ class _SettingsViewState extends State<SettingsView> {
             const SizedBox(height: 16),
 
             // Section 1.6: 데이터 소스 — 어떤 API 를 쓸 지
-            _SectionHeader(label: '데이터 소스'),
+            _SectionHeader(label: AppL10n.of(context).settingsSectionDataSource),
             AdaptiveSectionCard(
               children: [
                 _TrailingTextItem(
-                  label: '지하철 모드',
+                  label: AppL10n.of(context).settingsSubwayMode,
                   trailing:
-                      '${SettingsService.instance.mode == 'live' ? '실시간' : '데모'} >',
-                  onTap: () => _showPicker(
-                    title: '지하철 모드',
-                    options: const ['실시간', '데모'],
-                    selected: SettingsService.instance.mode == 'live' ? '실시간' : '데모',
-                    onSelected: (v) {
-                      SettingsService.instance
-                          .setMode(v == '실시간' ? 'live' : 'demo');
-                      setState(() {});
-                    },
-                  ),
+                      '${_subwayModeLabel(context, SettingsService.instance.mode)} >',
+                  onTap: () {
+                    final codes = ['live', 'demo'];
+                    final labels =
+                        codes.map((c) => _subwayModeLabel(context, c)).toList();
+                    _showPicker(
+                      title: AppL10n.of(context).settingsSubwayMode,
+                      options: labels,
+                      selected:
+                          _subwayModeLabel(context, SettingsService.instance.mode),
+                      onSelected: (v) {
+                        final idx = labels.indexOf(v);
+                        if (idx < 0) return;
+                        SettingsService.instance.setMode(codes[idx]);
+                        setState(() {});
+                      },
+                    );
+                  },
                 ),
                 const _ItemDivider(),
                 _SwitchItem(
-                  label: '서울시 공공 API (60s)',
+                  label: AppL10n.of(context).settingsSeoulApi,
                   value: SettingsService.instance.useSeoulApi,
                   onChanged: (v) {
                     SettingsService.instance.setUseSeoulApi(v);
@@ -193,7 +232,7 @@ class _SettingsViewState extends State<SettingsView> {
                 ),
                 const _ItemDivider(),
                 _SwitchItem(
-                  label: '네이버 API (5s 단위 보정)',
+                  label: AppL10n.of(context).settingsNaverApi,
                   value: SettingsService.instance.useNaverApi,
                   onChanged: (v) {
                     SettingsService.instance.setUseNaverApi(v);
@@ -205,11 +244,11 @@ class _SettingsViewState extends State<SettingsView> {
             const SizedBox(height: 16),
 
             // Section 1.8: 라이팅
-            _SectionHeader(label: '라이팅'),
+            _SectionHeader(label: AppL10n.of(context).settingsSectionLighting),
             AdaptiveSectionCard(
               children: [
                 _SwitchItem(
-                  label: '자동 (시간대 + 날씨)',
+                  label: AppL10n.of(context).settingsAutoLighting,
                   value: SettingsService.instance.autoLighting,
                   onChanged: (v) {
                     SettingsService.instance.setAutoLighting(v);
@@ -219,17 +258,24 @@ class _SettingsViewState extends State<SettingsView> {
                 if (!SettingsService.instance.autoLighting) ...[
                   const _ItemDivider(),
                   _TrailingTextItem(
-                    label: '라이트 프리셋',
-                    trailing: '${_lightLabelStatic(SettingsService.instance.lightPreset)} >',
-                    onTap: () => _showPicker(
-                      title: '라이트 프리셋',
-                      options: const ['새벽', '낮', '저녁', '밤'],
-                      selected: _lightLabelStatic(SettingsService.instance.lightPreset),
-                      onSelected: (v) {
-                        SettingsService.instance.setLightPreset(_lightKeyStatic(v));
-                        setState(() {});
-                      },
-                    ),
+                    label: AppL10n.of(context).settingsLightPreset,
+                    trailing: '${_lightLabel(context, SettingsService.instance.lightPreset)} >',
+                    onTap: () {
+                      final codes = ['dawn', 'day', 'dusk', 'night'];
+                      final labels = codes.map((c) => _lightLabel(context, c)).toList();
+                      _showPicker(
+                        title: AppL10n.of(context).settingsLightPreset,
+                        options: labels,
+                        selected: _lightLabel(
+                            context, SettingsService.instance.lightPreset),
+                        onSelected: (v) {
+                          final idx = labels.indexOf(v);
+                          if (idx < 0) return;
+                          SettingsService.instance.setLightPreset(codes[idx]);
+                          setState(() {});
+                        },
+                      );
+                    },
                   ),
                 ],
               ],
@@ -239,11 +285,20 @@ class _SettingsViewState extends State<SettingsView> {
             // Section 2: 데이터 관리
             AdaptiveSectionCard(
               children: [
-                _InfoItem(label: '즐겨찾기', value: '${FavoritesService.instance.favorites.length}개'),
+                _InfoItem(
+                    label: AppL10n.of(context).settingsLabelFavorites,
+                    value: AppL10n.of(context).settingsCountValue(
+                        FavoritesService.instance.favorites.length)),
                 const _ItemDivider(),
-                _InfoItem(label: '방문 기록', value: '${VisitHistoryService.instance.recentVisits.length}개'),
+                _InfoItem(
+                    label: AppL10n.of(context).settingsLabelVisits,
+                    value: AppL10n.of(context).settingsCountValue(
+                        VisitHistoryService.instance.recentVisits.length)),
                 const _ItemDivider(),
-                _InfoItem(label: '최근 검색', value: '${RecentSearchService.instance.items.length}개'),
+                _InfoItem(
+                    label: AppL10n.of(context).settingsLabelRecentSearches,
+                    value: AppL10n.of(context).settingsCountValue(
+                        RecentSearchService.instance.items.length)),
               ],
             ),
             const SizedBox(height: 16),
@@ -284,10 +339,10 @@ class _SettingsViewState extends State<SettingsView> {
                 ),
                 const _ItemDivider(),
                 _TrailingTextItem(
-                  label: 'AI 비서 언어',
+                  label: AppL10n.of(context).settingsAiAssistantLanguage,
                   trailing: '$_language >',
                   onTap: () => _showPicker(
-                    title: 'AI 비서 언어',
+                    title: AppL10n.of(context).settingsAiAssistantLanguage,
                     options: kAiLanguages.map((l) => l.label).toList(),
                     selected: _language,
                     onSelected: (v) {
@@ -304,47 +359,60 @@ class _SettingsViewState extends State<SettingsView> {
                 ),
                 const _ItemDivider(),
                 _TrailingTextItem(
-                  label: '화면 테마',
-                  trailing: '$_themeMode >',
-                  onTap: () => _showPicker(
-                    title: '화면 테마',
-                    options: ['라이트', '다크'],
-                    selected: _themeMode,
-                    onSelected: (v) {
-                      if (v == _themeMode) return;
-                      setState(() => _themeMode = v);
-                      final mode = v == '라이트' ? 'light' : 'dark';
-                      SeoulPrismApp.setThemeMode(context, mode);
-                      // 테마 완전 적용 위해 위젯 트리 재구성 안내.
-                      showAdaptiveConfirmDialog(
-                        context: context,
-                        title: '테마 변경됨',
-                        content:
-                            '$v 모드를 완전히 적용하려면 앱을 재시작해야 해요. 지금 재시작할까요?',
-                        confirmText: '재시작',
-                        cancelText: '나중에',
-                        onConfirm: () {
-                          // 위젯 트리 강제 재구성 (process 재시작은 iOS 가 막음).
-                          SeoulPrismApp.restartApp(context);
-                        },
-                      );
-                    },
-                  ),
+                  label: AppL10n.of(context).settingsThemeMode,
+                  trailing: '${_themeLabel(context, _themeModeCode)} >',
+                  onTap: () {
+                    final codes = ['light', 'dark'];
+                    final labels =
+                        codes.map((c) => _themeLabel(context, c)).toList();
+                    _showPicker(
+                      title: AppL10n.of(context).settingsThemeMode,
+                      options: labels,
+                      selected: _themeLabel(context, _themeModeCode),
+                      onSelected: (v) {
+                        final idx = labels.indexOf(v);
+                        if (idx < 0) return;
+                        final picked = codes[idx];
+                        if (picked == _themeModeCode) return;
+                        setState(() => _themeModeCode = picked);
+                        SeoulPrismApp.setThemeMode(context, picked);
+                        final l = AppL10n.of(context);
+                        showAdaptiveConfirmDialog(
+                          context: context,
+                          title: l.settingsThemeChangedTitle,
+                          content: l.settingsThemeChangedBody(
+                              _themeLabel(context, picked)),
+                          confirmText: l.settingsRestartConfirm,
+                          cancelText: l.commonLater,
+                          onConfirm: () => SeoulPrismApp.restartApp(context),
+                        );
+                      },
+                    );
+                  },
                 ),
                 const _ItemDivider(),
                 _TrailingTextItem(
-                  label: '지도 홈 시작',
-                  trailing: '$_mapHome >',
-                  onTap: () => _showPicker(
-                    title: '지도 홈 시작',
-                    options: ['기본', '내 위치', '최근 검색'],
-                    selected: _mapHome,
-                    onSelected: (v) => setState(() => _mapHome = v),
-                  ),
+                  label: AppL10n.of(context).settingsMapHome,
+                  trailing: '${_mapHomeLabel(context, _mapHomeCode)} >',
+                  onTap: () {
+                    final codes = ['default', 'myLocation', 'recent'];
+                    final labels =
+                        codes.map((c) => _mapHomeLabel(context, c)).toList();
+                    _showPicker(
+                      title: AppL10n.of(context).settingsMapHome,
+                      options: labels,
+                      selected: _mapHomeLabel(context, _mapHomeCode),
+                      onSelected: (v) {
+                        final idx = labels.indexOf(v);
+                        if (idx < 0) return;
+                        setState(() => _mapHomeCode = codes[idx]);
+                      },
+                    );
+                  },
                 ),
                 const _ItemDivider(),
                 _SwitchItem(
-                  label: '화면 자동 잠금 안 함',
+                  label: AppL10n.of(context).settingsKeepScreenOn,
                   value: _screenAutoLockOff,
                   onChanged: (v) {
                     setState(() => _screenAutoLockOff = v);
@@ -356,7 +424,7 @@ class _SettingsViewState extends State<SettingsView> {
                 ),
                 const _ItemDivider(),
                 _SwitchItem(
-                  label: '화면 방향 자동 회전',
+                  label: AppL10n.of(context).settingsAutoRotate,
                   value: _autoRotate,
                   onChanged: (v) {
                     setState(() => _autoRotate = v);
@@ -373,7 +441,7 @@ class _SettingsViewState extends State<SettingsView> {
                 ),
                 const _ItemDivider(),
                 _SwitchItem(
-                  label: '길찾기 출발지를 항상 내위치로',
+                  label: AppL10n.of(context).settingsAlwaysMyLocation,
                   value: _alwaysMyLocation,
                   onChanged: (v) => setState(() => _alwaysMyLocation = v),
                 ),
@@ -385,12 +453,14 @@ class _SettingsViewState extends State<SettingsView> {
             AdaptiveSectionCard(
               children: [
                 _ChevronItem(
-                  label: '사용 기록 전체 삭제',
+                  label: AppL10n.of(context).settingsClearHistory,
                   isDestructive: true,
                   onTap: () => _confirmDeleteHistory(),
                 ),
                 const _ItemDivider(),
-                _ChevronItem(label: '최근 검색 기록 삭제', onTap: () => _confirmClearSearch()),
+                _ChevronItem(
+                    label: AppL10n.of(context).settingsClearSearchHistory,
+                    onTap: () => _confirmClearSearch()),
               ],
             ),
             const SizedBox(height: 16),
@@ -405,7 +475,7 @@ class _SettingsViewState extends State<SettingsView> {
                   return AdaptiveSectionCard(
                     children: [
                       _ChevronItem(
-                        label: '정식 계정으로 전환',
+                        label: AppL10n.of(context).settingsConvertAccount,
                         onTap: () => Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -419,22 +489,22 @@ class _SettingsViewState extends State<SettingsView> {
                 return AdaptiveSectionCard(
                   children: [
                     _ChevronItem(
-                      label: '이름 변경',
+                      label: AppL10n.of(context).settingsEditNameItem,
                       onTap: () => _editUsername(),
                     ),
                     const _ItemDivider(),
                     _ChevronItem(
-                      label: '비밀번호 변경',
+                      label: AppL10n.of(context).settingsChangePassword,
                       onTap: () => _changePassword(),
                     ),
                     const _ItemDivider(),
                     _ChevronItem(
-                      label: '로그아웃',
+                      label: AppL10n.of(context).settingsLogout,
                       onTap: () => _confirmLogout(),
                     ),
                     const _ItemDivider(),
                     _ChevronItem(
-                      label: '회원 탈퇴',
+                      label: AppL10n.of(context).settingsDeleteAccount,
                       isDestructive: true,
                       onTap: () => _confirmDeleteAccount(),
                     ),
@@ -450,7 +520,7 @@ class _SettingsViewState extends State<SettingsView> {
             AdaptiveSectionCard(
               children: [
                 _ChevronItem(
-                  label: '지도 표시 및 데이터',
+                  label: AppL10n.of(context).settingsMapDataLabel,
                   onTap: () async {
                     await Navigator.push(
                       context,
@@ -466,11 +536,11 @@ class _SettingsViewState extends State<SettingsView> {
             const SizedBox(height: 16),
 
             // Section 5.5: 개발자
-            _SectionHeader(label: '개발자'),
+            _SectionHeader(label: AppL10n.of(context).settingsSectionDeveloper),
             AdaptiveSectionCard(
               children: [
                 _SwitchItem(
-                  label: '디버그 로그 출력',
+                  label: AppL10n.of(context).settingsDebugLogs,
                   value: SettingsService.instance.debugLogs,
                   onChanged: (v) {
                     SettingsService.instance.setDebugLogs(v);
@@ -479,16 +549,16 @@ class _SettingsViewState extends State<SettingsView> {
                 ),
                 const _ItemDivider(),
                 _ChevronItem(
-                  label: '튜토리얼 다시 보기',
+                  label: AppL10n.of(context).settingsResetTutorial,
                   onTap: () => _confirmResetTutorial(),
                 ),
                 const _ItemDivider(),
                 _ChevronItem(
-                  label: '새 기능 다시 보기',
+                  label: AppL10n.of(context).settingsReplayWhatsNew,
                   onTap: () async {
                     await OnboardingService.instance.resetWhatsNew();
                     if (!mounted) return;
-                    showAppSnackBar('다음 앱 실행 시 새 기능 안내가 다시 나와요');
+                    showAppSnackBar(AppL10n.of(context).settingsWhatsNewToast);
                   },
                 ),
               ],
@@ -498,10 +568,12 @@ class _SettingsViewState extends State<SettingsView> {
             // Section 6: 앱 정보
             AdaptiveSectionCard(
               children: [
-                _InfoItem(label: '앱 버전', value: 'v$kAppVersion'),
+                _InfoItem(
+                    label: AppL10n.of(context).settingsAppVersion,
+                    value: 'v$kAppVersion'),
                 const _ItemDivider(),
                 _ChevronItem(
-                  label: '개인정보처리방침',
+                  label: AppL10n.of(context).settingsPrivacy,
                   onTap: () => launchUrl(
                     Uri.parse('https://seoulprism.github.io/SeoulPrism_Docs/privacy-policy.html'),
                     mode: LaunchMode.externalApplication,
@@ -509,7 +581,7 @@ class _SettingsViewState extends State<SettingsView> {
                 ),
                 const _ItemDivider(),
                 _ChevronItem(
-                  label: '오픈소스 라이선스',
+                  label: AppL10n.of(context).settingsLicenses,
                   onTap: () {
                     showLicensePage(
                       context: context,
@@ -528,25 +600,24 @@ class _SettingsViewState extends State<SettingsView> {
   }
 
   void _confirmDeleteHistory() {
+    final l = AppL10n.of(context);
     showAdaptiveConfirmDialog(
       context: context,
-      title: '사용 기록 삭제',
-      content: '모든 사용 기록이 삭제됩니다.\n이 작업은 되돌릴 수 없습니다.',
-      confirmText: '삭제',
+      title: l.settingsClearHistoryTitle,
+      content: l.settingsClearHistoryBody,
+      confirmText: l.commonDelete,
       isDestructive: true,
       onConfirm: () async {
-        // 즐겨찾기, 방문 기록, ���근 검색 모두 삭제
         for (final f in List.from(FavoritesService.instance.favorites)) {
           await FavoritesService.instance.remove(f.name);
         }
         await RecentSearchService.instance.clear();
-        // 방��� 기록도 초기화
         await VisitHistoryService.instance.clear();
         if (mounted) {
           setState(() {});
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: const Text('모든 사용 기록이 삭제되었습니다'),
+              content: Text(AppL10n.of(context).settingsClearedHistoryToast),
               behavior: SnackBarBehavior.floating,
               backgroundColor: const Color(0xFF2C2C2E),
               shape: RoundedRectangleBorder(
@@ -559,19 +630,23 @@ class _SettingsViewState extends State<SettingsView> {
   }
 
   void _confirmClearSearch() {
+    final l = AppL10n.of(context);
     showAdaptiveConfirmDialog(
       context: context,
-      title: '검색 기록 삭제',
-      content: '최근 검색 기록이 모두 삭제됩니다.',
-      confirmText: '삭제',
+      title: l.settingsClearSearchTitle,
+      content: l.settingsClearSearchBody,
+      confirmText: l.commonDelete,
       isDestructive: true,
       onConfirm: () async {
         await RecentSearchService.instance.clear();
         if (mounted) {
           setState(() {});
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: const Text('검색 기록이 삭제되었습니다'), behavior: SnackBarBehavior.floating,
-              backgroundColor: const Color(0xFF2C2C2E), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+            SnackBar(
+                content: Text(AppL10n.of(context).settingsClearedSearchToast),
+                behavior: SnackBarBehavior.floating,
+                backgroundColor: const Color(0xFF2C2C2E),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
           );
         }
       },
@@ -579,26 +654,27 @@ class _SettingsViewState extends State<SettingsView> {
   }
 
   void _editUsername() {
+    final l = AppL10n.of(context);
     showAdaptiveConfirmDialog(
       context: context,
-      title: '이름 변경',
-      content: '변경할 이름을 입력해주세요.',
-      confirmText: '변경',
+      title: l.settingsEditNameDialogTitle,
+      content: l.settingsEditNameDialogBody,
+      confirmText: l.settingsEditNameConfirm,
       onConfirm: () async {
-        // 다이얼로그 닫힌 후 입력 다이얼로그
         if (!mounted) return;
+        final l2 = AppL10n.of(context);
         final controller = TextEditingController(
           text: supabase.auth.currentUser?.userMetadata?['username'] ?? '',
         );
         final name = await showDialog<String>(
           context: context,
           builder: (ctx) => AlertDialog(
-            title: const Text('새 이름'),
+            title: Text(l2.settingsNewNameDialogTitle),
             content: TextField(controller: controller, autofocus: true,
               decoration: InputDecoration(border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)))),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('취소')),
-              FilledButton(onPressed: () => Navigator.pop(ctx, controller.text.trim()), child: const Text('확인')),
+              TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l2.commonCancel)),
+              FilledButton(onPressed: () => Navigator.pop(ctx, controller.text.trim()), child: Text(l2.commonConfirm)),
             ],
           ),
         );
@@ -611,19 +687,23 @@ class _SettingsViewState extends State<SettingsView> {
   }
 
   void _changePassword() {
+    final l = AppL10n.of(context);
     final email = supabase.auth.currentUser?.email;
     if (email == null) return;
     showAdaptiveConfirmDialog(
       context: context,
-      title: '비밀번호 변경',
-      content: '$email 으로 비밀번호 재설정 링크를 보냅니다.',
-      confirmText: '발송',
+      title: l.settingsChangePasswordTitle,
+      content: l.settingsChangePasswordBody(email),
+      confirmText: l.settingsSendButton,
       onConfirm: () async {
         await supabase.auth.resetPasswordForEmail(email);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: const Text('재설정 이메일이 발송되었습니다'), behavior: SnackBarBehavior.floating,
-              backgroundColor: const Color(0xFF2C2C2E), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+            SnackBar(
+                content: Text(AppL10n.of(context).settingsPasswordResetSent),
+                behavior: SnackBarBehavior.floating,
+                backgroundColor: const Color(0xFF2C2C2E),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
           );
         }
       },
@@ -631,11 +711,12 @@ class _SettingsViewState extends State<SettingsView> {
   }
 
   void _confirmLogout() {
+    final l = AppL10n.of(context);
     showAdaptiveConfirmDialog(
       context: context,
-      title: '로그아웃',
-      content: '로그아웃 하시겠습니까?',
-      confirmText: '로그아웃',
+      title: l.settingsLogoutTitle,
+      content: l.settingsLogoutBody,
+      confirmText: l.settingsLogoutConfirm,
       isDestructive: true,
       onConfirm: () async {
         await supabase.auth.signOut();
@@ -650,11 +731,12 @@ class _SettingsViewState extends State<SettingsView> {
   }
 
   void _confirmDeleteAccount() {
+    final l = AppL10n.of(context);
     showAdaptiveConfirmDialog(
       context: context,
-      title: '회원 탈퇴',
-      content: '계정과 모든 데이터가 영구적으로 삭제됩니다.\n이 작업은 되돌릴 수 없습니다.',
-      confirmText: '탈퇴',
+      title: l.settingsDeleteAccountTitle,
+      content: l.settingsDeleteAccountBody,
+      confirmText: l.settingsDeleteAccountConfirm,
       isDestructive: true,
       onConfirm: () async {
         try {
@@ -670,7 +752,7 @@ class _SettingsViewState extends State<SettingsView> {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: const Text('탈퇴 처리 중 오류가 발생했습니다'),
+                content: Text(AppL10n.of(context).settingsDeleteError),
                 behavior: SnackBarBehavior.floating,
                 backgroundColor: const Color(0xFFFF453A),
                 shape: RoundedRectangleBorder(
@@ -701,31 +783,15 @@ class _SettingsViewState extends State<SettingsView> {
   // 품질 프리셋은 QualityPresetSegmented 가 직접 처리 — 매핑 함수 불필요.
 
   void _confirmResetTutorial() {
+    final l = AppL10n.of(context);
     showAdaptiveConfirmDialog(
       context: context,
-      title: '튜토리얼 다시 보기',
-      content: '저장된 진행 상태를 지우고 다음 앱 실행 시 튜토리얼을 처음부터 보여드려요.',
-      confirmText: '다시 보기',
+      title: l.settingsResetTutorialTitle,
+      content: l.settingsResetTutorialBody,
+      confirmText: l.settingsResetTutorialConfirm,
       onConfirm: () => OnboardingService.instance.reset(),
     );
   }
-
-  static String _lightLabelStatic(String key) => switch (key) {
-        'auto' => '자동',
-        'dawn' => '새벽',
-        'day' => '낮',
-        'dusk' => '저녁',
-        'night' => '밤',
-        _ => key,
-      };
-  static String _lightKeyStatic(String label) => switch (label) {
-        '자동' => 'auto',
-        '새벽' => 'dawn',
-        '낮' => 'day',
-        '저녁' => 'dusk',
-        '밤' => 'night',
-        _ => label,
-      };
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -765,7 +831,7 @@ class _MapDisplaySettingsViewState extends State<MapDisplaySettingsView> {
           ),
         ),
         title: Text(
-          '지도 표시 및 데이터',
+          AppL10n.of(context).settingsMapDisplayTitle,
           style: TextStyle(
             color: Theme.of(context).colorScheme.onSurface,
             fontSize: 17,
