@@ -2835,6 +2835,35 @@ class AppL10nEn extends AppL10n {
   String get profileEditBirthPlaceholder => 'e.g. 2000';
 
   @override
+  String get profileEditAvatarLabel => 'Profile photo';
+
+  @override
+  String get profileEditAvatarTapHint => 'Tap to change';
+
+  @override
+  String get profileEditAvatarChoose => 'Choose from gallery';
+
+  @override
+  String get profileEditAvatarCamera => 'Take a photo';
+
+  @override
+  String get profileEditAvatarRemove => 'Remove current photo';
+
+  @override
+  String get profileEditAvatarUploading => 'Uploading...';
+
+  @override
+  String get profileEditAvatarRemoveConfirmTitle => 'Remove photo?';
+
+  @override
+  String get profileEditAvatarRemoveConfirmBody =>
+      'Your profile photo will be replaced by your emoji again.';
+
+  @override
+  String get profileEditAvatarFailed =>
+      'Couldn\'t upload the photo. Please try again later.';
+
+  @override
   String get profileEditEmojiLabel => 'Pin emoji';
 
   @override

@@ -5063,6 +5063,60 @@ abstract class AppL10n {
   /// **'e.g. 2000'**
   String get profileEditBirthPlaceholder;
 
+  /// No description provided for @profileEditAvatarLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile photo'**
+  String get profileEditAvatarLabel;
+
+  /// No description provided for @profileEditAvatarTapHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to change'**
+  String get profileEditAvatarTapHint;
+
+  /// No description provided for @profileEditAvatarChoose.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose from gallery'**
+  String get profileEditAvatarChoose;
+
+  /// No description provided for @profileEditAvatarCamera.
+  ///
+  /// In en, this message translates to:
+  /// **'Take a photo'**
+  String get profileEditAvatarCamera;
+
+  /// No description provided for @profileEditAvatarRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove current photo'**
+  String get profileEditAvatarRemove;
+
+  /// No description provided for @profileEditAvatarUploading.
+  ///
+  /// In en, this message translates to:
+  /// **'Uploading...'**
+  String get profileEditAvatarUploading;
+
+  /// No description provided for @profileEditAvatarRemoveConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove photo?'**
+  String get profileEditAvatarRemoveConfirmTitle;
+
+  /// No description provided for @profileEditAvatarRemoveConfirmBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your profile photo will be replaced by your emoji again.'**
+  String get profileEditAvatarRemoveConfirmBody;
+
+  /// No description provided for @profileEditAvatarFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t upload the photo. Please try again later.'**
+  String get profileEditAvatarFailed;
+
   /// No description provided for @profileEditEmojiLabel.
   ///
   /// In en, this message translates to:

@@ -2768,6 +2768,34 @@ class AppL10nKo extends AppL10n {
   String get profileEditBirthPlaceholder => '예: 2000';
 
   @override
+  String get profileEditAvatarLabel => '프로필 사진';
+
+  @override
+  String get profileEditAvatarTapHint => '탭하여 변경';
+
+  @override
+  String get profileEditAvatarChoose => '갤러리에서 선택';
+
+  @override
+  String get profileEditAvatarCamera => '카메라로 촬영';
+
+  @override
+  String get profileEditAvatarRemove => '현재 사진 삭제';
+
+  @override
+  String get profileEditAvatarUploading => '업로드 중...';
+
+  @override
+  String get profileEditAvatarRemoveConfirmTitle => '사진을 삭제할까요?';
+
+  @override
+  String get profileEditAvatarRemoveConfirmBody =>
+      '프로필 사진이 사라지고 이모지로 다시 표시됩니다.';
+
+  @override
+  String get profileEditAvatarFailed => '사진 업로드에 실패했어요. 잠시 후 다시 시도해주세요.';
+
+  @override
   String get profileEditEmojiLabel => '핀 이모지';
 
   @override

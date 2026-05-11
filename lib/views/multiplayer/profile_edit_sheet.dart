@@ -1,9 +1,14 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../l10n/gen/app_localizations.dart';
 import '../../models/multiplayer_models.dart';
 import '../../services/multiplayer_service.dart';
 import '../../widgets/adaptive/adaptive.dart';
+import '../../widgets/app_snackbar.dart';
+import '../../widgets/multiplayer/profile_avatar.dart';
 
 /// 멀티플레이어 프로필 편집 — 닉네임/핀색상/이모지/가시성/출생연도.
 class MultiplayerProfileEditSheet extends StatefulWidget {
@@ -46,6 +51,7 @@ class _MultiplayerProfileEditSheetState
   // 기본값을 friends 로 — ghost 는 의도적으로 비공개를 원하는 사용자가 직접 선택.
   String _visibility = 'friends';
   bool _saving = false;
+  bool _uploadingAvatar = false;
   String? _error;
 
   static const _emojiPalette = [
@@ -148,6 +154,15 @@ class _MultiplayerProfileEditSheetState
             Text(l.profileEditSubtitle,
                 style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
             const SizedBox(height: 24),
+
+            _AvatarSection(
+              profile: MultiplayerService.instance.myProfile,
+              previewEmoji: _pinEmoji,
+              previewColor: _pinColor,
+              uploading: _uploadingAvatar,
+              onTap: _uploadingAvatar ? null : _openAvatarPicker,
+            ),
+            const SizedBox(height: 22),
 
             _Label(text: l.profileEditNicknameLabel),
             AdaptiveTextField(
@@ -283,6 +298,100 @@ class _MultiplayerProfileEditSheetState
       );
   }
 
+  Future<void> _openAvatarPicker() async {
+    final l = AppL10n.of(context);
+    final hasExisting =
+        (MultiplayerService.instance.myProfile?.avatarUrl ?? '').isNotEmpty;
+    final source = await showModalBottomSheet<_AvatarAction>(
+      context: context,
+      showDragHandle: true,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      builder: (ctx) {
+        final cs2 = Theme.of(ctx).colorScheme;
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(8, 0, 8, 12),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.photo_library_rounded),
+                  title: Text(l.profileEditAvatarChoose),
+                  onTap: () => Navigator.pop(ctx, _AvatarAction.gallery),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.photo_camera_rounded),
+                  title: Text(l.profileEditAvatarCamera),
+                  onTap: () => Navigator.pop(ctx, _AvatarAction.camera),
+                ),
+                if (hasExisting)
+                  ListTile(
+                    leading: Icon(Icons.delete_outline_rounded,
+                        color: cs2.error),
+                    title: Text(l.profileEditAvatarRemove,
+                        style: TextStyle(color: cs2.error)),
+                    onTap: () => Navigator.pop(ctx, _AvatarAction.remove),
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+    if (source == null || !mounted) return;
+    switch (source) {
+      case _AvatarAction.gallery:
+        await _pickAndUpload(ImageSource.gallery);
+      case _AvatarAction.camera:
+        await _pickAndUpload(ImageSource.camera);
+      case _AvatarAction.remove:
+        await _confirmAndRemoveAvatar();
+    }
+  }
+
+  Future<void> _pickAndUpload(ImageSource source) async {
+    try {
+      final picker = ImagePicker();
+      // 큰 사진을 그대로 올리면 Storage 비용 + 다운로드 지연. 한 변 1024px,
+      // 80% 품질로 줄여서 평균 100-300KB 수준으로 정리.
+      final picked = await picker.pickImage(
+        source: source,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 80,
+      );
+      if (picked == null || !mounted) return;
+      setState(() => _uploadingAvatar = true);
+      await MultiplayerService.instance.uploadMyAvatar(File(picked.path));
+      if (!mounted) return;
+      setState(() => _uploadingAvatar = false);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _uploadingAvatar = false);
+      final l = AppL10n.of(context);
+      showAppSnackBar(l.profileEditAvatarFailed);
+    }
+  }
+
+  Future<void> _confirmAndRemoveAvatar() async {
+    final l = AppL10n.of(context);
+    await showAdaptiveConfirmDialog(
+      context: context,
+      title: l.profileEditAvatarRemoveConfirmTitle,
+      content: l.profileEditAvatarRemoveConfirmBody,
+      confirmText: l.profileEditAvatarRemove,
+      isDestructive: true,
+      onConfirm: () async {
+        try {
+          await MultiplayerService.instance.removeMyAvatar();
+          if (mounted) setState(() {});
+        } catch (_) {
+          if (mounted) showAppSnackBar(AppL10n.of(context).profileEditAvatarFailed);
+        }
+      },
+    );
+  }
+
   Future<bool> _confirmPublic() async {
     final l = AppL10n.of(context);
     bool result = false;
@@ -413,6 +522,95 @@ class _Label extends StatelessWidget {
               fontSize: 13,
               fontWeight: FontWeight.w600,
               color: cs.onSurfaceVariant)),
+    );
+  }
+}
+
+enum _AvatarAction { gallery, camera, remove }
+
+/// 편집 시트 상단의 큰 아바타 + 카메라 뱃지 + 업로드 진행 상태.
+/// 사진이 없으면 현재 선택 중인 핀 컬러 + 이모지로 미리보기.
+class _AvatarSection extends StatelessWidget {
+  final MultiplayerProfile? profile;
+  final String previewEmoji;
+  final String previewColor;
+  final bool uploading;
+  final VoidCallback? onTap;
+
+  const _AvatarSection({
+    required this.profile,
+    required this.previewEmoji,
+    required this.previewColor,
+    required this.uploading,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final l = AppL10n.of(context);
+
+    // 사진 없을 때는 현재 시트에서 막 고른 이모지/색상을 즉시 반영.
+    final preview = profile == null
+        ? null
+        : MultiplayerProfile(
+            userId: profile!.userId,
+            nickname: profile!.nickname,
+            pinColor: previewColor,
+            pinEmoji: previewEmoji,
+            visibility: profile!.visibility,
+            birthYear: profile!.birthYear,
+            avatarUrl: profile!.avatarUrl,
+          );
+
+    return Center(
+      child: Column(
+        children: [
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              ProfileAvatar(
+                profile: preview,
+                size: 96,
+                emojiSize: 48,
+                borderColor: cs.outlineVariant,
+                onTap: onTap,
+              ),
+              // 카메라 뱃지 — 우하단.
+              Positioned(
+                right: -2,
+                bottom: -2,
+                child: Container(
+                  width: 30,
+                  height: 30,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: cs.primary,
+                    border: Border.all(color: cs.surface, width: 2),
+                  ),
+                  alignment: Alignment.center,
+                  child: uploading
+                      ? SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: cs.onPrimary,
+                          ),
+                        )
+                      : Icon(Icons.camera_alt_rounded,
+                          size: 16, color: cs.onPrimary),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            uploading ? l.profileEditAvatarUploading : l.profileEditAvatarTapHint,
+            style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+          ),
+        ],
+      ),
     );
   }
 }

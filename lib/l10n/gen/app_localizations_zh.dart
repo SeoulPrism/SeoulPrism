@@ -2748,6 +2748,33 @@ class AppL10nZh extends AppL10n {
   String get profileEditBirthPlaceholder => '例如:2000';
 
   @override
+  String get profileEditAvatarLabel => '头像照片';
+
+  @override
+  String get profileEditAvatarTapHint => '点击更换';
+
+  @override
+  String get profileEditAvatarChoose => '从相册选择';
+
+  @override
+  String get profileEditAvatarCamera => '拍摄照片';
+
+  @override
+  String get profileEditAvatarRemove => '删除当前照片';
+
+  @override
+  String get profileEditAvatarUploading => '正在上传...';
+
+  @override
+  String get profileEditAvatarRemoveConfirmTitle => '删除照片?';
+
+  @override
+  String get profileEditAvatarRemoveConfirmBody => '头像照片将被移除,会重新显示表情。';
+
+  @override
+  String get profileEditAvatarFailed => '照片上传失败,请稍后再试。';
+
+  @override
   String get profileEditEmojiLabel => '图钉表情';
 
   @override

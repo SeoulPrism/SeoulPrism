@@ -2767,6 +2767,33 @@ class AppL10nJa extends AppL10n {
   String get profileEditBirthPlaceholder => '例: 2000';
 
   @override
+  String get profileEditAvatarLabel => 'プロフィール写真';
+
+  @override
+  String get profileEditAvatarTapHint => 'タップして変更';
+
+  @override
+  String get profileEditAvatarChoose => 'ライブラリから選択';
+
+  @override
+  String get profileEditAvatarCamera => 'カメラで撮影';
+
+  @override
+  String get profileEditAvatarRemove => '現在の写真を削除';
+
+  @override
+  String get profileEditAvatarUploading => 'アップロード中...';
+
+  @override
+  String get profileEditAvatarRemoveConfirmTitle => '写真を削除しますか?';
+
+  @override
+  String get profileEditAvatarRemoveConfirmBody => 'プロフィール写真が消え、絵文字で再表示されます。';
+
+  @override
+  String get profileEditAvatarFailed => '写真のアップロードに失敗しました。後でもう一度お試しください。';
+
+  @override
   String get profileEditEmojiLabel => 'ピン絵文字';
 
   @override

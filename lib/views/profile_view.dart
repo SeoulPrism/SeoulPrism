@@ -15,6 +15,8 @@ import 'settings_view.dart';
 import 'multiplayer/multiplayer_consent_view.dart';
 import 'multiplayer/multiplayer_hub_view.dart';
 import '../services/multiplayer_service.dart';
+import '../widgets/multiplayer/profile_avatar.dart';
+import 'multiplayer/profile_edit_sheet.dart';
 
 class ProfileView extends StatefulWidget {
   const ProfileView({super.key});
@@ -27,6 +29,23 @@ class _ProfileViewState extends State<ProfileView> {
   int _selectedCategoryIndex = 0;
 
   static const _kCategoryCount = 3;
+
+  @override
+  void initState() {
+    super.initState();
+    // 멀티플레이어 프로필이 바뀌면 (아바타 업로드 포함) 헤더가 즉시 반응하도록.
+    MultiplayerService.instance.addListener(_onMultiplayerChanged);
+  }
+
+  @override
+  void dispose() {
+    MultiplayerService.instance.removeListener(_onMultiplayerChanged);
+    super.dispose();
+  }
+
+  void _onMultiplayerChanged() {
+    if (mounted) setState(() {});
+  }
 
   String _categoryLabel(BuildContext ctx, int index) {
     final l = AppL10n.of(ctx);
@@ -133,26 +152,31 @@ class _ProfileViewState extends State<ProfileView> {
   Widget _buildUserInfo() {
     final cs = Theme.of(context).colorScheme;
     final isM3 = Platform.isAndroid;
+    final mpProfile = MultiplayerService.instance.myProfile;
+    final user = supabase.auth.currentUser;
+    final initial = (user?.userMetadata?['username'] as String?)?.isNotEmpty == true
+        ? user!.userMetadata!['username'] as String
+        : (user?.email ?? '');
 
     return Center(
       child: Column(
         children: [
-          Container(
-            width: 80,
-            height: 80,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: isM3 ? cs.outlineVariant : Colors.white.withValues(alpha: 0.15),
-                width: 1.5,
-              ),
-              color: isM3 ? cs.secondaryContainer : Colors.white.withValues(alpha: 0.08),
-            ),
-            child: Icon(
-              Icons.person_rounded,
-              size: 40,
-              color: isM3 ? cs.onSecondaryContainer : Colors.white.withValues(alpha: 0.50),
-            ),
+          ProfileAvatar(
+            profile: mpProfile,
+            fallbackInitial: initial,
+            size: 80,
+            emojiSize: 40,
+            borderColor: isM3
+                ? cs.outlineVariant
+                : Colors.white.withValues(alpha: 0.15),
+            // 멀티플레이어 프로필이 있을 때만 탭으로 사진 변경 (edit sheet).
+            // 없으면 아래 Seoul Live 카드를 통해 먼저 가입을 유도.
+            onTap: mpProfile == null
+                ? null
+                : () async {
+                    await MultiplayerProfileEditSheet.show(context);
+                    if (mounted) setState(() {});
+                  },
           ),
           const SizedBox(height: 14),
           Builder(
