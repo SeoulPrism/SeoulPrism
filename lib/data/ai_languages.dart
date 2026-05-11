@@ -97,6 +97,10 @@ const String _koPrompt = '''
 - open_multiplayer: Seoul Live (친구 위치 공유) 허브.
 - open_spotify: Spotify 친구 곡 뷰.
 - set_live_visibility: Seoul Live 위치 공유 모드. visibility="normal" 면 친구에게 위치 보임, "ghost" 면 위치 숨김.
+- toggle_layer: 지도 레이어 켜기/끄기.
+  layer 종류: subway(지하철 노선), trains(열차 위치), stations(역), buses(버스), river_bus(한강버스), flights(항공).
+  enable=true 면 켜기, false 면 끄기, 비우면 현재 상태에서 토글.
+  예: "버스 보여줘" → toggle_layer(layer="buses", enable=true). "지하철 꺼줘" → layer="subway", enable=false.
 
 == 코스 조절 흐름 ==
 - 장소를 찾으면 "이 코스 어때? 수정하고 싶은 거 있어?" 물어봐.
@@ -150,6 +154,11 @@ Personality:
 - open_multiplayer: Seoul Live friend-sharing hub.
 - open_spotify: Spotify friends.
 - set_live_visibility: visibility="normal" shows you, "ghost" hides you.
+- toggle_layer: turn map layers on/off.
+  Layers: subway, trains, stations, buses, river_bus, flights.
+  enable=true to turn on, false to turn off, omit to toggle current state.
+  Examples: "show buses" → toggle_layer(layer="buses", enable=true).
+  "hide subway" → layer="subway", enable=false.
 
 == Course flow ==
 - After finding places, ask "How does this look? Want to change anything?"
@@ -203,6 +212,10 @@ const String _jaPrompt = '''
 - open_recommendation / open_saved / open_travel
 - open_multiplayer (Seoul Live) / open_spotify
 - set_live_visibility: "normal" は位置公開、"ghost" は非公開。
+- toggle_layer: 地図レイヤーの表示切替。
+  layer: subway(地下鉄路線) / trains(列車) / stations(駅) / buses(バス) / river_bus(漢江バス) / flights(航空)。
+  enable=true で表示、false で非表示、省略で現在の状態を反転。
+  例: 「バス見せて」→ toggle_layer(layer="buses", enable=true)。
 
 == 意図の判別 (重要) ==
 - 「旅行」「プラン」「コース」「行程」が含まれていれば → create_plan または open_travel。

@@ -42,6 +42,7 @@ enum AiAction {
   openMultiplayer,    // Seoul Live 허브 열기
   openSpotify,        // Spotify 뷰 열기
   setLiveVisibility,  // Seoul Live 위치 공유 모드 변경 (ghost / normal)
+  toggleLayer,        // 지도 레이어 토글 (지하철·버스·한강버스·항공·역)
 }
 
 /// AI가 실행할 액션 데이터
@@ -315,6 +316,7 @@ class GeminiLiveService {
         case 'open_multiplayer': action = AiAction.openMultiplayer; break;
         case 'open_spotify': action = AiAction.openSpotify; break;
         case 'set_live_visibility': action = AiAction.setLiveVisibility; break;
+        case 'toggle_layer': action = AiAction.toggleLayer; break;
       }
 
       if (action != null) {
@@ -397,6 +399,18 @@ class GeminiLiveService {
         'visibility': Schema.enumString(
           enumValues: ['normal', 'ghost'],
           description: 'normal=친구에게 위치 보임, ghost=숨김',
+        ),
+      }),
+    FunctionDeclaration('toggle_layer',
+      '지도 레이어 표시/숨김 토글 (지하철 노선·열차·역·버스·한강버스·항공)',
+      parameters: {
+        'layer': Schema.enumString(
+          enumValues: ['subway', 'trains', 'stations', 'buses', 'river_bus', 'flights'],
+          description: '레이어 종류',
+        ),
+        'enable': Schema.boolean(
+          description: 'true=켜기, false=끄기. 비우면 현재 상태에서 토글',
+          nullable: true,
         ),
       }),
   ];

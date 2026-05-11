@@ -110,6 +110,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
       GlobalKey<UnifiedSearchBarState>();
   PlaceSearchResult? _selectedPlace;
   PlaceSearchResult? _lastSelectedPlace;
+
+  // 동/리/도로명 + 번지로 끝나는 주소 라벨 패턴 (예: "가회동60", "삼청동34-1",
+  // "북촌로5길12"). POI 탭 핸들러에서 이런 라벨이 들어오면 키워드 검색을
+  // 스킵해 같은 주소의 무관한 가게가 패널에 뜨는 걸 막는다.
+  static final RegExp _addressLabelRegex =
+      RegExp(r'(동|리|로|길)\s*\d+(-\d+)?$');
   RiverBusStop? _selectedRiverStop;
   RiverBusStop? _lastSelectedRiverStop;
 
@@ -1043,18 +1049,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
       _mapController?.hideRiverBusHighlight();
       _setSelectedRiverStop(null);
 
+      // "가회동60" / "북촌로5길12" 같은 지번·도로명 라벨은 가게가 아니라 주소다.
+      // 그대로 키워드 검색하면 같은 주소에 등록된 엉뚱한 가게가 매칭돼서
+      // 패널에 뜬다 (예: 가회동60 → 슈가살롱). 주소 라벨이면 검색 자체를 스킵.
+      final isAddressLabel = _addressLabelRegex.hasMatch(name.trim());
+
       final basicPlace = PlaceSearchResult(
         name: name,
-        address: '',
-        category: '장소',
+        address: isAddressLabel ? name : '',
+        category: isAddressLabel ? '주소' : '장소',
         lat: lat,
         lng: lng,
       );
       _showPlaceMarker(basicPlace);
-      setState(() => _setSelectedPlace(null));
 
       // 방문 기록 저장
       VisitHistoryService.instance.recordVisit(name, '장소', lat, lng);
+
+      if (isAddressLabel) {
+        setState(() => _setSelectedPlace(basicPlace));
+        return;
+      }
+
+      setState(() => _setSelectedPlace(null));
 
       // 카카오 API 완료 후 패널 표시
       PlaceSearchService.instance.search(name).then((results) {
@@ -3029,12 +3046,58 @@ class _DashboardScreenState extends State<DashboardScreen> {
         final v = event.params['visibility'] as String? ?? 'normal';
         MultiplayerService.instance.setVisibility(v == 'ghost' ? 'ghost' : 'normal');
         break;
+      case AiAction.toggleLayer:
+        _handleAiToggleLayer(
+          event.params['layer'] as String? ?? '',
+          event.params['enable'] as bool?,
+        );
+        break;
       case AiAction.requestPhoto:
       case AiAction.addPlaces:
       case AiAction.removePlace:
       case AiAction.confirmPlan:
         break;
     }
+  }
+
+  /// AI: 지도 레이어 표시 토글 (지하철 / 열차 / 역 / 버스 / 한강버스 / 항공).
+  /// enable=null 이면 현재 상태에서 토글, true/false 면 강제 지정.
+  void _handleAiToggleLayer(String layer, bool? enable) {
+    final s = SettingsService.instance;
+    bool current;
+    void Function(bool) setter;
+    switch (layer) {
+      case 'subway':
+        current = s.showRoutes;
+        setter = s.setShowRoutes;
+        break;
+      case 'trains':
+        current = s.showTrains;
+        setter = s.setShowTrains;
+        break;
+      case 'stations':
+        current = s.showStations;
+        setter = s.setShowStations;
+        break;
+      case 'buses':
+        current = s.showBuses;
+        setter = s.setShowBuses;
+        break;
+      case 'river_bus':
+        current = s.showRiverBus;
+        setter = s.setShowRiverBus;
+        break;
+      case 'flights':
+        current = s.showFlights;
+        setter = s.setShowFlights;
+        break;
+      default:
+        return;
+    }
+    final next = enable ?? !current;
+    if (next == current) return;
+    setter(next);
+    if (mounted) setState(() {});
   }
 
   /// AI: 즐겨찾기 토글. placeName 지정 시 그 장소, 없으면 _selectedPlace.

@@ -268,6 +268,8 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
         return 'open_spotify';
       case AiAction.setLiveVisibility:
         return 'set_live_visibility';
+      case AiAction.toggleLayer:
+        return 'toggle_layer';
     }
   }
 
@@ -373,6 +375,12 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
           'message': v == 'ghost'
               ? 'Seoul Live 위치 공유를 숨겼어 (ghost 모드).'
               : 'Seoul Live 위치 공유를 켰어. 친구가 위치를 볼 수 있어.',
+        };
+      case AiAction.toggleLayer:
+        final layer = action.params['layer'] as String? ?? '';
+        return {
+          'status': 'success',
+          'message': '$layer 레이어를 토글했어.',
         };
     }
   }
