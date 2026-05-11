@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../l10n/gen/app_localizations.dart';
 import '../../models/multiplayer_models.dart';
 import '../../services/multiplayer_service.dart';
 import 'peer_profile_card.dart';
@@ -71,7 +72,7 @@ class _MyAvatarSheetState extends State<MyAvatarSheet> {
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 24),
               child: Text(
-                '친구방에 들어가면 친구들이 여기에 보여요',
+                AppL10n.of(context).avatarNoRoomHint,
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant),
               ),
@@ -80,7 +81,7 @@ class _MyAvatarSheetState extends State<MyAvatarSheet> {
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 24),
               child: Text(
-                '아직 같이 있는 친구가 없어요',
+                AppL10n.of(context).avatarNoRoomMembers,
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant),
               ),
@@ -89,7 +90,7 @@ class _MyAvatarSheetState extends State<MyAvatarSheet> {
             Padding(
               padding: const EdgeInsets.only(bottom: 8, left: 4),
               child: Text(
-                '같이 있는 친구 ${memberIds.length}명',
+                AppL10n.of(context).avatarRoomMembersCount(memberIds.length),
                 style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
@@ -135,7 +136,7 @@ class _MeHeader extends StatelessWidget {
                       fontWeight: FontWeight.w800,
                       color: cs.onSurface)),
               const SizedBox(height: 2),
-              Text('나의 핀',
+              Text(AppL10n.of(context).avatarMyPin,
                   style: TextStyle(
                       fontSize: 11, color: cs.onSurfaceVariant)),
               if (track != null) ...[
@@ -230,7 +231,7 @@ class _MemberRowState extends State<_MemberRow> {
                     if (track != null)
                       _TrackInline(track: track)
                     else
-                      Text('지금 듣는 곡 없음',
+                      Text(AppL10n.of(context).avatarNoTrack,
                           style: TextStyle(
                               fontSize: 11,
                               color: cs.onSurfaceVariant

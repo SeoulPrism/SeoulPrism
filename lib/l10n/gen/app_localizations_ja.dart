@@ -3104,4 +3104,322 @@ class AppL10nJa extends AppL10n {
 
   @override
   String get optRecommended => '推奨';
+
+  @override
+  String get vehicleCongestion => '混雑度';
+
+  @override
+  String get vehicleCongestionNone => '情報なし';
+
+  @override
+  String get vehicleCongestionFree => '余裕';
+
+  @override
+  String get vehicleCongestionNormal => '普通';
+
+  @override
+  String get vehicleCongestionBusy => '混雑';
+
+  @override
+  String get vehicleCongestionPacked => '非常に混雑';
+
+  @override
+  String get vehicleCongestionFull => '満員';
+
+  @override
+  String get vehicleStatus => '状態';
+
+  @override
+  String get vehicleStopped => '停車中';
+
+  @override
+  String get vehicleRunning => '運行中';
+
+  @override
+  String get vehicleSection => '区間';
+
+  @override
+  String vehicleSectionOrd(int ord) {
+    return '$ord番目';
+  }
+
+  @override
+  String get vehicleBusLowFloor => '低床バス';
+
+  @override
+  String get vehicleBusRegular => '一般バス';
+
+  @override
+  String get vehiclePhaseAscent => '上昇';
+
+  @override
+  String get vehiclePhaseCruise => '巡航';
+
+  @override
+  String get vehiclePhaseDescent => '降下';
+
+  @override
+  String get vehiclePhaseTakeoff => '離着陸';
+
+  @override
+  String get vehiclePhaseGround => '地上';
+
+  @override
+  String get vehicleAltitude => '高度';
+
+  @override
+  String get vehicleAltitudeOnGround => '地上';
+
+  @override
+  String get vehicleSpeed => '速度';
+
+  @override
+  String get vehicleHeading => '方向';
+
+  @override
+  String vehicleRiverBusRoute(String name) {
+    return 'ハンガンバス $name';
+  }
+
+  @override
+  String get vehicleRiverDirNormal => '正方向';
+
+  @override
+  String get vehicleRiverDirReverse => '逆方向';
+
+  @override
+  String get vehicleRiverPhaseStop => '停泊';
+
+  @override
+  String get vehicleNext => '次';
+
+  @override
+  String get vehicleProgress => '進行';
+
+  @override
+  String get deepLinkRoomLoginRequired => 'ログイン後にルームへ入れます';
+
+  @override
+  String deepLinkRoomEntered(String code) {
+    return 'ルーム入場 — コード $code';
+  }
+
+  @override
+  String deepLinkRoomFailure(String error) {
+    return 'ルーム入場失敗: $error';
+  }
+
+  @override
+  String get snsAnalysisTitle => '分析結果';
+
+  @override
+  String get snsAnalysisEmpty => '抽出された場所がありません';
+
+  @override
+  String snsAnalysisCreatePlans(int count) {
+    return 'プラン作成 ($count件)';
+  }
+
+  @override
+  String snsAnalysisPlanFailure(String error) {
+    return 'プラン作成失敗: $error';
+  }
+
+  @override
+  String snsAnalysisNearestStation(String station, int minutes) {
+    return '📍 $station駅 · $minutes分';
+  }
+
+  @override
+  String get avatarMyPin => '私のピン';
+
+  @override
+  String get avatarNoRoomHint => '友だちルームに参加すると友だちが表示されます';
+
+  @override
+  String get avatarNoRoomMembers => 'まだ一緒にいる友だちがいません';
+
+  @override
+  String avatarRoomMembersCount(int count) {
+    return '一緒の友だち $count人';
+  }
+
+  @override
+  String get avatarNoTrack => '再生中の曲はありません';
+
+  @override
+  String get qrScanTitle => 'QR スキャン';
+
+  @override
+  String qrScanCameraError(String error) {
+    return 'カメラを使用できません\n$error';
+  }
+
+  @override
+  String get qrScanHint => '友だちの QR をフレームに合わせてください';
+
+  @override
+  String get buildingOccupantsFallbackName => '建物';
+
+  @override
+  String buildingOccupantsInside(int count) {
+    return '$count人が中にいます';
+  }
+
+  @override
+  String get buildingOccupantsEmpty => '建物から出ました';
+
+  @override
+  String buildingOccupantsListening(String name, String artist) {
+    return '🎵 $name · $artist を聴いています';
+  }
+
+  @override
+  String get buildingOccupantsInBuilding => '🏢 建物の中にいます';
+
+  @override
+  String get weatherWeeklyLabel => '週間';
+
+  @override
+  String get weatherToday => '今日';
+
+  @override
+  String get weatherDayMon => '月';
+
+  @override
+  String get weatherDayTue => '火';
+
+  @override
+  String get weatherDayWed => '水';
+
+  @override
+  String get weatherDayThu => '木';
+
+  @override
+  String get weatherDayFri => '金';
+
+  @override
+  String get weatherDaySat => '土';
+
+  @override
+  String get weatherDaySun => '日';
+
+  @override
+  String get locPermTitle => '位置情報の許可が必要です';
+
+  @override
+  String get locPermBody => '現在地を地図に表示し、周辺情報や経路を正確に案内するために\n位置情報の許可が必要です。';
+
+  @override
+  String get locPermRequesting => 'リクエスト中...';
+
+  @override
+  String get locPermRequest => '位置情報を許可';
+
+  @override
+  String get locPermGranted => '✓ 位置情報を許可済み';
+
+  @override
+  String get locPermDenied => '拒否されました — 設定から直接許可できます';
+
+  @override
+  String get locPermRetry => '再試行';
+
+  @override
+  String get groupEditorTitle => '友だちグループ';
+
+  @override
+  String get groupEditorNew => '新規グループ';
+
+  @override
+  String get groupEditorEmpty => 'まだグループがありません';
+
+  @override
+  String get groupEditorEmptyHint => '右上の + ボタンでグループを作成して友だちを分類しましょう。';
+
+  @override
+  String get groupEditorHelper => 'グループ別の公開範囲 / チャットに使えます';
+
+  @override
+  String get groupEditorNamePlaceholder => '例: 家族、仕事、サークル';
+
+  @override
+  String get groupEditorCreate => '作成';
+
+  @override
+  String groupEditorFailure(String error) {
+    return '失敗: $error';
+  }
+
+  @override
+  String groupEditorMemberCount(int count) {
+    return '$count人';
+  }
+
+  @override
+  String groupEditorDeleteTitle(String name) {
+    return '$name グループ削除';
+  }
+
+  @override
+  String get groupEditorDeleteBody => 'グループのみ削除され、友だちは保持されます。';
+
+  @override
+  String get groupEditorDelete => '削除';
+
+  @override
+  String get groupEditorAddFriendsHint => '先に友だちを追加してください。';
+
+  @override
+  String get peerPinDestinationFallback => '目的地';
+
+  @override
+  String peerPinDestinationLabel(String name) {
+    return '🎯 $name';
+  }
+
+  @override
+  String get stationDetailCloseLabel => '駅の詳細を閉じる';
+
+  @override
+  String get stationDetailDeparture => '出発';
+
+  @override
+  String get stationDetailArrival => '到着';
+
+  @override
+  String get stationDetailLiveArrivals => 'リアルタイム発車情報';
+
+  @override
+  String get stationDetailLoading => '読み込み中...';
+
+  @override
+  String get stationDetailNoArrivals => '到着情報なし';
+
+  @override
+  String get stationDetailCrowdVery => '非常に混雑';
+
+  @override
+  String get stationDetailCrowdBusy => '混雑';
+
+  @override
+  String get stationDetailCrowdNormal => '普通';
+
+  @override
+  String get stationDetailCrowdFree => '余裕';
+
+  @override
+  String stationDetailBoardingCount(String count) {
+    return '乗車 $count人';
+  }
+
+  @override
+  String stationDetailAlightingCount(String count) {
+    return '降車 $count人';
+  }
+
+  @override
+  String stationDetailClosureCount(int count) {
+    return '施設閉鎖 $count件';
+  }
 }

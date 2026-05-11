@@ -1032,7 +1032,7 @@ class StationDetailPanel extends StatelessWidget {
                     AppCircleButton(
                       icon: Icons.close,
                       onTap: onClose ?? () {},
-                      semanticLabel: '역 상세 닫기',
+                      semanticLabel: AppL10n.of(context).stationDetailCloseLabel,
                     ),
                   ],
                 ),
@@ -1046,23 +1046,23 @@ class StationDetailPanel extends StatelessWidget {
                     children: [
                       if (onSetDeparture != null)
                         Expanded(
-                          child: _navButton('출발', Icons.trip_origin, lineColors.first, () => onSetDeparture!(stationName)),
+                          child: _navButton(AppL10n.of(context).stationDetailDeparture, Icons.trip_origin, lineColors.first, () => onSetDeparture!(stationName)),
                         ),
                       if (onSetDeparture != null && onSetArrival != null)
                         const SizedBox(width: 8),
                       if (onSetArrival != null)
                         Expanded(
-                          child: _navButton('도착', Icons.place, Colors.redAccent, () => onSetArrival!(stationName)),
+                          child: _navButton(AppL10n.of(context).stationDetailArrival, Icons.place, Colors.redAccent, () => onSetArrival!(stationName)),
                         ),
                     ],
                   ),
                 ),
 
               // ── 혼잡도 정보 ──
-              _buildCongestionRow(lineColors.first),
+              _buildCongestionRow(context, lineColors.first),
 
               // ── 시설 폐쇄 안내 ──
-              _buildClosureSection(),
+              _buildClosureSection(context),
 
               // ── 출발 정보 라벨 ──
               Padding(
@@ -1071,7 +1071,7 @@ class StationDetailPanel extends StatelessWidget {
                   children: [
                     Icon(Icons.departure_board, size: 14, color: lineColors.first),
                     const SizedBox(width: AppSpacing.sm),
-                    Text('실시간 출발 정보', style: AppTypography.bodySm.copyWith(fontWeight: FontWeight.w600)),
+                    Text(AppL10n.of(context).stationDetailLiveArrivals, style: AppTypography.bodySm.copyWith(fontWeight: FontWeight.w600)),
                     const Spacer(),
                     if (isLoading)
                       SizedBox(width: AppSpacing.md, height: AppSpacing.md, child: CircularProgressIndicator(strokeWidth: 1.5, color: AppColors.textDisabled)),
@@ -1083,12 +1083,12 @@ class StationDetailPanel extends StatelessWidget {
               if (isLoading && arrivals.isEmpty)
                 Padding(
                   padding: const EdgeInsets.all(AppSpacing.xl),
-                  child: Center(child: Text('조회 중...', style: AppTypography.bodySm.copyWith(color: Colors.grey))),
+                  child: Center(child: Text(AppL10n.of(context).stationDetailLoading, style: AppTypography.bodySm.copyWith(color: Colors.grey))),
                 )
               else if (arrivals.isEmpty)
                 Padding(
                   padding: const EdgeInsets.all(AppSpacing.xl),
-                  child: Center(child: Text('도착 정보 없음', style: AppTypography.bodySm.copyWith(color: Colors.grey))),
+                  child: Center(child: Text(AppL10n.of(context).stationDetailNoArrivals, style: AppTypography.bodySm.copyWith(color: Colors.grey))),
                 )
               else
                 Builder(builder: (context) {
@@ -1257,7 +1257,8 @@ class StationDetailPanel extends StatelessWidget {
     );
   }
 
-  Widget _buildCongestionRow(Color primaryColor) {
+  Widget _buildCongestionRow(BuildContext context, Color primaryColor) {
+    final l = AppL10n.of(context);
     final service = CongestionService.instance;
     if (!service.isLoaded) return const SizedBox.shrink();
 
@@ -1269,16 +1270,16 @@ class StationDetailPanel extends StatelessWidget {
     final String crowdLabel;
     if (crowding > 0.7) {
       crowdColor = Colors.red;
-      crowdLabel = '매우 혼잡';
+      crowdLabel = l.stationDetailCrowdVery;
     } else if (crowding > 0.4) {
       crowdColor = Colors.orange;
-      crowdLabel = '혼잡';
+      crowdLabel = l.stationDetailCrowdBusy;
     } else if (crowding > 0.2) {
       crowdColor = Colors.amber;
-      crowdLabel = '보통';
+      crowdLabel = l.stationDetailCrowdNormal;
     } else {
       crowdColor = Colors.green;
-      crowdLabel = '여유';
+      crowdLabel = l.stationDetailCrowdFree;
     }
 
     final formatter = RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))');
@@ -1300,12 +1301,12 @@ class StationDetailPanel extends StatelessWidget {
           ),
           const SizedBox(width: AppSpacing.sm),
           Text(
-            '승차 ${fmt(congestion.boarding)}명',
+            l.stationDetailBoardingCount(fmt(congestion.boarding)),
             style: AppTypography.caption.copyWith(color: Colors.blue.shade300),
           ),
           const SizedBox(width: AppSpacing.sm),
           Text(
-            '하차 ${fmt(congestion.alighting)}명',
+            l.stationDetailAlightingCount(fmt(congestion.alighting)),
             style: AppTypography.caption.copyWith(color: Colors.orange.shade300),
           ),
         ],
@@ -1314,7 +1315,8 @@ class StationDetailPanel extends StatelessWidget {
   }
 
   /// 시설 임시폐쇄 정보 섹션
-  Widget _buildClosureSection() {
+  Widget _buildClosureSection(BuildContext context) {
+    final l = AppL10n.of(context);
     final closures = ClosureService.instance.getClosures(stationName);
     if (closures.isEmpty) return const SizedBox.shrink();
 
@@ -1336,7 +1338,7 @@ class StationDetailPanel extends StatelessWidget {
                 const Icon(Icons.construction, size: 14, color: Colors.orange),
                 const SizedBox(width: AppSpacing.xs),
                 Text(
-                  '시설 폐쇄 ${closures.length}건',
+                  l.stationDetailClosureCount(closures.length),
                   style: AppTypography.bodySm.copyWith(
                     fontWeight: FontWeight.w700,
                     color: Colors.orange,

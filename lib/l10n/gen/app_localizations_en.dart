@@ -3179,4 +3179,325 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get optRecommended => 'Recommended';
+
+  @override
+  String get vehicleCongestion => 'Crowdedness';
+
+  @override
+  String get vehicleCongestionNone => 'No data';
+
+  @override
+  String get vehicleCongestionFree => 'Light';
+
+  @override
+  String get vehicleCongestionNormal => 'Normal';
+
+  @override
+  String get vehicleCongestionBusy => 'Busy';
+
+  @override
+  String get vehicleCongestionPacked => 'Very crowded';
+
+  @override
+  String get vehicleCongestionFull => 'Full';
+
+  @override
+  String get vehicleStatus => 'Status';
+
+  @override
+  String get vehicleStopped => 'Stopped';
+
+  @override
+  String get vehicleRunning => 'Running';
+
+  @override
+  String get vehicleSection => 'Section';
+
+  @override
+  String vehicleSectionOrd(int ord) {
+    return 'Stop $ord';
+  }
+
+  @override
+  String get vehicleBusLowFloor => 'Low-floor';
+
+  @override
+  String get vehicleBusRegular => 'Standard';
+
+  @override
+  String get vehiclePhaseAscent => 'Climbing';
+
+  @override
+  String get vehiclePhaseCruise => 'Cruise';
+
+  @override
+  String get vehiclePhaseDescent => 'Descent';
+
+  @override
+  String get vehiclePhaseTakeoff => 'Takeoff/landing';
+
+  @override
+  String get vehiclePhaseGround => 'On ground';
+
+  @override
+  String get vehicleAltitude => 'Altitude';
+
+  @override
+  String get vehicleAltitudeOnGround => 'Ground';
+
+  @override
+  String get vehicleSpeed => 'Speed';
+
+  @override
+  String get vehicleHeading => 'Heading';
+
+  @override
+  String vehicleRiverBusRoute(String name) {
+    return 'Han River bus $name';
+  }
+
+  @override
+  String get vehicleRiverDirNormal => 'Forward';
+
+  @override
+  String get vehicleRiverDirReverse => 'Reverse';
+
+  @override
+  String get vehicleRiverPhaseStop => 'Docked';
+
+  @override
+  String get vehicleNext => 'Next';
+
+  @override
+  String get vehicleProgress => 'Progress';
+
+  @override
+  String get deepLinkRoomLoginRequired => 'Sign in to join a friend room';
+
+  @override
+  String deepLinkRoomEntered(String code) {
+    return 'Joined room — code $code';
+  }
+
+  @override
+  String deepLinkRoomFailure(String error) {
+    return 'Couldn\'t join the room: $error';
+  }
+
+  @override
+  String get snsAnalysisTitle => 'Analysis';
+
+  @override
+  String get snsAnalysisEmpty => 'No places extracted';
+
+  @override
+  String snsAnalysisCreatePlans(int count) {
+    return 'Create plan ($count)';
+  }
+
+  @override
+  String snsAnalysisPlanFailure(String error) {
+    return 'Couldn\'t build a plan: $error';
+  }
+
+  @override
+  String snsAnalysisNearestStation(String station, int minutes) {
+    return '📍 $station station · $minutes min';
+  }
+
+  @override
+  String get avatarMyPin => 'My pin';
+
+  @override
+  String get avatarNoRoomHint => 'Join a friend room to see friends here';
+
+  @override
+  String get avatarNoRoomMembers => 'No one\'s with you yet';
+
+  @override
+  String avatarRoomMembersCount(int count) {
+    return 'With you · $count';
+  }
+
+  @override
+  String get avatarNoTrack => 'Not listening to anything';
+
+  @override
+  String get qrScanTitle => 'Scan QR';
+
+  @override
+  String qrScanCameraError(String error) {
+    return 'Camera unavailable\n$error';
+  }
+
+  @override
+  String get qrScanHint => 'Frame your friend\'s QR code';
+
+  @override
+  String get buildingOccupantsFallbackName => 'Building';
+
+  @override
+  String buildingOccupantsInside(int count) {
+    return '$count inside';
+  }
+
+  @override
+  String get buildingOccupantsEmpty => 'Everyone left the building';
+
+  @override
+  String buildingOccupantsListening(String name, String artist) {
+    return '🎵 Listening to $name · $artist';
+  }
+
+  @override
+  String get buildingOccupantsInBuilding => '🏢 Inside the building';
+
+  @override
+  String get weatherWeeklyLabel => 'Weekly';
+
+  @override
+  String get weatherToday => 'Today';
+
+  @override
+  String get weatherDayMon => 'Mon';
+
+  @override
+  String get weatherDayTue => 'Tue';
+
+  @override
+  String get weatherDayWed => 'Wed';
+
+  @override
+  String get weatherDayThu => 'Thu';
+
+  @override
+  String get weatherDayFri => 'Fri';
+
+  @override
+  String get weatherDaySat => 'Sat';
+
+  @override
+  String get weatherDaySun => 'Sun';
+
+  @override
+  String get locPermTitle => 'Location permission needed';
+
+  @override
+  String get locPermBody =>
+      'We need location access to show your position on the map\nand to provide accurate nearby info / directions.';
+
+  @override
+  String get locPermRequesting => 'Requesting…';
+
+  @override
+  String get locPermRequest => 'Allow location';
+
+  @override
+  String get locPermGranted => '✓ Location allowed';
+
+  @override
+  String get locPermDenied => 'Denied — enable it from Settings';
+
+  @override
+  String get locPermRetry => 'Retry';
+
+  @override
+  String get groupEditorTitle => 'Friend groups';
+
+  @override
+  String get groupEditorNew => 'New group';
+
+  @override
+  String get groupEditorEmpty => 'No groups yet';
+
+  @override
+  String get groupEditorEmptyHint =>
+      'Tap + at top-right to create a group and organize friends.';
+
+  @override
+  String get groupEditorHelper => 'Used for group-based visibility / chat';
+
+  @override
+  String get groupEditorNamePlaceholder => 'e.g. Family, Work, Club';
+
+  @override
+  String get groupEditorCreate => 'Create';
+
+  @override
+  String groupEditorFailure(String error) {
+    return 'Failed: $error';
+  }
+
+  @override
+  String groupEditorMemberCount(int count) {
+    return '$count';
+  }
+
+  @override
+  String groupEditorDeleteTitle(String name) {
+    return 'Delete group $name';
+  }
+
+  @override
+  String get groupEditorDeleteBody =>
+      'Only the group is deleted; friends are kept.';
+
+  @override
+  String get groupEditorDelete => 'Delete';
+
+  @override
+  String get groupEditorAddFriendsHint => 'Add friends first.';
+
+  @override
+  String get peerPinDestinationFallback => 'Destination';
+
+  @override
+  String peerPinDestinationLabel(String name) {
+    return '🎯 $name';
+  }
+
+  @override
+  String get stationDetailCloseLabel => 'Close station detail';
+
+  @override
+  String get stationDetailDeparture => 'Start';
+
+  @override
+  String get stationDetailArrival => 'End';
+
+  @override
+  String get stationDetailLiveArrivals => 'Live arrivals';
+
+  @override
+  String get stationDetailLoading => 'Loading…';
+
+  @override
+  String get stationDetailNoArrivals => 'No arrival info';
+
+  @override
+  String get stationDetailCrowdVery => 'Very crowded';
+
+  @override
+  String get stationDetailCrowdBusy => 'Crowded';
+
+  @override
+  String get stationDetailCrowdNormal => 'Normal';
+
+  @override
+  String get stationDetailCrowdFree => 'Light';
+
+  @override
+  String stationDetailBoardingCount(String count) {
+    return 'Boarding $count';
+  }
+
+  @override
+  String stationDetailAlightingCount(String count) {
+    return 'Alighting $count';
+  }
+
+  @override
+  String stationDetailClosureCount(int count) {
+    return '$count closures';
+  }
 }

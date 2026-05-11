@@ -2,6 +2,8 @@ import 'package:flutter/widgets.dart';
 
 import '../../core/debug_log.dart';
 import '../../core/map_interface.dart';
+import '../../l10n/gen/app_localizations.dart';
+import '../../main.dart' show rootNavigatorKey;
 import '../../services/building_presence_tracker.dart';
 import '../../services/multiplayer_service.dart';
 
@@ -96,12 +98,20 @@ class PeerPinRenderer {
 
     // 3. 방 목적지 pin.
     if (room != null && room.hasDestination) {
+      final ctx = rootNavigatorKey.currentContext;
+      final fallback = ctx == null
+          ? '목적지'
+          : AppL10n.of(ctx).peerPinDestinationFallback;
+      final name = room.destName ?? fallback;
+      final label = ctx == null
+          ? '🎯 $name'
+          : AppL10n.of(ctx).peerPinDestinationLabel(name);
       map.upsertPeerPin(
         _kDestId,
         room.destLat!,
         room.destLng!,
         color: const Color(0xFFFF7A00),
-        label: '🎯 ${room.destName ?? '목적지'}',
+        label: label,
       );
     }
 

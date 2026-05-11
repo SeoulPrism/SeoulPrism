@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../l10n/gen/app_localizations.dart';
 import '../main.dart' show rootNavigatorKey;
 import '../views/multiplayer/friend_code_share.dart';
 import '../widgets/app_snackbar.dart';
@@ -81,17 +82,18 @@ class DeepLinkRouter {
       WidgetsBinding.instance.addPostFrameCallback((_) => _enterRoom(code));
       return;
     }
+    final l = AppL10n.of(nav.context);
     // 익명 사용자는 룸 입장 불가 — 명시적 안내.
     final user = Supabase.instance.client.auth.currentUser;
     if (user == null || user.isAnonymous) {
-      showAppSnackBar('정식 로그인 후 방에 입장할 수 있어요');
+      showAppSnackBar(l.deepLinkRoomLoginRequired);
       return;
     }
     try {
       await MultiplayerService.instance.joinRoomByCode(code);
-      showAppSnackBar('방 입장 — 코드 $code');
+      showAppSnackBar(l.deepLinkRoomEntered(code));
     } catch (e) {
-      showAppSnackBar('방 입장 실패: $e');
+      showAppSnackBar(l.deepLinkRoomFailure(e.toString()));
     }
   }
 

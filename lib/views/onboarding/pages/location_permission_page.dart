@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 
+import '../../../l10n/gen/app_localizations.dart';
 import '../../../theme/app_typography.dart';
 import '../../../widgets/adaptive/adaptive.dart';
 
@@ -45,6 +46,7 @@ class _LocationPermissionPageState extends State<LocationPermissionPage> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final l = AppL10n.of(context);
     final isIos = Platform.isIOS;
     final titleColor = isIos ? Colors.white : cs.onSurface;
     final bodyColor =
@@ -77,7 +79,7 @@ class _LocationPermissionPageState extends State<LocationPermissionPage> {
             ),
             const SizedBox(height: 28),
             Text(
-              '위치 권한이 필요해요',
+              l.locPermTitle,
               style: AppTypography.displayLg.copyWith(
                 color: titleColor,
                 fontSize: 28,
@@ -86,7 +88,7 @@ class _LocationPermissionPageState extends State<LocationPermissionPage> {
             ),
             const SizedBox(height: 12),
             Text(
-              '현재 위치를 지도에 표시하고\n주변 정보 / 길찾기를 정확하게 안내하기 위해\n위치 권한이 필요해요.',
+              l.locPermBody,
               textAlign: TextAlign.center,
               style: AppTypography.bodyMd.copyWith(
                 color: bodyColor,
@@ -98,13 +100,13 @@ class _LocationPermissionPageState extends State<LocationPermissionPage> {
               SizedBox(
                 width: double.infinity,
                 child: AdaptiveGlassButton(
-                  label: _requesting ? '요청 중...' : '위치 권한 허용',
+                  label: _requesting ? l.locPermRequesting : l.locPermRequest,
                   onPressed: _requesting ? null : _request,
                 ),
               )
             else if (_granted == true)
               Text(
-                '✓ 위치 권한 허용됨',
+                l.locPermGranted,
                 style: TextStyle(
                   color: isIos
                       ? Colors.white
@@ -117,7 +119,7 @@ class _LocationPermissionPageState extends State<LocationPermissionPage> {
               Column(
                 children: [
                   Text(
-                    '거부됨 — 설정에서 직접 허용할 수 있어요',
+                    l.locPermDenied,
                     style: TextStyle(
                       color: bodyColor,
                       fontSize: 13,
@@ -126,7 +128,7 @@ class _LocationPermissionPageState extends State<LocationPermissionPage> {
                   const SizedBox(height: 8),
                   TextButton(
                     onPressed: _request,
-                    child: const Text('다시 시도'),
+                    child: Text(l.locPermRetry),
                   ),
                 ],
               ),

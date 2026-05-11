@@ -1434,5 +1434,170 @@
   "@optDetectedTier": {
     "placeholders": { "tier": { "type": "String" } }
   },
-  "optRecommended": "Recommended"
+  "optRecommended": "Recommended",
+
+  "vehicleCongestion": "Crowdedness",
+  "vehicleCongestionNone": "No data",
+  "vehicleCongestionFree": "Light",
+  "vehicleCongestionNormal": "Normal",
+  "vehicleCongestionBusy": "Busy",
+  "vehicleCongestionPacked": "Very crowded",
+  "vehicleCongestionFull": "Full",
+  "vehicleStatus": "Status",
+  "vehicleStopped": "Stopped",
+  "vehicleRunning": "Running",
+  "vehicleSection": "Section",
+  "vehicleSectionOrd": "Stop {ord}",
+  "@vehicleSectionOrd": {
+    "placeholders": { "ord": { "type": "int" } }
+  },
+  "vehicleBusLowFloor": "Low-floor",
+  "vehicleBusRegular": "Standard",
+  "vehiclePhaseAscent": "Climbing",
+  "vehiclePhaseCruise": "Cruise",
+  "vehiclePhaseDescent": "Descent",
+  "vehiclePhaseTakeoff": "Takeoff/landing",
+  "vehiclePhaseGround": "On ground",
+  "vehicleAltitude": "Altitude",
+  "vehicleAltitudeOnGround": "Ground",
+  "vehicleSpeed": "Speed",
+  "vehicleHeading": "Heading",
+  "vehicleRiverBusRoute": "Han River bus {name}",
+  "@vehicleRiverBusRoute": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "vehicleRiverDirNormal": "Forward",
+  "vehicleRiverDirReverse": "Reverse",
+  "vehicleRiverPhaseStop": "Docked",
+  "vehicleNext": "Next",
+  "vehicleProgress": "Progress",
+
+  "deepLinkRoomLoginRequired": "Sign in to join a friend room",
+  "deepLinkRoomEntered": "Joined room — code {code}",
+  "@deepLinkRoomEntered": {
+    "placeholders": { "code": { "type": "String" } }
+  },
+  "deepLinkRoomFailure": "Couldn't join the room: {error}",
+  "@deepLinkRoomFailure": {
+    "placeholders": { "error": { "type": "String" } }
+  },
+
+  "snsAnalysisTitle": "Analysis",
+  "snsAnalysisEmpty": "No places extracted",
+  "snsAnalysisCreatePlans": "Create plan ({count})",
+  "@snsAnalysisCreatePlans": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "snsAnalysisPlanFailure": "Couldn't build a plan: {error}",
+  "@snsAnalysisPlanFailure": {
+    "placeholders": { "error": { "type": "String" } }
+  },
+  "snsAnalysisNearestStation": "📍 {station} station · {minutes} min",
+  "@snsAnalysisNearestStation": {
+    "placeholders": {
+      "station": { "type": "String" },
+      "minutes": { "type": "int" }
+    }
+  },
+
+  "avatarMyPin": "My pin",
+  "avatarNoRoomHint": "Join a friend room to see friends here",
+  "avatarNoRoomMembers": "No one's with you yet",
+  "avatarRoomMembersCount": "With you · {count}",
+  "@avatarRoomMembersCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "avatarNoTrack": "Not listening to anything",
+
+  "qrScanTitle": "Scan QR",
+  "qrScanCameraError": "Camera unavailable\n{error}",
+  "@qrScanCameraError": {
+    "placeholders": { "error": { "type": "String" } }
+  },
+  "qrScanHint": "Frame your friend's QR code",
+
+  "buildingOccupantsFallbackName": "Building",
+  "buildingOccupantsInside": "{count} inside",
+  "@buildingOccupantsInside": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "buildingOccupantsEmpty": "Everyone left the building",
+  "buildingOccupantsListening": "🎵 Listening to {name} · {artist}",
+  "@buildingOccupantsListening": {
+    "placeholders": {
+      "name": { "type": "String" },
+      "artist": { "type": "String" }
+    }
+  },
+  "buildingOccupantsInBuilding": "🏢 Inside the building",
+
+  "weatherWeeklyLabel": "Weekly",
+  "weatherToday": "Today",
+  "weatherDayMon": "Mon",
+  "weatherDayTue": "Tue",
+  "weatherDayWed": "Wed",
+  "weatherDayThu": "Thu",
+  "weatherDayFri": "Fri",
+  "weatherDaySat": "Sat",
+  "weatherDaySun": "Sun",
+
+  "locPermTitle": "Location permission needed",
+  "locPermBody": "We need location access to show your position on the map\nand to provide accurate nearby info / directions.",
+  "locPermRequesting": "Requesting…",
+  "locPermRequest": "Allow location",
+  "locPermGranted": "✓ Location allowed",
+  "locPermDenied": "Denied — enable it from Settings",
+  "locPermRetry": "Retry",
+
+  "groupEditorTitle": "Friend groups",
+  "groupEditorNew": "New group",
+  "groupEditorEmpty": "No groups yet",
+  "groupEditorEmptyHint": "Tap + at top-right to create a group and organize friends.",
+  "groupEditorHelper": "Used for group-based visibility / chat",
+  "groupEditorNamePlaceholder": "e.g. Family, Work, Club",
+  "groupEditorCreate": "Create",
+  "groupEditorFailure": "Failed: {error}",
+  "@groupEditorFailure": {
+    "placeholders": { "error": { "type": "String" } }
+  },
+  "groupEditorMemberCount": "{count}",
+  "@groupEditorMemberCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "groupEditorDeleteTitle": "Delete group {name}",
+  "@groupEditorDeleteTitle": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "groupEditorDeleteBody": "Only the group is deleted; friends are kept.",
+  "groupEditorDelete": "Delete",
+  "groupEditorAddFriendsHint": "Add friends first.",
+
+  "peerPinDestinationFallback": "Destination",
+  "peerPinDestinationLabel": "🎯 {name}",
+  "@peerPinDestinationLabel": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+
+  "stationDetailCloseLabel": "Close station detail",
+  "stationDetailDeparture": "Start",
+  "stationDetailArrival": "End",
+  "stationDetailLiveArrivals": "Live arrivals",
+  "stationDetailLoading": "Loading…",
+  "stationDetailNoArrivals": "No arrival info",
+  "stationDetailCrowdVery": "Very crowded",
+  "stationDetailCrowdBusy": "Crowded",
+  "stationDetailCrowdNormal": "Normal",
+  "stationDetailCrowdFree": "Light",
+  "stationDetailBoardingCount": "Boarding {count}",
+  "@stationDetailBoardingCount": {
+    "placeholders": { "count": { "type": "String" } }
+  },
+  "stationDetailAlightingCount": "Alighting {count}",
+  "@stationDetailAlightingCount": {
+    "placeholders": { "count": { "type": "String" } }
+  },
+  "stationDetailClosureCount": "{count} closures",
+  "@stationDetailClosureCount": {
+    "placeholders": { "count": { "type": "int" } }
+  }
 }

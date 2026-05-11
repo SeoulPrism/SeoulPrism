@@ -3081,4 +3081,322 @@ class AppL10nZh extends AppL10n {
 
   @override
   String get optRecommended => '推荐';
+
+  @override
+  String get vehicleCongestion => '拥挤度';
+
+  @override
+  String get vehicleCongestionNone => '无信息';
+
+  @override
+  String get vehicleCongestionFree => '宽松';
+
+  @override
+  String get vehicleCongestionNormal => '一般';
+
+  @override
+  String get vehicleCongestionBusy => '拥挤';
+
+  @override
+  String get vehicleCongestionPacked => '非常拥挤';
+
+  @override
+  String get vehicleCongestionFull => '满载';
+
+  @override
+  String get vehicleStatus => '状态';
+
+  @override
+  String get vehicleStopped => '停车中';
+
+  @override
+  String get vehicleRunning => '运行中';
+
+  @override
+  String get vehicleSection => '区间';
+
+  @override
+  String vehicleSectionOrd(int ord) {
+    return '第$ord站';
+  }
+
+  @override
+  String get vehicleBusLowFloor => '低地板巴士';
+
+  @override
+  String get vehicleBusRegular => '普通巴士';
+
+  @override
+  String get vehiclePhaseAscent => '上升';
+
+  @override
+  String get vehiclePhaseCruise => '巡航';
+
+  @override
+  String get vehiclePhaseDescent => '下降';
+
+  @override
+  String get vehiclePhaseTakeoff => '起降';
+
+  @override
+  String get vehiclePhaseGround => '地面';
+
+  @override
+  String get vehicleAltitude => '高度';
+
+  @override
+  String get vehicleAltitudeOnGround => '地面';
+
+  @override
+  String get vehicleSpeed => '速度';
+
+  @override
+  String get vehicleHeading => '方向';
+
+  @override
+  String vehicleRiverBusRoute(String name) {
+    return '汉江巴士 $name';
+  }
+
+  @override
+  String get vehicleRiverDirNormal => '正向';
+
+  @override
+  String get vehicleRiverDirReverse => '反向';
+
+  @override
+  String get vehicleRiverPhaseStop => '停靠';
+
+  @override
+  String get vehicleNext => '下一站';
+
+  @override
+  String get vehicleProgress => '进度';
+
+  @override
+  String get deepLinkRoomLoginRequired => '登录后才能进入房间';
+
+  @override
+  String deepLinkRoomEntered(String code) {
+    return '进入房间 — 代码 $code';
+  }
+
+  @override
+  String deepLinkRoomFailure(String error) {
+    return '进入房间失败: $error';
+  }
+
+  @override
+  String get snsAnalysisTitle => '分析结果';
+
+  @override
+  String get snsAnalysisEmpty => '未提取到地点';
+
+  @override
+  String snsAnalysisCreatePlans(int count) {
+    return '创建行程 ($count处)';
+  }
+
+  @override
+  String snsAnalysisPlanFailure(String error) {
+    return '行程生成失败: $error';
+  }
+
+  @override
+  String snsAnalysisNearestStation(String station, int minutes) {
+    return '📍 $station站 · $minutes分钟';
+  }
+
+  @override
+  String get avatarMyPin => '我的图钉';
+
+  @override
+  String get avatarNoRoomHint => '加入朋友房间后,朋友们会显示在这里';
+
+  @override
+  String get avatarNoRoomMembers => '暂时没有同伴';
+
+  @override
+  String avatarRoomMembersCount(int count) {
+    return '同伴 $count 人';
+  }
+
+  @override
+  String get avatarNoTrack => '未在播放音乐';
+
+  @override
+  String get qrScanTitle => '扫描 QR';
+
+  @override
+  String qrScanCameraError(String error) {
+    return '无法使用相机\n$error';
+  }
+
+  @override
+  String get qrScanHint => '请将朋友的 QR 码对准方框';
+
+  @override
+  String get buildingOccupantsFallbackName => '建筑';
+
+  @override
+  String buildingOccupantsInside(int count) {
+    return '$count 人在里面';
+  }
+
+  @override
+  String get buildingOccupantsEmpty => '已离开建筑';
+
+  @override
+  String buildingOccupantsListening(String name, String artist) {
+    return '🎵 正在听 $name · $artist';
+  }
+
+  @override
+  String get buildingOccupantsInBuilding => '🏢 在建筑内';
+
+  @override
+  String get weatherWeeklyLabel => '一周';
+
+  @override
+  String get weatherToday => '今天';
+
+  @override
+  String get weatherDayMon => '一';
+
+  @override
+  String get weatherDayTue => '二';
+
+  @override
+  String get weatherDayWed => '三';
+
+  @override
+  String get weatherDayThu => '四';
+
+  @override
+  String get weatherDayFri => '五';
+
+  @override
+  String get weatherDaySat => '六';
+
+  @override
+  String get weatherDaySun => '日';
+
+  @override
+  String get locPermTitle => '需要位置权限';
+
+  @override
+  String get locPermBody => '为了在地图上显示您的位置,并提供周边信息和导航,\n需要位置权限。';
+
+  @override
+  String get locPermRequesting => '请求中...';
+
+  @override
+  String get locPermRequest => '允许位置权限';
+
+  @override
+  String get locPermGranted => '✓ 已允许位置权限';
+
+  @override
+  String get locPermDenied => '已拒绝 — 可在设置中手动允许';
+
+  @override
+  String get locPermRetry => '重试';
+
+  @override
+  String get groupEditorTitle => '朋友分组';
+
+  @override
+  String get groupEditorNew => '新建分组';
+
+  @override
+  String get groupEditorEmpty => '还没有分组';
+
+  @override
+  String get groupEditorEmptyHint => '用右上角的 + 创建分组并分类朋友。';
+
+  @override
+  String get groupEditorHelper => '用于分组可见性 / 聊天';
+
+  @override
+  String get groupEditorNamePlaceholder => '例如:家人、同事、社团';
+
+  @override
+  String get groupEditorCreate => '创建';
+
+  @override
+  String groupEditorFailure(String error) {
+    return '失败: $error';
+  }
+
+  @override
+  String groupEditorMemberCount(int count) {
+    return '$count 人';
+  }
+
+  @override
+  String groupEditorDeleteTitle(String name) {
+    return '删除分组 $name';
+  }
+
+  @override
+  String get groupEditorDeleteBody => '仅删除分组,朋友会保留。';
+
+  @override
+  String get groupEditorDelete => '删除';
+
+  @override
+  String get groupEditorAddFriendsHint => '请先添加朋友。';
+
+  @override
+  String get peerPinDestinationFallback => '目的地';
+
+  @override
+  String peerPinDestinationLabel(String name) {
+    return '🎯 $name';
+  }
+
+  @override
+  String get stationDetailCloseLabel => '关闭车站详情';
+
+  @override
+  String get stationDetailDeparture => '出发';
+
+  @override
+  String get stationDetailArrival => '到达';
+
+  @override
+  String get stationDetailLiveArrivals => '实时发车信息';
+
+  @override
+  String get stationDetailLoading => '加载中...';
+
+  @override
+  String get stationDetailNoArrivals => '暂无到达信息';
+
+  @override
+  String get stationDetailCrowdVery => '非常拥挤';
+
+  @override
+  String get stationDetailCrowdBusy => '拥挤';
+
+  @override
+  String get stationDetailCrowdNormal => '一般';
+
+  @override
+  String get stationDetailCrowdFree => '宽松';
+
+  @override
+  String stationDetailBoardingCount(String count) {
+    return '上车 $count 人';
+  }
+
+  @override
+  String stationDetailAlightingCount(String count) {
+    return '下车 $count 人';
+  }
+
+  @override
+  String stationDetailClosureCount(int count) {
+    return '设施关闭 $count 项';
+  }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/gen/app_localizations.dart';
 import '../../models/building_hit.dart';
 import '../../models/multiplayer_models.dart';
 import '../../services/building_presence_tracker.dart';
@@ -64,8 +65,9 @@ class _BuildingOccupantsSheetState extends State<BuildingOccupantsSheet> {
         break;
       }
     }
+    final l = AppL10n.of(context);
     final inset = MediaQuery.of(context).viewInsets.bottom;
-    final title = hit?.displayName ?? '건물';
+    final title = hit?.displayName ?? l.buildingOccupantsFallbackName;
 
     return Padding(
       padding: EdgeInsets.fromLTRB(20, 8, 20, inset + 24),
@@ -99,7 +101,7 @@ class _BuildingOccupantsSheetState extends State<BuildingOccupantsSheet> {
                             fontWeight: FontWeight.w800,
                             color: cs.onSurface)),
                     const SizedBox(height: 2),
-                    Text('${peerIds.length}명이 안에 있어요',
+                    Text(l.buildingOccupantsInside(peerIds.length),
                         style: TextStyle(
                             fontSize: 12, color: cs.onSurfaceVariant)),
                   ],
@@ -112,7 +114,7 @@ class _BuildingOccupantsSheetState extends State<BuildingOccupantsSheet> {
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 24),
               child: Text(
-                '건물을 떠났어요',
+                l.buildingOccupantsEmpty,
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant),
               ),
@@ -245,9 +247,10 @@ class _Bubble extends StatelessWidget {
         ? const Color(0xFF1DB954)
         : cs.onSurface;
 
+    final l = AppL10n.of(context);
     final text = hasTrack
-        ? '🎵 ${track!.name} · ${track!.artist} 듣는 중'
-        : '🏢 건물 안에 있어요';
+        ? l.buildingOccupantsListening(track!.name, track!.artist)
+        : l.buildingOccupantsInBuilding;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),

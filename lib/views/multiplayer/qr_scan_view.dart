@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
+import '../../l10n/gen/app_localizations.dart';
+
 /// QR 스캐너 — 8자리 친구 코드 또는 seoulvista://friend/<code> 형식 인식.
 /// 인식 즉시 코드 문자열 반환하며 pop. 권한 거부/오류는 호출 측에서 처리.
 class QrScanView extends StatefulWidget {
@@ -62,7 +64,7 @@ class _QrScanViewState extends State<QrScanView> {
       appBar: AppBar(
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
-        title: const Text('QR 스캔'),
+        title: Text(AppL10n.of(context).qrScanTitle),
         actions: [
           IconButton(
             icon: const Icon(Icons.flash_on_rounded),
@@ -75,11 +77,12 @@ class _QrScanViewState extends State<QrScanView> {
           MobileScanner(
             controller: _controller,
             onDetect: _onDetect,
-            errorBuilder: (_, err) => Center(
+            errorBuilder: (ctx, err) => Center(
               child: Padding(
                 padding: const EdgeInsets.all(24),
                 child: Text(
-                  '카메라를 사용할 수 없어요\n${err.errorDetails?.message ?? err.errorCode.name}',
+                  AppL10n.of(ctx).qrScanCameraError(
+                      err.errorDetails?.message ?? err.errorCode.name),
                   textAlign: TextAlign.center,
                   style: const TextStyle(color: Colors.white70),
                 ),
@@ -107,7 +110,7 @@ class _QrScanViewState extends State<QrScanView> {
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 32),
                 child: Text(
-                  '친구 QR 을 프레임 안에 맞춰 주세요',
+                  AppL10n.of(context).qrScanHint,
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.85),

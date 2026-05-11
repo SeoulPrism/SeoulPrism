@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'adaptive/adaptive.dart';
+import '../l10n/gen/app_localizations.dart';
 import '../services/environment_service.dart';
 import '../theme/app_colors.dart';
 
@@ -142,7 +143,7 @@ class _WeatherTimeWidgetState extends State<WeatherTimeWidget> {
               ),
               const SizedBox(width: 8),
               if (_forecast != null && _forecast!.isNotEmpty) ...[
-                Text('주간 ', style: TextStyle(fontSize: 10, color: fgSub)),
+                Text('${AppL10n.of(context).weatherWeeklyLabel} ', style: TextStyle(fontSize: 10, color: fgSub)),
                 Text('${_weeklyAvgMin()}°', style: TextStyle(fontSize: 10, color: Colors.lightBlueAccent.withValues(alpha: 0.8))),
                 Text(' / ', style: TextStyle(fontSize: 10, color: fgSub)),
                 Text('${_weeklyAvgMax()}°', style: TextStyle(fontSize: 10, color: Colors.orangeAccent.withValues(alpha: 0.9))),
@@ -173,10 +174,19 @@ class _WeatherTimeWidgetState extends State<WeatherTimeWidget> {
   }
 
   Widget _buildDayColumn(DailyForecast f, Color fg, Color fgSub) {
+    final l = AppL10n.of(context);
     final now = DateTime.now();
     final isToday = f.date.day == now.day && f.date.month == now.month;
-    final dayNames = ['월', '화', '수', '목', '금', '토', '일'];
-    final dayName = isToday ? '오늘' : dayNames[f.date.weekday - 1];
+    final dayNames = [
+      l.weatherDayMon,
+      l.weatherDayTue,
+      l.weatherDayWed,
+      l.weatherDayThu,
+      l.weatherDayFri,
+      l.weatherDaySat,
+      l.weatherDaySun,
+    ];
+    final dayName = isToday ? l.weatherToday : dayNames[f.date.weekday - 1];
     final weatherColor = _descriptionColor(f.description);
 
     return Column(

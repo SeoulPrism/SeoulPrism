@@ -5686,6 +5686,570 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Recommended'**
   String get optRecommended;
+
+  /// No description provided for @vehicleCongestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Crowdedness'**
+  String get vehicleCongestion;
+
+  /// No description provided for @vehicleCongestionNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No data'**
+  String get vehicleCongestionNone;
+
+  /// No description provided for @vehicleCongestionFree.
+  ///
+  /// In en, this message translates to:
+  /// **'Light'**
+  String get vehicleCongestionFree;
+
+  /// No description provided for @vehicleCongestionNormal.
+  ///
+  /// In en, this message translates to:
+  /// **'Normal'**
+  String get vehicleCongestionNormal;
+
+  /// No description provided for @vehicleCongestionBusy.
+  ///
+  /// In en, this message translates to:
+  /// **'Busy'**
+  String get vehicleCongestionBusy;
+
+  /// No description provided for @vehicleCongestionPacked.
+  ///
+  /// In en, this message translates to:
+  /// **'Very crowded'**
+  String get vehicleCongestionPacked;
+
+  /// No description provided for @vehicleCongestionFull.
+  ///
+  /// In en, this message translates to:
+  /// **'Full'**
+  String get vehicleCongestionFull;
+
+  /// No description provided for @vehicleStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Status'**
+  String get vehicleStatus;
+
+  /// No description provided for @vehicleStopped.
+  ///
+  /// In en, this message translates to:
+  /// **'Stopped'**
+  String get vehicleStopped;
+
+  /// No description provided for @vehicleRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Running'**
+  String get vehicleRunning;
+
+  /// No description provided for @vehicleSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Section'**
+  String get vehicleSection;
+
+  /// No description provided for @vehicleSectionOrd.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop {ord}'**
+  String vehicleSectionOrd(int ord);
+
+  /// No description provided for @vehicleBusLowFloor.
+  ///
+  /// In en, this message translates to:
+  /// **'Low-floor'**
+  String get vehicleBusLowFloor;
+
+  /// No description provided for @vehicleBusRegular.
+  ///
+  /// In en, this message translates to:
+  /// **'Standard'**
+  String get vehicleBusRegular;
+
+  /// No description provided for @vehiclePhaseAscent.
+  ///
+  /// In en, this message translates to:
+  /// **'Climbing'**
+  String get vehiclePhaseAscent;
+
+  /// No description provided for @vehiclePhaseCruise.
+  ///
+  /// In en, this message translates to:
+  /// **'Cruise'**
+  String get vehiclePhaseCruise;
+
+  /// No description provided for @vehiclePhaseDescent.
+  ///
+  /// In en, this message translates to:
+  /// **'Descent'**
+  String get vehiclePhaseDescent;
+
+  /// No description provided for @vehiclePhaseTakeoff.
+  ///
+  /// In en, this message translates to:
+  /// **'Takeoff/landing'**
+  String get vehiclePhaseTakeoff;
+
+  /// No description provided for @vehiclePhaseGround.
+  ///
+  /// In en, this message translates to:
+  /// **'On ground'**
+  String get vehiclePhaseGround;
+
+  /// No description provided for @vehicleAltitude.
+  ///
+  /// In en, this message translates to:
+  /// **'Altitude'**
+  String get vehicleAltitude;
+
+  /// No description provided for @vehicleAltitudeOnGround.
+  ///
+  /// In en, this message translates to:
+  /// **'Ground'**
+  String get vehicleAltitudeOnGround;
+
+  /// No description provided for @vehicleSpeed.
+  ///
+  /// In en, this message translates to:
+  /// **'Speed'**
+  String get vehicleSpeed;
+
+  /// No description provided for @vehicleHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Heading'**
+  String get vehicleHeading;
+
+  /// No description provided for @vehicleRiverBusRoute.
+  ///
+  /// In en, this message translates to:
+  /// **'Han River bus {name}'**
+  String vehicleRiverBusRoute(String name);
+
+  /// No description provided for @vehicleRiverDirNormal.
+  ///
+  /// In en, this message translates to:
+  /// **'Forward'**
+  String get vehicleRiverDirNormal;
+
+  /// No description provided for @vehicleRiverDirReverse.
+  ///
+  /// In en, this message translates to:
+  /// **'Reverse'**
+  String get vehicleRiverDirReverse;
+
+  /// No description provided for @vehicleRiverPhaseStop.
+  ///
+  /// In en, this message translates to:
+  /// **'Docked'**
+  String get vehicleRiverPhaseStop;
+
+  /// No description provided for @vehicleNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get vehicleNext;
+
+  /// No description provided for @vehicleProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Progress'**
+  String get vehicleProgress;
+
+  /// No description provided for @deepLinkRoomLoginRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to join a friend room'**
+  String get deepLinkRoomLoginRequired;
+
+  /// No description provided for @deepLinkRoomEntered.
+  ///
+  /// In en, this message translates to:
+  /// **'Joined room — code {code}'**
+  String deepLinkRoomEntered(String code);
+
+  /// No description provided for @deepLinkRoomFailure.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t join the room: {error}'**
+  String deepLinkRoomFailure(String error);
+
+  /// No description provided for @snsAnalysisTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Analysis'**
+  String get snsAnalysisTitle;
+
+  /// No description provided for @snsAnalysisEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No places extracted'**
+  String get snsAnalysisEmpty;
+
+  /// No description provided for @snsAnalysisCreatePlans.
+  ///
+  /// In en, this message translates to:
+  /// **'Create plan ({count})'**
+  String snsAnalysisCreatePlans(int count);
+
+  /// No description provided for @snsAnalysisPlanFailure.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t build a plan: {error}'**
+  String snsAnalysisPlanFailure(String error);
+
+  /// No description provided for @snsAnalysisNearestStation.
+  ///
+  /// In en, this message translates to:
+  /// **'📍 {station} station · {minutes} min'**
+  String snsAnalysisNearestStation(String station, int minutes);
+
+  /// No description provided for @avatarMyPin.
+  ///
+  /// In en, this message translates to:
+  /// **'My pin'**
+  String get avatarMyPin;
+
+  /// No description provided for @avatarNoRoomHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Join a friend room to see friends here'**
+  String get avatarNoRoomHint;
+
+  /// No description provided for @avatarNoRoomMembers.
+  ///
+  /// In en, this message translates to:
+  /// **'No one\'s with you yet'**
+  String get avatarNoRoomMembers;
+
+  /// No description provided for @avatarRoomMembersCount.
+  ///
+  /// In en, this message translates to:
+  /// **'With you · {count}'**
+  String avatarRoomMembersCount(int count);
+
+  /// No description provided for @avatarNoTrack.
+  ///
+  /// In en, this message translates to:
+  /// **'Not listening to anything'**
+  String get avatarNoTrack;
+
+  /// No description provided for @qrScanTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan QR'**
+  String get qrScanTitle;
+
+  /// No description provided for @qrScanCameraError.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera unavailable\n{error}'**
+  String qrScanCameraError(String error);
+
+  /// No description provided for @qrScanHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Frame your friend\'s QR code'**
+  String get qrScanHint;
+
+  /// No description provided for @buildingOccupantsFallbackName.
+  ///
+  /// In en, this message translates to:
+  /// **'Building'**
+  String get buildingOccupantsFallbackName;
+
+  /// No description provided for @buildingOccupantsInside.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} inside'**
+  String buildingOccupantsInside(int count);
+
+  /// No description provided for @buildingOccupantsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Everyone left the building'**
+  String get buildingOccupantsEmpty;
+
+  /// No description provided for @buildingOccupantsListening.
+  ///
+  /// In en, this message translates to:
+  /// **'🎵 Listening to {name} · {artist}'**
+  String buildingOccupantsListening(String name, String artist);
+
+  /// No description provided for @buildingOccupantsInBuilding.
+  ///
+  /// In en, this message translates to:
+  /// **'🏢 Inside the building'**
+  String get buildingOccupantsInBuilding;
+
+  /// No description provided for @weatherWeeklyLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly'**
+  String get weatherWeeklyLabel;
+
+  /// No description provided for @weatherToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get weatherToday;
+
+  /// No description provided for @weatherDayMon.
+  ///
+  /// In en, this message translates to:
+  /// **'Mon'**
+  String get weatherDayMon;
+
+  /// No description provided for @weatherDayTue.
+  ///
+  /// In en, this message translates to:
+  /// **'Tue'**
+  String get weatherDayTue;
+
+  /// No description provided for @weatherDayWed.
+  ///
+  /// In en, this message translates to:
+  /// **'Wed'**
+  String get weatherDayWed;
+
+  /// No description provided for @weatherDayThu.
+  ///
+  /// In en, this message translates to:
+  /// **'Thu'**
+  String get weatherDayThu;
+
+  /// No description provided for @weatherDayFri.
+  ///
+  /// In en, this message translates to:
+  /// **'Fri'**
+  String get weatherDayFri;
+
+  /// No description provided for @weatherDaySat.
+  ///
+  /// In en, this message translates to:
+  /// **'Sat'**
+  String get weatherDaySat;
+
+  /// No description provided for @weatherDaySun.
+  ///
+  /// In en, this message translates to:
+  /// **'Sun'**
+  String get weatherDaySun;
+
+  /// No description provided for @locPermTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Location permission needed'**
+  String get locPermTitle;
+
+  /// No description provided for @locPermBody.
+  ///
+  /// In en, this message translates to:
+  /// **'We need location access to show your position on the map\nand to provide accurate nearby info / directions.'**
+  String get locPermBody;
+
+  /// No description provided for @locPermRequesting.
+  ///
+  /// In en, this message translates to:
+  /// **'Requesting…'**
+  String get locPermRequesting;
+
+  /// No description provided for @locPermRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow location'**
+  String get locPermRequest;
+
+  /// No description provided for @locPermGranted.
+  ///
+  /// In en, this message translates to:
+  /// **'✓ Location allowed'**
+  String get locPermGranted;
+
+  /// No description provided for @locPermDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Denied — enable it from Settings'**
+  String get locPermDenied;
+
+  /// No description provided for @locPermRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get locPermRetry;
+
+  /// No description provided for @groupEditorTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Friend groups'**
+  String get groupEditorTitle;
+
+  /// No description provided for @groupEditorNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New group'**
+  String get groupEditorNew;
+
+  /// No description provided for @groupEditorEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No groups yet'**
+  String get groupEditorEmpty;
+
+  /// No description provided for @groupEditorEmptyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap + at top-right to create a group and organize friends.'**
+  String get groupEditorEmptyHint;
+
+  /// No description provided for @groupEditorHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Used for group-based visibility / chat'**
+  String get groupEditorHelper;
+
+  /// No description provided for @groupEditorNamePlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Family, Work, Club'**
+  String get groupEditorNamePlaceholder;
+
+  /// No description provided for @groupEditorCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Create'**
+  String get groupEditorCreate;
+
+  /// No description provided for @groupEditorFailure.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed: {error}'**
+  String groupEditorFailure(String error);
+
+  /// No description provided for @groupEditorMemberCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}'**
+  String groupEditorMemberCount(int count);
+
+  /// No description provided for @groupEditorDeleteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete group {name}'**
+  String groupEditorDeleteTitle(String name);
+
+  /// No description provided for @groupEditorDeleteBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Only the group is deleted; friends are kept.'**
+  String get groupEditorDeleteBody;
+
+  /// No description provided for @groupEditorDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get groupEditorDelete;
+
+  /// No description provided for @groupEditorAddFriendsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Add friends first.'**
+  String get groupEditorAddFriendsHint;
+
+  /// No description provided for @peerPinDestinationFallback.
+  ///
+  /// In en, this message translates to:
+  /// **'Destination'**
+  String get peerPinDestinationFallback;
+
+  /// No description provided for @peerPinDestinationLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'🎯 {name}'**
+  String peerPinDestinationLabel(String name);
+
+  /// No description provided for @stationDetailCloseLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Close station detail'**
+  String get stationDetailCloseLabel;
+
+  /// No description provided for @stationDetailDeparture.
+  ///
+  /// In en, this message translates to:
+  /// **'Start'**
+  String get stationDetailDeparture;
+
+  /// No description provided for @stationDetailArrival.
+  ///
+  /// In en, this message translates to:
+  /// **'End'**
+  String get stationDetailArrival;
+
+  /// No description provided for @stationDetailLiveArrivals.
+  ///
+  /// In en, this message translates to:
+  /// **'Live arrivals'**
+  String get stationDetailLiveArrivals;
+
+  /// No description provided for @stationDetailLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading…'**
+  String get stationDetailLoading;
+
+  /// No description provided for @stationDetailNoArrivals.
+  ///
+  /// In en, this message translates to:
+  /// **'No arrival info'**
+  String get stationDetailNoArrivals;
+
+  /// No description provided for @stationDetailCrowdVery.
+  ///
+  /// In en, this message translates to:
+  /// **'Very crowded'**
+  String get stationDetailCrowdVery;
+
+  /// No description provided for @stationDetailCrowdBusy.
+  ///
+  /// In en, this message translates to:
+  /// **'Crowded'**
+  String get stationDetailCrowdBusy;
+
+  /// No description provided for @stationDetailCrowdNormal.
+  ///
+  /// In en, this message translates to:
+  /// **'Normal'**
+  String get stationDetailCrowdNormal;
+
+  /// No description provided for @stationDetailCrowdFree.
+  ///
+  /// In en, this message translates to:
+  /// **'Light'**
+  String get stationDetailCrowdFree;
+
+  /// No description provided for @stationDetailBoardingCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Boarding {count}'**
+  String stationDetailBoardingCount(String count);
+
+  /// No description provided for @stationDetailAlightingCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Alighting {count}'**
+  String stationDetailAlightingCount(String count);
+
+  /// No description provided for @stationDetailClosureCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} closures'**
+  String stationDetailClosureCount(int count);
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {
