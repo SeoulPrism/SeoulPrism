@@ -1,5 +1,6 @@
 {
   "@@locale": "en",
+
   "appTitle": "Seoul Vista",
   "@appTitle": {
     "description": "Application name shown in OS task switcher and onGenerateTitle."
@@ -26,5 +27,167 @@
   "languageChangedTitle": "Language changed",
   "languageChangedBody": "Restart the app to fully apply the new language. Restart now?",
   "languageRestartNow": "Restart",
-  "languageRestartLater": "Later"
+  "languageRestartLater": "Later",
+
+  "routeUnitHour": "h",
+  "routeUnitMin": "min",
+  "routeTransfersCount": "{count} transfers",
+  "@routeTransfersCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "routeDeparture": "Depart",
+  "routeArrival": "Arrive",
+  "routeTransfer": "Transfer",
+  "routeTransferDetail": "{line} · {min} min",
+  "@routeTransferDetail": {
+    "placeholders": {
+      "line": { "type": "String" },
+      "min": { "type": "int" }
+    }
+  },
+  "routeBoardLine": "Board {line}",
+  "@routeBoardLine": {
+    "placeholders": { "line": { "type": "String" } }
+  },
+  "routeSegmentBus": "{from} → {to} · {count} stops · {min} min",
+  "@routeSegmentBus": {
+    "placeholders": {
+      "from": { "type": "String" },
+      "to": { "type": "String" },
+      "count": { "type": "int" },
+      "min": { "type": "int" }
+    }
+  },
+  "routeSegmentTrain": "{from} → {to} · {count} stations · {min} min",
+  "@routeSegmentTrain": {
+    "placeholders": {
+      "from": { "type": "String" },
+      "to": { "type": "String" },
+      "count": { "type": "int" },
+      "min": { "type": "int" }
+    }
+  },
+  "routeSegmentShort": "{from} · {min} min",
+  "@routeSegmentShort": {
+    "placeholders": {
+      "from": { "type": "String" },
+      "min": { "type": "int" }
+    }
+  },
+  "routeShowStops": "Show stops ▼",
+  "routeCollapse": "Collapse ▲",
+
+  "snsTitle": "AI Plan",
+  "snsSubtitle": "Build a Seoul day plan from social posts",
+  "snsSectionPhotos": "Photos",
+  "snsSectionDescription": "Description",
+  "snsSectionLink": "Social link",
+  "snsTextHint": "Tell us where you'd like to go and what you'd like to do",
+  "snsUrlHint": "Instagram, TikTok URL",
+  "snsAnalyzeButton": "Analyze",
+  "snsAnalyzeError": "Analysis failed: {error}",
+  "@snsAnalyzeError": {
+    "placeholders": { "error": { "type": "String" } }
+  },
+  "snsImageGallery": "Gallery",
+  "snsImageCamera": "Camera",
+
+  "dayPlanTitle": "Day plan",
+  "dayPlanNavigateAll": "Navigate all",
+  "dayPlanTransitSummary": "🚇 {min} min",
+  "@dayPlanTransitSummary": {
+    "placeholders": { "min": { "type": "int" } }
+  },
+  "dayPlanTransfersSummary": "🔄 {count}",
+  "@dayPlanTransfersSummary": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "dayPlanStyleStats": "{count} stops · {min} min",
+  "@dayPlanStyleStats": {
+    "placeholders": {
+      "count": { "type": "int" },
+      "min": { "type": "int" }
+    }
+  },
+  "dayPlanNavigateStop": "Navigate",
+
+  "whatsNewClose": "Close",
+  "whatsNewSkip": "Skip",
+  "whatsNewStart": "Get started",
+  "whatsNewNext": "Next",
+  "whatsNewPage1Title": "v{version} — Welcome back",
+  "@whatsNewPage1Title": {
+    "placeholders": { "version": { "type": "String" } }
+  },
+  "whatsNewPage1Body": "Your trips just got more personal.\nFrom travel moods to friends and memories —\nmeet 14 new features.",
+  "whatsNewPage2Title": "Your travel mood",
+  "whatsNewPage2Body": "Pick from Relax · Play · History · Mix and\nthe AI tone, recommendations, and Trip tab\nshift to match.",
+  "whatsNewPage3Title": "Go together",
+  "whatsNewPage3Body": "Set a shared destination in a friend room.\nDistances for each member update live.\nAn orange pin lands on the map.",
+  "whatsNewPage4Title": "1:1 DMs + voice/photo",
+  "whatsNewPage4Body": "Chat with a friend without a room.\n🎙 Long-press the mic for voice, 📷 pick a photo,\n📍 share a location — all in one chat.",
+  "whatsNewPage5Title": "Spotify sharing",
+  "whatsNewPage5Body": "Send what you're listening to.\nTap 🎵 in chat and your currently-playing\nSpotify track shares as a card.",
+  "whatsNewPage6Title": "More friends",
+  "whatsNewPage6Body": "Friend-of-friend suggestions,\nQR codes for instant adds,\nroom invite links for one-tap join.",
+  "whatsNewPage7Title": "Activity becomes points",
+  "whatsNewPage7Body": "Earn points and badges from adds, meetups, and streaks.\nCompare with friends in the ranking,\nand review your week on a chart.",
+  "whatsNewPage8Title": "Your way",
+  "whatsNewPage8Body": "Toggle notifications by type,\nshare your location with only certain groups.\nSafety and privacy stay with you.",
+
+  "profileCategoryFavorites": "Favorites",
+  "profileCategoryRecent": "Recent",
+  "profileCategoryFrequent": "Frequent",
+  "profileGuestName": "Guest",
+  "profileDefaultName": "User",
+  "profileSyncCta": "Sign in to sync across devices",
+  "profileAgoDays": "{days}d ago",
+  "@profileAgoDays": {
+    "placeholders": { "days": { "type": "int" } }
+  },
+  "profileAgoHours": "{hours}h ago",
+  "@profileAgoHours": {
+    "placeholders": { "hours": { "type": "int" } }
+  },
+  "profileAgoNow": "Just now",
+  "profileVisitCount": "{count} visits",
+  "@profileVisitCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "profileEmptyFavorites": "No favorites yet",
+  "profileEmptyVisits": "No visits yet",
+  "profileCollapse": "Collapse",
+  "profileMoreCount": "{count} more",
+  "@profileMoreCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "profileLiveShareBeta": "Real-time location & chat (Beta)",
+  "profileTimeline": "My timeline",
+  "profilePlaceCount": "{count} places",
+  "@profilePlaceCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "profileEmptyVisitsCta": "No visits yet. Explore places and try directions.",
+  "profileToday": "Today",
+  "profileYesterday": "Yesterday",
+  "profileMonthDay": "{month}/{day}",
+  "@profileMonthDay": {
+    "placeholders": {
+      "month": { "type": "int" },
+      "day": { "type": "int" }
+    }
+  },
+  "profileVisitTimes": "{count}×",
+  "@profileVisitTimes": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "profileEditName": "Edit name",
+  "profileNewNameHint": "Enter new name",
+  "profileTagline": "Every moment in Seoul",
+  "profileMore": "More",
+  "profileEmptyMapPlaces": "Your visits will appear on this map",
+  "profileRecentPlaceCount": "Last {count} places",
+  "@profileRecentPlaceCount": {
+    "placeholders": { "count": { "type": "int" } }
+  }
 }

@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import '../l10n/gen/app_localizations.dart';
 import '../models/sns_content_models.dart';
 import '../services/gemini_service.dart';
 import '../services/settings_service.dart';
@@ -131,7 +132,7 @@ class _SnsUploadViewState extends State<SnsUploadView> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('분석 실패: $e'),
+            content: Text(AppL10n.of(context).snsAnalyzeError(e.toString())),
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
@@ -174,7 +175,7 @@ class _SnsUploadViewState extends State<SnsUploadView> {
           child: Align(
             alignment: Alignment.centerLeft,
             child: Text(
-              'AI 플랜',
+              AppL10n.of(context).snsTitle,
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.w800,
@@ -189,7 +190,7 @@ class _SnsUploadViewState extends State<SnsUploadView> {
           child: Align(
             alignment: Alignment.centerLeft,
             child: Text(
-              'SNS 콘텐츠로 서울 하루 플랜 만들기',
+              AppL10n.of(context).snsSubtitle,
               style: TextStyle(
                 fontSize: 14,
                 color: textSecondary,
@@ -204,27 +205,27 @@ class _SnsUploadViewState extends State<SnsUploadView> {
             padding: EdgeInsets.fromLTRB(24, 0, 24, MediaQuery.of(context).padding.bottom + 80),
             children: [
               // 이미지
-              _sectionLabel('사진', bright, cs),
+              _sectionLabel(AppL10n.of(context).snsSectionPhotos, bright, cs),
               const SizedBox(height: 8),
               _buildImageSection(bright, cs),
               const SizedBox(height: 20),
               // 텍스트
-              _sectionLabel('설명', bright, cs),
+              _sectionLabel(AppL10n.of(context).snsSectionDescription, bright, cs),
               const SizedBox(height: 8),
               _buildTextField(
                 controller: _textController,
-                hint: '가고 싶은 곳, 하고 싶은 것을 적어주세요',
+                hint: AppL10n.of(context).snsTextHint,
                 maxLines: 3,
                 bright: bright,
                 cs: cs,
               ),
               const SizedBox(height: 20),
               // URL
-              _sectionLabel('SNS 링크', bright, cs),
+              _sectionLabel(AppL10n.of(context).snsSectionLink, bright, cs),
               const SizedBox(height: 8),
               _buildTextField(
                 controller: _urlController,
-                hint: 'Instagram, TikTok URL',
+                hint: AppL10n.of(context).snsUrlHint,
                 maxLines: 1,
                 bright: bright,
                 cs: cs,
@@ -240,7 +241,7 @@ class _SnsUploadViewState extends State<SnsUploadView> {
                             : const CircularProgressIndicator(),
                       )
                     : AdaptiveGlassButton(
-                        label: '분석하기',
+                        label: AppL10n.of(context).snsAnalyzeButton,
                         onPressed: _hasContent ? _analyze : null,
                         minHeight: 48,
                       ),
@@ -319,9 +320,11 @@ class _SnsUploadViewState extends State<SnsUploadView> {
         scrollDirection: Axis.horizontal,
         children: [
           // 추가 버튼들
-          _imageAddButton(Icons.photo_library_outlined, '갤러리', _pickImages, bright, cs),
+          _imageAddButton(Icons.photo_library_outlined,
+              AppL10n.of(context).snsImageGallery, _pickImages, bright, cs),
           const SizedBox(width: 8),
-          _imageAddButton(Icons.camera_alt_outlined, '카메라', _takePhoto, bright, cs),
+          _imageAddButton(Icons.camera_alt_outlined,
+              AppL10n.of(context).snsImageCamera, _takePhoto, bright, cs),
           const SizedBox(width: 8),
           // 선택된 이미지들
           ..._imagePaths.asMap().entries.map((entry) {

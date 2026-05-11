@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../main.dart';
 import '../core/api_keys.dart';
+import '../l10n/gen/app_localizations.dart';
 import '../services/favorites_service.dart';
 import '../services/visit_history_service.dart';
 import 'notifications_view.dart';
@@ -25,11 +26,16 @@ class ProfileView extends StatefulWidget {
 class _ProfileViewState extends State<ProfileView> {
   int _selectedCategoryIndex = 0;
 
-  final List<String> _categories = [
-    '즐겨찾기',
-    '최근 방문',
-    '자주 방문',
-  ];
+  static const _kCategoryCount = 3;
+
+  String _categoryLabel(BuildContext ctx, int index) {
+    final l = AppL10n.of(ctx);
+    return switch (index) {
+      0 => l.profileCategoryFavorites,
+      1 => l.profileCategoryRecent,
+      _ => l.profileCategoryFrequent,
+    };
+  }
 
   /// 타임라인에서 펼친 날짜 그룹 라벨 ('오늘', '어제', '3일 전', ...).
   /// 기본은 모두 접힘 → 그룹당 5개 노출 + 더보기.
@@ -150,14 +156,15 @@ class _ProfileViewState extends State<ProfileView> {
           ),
           const SizedBox(height: 14),
           Builder(
-            builder: (_) {
+            builder: (ctx) {
+              final l = AppL10n.of(ctx);
               final user = supabase.auth.currentUser;
               final isGuest = user?.isAnonymous ?? true;
               final displayName = isGuest
-                  ? '게스트'
-                  : (user?.userMetadata?['username'] ?? '사용자');
+                  ? l.profileGuestName
+                  : (user?.userMetadata?['username'] ?? l.profileDefaultName);
               final subtitle = isGuest
-                  ? '정식 로그인하면 다른 기기에서도 동기화돼요'
+                  ? l.profileSyncCta
                   : (user?.email ?? '');
               return Column(
                 children: [
@@ -207,7 +214,7 @@ class _ProfileViewState extends State<ProfileView> {
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 20),
-        itemCount: _categories.length,
+        itemCount: _kCategoryCount,
         separatorBuilder: (_, _) => const SizedBox(width: 10),
         itemBuilder: (context, index) {
           final isSelected = _selectedCategoryIndex == index;
@@ -216,7 +223,7 @@ class _ProfileViewState extends State<ProfileView> {
           if (isM3) {
             return FilterChip(
               selected: isSelected,
-              label: Text(_categories[index]),
+              label: Text(_categoryLabel(context, index)),
               onSelected: (_) => setState(() {
                 _selectedCategoryIndex = index;
                 _expandedAll = false;
@@ -251,7 +258,7 @@ class _ProfileViewState extends State<ProfileView> {
                   ),
                   alignment: Alignment.center,
                   child: Text(
-                    _categories[index],
+                    _categoryLabel(context, index),
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
@@ -287,27 +294,31 @@ class _ProfileViewState extends State<ProfileView> {
               lat: f.lat, lng: f.lng))
           .toList();
     } else if (_selectedCategoryIndex == 1) {
+      final l = AppL10n.of(context);
       final recent = VisitHistoryService.instance.recentVisits;
       items = recent.map((r) {
         final ago = DateTime.now().difference(r.visitedAt);
         final agoStr = ago.inDays > 0
-            ? '${ago.inDays}일 전'
+            ? l.profileAgoDays(ago.inDays)
             : ago.inHours > 0
-                ? '${ago.inHours}시간 전'
-                : '방금';
+                ? l.profileAgoHours(ago.inHours)
+                : l.profileAgoNow;
         return _buildPlaceCard(r.name, agoStr, Icons.history, cs.primary, cs,
             lat: r.lat, lng: r.lng);
       }).toList();
     } else {
+      final l = AppL10n.of(context);
       final freq = VisitHistoryService.instance.frequentVisits;
       items = freq
           .map((r) => _buildPlaceCard(
-              r.name, '${r.visitCount}회 방문', Icons.repeat, cs.tertiary, cs,
+              r.name, l.profileVisitCount(r.visitCount), Icons.repeat,
+              cs.tertiary, cs,
               lat: r.lat, lng: r.lng))
           .toList();
     }
 
     if (items.isEmpty) {
+      final l = AppL10n.of(context);
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20),
         child: AdaptiveSurfaceCard(
@@ -317,7 +328,9 @@ class _ProfileViewState extends State<ProfileView> {
             height: 120,
             child: Center(
               child: Text(
-                _selectedCategoryIndex == 0 ? '즐겨찾기가 없습니다' : '방문 기록이 없습니다',
+                _selectedCategoryIndex == 0
+                    ? l.profileEmptyFavorites
+                    : l.profileEmptyVisits,
                 style: TextStyle(fontSize: 14, color: cs.onSurfaceVariant),
               ),
             ),
@@ -348,6 +361,7 @@ class _ProfileViewState extends State<ProfileView> {
   Widget _buildExpandToggle(ColorScheme cs, int total) {
     final isExpanded = _expandedAll;
     final remaining = total - _previewCount;
+    final l = AppL10n.of(context);
     return TextButton.icon(
       onPressed: () => setState(() => _expandedAll = !_expandedAll),
       icon: Icon(
@@ -355,7 +369,7 @@ class _ProfileViewState extends State<ProfileView> {
         size: 18,
       ),
       label: Text(
-        isExpanded ? '접기' : '$remaining개 더 보기',
+        isExpanded ? l.profileCollapse : l.profileMoreCount(remaining),
         style: const TextStyle(fontWeight: FontWeight.w600),
       ),
       style: TextButton.styleFrom(
@@ -424,7 +438,7 @@ class _ProfileViewState extends State<ProfileView> {
                               fontWeight: FontWeight.w800,
                               color: cs.onSurface)),
                       const SizedBox(height: 2),
-                      Text('친구와 위치/채팅 실시간 공유 (베타)',
+                      Text(AppL10n.of(context).profileLiveShareBeta,
                           style: TextStyle(
                               fontSize: 12, color: cs.onSurfaceVariant)),
                     ],
@@ -444,6 +458,7 @@ class _ProfileViewState extends State<ProfileView> {
   Widget _buildTimelineSection() {
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final l = AppL10n.of(context);
     final visits = VisitHistoryService.instance.recentVisits;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -453,7 +468,7 @@ class _ProfileViewState extends State<ProfileView> {
           Row(
             children: [
               Text(
-                '내 타임라인',
+                l.profileTimeline,
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w800,
@@ -463,7 +478,7 @@ class _ProfileViewState extends State<ProfileView> {
               const Spacer(),
               if (visits.isNotEmpty)
                 Text(
-                  '${visits.length}곳',
+                  l.profilePlaceCount(visits.length),
                   style: TextStyle(
                     fontSize: 13,
                     color: cs.onSurfaceVariant,
@@ -491,7 +506,7 @@ class _ProfileViewState extends State<ProfileView> {
                 height: 90,
                 child: Center(
                   child: Text(
-                    '방문 기록이 없어요. 장소를 탐색하고 길찾기를 해보세요.',
+                    l.profileEmptyVisitsCta,
                     style: TextStyle(
                       fontSize: 13,
                       color: cs.onSurfaceVariant,
@@ -510,15 +525,16 @@ class _ProfileViewState extends State<ProfileView> {
   /// 방문 기록을 날짜별로 그룹핑 후 카드 리스트 생성.
   /// 그룹마다 5개까지 노출, 나머지는 더보기 토글.
   List<Widget> _buildTimelineFeed(List<VisitRecord> visits, ColorScheme cs) {
+    final l = AppL10n.of(context);
     String dateLabel(DateTime d) {
       final now = DateTime.now();
       final today = DateTime(now.year, now.month, now.day);
       final dDay = DateTime(d.year, d.month, d.day);
       final diff = today.difference(dDay).inDays;
-      if (diff == 0) return '오늘';
-      if (diff == 1) return '어제';
-      if (diff < 7) return '$diff일 전';
-      return '${d.month}월 ${d.day}일';
+      if (diff == 0) return l.profileToday;
+      if (diff == 1) return l.profileYesterday;
+      if (diff < 7) return l.profileAgoDays(diff);
+      return l.profileMonthDay(d.month, d.day);
     }
 
     // 1) 라벨별로 묶음 (입력은 시간 내림차순 가정 → 순서 유지).
@@ -664,7 +680,7 @@ class _ProfileViewState extends State<ProfileView> {
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
-                            '${v.visitCount}회',
+                            AppL10n.of(context).profileVisitTimes(v.visitCount),
                             style: TextStyle(
                               fontSize: 10,
                               color: color,
@@ -748,18 +764,19 @@ class _ProfileViewState extends State<ProfileView> {
     showDialog(
       context: context,
       builder: (ctx) {
+        final l = AppL10n.of(ctx);
         return AlertDialog(
-          title: const Text('이름 변경'),
+          title: Text(l.profileEditName),
           content: TextField(
             controller: controller,
             autofocus: true,
             decoration: InputDecoration(
-              hintText: '새 이름 입력',
+              hintText: l.profileNewNameHint,
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('취소')),
+            TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l.commonCancel)),
             FilledButton(
               onPressed: () async {
                 final newName = controller.text.trim();
@@ -772,7 +789,7 @@ class _ProfileViewState extends State<ProfileView> {
                   setState(() {});
                 }
               },
-              child: const Text('저장'),
+              child: Text(l.commonSave),
             ),
           ],
         );
@@ -802,7 +819,7 @@ class _ProfileViewState extends State<ProfileView> {
           ),
           const SizedBox(height: 4),
           Text(
-            '서울의 모든 순간을 담다',
+            AppL10n.of(context).profileTagline,
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w400,
@@ -854,7 +871,9 @@ class _TimelineExpandToggle extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  expanded ? '접기' : '더보기',
+                  expanded
+                      ? AppL10n.of(context).profileCollapse
+                      : AppL10n.of(context).profileMore,
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
@@ -953,7 +972,7 @@ class _TimelineMapPreview extends StatelessWidget {
                         size: 32, color: cs.onSurfaceVariant),
                     const SizedBox(height: 6),
                     Text(
-                      '방문지가 쌓이면 여기 지도에 표시돼요',
+                      AppL10n.of(context).profileEmptyMapPlaces,
                       style: TextStyle(
                           fontSize: 12, color: cs.onSurfaceVariant),
                     ),
@@ -999,7 +1018,8 @@ class _TimelineMapPreview extends StatelessWidget {
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
-                      '최근 ${visits.where((v) => v.lat != 0 && v.lng != 0).take(8).length}곳',
+                      AppL10n.of(context).profileRecentPlaceCount(
+                          visits.where((v) => v.lat != 0 && v.lng != 0).take(8).length),
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 11,

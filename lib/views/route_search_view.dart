@@ -3,6 +3,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import '../core/platform_scroll.dart';
+import '../l10n/gen/app_localizations.dart';
 import '../services/path_finding_service.dart';
 import '../models/subway_models.dart';
 import '../widgets/bus_overlay.dart';
@@ -276,7 +277,7 @@ class _RouteSearchOverlayState extends State<RouteSearchOverlay>
             const SizedBox(width: 2),
             Padding(
               padding: const EdgeInsets.only(bottom: 6),
-              child: Text('시간', style: TextStyle(
+              child: Text(AppL10n.of(context).routeUnitHour, style: TextStyle(
                 color: Colors.white.withValues(alpha: 0.70), fontSize: 16, fontWeight: FontWeight.w600,
               )),
             ),
@@ -291,7 +292,7 @@ class _RouteSearchOverlayState extends State<RouteSearchOverlay>
           const SizedBox(width: 2),
           Padding(
             padding: const EdgeInsets.only(bottom: 6),
-            child: Text('분', style: TextStyle(
+            child: Text(AppL10n.of(context).routeUnitMin, style: TextStyle(
               color: Colors.white.withValues(alpha: 0.70), fontSize: 16, fontWeight: FontWeight.w600,
             )),
           ),
@@ -301,7 +302,7 @@ class _RouteSearchOverlayState extends State<RouteSearchOverlay>
             children: [
               if (_r.transferCount > 0)
                 Text(
-                  '환승 ${_r.transferCount}회',
+                  AppL10n.of(context).routeTransfersCount(_r.transferCount),
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.50), fontSize: 13,
                   ),
@@ -347,6 +348,7 @@ class _RouteSearchOverlayState extends State<RouteSearchOverlay>
   }
 
   Widget _buildRouteSteps() {
+    final l = AppL10n.of(context);
     final steps = <Widget>[];
 
     // 출발역
@@ -356,7 +358,7 @@ class _RouteSearchOverlayState extends State<RouteSearchOverlay>
           ? (_segmentColor(_r.segments.first))
           : Colors.grey,
       title: _r.departure,
-      subtitle: '출발',
+      subtitle: l.routeDeparture,
       icon: Icons.my_location_rounded,
     ));
 
@@ -376,8 +378,8 @@ class _RouteSearchOverlayState extends State<RouteSearchOverlay>
         steps.add(_RouteStep(
           dotColor: Colors.white,
           lineColor: nextColor,
-          title: '환승',
-          subtitle: '${seg.lineName} · $transferMin분',
+          title: l.routeTransfer,
+          subtitle: l.routeTransferDetail(seg.lineName, transferMin),
           icon: Icons.swap_horiz_rounded,
         ));
       } else {
@@ -391,13 +393,22 @@ class _RouteSearchOverlayState extends State<RouteSearchOverlay>
             : null;
 
         final isBus = seg.mode == TransportMode.bus;
+        final String subtitleText;
+        if (stationCount > 1) {
+          subtitleText = isBus
+              ? l.routeSegmentBus(
+                  seg.stations.first, seg.stations.last, stationCount, timeMins)
+              : l.routeSegmentTrain(
+                  seg.stations.first, seg.stations.last, stationCount, timeMins);
+        } else {
+          subtitleText = l.routeSegmentShort(
+              seg.stations.firstOrNull ?? '', timeMins);
+        }
         steps.add(_RouteStep(
           dotColor: lineColor,
           lineColor: isLast ? null : (nextLineColor ?? lineColor),
-          title: '${seg.lineName} 승차',
-          subtitle: stationCount > 1
-              ? '${seg.stations.first} → ${seg.stations.last} · ${stationCount}개 ${isBus ? "정류장" : "역"} · $timeMins분'
-              : '${seg.stations.firstOrNull ?? ""} · $timeMins분',
+          title: l.routeBoardLine(seg.lineName),
+          subtitle: subtitleText,
           icon: isBus ? Icons.directions_bus_rounded : Icons.train_rounded,
           badge: seg.lineName,
           badgeColor: lineColor,
@@ -421,7 +432,7 @@ class _RouteSearchOverlayState extends State<RouteSearchOverlay>
       dotColor: const Color(0xFFFF453A),
       lineColor: null,
       title: _r.arrival,
-      subtitle: '도착',
+      subtitle: l.routeArrival,
       icon: Icons.location_on_rounded,
       isLast: true,
     ));
@@ -542,7 +553,9 @@ class _RouteStep extends StatelessWidget {
                     GestureDetector(
                       onTap: onToggle,
                       child: Text(
-                        showExpanded ? '접기 ▲' : '정류장 보기 ▼',
+                        showExpanded
+                            ? AppL10n.of(context).routeCollapse
+                            : AppL10n.of(context).routeShowStops,
                         style: TextStyle(
                           color: Colors.white.withValues(alpha: 0.35), fontSize: 12,
                         ),

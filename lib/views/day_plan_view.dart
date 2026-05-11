@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import '../l10n/gen/app_localizations.dart';
 import '../models/sns_content_models.dart';
 import '../services/route_renderer.dart';
 import '../theme/app_colors.dart';
@@ -246,7 +247,7 @@ class _DayPlanViewState extends State<DayPlanView>
             child: Row(
               children: [
                 Text(
-                  '하루 플랜',
+                  AppL10n.of(context).dayPlanTitle,
                   style: TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.w700,
@@ -269,9 +270,9 @@ class _DayPlanViewState extends State<DayPlanView>
                           borderRadius: BorderRadius.circular(16)),
                     ),
                     icon: const Icon(Icons.alt_route_rounded, size: 16),
-                    label: const Text(
-                      '전체 길찾기',
-                      style: TextStyle(
+                    label: Text(
+                      AppL10n.of(context).dayPlanNavigateAll,
+                      style: const TextStyle(
                           fontSize: 12, fontWeight: FontWeight.w700),
                     ),
                   ),
@@ -309,10 +310,18 @@ class _DayPlanViewState extends State<DayPlanView>
                     cs,
                     isDark),
                 const SizedBox(width: 8),
-                _summaryChip('🚇 ${_currentPlan.totalTransitMinutes}분', cs, isDark),
+                _summaryChip(
+                    AppL10n.of(context)
+                        .dayPlanTransitSummary(_currentPlan.totalTransitMinutes),
+                    cs,
+                    isDark),
                 if (_currentPlan.transferCount > 0) ...[
                   const SizedBox(width: 8),
-                  _summaryChip('🔄 ${_currentPlan.transferCount}회', cs, isDark),
+                  _summaryChip(
+                      AppL10n.of(context)
+                          .dayPlanTransfersSummary(_currentPlan.transferCount),
+                      cs,
+                      isDark),
                 ],
               ],
             ),
@@ -390,7 +399,8 @@ class _DayPlanViewState extends State<DayPlanView>
               ),
             ),
             Text(
-              '${plan.stops.length}곳 · ${plan.totalTransitMinutes}분',
+              AppL10n.of(context)
+                  .dayPlanStyleStats(plan.stops.length, plan.totalTransitMinutes),
               style: TextStyle(
                 fontSize: 10,
                 color: selected
@@ -540,7 +550,7 @@ class _DayPlanViewState extends State<DayPlanView>
                             color: cs.primary,
                           ),
                           label: Text(
-                            '길찾기',
+                            AppL10n.of(context).dayPlanNavigateStop,
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,

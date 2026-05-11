@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
+import '../l10n/gen/app_localizations.dart';
 import '../services/onboarding_service.dart';
 import '../widgets/adaptive/adaptive.dart';
 
@@ -41,73 +42,55 @@ class _WhatsNewViewState extends State<WhatsNewView> {
   final _pageCtrl = PageController();
   int _index = 0;
 
-  static const _pages = <_WnPage>[
-    _WnPage(
-      emoji: '🎉',
-      title: 'v$kAppVersion — 다시 만나서 반가워요',
-      body:
-          '이번엔 여행이 더 너답게 바뀌었어요.\n'
-          '여행 무드부터 친구·기록까지\n'
-          '14개의 새 기능을 만나보세요.',
-      gradient: [Color(0xFF7C5CFF), Color(0xFF5CC8FF)],
-    ),
-    _WnPage(
-      emoji: '✨',
-      title: '당신의 여행 무드',
-      body: '쉬어가기·놀기·역사·섞어서 중 하나를 고르면\n'
-          'AI 톤, 추천 코스, 여행 탭이\n'
-          '그 무드에 맞춰 바뀌어요.',
-      gradient: [Color(0xFFBC82F3), Color(0xFFFF6B9D)],
-    ),
-    _WnPage(
-      emoji: '🎯',
-      title: '같이 가기',
-      body: '친구방에서 공통 목적지를 정하면\n'
-          '멤버별 거리가 실시간으로 보여요.\n'
-          '맵에는 주황 핀이 자동으로.',
-      gradient: [Color(0xFFFF7A00), Color(0xFFFFC371)],
-    ),
-    _WnPage(
-      emoji: '💬',
-      title: '1:1 DM + 음성/사진',
-      body: '친구방 없이 친구와 바로 대화.\n'
-          '🎙 마이크 길게 눌러 음성, 📷 갤러리에서 사진,\n'
-          '📍 위치까지 한 채팅에서.',
-      gradient: [Color(0xFF06B6D4), Color(0xFF22D3EE)],
-    ),
-    _WnPage(
-      emoji: '🎵',
-      title: 'Spotify 공유',
-      body: '내가 듣는 곡을 친구에게.\n'
-          '채팅에 🎵 누르면 지금 재생 중인\n'
-          'Spotify 트랙이 카드로 공유돼요.',
-      gradient: [Color(0xFF1DB954), Color(0xFF1ED760)],
-    ),
-    _WnPage(
-      emoji: '🤝',
-      title: '친구 늘리기',
-      body: '친구 화면에 "친구의 친구" 추천,\n'
-          'QR 코드로 즉시 추가,\n'
-          '방 초대 링크로 한 번에 입장.',
-      gradient: [Color(0xFFEC4899), Color(0xFFF472B6)],
-    ),
-    _WnPage(
-      emoji: '🏆',
-      title: '활동이 점수가 돼요',
-      body: '친구 추가, 만남, 연속 출석으로 점수와 뱃지.\n'
-          '친구끼리 랭킹으로 비교하고,\n'
-          '주간 활동 차트로 돌아보세요.',
-      gradient: [Color(0xFFA855F7), Color(0xFFD946EF)],
-    ),
-    _WnPage(
-      emoji: '🛡',
-      title: '내 마음대로',
-      body: '알림은 종류별로 켜고 끄고,\n'
-          '내 위치는 특정 그룹에게만.\n'
-          '안전과 프라이버시는 본인이.',
-      gradient: [Color(0xFF10B981), Color(0xFF34D399)],
-    ),
+  // 페이지 정의는 BuildContext 가 있어야 현지화된 타이틀/본문을 빌드할 수 있어
+  // const → instance method 로 전환. 그라데이션/이모지는 고정.
+  static const _pageGradients = <List<Color>>[
+    [Color(0xFF7C5CFF), Color(0xFF5CC8FF)],
+    [Color(0xFFBC82F3), Color(0xFFFF6B9D)],
+    [Color(0xFFFF7A00), Color(0xFFFFC371)],
+    [Color(0xFF06B6D4), Color(0xFF22D3EE)],
+    [Color(0xFF1DB954), Color(0xFF1ED760)],
+    [Color(0xFFEC4899), Color(0xFFF472B6)],
+    [Color(0xFFA855F7), Color(0xFFD946EF)],
+    [Color(0xFF10B981), Color(0xFF34D399)],
   ];
+  static const _pageEmojis = <String>[
+    '🎉', '✨', '🎯', '💬', '🎵', '🤝', '🏆', '🛡',
+  ];
+  static const _pageCount = 8;
+
+  List<_WnPage> _pagesFor(BuildContext ctx) {
+    final l = AppL10n.of(ctx);
+    final titles = <String>[
+      l.whatsNewPage1Title(kAppVersion),
+      l.whatsNewPage2Title,
+      l.whatsNewPage3Title,
+      l.whatsNewPage4Title,
+      l.whatsNewPage5Title,
+      l.whatsNewPage6Title,
+      l.whatsNewPage7Title,
+      l.whatsNewPage8Title,
+    ];
+    final bodies = <String>[
+      l.whatsNewPage1Body,
+      l.whatsNewPage2Body,
+      l.whatsNewPage3Body,
+      l.whatsNewPage4Body,
+      l.whatsNewPage5Body,
+      l.whatsNewPage6Body,
+      l.whatsNewPage7Body,
+      l.whatsNewPage8Body,
+    ];
+    return [
+      for (int i = 0; i < _pageCount; i++)
+        _WnPage(
+          emoji: _pageEmojis[i],
+          title: titles[i],
+          body: bodies[i],
+          gradient: _pageGradients[i],
+        ),
+    ];
+  }
 
   @override
   void dispose() {
@@ -116,7 +99,7 @@ class _WhatsNewViewState extends State<WhatsNewView> {
   }
 
   Future<void> _next() async {
-    if (_index >= _pages.length - 1) {
+    if (_index >= _pageCount - 1) {
       if (mounted) Navigator.of(context).pop();
       return;
     }
@@ -130,7 +113,9 @@ class _WhatsNewViewState extends State<WhatsNewView> {
 
   @override
   Widget build(BuildContext context) {
-    final isLast = _index == _pages.length - 1;
+    final pages = _pagesFor(context);
+    final isLast = _index == pages.length - 1;
+    final l = AppL10n.of(context);
     final topPad = MediaQuery.of(context).padding.top;
     final bottomPad = MediaQuery.of(context).padding.bottom;
     return Scaffold(
@@ -145,11 +130,11 @@ class _WhatsNewViewState extends State<WhatsNewView> {
             child: PageView.builder(
               controller: _pageCtrl,
               onPageChanged: (i) => setState(() => _index = i),
-              itemCount: _pages.length,
+              itemCount: pages.length,
               itemBuilder: (_, i) => _PageContent(
                 // 같은 페이지로 돌아와도 애니메이션 재생되도록 currentIndex 포함.
                 key: ValueKey('wn_$i${_index == i ? '_active' : ''}'),
-                page: _pages[i],
+                page: pages[i],
                 isActive: i == _index,
                 topPadding: topPad,
                 bottomPadding: bottomPad,
@@ -165,7 +150,7 @@ class _WhatsNewViewState extends State<WhatsNewView> {
               style: TextButton.styleFrom(
                 foregroundColor: Colors.white.withValues(alpha: 0.7),
               ),
-              child: Text(isLast ? '닫기' : '건너뛰기',
+              child: Text(isLast ? l.whatsNewClose : l.whatsNewSkip,
                   style: const TextStyle(fontWeight: FontWeight.w600)),
             ),
           ),
@@ -178,7 +163,7 @@ class _WhatsNewViewState extends State<WhatsNewView> {
                 children: [
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(_pages.length, (i) {
+                    children: List.generate(pages.length, (i) {
                       final on = i == _index;
                       return AnimatedContainer(
                         duration: const Duration(milliseconds: 240),
@@ -200,7 +185,7 @@ class _WhatsNewViewState extends State<WhatsNewView> {
                     width: double.infinity,
                     height: 50,
                     child: AdaptiveGlassButton(
-                      label: isLast ? '시작하기' : '다음',
+                      label: isLast ? l.whatsNewStart : l.whatsNewNext,
                       onPressed: _next,
                     ),
                   )
