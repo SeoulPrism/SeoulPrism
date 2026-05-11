@@ -31,6 +31,15 @@ class SceneDelegate: FlutterSceneDelegate {
       appDelegate?.handleLiveActivityCall(call, result: result)
     }
 
+    // ── Audio session channel (Gemini Live 진입/이탈 시 호출) ──
+    let audioChannel = FlutterMethodChannel(
+      name: "seoul_prism/audio_session",
+      binaryMessenger: controller.binaryMessenger
+    )
+    audioChannel.setMethodCallHandler { [weak appDelegate] (call, result) in
+      appDelegate?.handleAudioSessionCall(call, result: result)
+    }
+
     // ── Widget data channel — App Group UserDefaults write ──
     widgetChannel = FlutterMethodChannel(
       name: SceneDelegate.widgetChannelName,

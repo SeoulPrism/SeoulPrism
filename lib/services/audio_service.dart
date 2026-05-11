@@ -1,14 +1,21 @@
 import 'dart:async';
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:record/record.dart';
 import 'package:flutter_soloud/flutter_soloud.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+import 'ios_audio_session.dart';
+
 /// 공식 firebase_ai 예제 패턴:
 /// - 녹음: record 패키지 (AudioRecorder)
 /// - 재생: flutter_soloud (SoLoud 엔진 — AudioFocus 안 씀, 마이크 방해 안 함)
+///
+/// singleton — AiView 인스턴스마다 새로 만들지 않는다. SoLoud / recorder 는 앱 lifecycle 동안 유지.
 class AudioService {
+  static AudioService? _instance;
+  static AudioService get instance => _instance ??= AudioService._();
+  AudioService._();
+
   final AudioRecorder _recorder = AudioRecorder();
   bool _isRecording = false;
 
@@ -20,8 +27,10 @@ class AudioService {
   bool _playReady = false; // play() 완료 여부
   final List<Uint8List> _pendingChunks = []; // play() 완료 전 도착한 청크
 
-  // 녹음 데이터 → Gemini
+  // 녹음 데이터 → Gemini. broadcast 로 만들어서 level 계산 listener 와
+  // sendMediaStream 의 await-for listener 가 같이 쓸 수 있게 한다.
   Stream<Uint8List>? audioInputStream;
+  StreamSubscription<Uint8List>? _levelSub;
 
   // 오디오 레벨 (Glow 반응)
   final _levelController = StreamController<double>.broadcast();
@@ -59,6 +68,8 @@ class AudioService {
       SoLoud.instance.setDataIsEnded(_stream!);
       await SoLoud.instance.stop(_handle!);
     }
+    _stream = null;
+    _handle = null;
   }
 
   /// 재생 스트림 시작 (새 발화마다 한 번만 호출됨)
@@ -104,13 +115,21 @@ class AudioService {
     _pendingChunks.clear();
   }
 
+  /// 사용자 interrupt 시 — 큐된 audio 즉시 중단해서 잘린 음성 잔여 재생을 막는다.
+  Future<void> flushPlayback() async {
+    _pendingChunks.clear();
+    await _stopStream();
+    _isPlaying = false;
+    _playReady = false;
+  }
+
   /// 마이크 권한 확인
   Future<bool> checkPermission() async {
     final status = await Permission.microphone.request();
     return status.isGranted;
   }
 
-  /// 녹음 시작 → Stream<Uint8List> 반환 (공식 예제 패턴)
+  /// 녹음 시작 → Stream<Uint8List> 반환 (broadcast — 여러 listener 가능).
   Future<Stream<Uint8List>?> startRecording() async {
     if (_isRecording) return audioInputStream;
 
@@ -119,6 +138,10 @@ class AudioService {
       final granted = await checkPermission();
       if (!granted) return null;
     }
+
+    // iOS — VPIO 마이크 + 스피커 동시 사용 위해 audio session 통일.
+    // 녹음 시작 *전* 에 활성화해야 VPIO 가 render err -1 안 던짐.
+    await IosAudioSession.activateVoiceChat();
 
     final recordConfig = RecordConfig(
       encoder: AudioEncoder.pcm16bits,
@@ -131,12 +154,15 @@ class AudioService {
       ),
     );
 
-    audioInputStream = await _recorder.startStream(recordConfig);
+    final raw = await _recorder.startStream(recordConfig);
+    // single-subscription → broadcast 로 변환. sendMediaStream 과 level 계산이
+    // 같은 stream 을 동시에 listen 해야 하기 때문.
+    audioInputStream = raw.asBroadcastStream();
     _isRecording = true;
     debugPrint('[AudioService] Recording started (16kHz mono)');
 
     // 레벨 계산용 리스너
-    audioInputStream!.listen((data) {
+    _levelSub = audioInputStream!.listen((data) {
       _levelController.add(_calculateRmsLevel(data));
     });
 
@@ -145,8 +171,17 @@ class AudioService {
 
   Future<void> stopRecording() async {
     if (!_isRecording) return;
-    await _recorder.stop();
     _isRecording = false;
+    await _levelSub?.cancel();
+    _levelSub = null;
+    try {
+      await _recorder.stop();
+    } catch (e) {
+      debugPrint('[AudioService] stopRecording error (suppressed): $e');
+    }
+    audioInputStream = null;
+    // 다른 앱 (음악 등) 에 audio session 돌려준다.
+    await IosAudioSession.deactivate();
     debugPrint('[AudioService] Recording stopped');
   }
 
@@ -164,13 +199,12 @@ class AudioService {
     return (rms * 10).clamp(0.0, 1.0);
   }
 
-  void dispose() {
-    stopRecording();
-    _stopStream();
-    if (_soloudReady) {
-      SoLoud.instance.deinit();
-    }
-    _recorder.dispose();
-    _levelController.close();
+  /// 앱 lifecycle 동안 singleton 유지가 의도이므로 일반적으로 호출되지 않는다.
+  /// 명시적으로 정리하고 싶을 때만 호출.
+  Future<void> dispose() async {
+    await stopRecording();
+    await _stopStream();
+    await _recorder.dispose();
+    await _levelController.close();
   }
 }
