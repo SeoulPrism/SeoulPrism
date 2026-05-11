@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../core/app_version.dart';
 import '../data/ai_languages.dart';
 import '../l10n/gen/app_localizations.dart';
 import '../main.dart';
@@ -16,7 +17,6 @@ import '../widgets/adaptive/adaptive.dart';
 import '../widgets/app_snackbar.dart';
 import 'auth_view.dart';
 import 'settings/quality_preset_preview.dart';
-import 'whats_new_sheet.dart';
 
 class SettingsView extends StatefulWidget {
   const SettingsView({super.key});
@@ -537,15 +537,6 @@ class _SettingsViewState extends State<SettingsView> {
                   label: AppL10n.of(context).settingsResetTutorial,
                   onTap: () => _confirmResetTutorial(),
                 ),
-                const _ItemDivider(),
-                _ChevronItem(
-                  label: AppL10n.of(context).settingsReplayWhatsNew,
-                  onTap: () async {
-                    await OnboardingService.instance.resetWhatsNew();
-                    if (!mounted) return;
-                    showAppSnackBar(AppL10n.of(context).settingsWhatsNewToast);
-                  },
-                ),
               ],
             ),
             const SizedBox(height: 16),
@@ -566,12 +557,20 @@ class _SettingsViewState extends State<SettingsView> {
                 ),
                 const _ItemDivider(),
                 _ChevronItem(
+                  label: AppL10n.of(context).settingsCommunityGuidelines,
+                  onTap: () => launchUrl(
+                    Uri.parse('https://seoulprism.github.io/SeoulPrism_Docs/community-guidelines.html'),
+                    mode: LaunchMode.externalApplication,
+                  ),
+                ),
+                const _ItemDivider(),
+                _ChevronItem(
                   label: AppL10n.of(context).settingsLicenses,
                   onTap: () {
                     showLicensePage(
                       context: context,
                       applicationName: 'Seoul Vista',
-                      applicationVersion: '1.0.3',
+                      applicationVersion: '1.0.5',
                     );
                   },
                 ),

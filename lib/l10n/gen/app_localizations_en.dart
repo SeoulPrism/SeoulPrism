@@ -999,6 +999,9 @@ class AppL10nEn extends AppL10n {
   String get settingsPrivacy => 'Privacy policy';
 
   @override
+  String get settingsCommunityGuidelines => 'Community guidelines';
+
+  @override
   String get settingsLicenses => 'Open source licenses';
 
   @override
@@ -3127,6 +3130,16 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get mpConsentItem3Link => 'Read the full terms';
+
+  @override
+  String get mpConsentItem4Title => '[Required] Community guidelines';
+
+  @override
+  String get mpConsentItem4Detail =>
+      'Zero-tolerance for hate, harassment, sexual content, and minor abuse. Reported content is reviewed within 24 hours; violators may have content removed, accounts suspended, or be permanently banned.';
+
+  @override
+  String get mpConsentItem4Link => 'Read the full guidelines';
 
   @override
   String get mpConsentDeclineNote =>

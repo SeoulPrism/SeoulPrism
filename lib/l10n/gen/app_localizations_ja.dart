@@ -984,6 +984,9 @@ class AppL10nJa extends AppL10n {
   String get settingsPrivacy => 'プライバシーポリシー';
 
   @override
+  String get settingsCommunityGuidelines => 'コミュニティガイドライン';
+
+  @override
   String get settingsLicenses => 'オープンソースライセンス';
 
   @override
@@ -3052,6 +3055,16 @@ class AppL10nJa extends AppL10n {
 
   @override
   String get mpConsentItem3Link => '規約全文を見る';
+
+  @override
+  String get mpConsentItem4Title => '[必須] コミュニティガイドライン';
+
+  @override
+  String get mpConsentItem4Detail =>
+      'ヘイト・嫌がらせ・性的コンテンツ・未成年虐待は無寛容。通報されたコンテンツは 24 時間以内に審査され、違反者は削除・停止・永久 BAN の対象となります。';
+
+  @override
+  String get mpConsentItem4Link => 'ガイドライン全文を見る';
 
   @override
   String get mpConsentDeclineNote => '拒否してもマルチプレイのみ無効になり、その他の機能は通常通り利用可能です。';

@@ -1829,6 +1829,12 @@ abstract class AppL10n {
   /// **'Privacy policy'**
   String get settingsPrivacy;
 
+  /// No description provided for @settingsCommunityGuidelines.
+  ///
+  /// In en, this message translates to:
+  /// **'Community guidelines'**
+  String get settingsCommunityGuidelines;
+
   /// No description provided for @settingsLicenses.
   ///
   /// In en, this message translates to:
@@ -5590,6 +5596,24 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Read the full terms'**
   String get mpConsentItem3Link;
+
+  /// No description provided for @mpConsentItem4Title.
+  ///
+  /// In en, this message translates to:
+  /// **'[Required] Community guidelines'**
+  String get mpConsentItem4Title;
+
+  /// No description provided for @mpConsentItem4Detail.
+  ///
+  /// In en, this message translates to:
+  /// **'Zero-tolerance for hate, harassment, sexual content, and minor abuse. Reported content is reviewed within 24 hours; violators may have content removed, accounts suspended, or be permanently banned.'**
+  String get mpConsentItem4Detail;
+
+  /// No description provided for @mpConsentItem4Link.
+  ///
+  /// In en, this message translates to:
+  /// **'Read the full guidelines'**
+  String get mpConsentItem4Link;
 
   /// No description provided for @mpConsentDeclineNote.
   ///

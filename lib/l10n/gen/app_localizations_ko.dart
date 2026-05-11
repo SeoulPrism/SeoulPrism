@@ -984,6 +984,9 @@ class AppL10nKo extends AppL10n {
   String get settingsPrivacy => '개인정보처리방침';
 
   @override
+  String get settingsCommunityGuidelines => '커뮤니티 가이드라인';
+
+  @override
   String get settingsLicenses => '오픈소스 라이선스';
 
   @override
@@ -3055,6 +3058,16 @@ class AppL10nKo extends AppL10n {
 
   @override
   String get mpConsentItem3Link => '약관 전문 보기';
+
+  @override
+  String get mpConsentItem4Title => '[필수] 커뮤니티 가이드라인';
+
+  @override
+  String get mpConsentItem4Detail =>
+      '혐오·괴롭힘·성적 콘텐츠·미성년자 학대 무관용. 신고된 콘텐츠는 24시간 이내에 검토되며, 위반자는 콘텐츠 삭제·정지·영구 차단될 수 있어요.';
+
+  @override
+  String get mpConsentItem4Link => '가이드라인 전문 보기';
 
   @override
   String get mpConsentDeclineNote => '거부해도 멀티플레이만 비활성화되고 나머지 기능은 정상 사용 가능해요.';

@@ -975,6 +975,9 @@ class AppL10nZh extends AppL10n {
   String get settingsPrivacy => '隐私政策';
 
   @override
+  String get settingsCommunityGuidelines => '社区准则';
+
+  @override
   String get settingsLicenses => '开源许可';
 
   @override
@@ -3030,6 +3033,16 @@ class AppL10nZh extends AppL10n {
 
   @override
   String get mpConsentItem3Link => '查看条款全文';
+
+  @override
+  String get mpConsentItem4Title => '[必需] 社区准则';
+
+  @override
+  String get mpConsentItem4Detail =>
+      '对仇恨、骚扰、色情内容及未成年虐待零容忍。被举报内容将在 24 小时内审核,违规者可能被删除内容、暂停账号或永久封禁。';
+
+  @override
+  String get mpConsentItem4Link => '查看准则全文';
 
   @override
   String get mpConsentDeclineNote => '拒绝后仅多人功能不可用,其他功能仍可正常使用。';

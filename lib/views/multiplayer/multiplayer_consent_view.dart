@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../l10n/gen/app_localizations.dart';
 import '../../services/multiplayer_service.dart';
 import '../../widgets/adaptive/adaptive.dart';
 import 'login_required_gate.dart';
+
+const _kCommunityGuidelinesUrl =
+    'https://seoulprism.github.io/SeoulPrism_Docs/community-guidelines.html';
 
 /// Seoul Live 첫 진입 시 1회 노출. 위치정보보호법(LBS) + PIPA 컴플라이언스.
 class MultiplayerConsentView extends StatefulWidget {
@@ -19,11 +23,15 @@ class _MultiplayerConsentViewState extends State<MultiplayerConsentView> {
   bool _agreeProfile = false;
   bool _agreeLocation = false;
   bool _agreeLbsTerms = false;
+  bool _agreeCommunityGuidelines = false;
   bool _busy = false;
   String? _error;
 
   bool get _allRequired =>
-      _agreeProfile && _agreeLocation && _agreeLbsTerms;
+      _agreeProfile &&
+      _agreeLocation &&
+      _agreeLbsTerms &&
+      _agreeCommunityGuidelines;
 
   Future<void> _proceed() async {
     if (!_allRequired) return;
@@ -102,6 +110,19 @@ class _MultiplayerConsentViewState extends State<MultiplayerConsentView> {
                   onChanged: (v) => setState(() => _agreeLbsTerms = v),
                   linkText: l.mpConsentItem3Link,
                   onLinkTap: () => _showFullTerms(context),
+                ),
+                const _Divider(),
+                _ConsentRow(
+                  title: l.mpConsentItem4Title,
+                  detail: l.mpConsentItem4Detail,
+                  value: _agreeCommunityGuidelines,
+                  onChanged: (v) =>
+                      setState(() => _agreeCommunityGuidelines = v),
+                  linkText: l.mpConsentItem4Link,
+                  onLinkTap: () => launchUrl(
+                    Uri.parse(_kCommunityGuidelinesUrl),
+                    mode: LaunchMode.externalApplication,
+                  ),
                 ),
               ],
             ),
