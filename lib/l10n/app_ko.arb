@@ -632,5 +632,19 @@
   "friendsFailure": "실패: {error}",
   "friendsSuggestionsTitle": "추천 친구 (친구의 친구)",
   "friendsMutualCount": "공통 친구 {count}명",
-  "friendsAddShort": "추가"
+  "friendsAddShort": "추가",
+
+  "searchRouteNotFound": "경로를 찾지 못했어요. 출발지/도착지를 확인해 주세요.",
+  "searchLocationUnavailable": "현재 위치를 가져올 수 없어요. 위치 권한과 GPS 를 확인해 주세요.",
+  "searchTabRoute": "길찾기",
+  "searchTabProfile": "프로필",
+  "searchPathTypeOptimal": "최적",
+  "searchPathTypeShortest": "최단",
+  "searchPathTypeMinTransfer": "최소환승",
+  "searchOutsideServiceTitle": "서비스 지역 밖이에요",
+  "searchOutsideServiceBody": "현재 길찾기는 서울·인천·경기 수도권만 지원해요. 출발 또는 도착지를 수도권 안에서 다시 선택해주세요.",
+  "searchDepartureFieldHint": "출발지",
+  "searchArrivalFieldHint": "도착지",
+  "searchSwapDepArr": "출발지·도착지 교환",
+  "searchCloseTooltip": "길찾기 닫기"
 }

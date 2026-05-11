@@ -632,5 +632,19 @@
   "friendsFailure": "失败:{error}",
   "friendsSuggestionsTitle": "推荐好友 (朋友的朋友)",
   "friendsMutualCount": "共同好友 {count} 人",
-  "friendsAddShort": "添加"
+  "friendsAddShort": "添加",
+
+  "searchRouteNotFound": "未找到路线。请确认出发地/到达地。",
+  "searchLocationUnavailable": "无法获取当前位置。请检查定位权限和 GPS。",
+  "searchTabRoute": "导航",
+  "searchTabProfile": "我的",
+  "searchPathTypeOptimal": "最佳",
+  "searchPathTypeShortest": "最短",
+  "searchPathTypeMinTransfer": "最少换乘",
+  "searchOutsideServiceTitle": "在服务区域之外",
+  "searchOutsideServiceBody": "当前导航仅支持首尔·仁川·京畿首都圈。请在首都圈内重新选择出发地或到达地。",
+  "searchDepartureFieldHint": "出发地",
+  "searchArrivalFieldHint": "到达地",
+  "searchSwapDepArr": "交换出发/到达",
+  "searchCloseTooltip": "关闭导航"
 }

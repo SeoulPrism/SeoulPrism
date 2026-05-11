@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../services/onboarding_service.dart';
 import '../../theme/app_typography.dart';
 import '../../widgets/adaptive/adaptive.dart';
@@ -298,7 +299,7 @@ class _OnboardingViewState extends State<OnboardingView>
                 child: TextButton(
                   onPressed: _finish,
                   child: Text(
-                    '건너뛰기',
+                    AppL10n.of(context).whatsNewSkip,
                     style: AppTypography.bodySm.copyWith(color: skipColor),
                   ),
                 ),
@@ -328,7 +329,9 @@ class _OnboardingViewState extends State<OnboardingView>
                       child: SizedBox(
                         width: double.infinity,
                         child: AdaptiveGlassButton(
-                          label: _isLast ? '시작하기' : '다음',
+                          label: _isLast
+                              ? AppL10n.of(context).whatsNewStart
+                              : AppL10n.of(context).whatsNewNext,
                           onPressed: _next,
                         ),
                       ),

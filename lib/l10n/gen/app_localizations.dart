@@ -3718,6 +3718,84 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Add'**
   String get friendsAddShort;
+
+  /// No description provided for @searchRouteNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t find a route. Check the start and end points.'**
+  String get searchRouteNotFound;
+
+  /// No description provided for @searchLocationUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t get your current location. Check location permission and GPS.'**
+  String get searchLocationUnavailable;
+
+  /// No description provided for @searchTabRoute.
+  ///
+  /// In en, this message translates to:
+  /// **'Directions'**
+  String get searchTabRoute;
+
+  /// No description provided for @searchTabProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile'**
+  String get searchTabProfile;
+
+  /// No description provided for @searchPathTypeOptimal.
+  ///
+  /// In en, this message translates to:
+  /// **'Optimal'**
+  String get searchPathTypeOptimal;
+
+  /// No description provided for @searchPathTypeShortest.
+  ///
+  /// In en, this message translates to:
+  /// **'Shortest'**
+  String get searchPathTypeShortest;
+
+  /// No description provided for @searchPathTypeMinTransfer.
+  ///
+  /// In en, this message translates to:
+  /// **'Min transfers'**
+  String get searchPathTypeMinTransfer;
+
+  /// No description provided for @searchOutsideServiceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Outside service area'**
+  String get searchOutsideServiceTitle;
+
+  /// No description provided for @searchOutsideServiceBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Directions currently support Seoul · Incheon · Gyeonggi only. Please pick a start or end inside the metro region.'**
+  String get searchOutsideServiceBody;
+
+  /// No description provided for @searchDepartureFieldHint.
+  ///
+  /// In en, this message translates to:
+  /// **'From'**
+  String get searchDepartureFieldHint;
+
+  /// No description provided for @searchArrivalFieldHint.
+  ///
+  /// In en, this message translates to:
+  /// **'To'**
+  String get searchArrivalFieldHint;
+
+  /// No description provided for @searchSwapDepArr.
+  ///
+  /// In en, this message translates to:
+  /// **'Swap from/to'**
+  String get searchSwapDepArr;
+
+  /// No description provided for @searchCloseTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Close directions'**
+  String get searchCloseTooltip;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

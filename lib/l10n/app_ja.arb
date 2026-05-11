@@ -632,5 +632,19 @@
   "friendsFailure": "失敗: {error}",
   "friendsSuggestionsTitle": "おすすめの友だち (友だちの友だち)",
   "friendsMutualCount": "共通の友だち {count} 人",
-  "friendsAddShort": "追加"
+  "friendsAddShort": "追加",
+
+  "searchRouteNotFound": "経路が見つかりませんでした。出発地/到着地をご確認ください。",
+  "searchLocationUnavailable": "現在地を取得できませんでした。位置情報の権限と GPS をご確認ください。",
+  "searchTabRoute": "ルート",
+  "searchTabProfile": "プロフィール",
+  "searchPathTypeOptimal": "最適",
+  "searchPathTypeShortest": "最短",
+  "searchPathTypeMinTransfer": "乗換最小",
+  "searchOutsideServiceTitle": "サービスエリア外です",
+  "searchOutsideServiceBody": "現在のルート機能はソウル・仁川・京畿の首都圏のみ対応しています。出発または到着地を首都圏内で選び直してください。",
+  "searchDepartureFieldHint": "出発地",
+  "searchArrivalFieldHint": "到着地",
+  "searchSwapDepArr": "出発地と到着地を入れ替え",
+  "searchCloseTooltip": "ルート画面を閉じる"
 }

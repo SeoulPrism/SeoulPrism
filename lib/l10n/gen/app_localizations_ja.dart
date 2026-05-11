@@ -2022,4 +2022,45 @@ class AppL10nJa extends AppL10n {
 
   @override
   String get friendsAddShort => '追加';
+
+  @override
+  String get searchRouteNotFound => '経路が見つかりませんでした。出発地/到着地をご確認ください。';
+
+  @override
+  String get searchLocationUnavailable =>
+      '現在地を取得できませんでした。位置情報の権限と GPS をご確認ください。';
+
+  @override
+  String get searchTabRoute => 'ルート';
+
+  @override
+  String get searchTabProfile => 'プロフィール';
+
+  @override
+  String get searchPathTypeOptimal => '最適';
+
+  @override
+  String get searchPathTypeShortest => '最短';
+
+  @override
+  String get searchPathTypeMinTransfer => '乗換最小';
+
+  @override
+  String get searchOutsideServiceTitle => 'サービスエリア外です';
+
+  @override
+  String get searchOutsideServiceBody =>
+      '現在のルート機能はソウル・仁川・京畿の首都圏のみ対応しています。出発または到着地を首都圏内で選び直してください。';
+
+  @override
+  String get searchDepartureFieldHint => '出発地';
+
+  @override
+  String get searchArrivalFieldHint => '到着地';
+
+  @override
+  String get searchSwapDepArr => '出発地と到着地を入れ替え';
+
+  @override
+  String get searchCloseTooltip => 'ルート画面を閉じる';
 }

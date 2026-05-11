@@ -2060,4 +2060,46 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get friendsAddShort => 'Add';
+
+  @override
+  String get searchRouteNotFound =>
+      'Couldn\'t find a route. Check the start and end points.';
+
+  @override
+  String get searchLocationUnavailable =>
+      'Couldn\'t get your current location. Check location permission and GPS.';
+
+  @override
+  String get searchTabRoute => 'Directions';
+
+  @override
+  String get searchTabProfile => 'Profile';
+
+  @override
+  String get searchPathTypeOptimal => 'Optimal';
+
+  @override
+  String get searchPathTypeShortest => 'Shortest';
+
+  @override
+  String get searchPathTypeMinTransfer => 'Min transfers';
+
+  @override
+  String get searchOutsideServiceTitle => 'Outside service area';
+
+  @override
+  String get searchOutsideServiceBody =>
+      'Directions currently support Seoul · Incheon · Gyeonggi only. Please pick a start or end inside the metro region.';
+
+  @override
+  String get searchDepartureFieldHint => 'From';
+
+  @override
+  String get searchArrivalFieldHint => 'To';
+
+  @override
+  String get searchSwapDepArr => 'Swap from/to';
+
+  @override
+  String get searchCloseTooltip => 'Close directions';
 }

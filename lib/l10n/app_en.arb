@@ -960,5 +960,19 @@
   "@friendsMutualCount": {
     "placeholders": { "count": { "type": "int" } }
   },
-  "friendsAddShort": "Add"
+  "friendsAddShort": "Add",
+
+  "searchRouteNotFound": "Couldn't find a route. Check the start and end points.",
+  "searchLocationUnavailable": "Couldn't get your current location. Check location permission and GPS.",
+  "searchTabRoute": "Directions",
+  "searchTabProfile": "Profile",
+  "searchPathTypeOptimal": "Optimal",
+  "searchPathTypeShortest": "Shortest",
+  "searchPathTypeMinTransfer": "Min transfers",
+  "searchOutsideServiceTitle": "Outside service area",
+  "searchOutsideServiceBody": "Directions currently support Seoul · Incheon · Gyeonggi only. Please pick a start or end inside the metro region.",
+  "searchDepartureFieldHint": "From",
+  "searchArrivalFieldHint": "To",
+  "searchSwapDepArr": "Swap from/to",
+  "searchCloseTooltip": "Close directions"
 }

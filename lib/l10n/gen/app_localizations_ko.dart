@@ -2022,4 +2022,45 @@ class AppL10nKo extends AppL10n {
 
   @override
   String get friendsAddShort => '추가';
+
+  @override
+  String get searchRouteNotFound => '경로를 찾지 못했어요. 출발지/도착지를 확인해 주세요.';
+
+  @override
+  String get searchLocationUnavailable =>
+      '현재 위치를 가져올 수 없어요. 위치 권한과 GPS 를 확인해 주세요.';
+
+  @override
+  String get searchTabRoute => '길찾기';
+
+  @override
+  String get searchTabProfile => '프로필';
+
+  @override
+  String get searchPathTypeOptimal => '최적';
+
+  @override
+  String get searchPathTypeShortest => '최단';
+
+  @override
+  String get searchPathTypeMinTransfer => '최소환승';
+
+  @override
+  String get searchOutsideServiceTitle => '서비스 지역 밖이에요';
+
+  @override
+  String get searchOutsideServiceBody =>
+      '현재 길찾기는 서울·인천·경기 수도권만 지원해요. 출발 또는 도착지를 수도권 안에서 다시 선택해주세요.';
+
+  @override
+  String get searchDepartureFieldHint => '출발지';
+
+  @override
+  String get searchArrivalFieldHint => '도착지';
+
+  @override
+  String get searchSwapDepArr => '출발지·도착지 교환';
+
+  @override
+  String get searchCloseTooltip => '길찾기 닫기';
 }

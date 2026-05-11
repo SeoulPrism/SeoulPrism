@@ -2011,4 +2011,44 @@ class AppL10nZh extends AppL10n {
 
   @override
   String get friendsAddShort => '添加';
+
+  @override
+  String get searchRouteNotFound => '未找到路线。请确认出发地/到达地。';
+
+  @override
+  String get searchLocationUnavailable => '无法获取当前位置。请检查定位权限和 GPS。';
+
+  @override
+  String get searchTabRoute => '导航';
+
+  @override
+  String get searchTabProfile => '我的';
+
+  @override
+  String get searchPathTypeOptimal => '最佳';
+
+  @override
+  String get searchPathTypeShortest => '最短';
+
+  @override
+  String get searchPathTypeMinTransfer => '最少换乘';
+
+  @override
+  String get searchOutsideServiceTitle => '在服务区域之外';
+
+  @override
+  String get searchOutsideServiceBody =>
+      '当前导航仅支持首尔·仁川·京畿首都圈。请在首都圈内重新选择出发地或到达地。';
+
+  @override
+  String get searchDepartureFieldHint => '出发地';
+
+  @override
+  String get searchArrivalFieldHint => '到达地';
+
+  @override
+  String get searchSwapDepArr => '交换出发/到达';
+
+  @override
+  String get searchCloseTooltip => '关闭导航';
 }

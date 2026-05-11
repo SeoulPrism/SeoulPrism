@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import '../l10n/gen/app_localizations.dart';
 import '../services/recent_search_service.dart';
 import '../services/recent_route_service.dart';
 import '../services/directions_service.dart';
@@ -867,7 +868,7 @@ class UnifiedSearchBarState extends State<UnifiedSearchBar>
     });
     // 셋 다 실패 — 사용자에게 안내. 그렇지 않으면 로딩만 사라지고 무반응.
     if (selected == null && mounted) {
-      showAppSnackBar('경로를 찾지 못했어요. 출발지/도착지를 확인해 주세요.');
+      if (mounted) showAppSnackBar(AppL10n.of(context).searchRouteNotFound);
       return;
     }
     if (selected != null) {
@@ -937,7 +938,7 @@ class UnifiedSearchBarState extends State<UnifiedSearchBar>
       });
       // 사용자에게 안내 — 위치 권한 거부 / GPS off / timeout 등의 원인을
       // 모르고 그냥 필드만 비워지면 "지도가 멈춤"으로 인식됨.
-      showAppSnackBar('현재 위치를 가져올 수 없어요. 위치 권한과 GPS 를 확인해 주세요.');
+      if (mounted) showAppSnackBar(AppL10n.of(context).searchLocationUnavailable);
     }
   }
 
@@ -1111,7 +1112,7 @@ class UnifiedSearchBarState extends State<UnifiedSearchBar>
 
   Widget _buildNavButton() {
     return Semantics(
-      label: '길찾기',
+      label: AppL10n.of(context).searchTabRoute,
       button: true,
       child: AdaptiveGlassIconButton(
         icon: CupertinoIcons.arrow_turn_down_right,
@@ -1124,7 +1125,7 @@ class UnifiedSearchBarState extends State<UnifiedSearchBar>
 
   Widget _buildProfile() {
     return Semantics(
-      label: '프로필',
+      label: AppL10n.of(context).searchTabProfile,
       button: true,
       child: AdaptiveGlassIconButton(
         icon: CupertinoIcons.person_fill,
@@ -1142,11 +1143,12 @@ class UnifiedSearchBarState extends State<UnifiedSearchBar>
   /// 경로 결과 있을 때 — [←] [소요시간]
   Widget _buildCompactNavHeader() {
     final chipData = <({PathSearchType type, String label, String time})>[];
+    final l = AppL10n.of(context);
     for (final entry in _allRoutes.entries) {
       final label = switch (entry.key) {
-        PathSearchType.duration => '최적',
-        PathSearchType.distance => '최단',
-        PathSearchType.transfer => '최소환승',
+        PathSearchType.duration => l.searchPathTypeOptimal,
+        PathSearchType.distance => l.searchPathTypeShortest,
+        PathSearchType.transfer => l.searchPathTypeMinTransfer,
       };
       chipData.add((
         type: entry.key,
@@ -1244,15 +1246,14 @@ class UnifiedSearchBarState extends State<UnifiedSearchBar>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '서비스 지역 밖이에요',
+                  AppL10n.of(context).searchOutsideServiceTitle,
                   style: AppTypography.bodyMd.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '현재 길찾기는 서울·인천·경기 수도권만 지원해요. '
-                  '출발 또는 도착지를 수도권 안에서 다시 선택해주세요.',
+                  AppL10n.of(context).searchOutsideServiceBody,
                   style: AppTypography.caption.copyWith(
                     color: AppColors.textSecondary,
                   ),
@@ -1327,9 +1328,11 @@ class UnifiedSearchBarState extends State<UnifiedSearchBar>
                   Expanded(
                     child: Column(
                       children: [
-                        _buildNavField(_depCtrl, _depFocus, '출발지'),
+                        _buildNavField(_depCtrl, _depFocus,
+                            AppL10n.of(context).searchDepartureFieldHint),
                         const SizedBox(height: AppSpacing.sm),
-                        _buildNavField(_arrCtrl, _arrFocus, '도착지'),
+                        _buildNavField(_arrCtrl, _arrFocus,
+                            AppL10n.of(context).searchArrivalFieldHint),
                       ],
                     ),
                   ),
@@ -1339,10 +1342,11 @@ class UnifiedSearchBarState extends State<UnifiedSearchBar>
                       _circleButton(
                         CupertinoIcons.arrow_up_arrow_down,
                         _swapStations,
-                        '출발지·도착지 교환',
+                        AppL10n.of(context).searchSwapDepArr,
                       ),
                       const SizedBox(height: AppSpacing.sm),
-                      _circleButton(CupertinoIcons.xmark, _exitNav, '길찾기 닫기'),
+                      _circleButton(CupertinoIcons.xmark, _exitNav,
+                          AppL10n.of(context).searchCloseTooltip),
                     ],
                   ),
                 ],
