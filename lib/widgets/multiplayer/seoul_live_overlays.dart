@@ -317,7 +317,7 @@ class _TutorialCoachmarksState extends State<_TutorialCoachmarks> {
                   TextButton(
                     onPressed: () => Navigator.of(context).pop(),
                     style: TextButton.styleFrom(foregroundColor: Colors.white),
-                    child: Text(AppL10n.of(context).whatsNewSkip),
+                    child: Text(AppL10n.of(context).commonSkip),
                   ),
                 ],
               ),
@@ -428,9 +428,9 @@ class _TutorialCoachmarksState extends State<_TutorialCoachmarks> {
     if (s.isPermission) {
       if (_requestingPermission) return l.seoulLivePermRequesting;
       if (_permissionResult == null) return l.seoulLivePermAllow;
-      return l.whatsNewStart;
+      return l.commonStart;
     }
-    return _step >= _stepCount - 1 ? l.whatsNewStart : l.whatsNewNext;
+    return _step >= _stepCount - 1 ? l.commonStart : l.commonNext;
   }
 }
 

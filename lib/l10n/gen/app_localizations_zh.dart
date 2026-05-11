@@ -2223,6 +2223,48 @@ class AppL10nZh extends AppL10n {
   String get roomMembersGhost => '隐身';
 
   @override
+  String get commonSkip => '跳过';
+
+  @override
+  String get commonStart => '开始体验';
+
+  @override
+  String get commonNext => '下一步';
+
+  @override
+  String get welcomePageLanguagesHint => '한국어 · English · 日本語 · 中文 — AI 助手用相同语言回答';
+
+  @override
+  String get liveMeetTitle => '一起出发';
+
+  @override
+  String get liveMeetBody => '在好友房间设定共同目的地,每个成员的距离实时显示,地图上自动落下橙色图钉。';
+
+  @override
+  String get liveDmHint => '1:1 私信 · 语音 · 照片 · 位置';
+
+  @override
+  String get liveMusicHint => '分享正在播放的 Spotify 曲目';
+
+  @override
+  String get liveAddFriendHint => '用 QR 或邀请链接添加好友';
+
+  @override
+  String get livePointsHint => '活动转化为积分和徽章';
+
+  @override
+  String get aiVoiceTitle => '用嘴问，用嘴答';
+
+  @override
+  String get aiVoiceBody => '和 AI 助手自然语音对话。搜索、导航、推荐都能用语音。Gemini Live 即听即答。';
+
+  @override
+  String get aiDayPlanHint => '用收藏地点自动生成一日行程';
+
+  @override
+  String get permPagePrivacyHint => '按类型开关通知,位置仅向选定群组公开。';
+
+  @override
   String roomMembersNearbyHeader(int count) {
     return '附近 ${count} 人 (500m 内)';
   }

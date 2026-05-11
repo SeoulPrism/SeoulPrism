@@ -4,11 +4,13 @@ import '../../services/onboarding_service.dart';
 import '../../theme/app_typography.dart';
 import '../../widgets/adaptive/adaptive.dart';
 import 'onboarding_page.dart';
+import 'pages/ai_companion_page.dart';
 import 'pages/living_city_page.dart';
 import 'pages/permissions_page.dart';
 import 'pages/optimization_page.dart';
 import 'pages/pathfinding_page.dart';
 import 'pages/ready_page.dart';
+import 'pages/seoul_live_page.dart';
 import 'pages/welcome_page.dart';
 import 'widgets/aurora_overlay.dart';
 import 'widgets/liquid_page_indicator.dart';
@@ -46,6 +48,8 @@ class OnboardingView extends StatefulWidget {
       const OnboardingPage(id: LivingCityPage.id, body: LivingCityPage()),
       const OnboardingPage(id: PathfindingPage.id, body: PathfindingPage()),
       const OnboardingPage(id: OptimizationPage.id, body: OptimizationPage()),
+      const OnboardingPage(id: SeoulLivePage.id, body: SeoulLivePage()),
+      const OnboardingPage(id: AiCompanionPage.id, body: AiCompanionPage()),
       // 5개 권한 (위치/알림/카메라/사진/마이크) 한 화면에 일괄 동의.
       const OnboardingPage(
           id: PermissionsPage.id, body: PermissionsPage()),
@@ -141,9 +145,10 @@ class _OnboardingViewState extends State<OnboardingView>
 
   bool get _isLast => _progress.round() == widget.pages.length - 1;
 
-  bool get _isMapVisiblePage =>
-      widget.pages[_progress.round().clamp(0, widget.pages.length - 1)].id ==
-      'living_city_v1';
+  bool get _isMapVisiblePage {
+    final id = widget.pages[_progress.round().clamp(0, widget.pages.length - 1)].id;
+    return id == LivingCityPage.id || id == SeoulLivePage.id;
+  }
 
   Widget _buildBackdropOverlay() {
     if (_isMapVisiblePage) {
@@ -299,7 +304,7 @@ class _OnboardingViewState extends State<OnboardingView>
                 child: TextButton(
                   onPressed: _finish,
                   child: Text(
-                    AppL10n.of(context).whatsNewSkip,
+                    AppL10n.of(context).commonSkip,
                     style: AppTypography.bodySm.copyWith(color: skipColor),
                   ),
                 ),
@@ -330,8 +335,8 @@ class _OnboardingViewState extends State<OnboardingView>
                         width: double.infinity,
                         child: AdaptiveGlassButton(
                           label: _isLast
-                              ? AppL10n.of(context).whatsNewStart
-                              : AppL10n.of(context).whatsNewNext,
+                              ? AppL10n.of(context).commonStart
+                              : AppL10n.of(context).commonNext,
                           onPressed: _next,
                         ),
                       ),

@@ -29,12 +29,13 @@ class OnboardingMapController {
   void flyToBus() => _setSceneCallback?.call(_Scene.bus);
   void flyToRiverBus() => _setSceneCallback?.call(_Scene.riverBus);
   void flyToFlight() => _setSceneCallback?.call(_Scene.flight);
+  void flyToLiveMeet() => _setSceneCallback?.call(_Scene.liveMeet);
 
   /// finish 시퀀스 — 카메라를 도시 광역 줌아웃 + 핵심 차량 follow 해제.
   void zoomOutToCity() => _zoomOutCallback?.call();
 }
 
-enum _Scene { initial, subway, bus, riverBus, flight }
+enum _Scene { initial, subway, bus, riverBus, flight, liveMeet }
 
 class _SceneCamera {
   final double lat, lng, zoom, pitch, bearing;
@@ -58,6 +59,8 @@ const _sceneCameras = <_Scene, _SceneCamera>{
   _Scene.riverBus: _SceneCamera(lat: 37.5310, lng: 126.9367, zoom: 14.6, pitch: 65, bearing: 90),
   // 인천공항 — 비행기는 빠르게 움직이므로 더 줌인 + pitch 살짝 낮춰 비행 동선 잘 보이게.
   _Scene.flight: _SceneCamera(lat: 37.4486, lng: 126.4505, zoom: 15.6, pitch: 60, bearing: 25),
+  // Seoul Live — 명동/홍대 부근. 차량 follow 없이 정적 카메라 (친구 dot 데모는 위 오버레이에서).
+  _Scene.liveMeet: _SceneCamera(lat: 37.5563, lng: 126.9236, zoom: 14.5, pitch: 50, bearing: -10),
 };
 
 /// 온보딩 백그라운드 — 실제 MapboxEngine + 실 컨트롤러 (실시간 데이터 + 3D 렌더).
@@ -252,6 +255,7 @@ class _OnboardingMapBackgroundState extends State<OnboardingMapBackground> {
   (double, double, String)? _findNearestForScene(_Scene s, _SceneCamera cam) {
     switch (s) {
       case _Scene.initial:
+      case _Scene.liveMeet:
         return null;
       case _Scene.subway:
         final t = _nearest(_subway.currentTrains, cam.lat, cam.lng,
@@ -276,6 +280,7 @@ class _OnboardingMapBackgroundState extends State<OnboardingMapBackground> {
     DebugLog.log('[Onboarding] $s follow 시작: $key');
     switch (s) {
       case _Scene.initial:
+      case _Scene.liveMeet:
         return;
       case _Scene.subway:
         // 지하철: 컨트롤러의 selectTrain 으로 highlight + 자동 follow.

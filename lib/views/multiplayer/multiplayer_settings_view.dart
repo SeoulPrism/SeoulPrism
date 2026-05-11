@@ -3,12 +3,10 @@ import 'package:flutter/material.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../models/multiplayer_models.dart';
 import '../../services/multiplayer_service.dart';
-import '../../services/onboarding_service.dart';
 import '../../widgets/adaptive/adaptive.dart';
 import 'admin_monitor_view.dart';
 import 'blocked_users_view.dart';
 import '../../widgets/app_snackbar.dart';
-import '../whats_new_sheet.dart';
 
 /// Seoul Live 설정/탈퇴/배터리/튜토리얼/동의관리.
 class MultiplayerSettingsView extends StatefulWidget {
@@ -135,17 +133,6 @@ class _MultiplayerSettingsViewState extends State<MultiplayerSettingsView> {
                     await MultiplayerService.resetTutorial();
                     if (!mounted) return;
                     showAppSnackBar(AppL10n.of(context).mpTutorialToast);
-                  },
-                ),
-                const _Divider(),
-                _ChevronRow(
-                  icon: Icons.new_releases_outlined,
-                  label: l.mpReplayWhatsNew,
-                  hint: l.mpReplayWhatsNewHint(kAppVersion),
-                  onTap: () async {
-                    await OnboardingService.instance.resetWhatsNew();
-                    if (!mounted) return;
-                    showAppSnackBar(AppL10n.of(context).settingsWhatsNewToast);
                   },
                 ),
               ]),

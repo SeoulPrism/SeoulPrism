@@ -279,6 +279,16 @@ class _PermissionsPageState extends State<PermissionsPage> {
                 fontSize: 11,
               ),
             ),
+            const SizedBox(height: 6),
+            Text(
+              l.permPagePrivacyHint,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: bodyColor.withValues(alpha: 0.75),
+                fontSize: 11,
+                height: 1.4,
+              ),
+            ),
           ],
         ),
       ),

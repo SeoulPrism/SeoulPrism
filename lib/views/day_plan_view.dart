@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import '../l10n/gen/app_localizations.dart';
 import '../models/sns_content_models.dart';
+import '../services/path_finding_service.dart';
 import '../services/route_renderer.dart';
 import '../theme/app_colors.dart';
 import '../widgets/adaptive/adaptive.dart';
@@ -105,8 +106,12 @@ class _DayPlanViewState extends State<DayPlanView>
     widget.mapController?.clearRouteArrows();
   }
 
-  /// stops 마커 + stop 간 [routeFromPrevious] 폴리라인 + 화살표.
-  /// 시각은 길찾기 (`_drawRouteOnMap`) 와 동일 — outline + colored line + arrows.
+  /// stops 마커 + stop 간 leg 경로 + 화살표.
+  /// 시각은 길찾기 (`_drawRouteOnMap`) 와 동일 — outline + colored line + arrows +
+  /// 큰 출발/도착 마커 + 환승 마커.
+  ///
+  /// `PlanStop.routeFromPrevious` 가 precompute 안 된 plan (테마 / AI 코스) 은
+  /// 좌표 기반으로 `PathFindingService.findPath` 를 호출해 on-the-fly 로 계산.
   Future<void> _renderMap() async {
     final mc = widget.mapController;
     if (mc == null) return;
@@ -117,20 +122,34 @@ class _DayPlanViewState extends State<DayPlanView>
     final plan = _currentPlan;
     if (plan.stops.isEmpty) return;
 
-    // 바운딩 박스 → 모든 stop 보이도록 카메라.
+    // 좌표 있는 stop 만 추출 (마커/경로 대상).
+    final geoStops = plan.stops.where((s) => s.place.hasCoordinates).toList();
+    if (geoStops.isEmpty) return;
+
+    // ── 1. 카메라 ── 모든 stop 보이도록 + bearing (출발→도착 방향).
     double minLat = 90, maxLat = -90, minLng = 180, maxLng = -180;
-    for (final stop in plan.stops) {
-      final p = stop.place;
-      if (!p.hasCoordinates) continue;
-      if (p.lat! < minLat) minLat = p.lat!;
-      if (p.lat! > maxLat) maxLat = p.lat!;
-      if (p.lng! < minLng) minLng = p.lng!;
-      if (p.lng! > maxLng) maxLng = p.lng!;
+    for (final s in geoStops) {
+      if (s.place.lat! < minLat) minLat = s.place.lat!;
+      if (s.place.lat! > maxLat) maxLat = s.place.lat!;
+      if (s.place.lng! < minLng) minLng = s.place.lng!;
+      if (s.place.lng! > maxLng) maxLng = s.place.lng!;
     }
     if (minLat < maxLat && minLng < maxLng) {
-      final centerLat = (minLat + maxLat) / 2;
+      final first = geoStops.first.place;
+      final last = geoStops.last.place;
+      double bearing = 0;
+      if (geoStops.length >= 2) {
+        final dLng = (last.lng! - first.lng!) * pi / 180;
+        final lat1 = first.lat! * pi / 180;
+        final lat2 = last.lat! * pi / 180;
+        final y = sin(dLng) * cos(lat2);
+        final x = cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(dLng);
+        bearing = (atan2(y, x) * 180 / pi + 360) % 360;
+      }
+      final latSpan = maxLat - minLat;
+      final centerLat = (minLat + maxLat) / 2 - latSpan * 0.12;
       final centerLng = (minLng + maxLng) / 2;
-      final span = max(maxLat - minLat, maxLng - minLng);
+      final span = max(latSpan, maxLng - minLng);
       final zoom = span > 0.3
           ? 10.0
           : span > 0.15
@@ -138,41 +157,80 @@ class _DayPlanViewState extends State<DayPlanView>
               : span > 0.08
                   ? 12.0
                   : 12.5;
-      // 패널이 하단을 차지하므로 중심을 살짝 북쪽으로.
-      mc.moveTo(centerLat - span * 0.15, centerLng, zoom: zoom - 0.5, pitch: 20);
+      mc.moveTo(centerLat, centerLng, zoom: zoom, pitch: 30, bearing: bearing);
     }
 
-    // stop 간 이동 경로 — 마커보다 먼저 그려서 마커가 위로 올라오게.
-    // 화살표는 모든 leg 의 것을 모아 한 번에 updateRouteArrows 호출 (SymbolLayer 갱신).
+    // ── 2. leg 별 경로 ── 마커보다 먼저 그려서 마커가 위에 오게.
+    // routeFromPrevious 가 precompute 돼 있으면 그대로, 아니면 PathFinding 으로 lazily.
     final allArrows = <Map<String, dynamic>>[];
-    for (int i = 0; i < plan.stops.length; i++) {
-      final route = plan.stops[i].routeFromPrevious;
-      if (route == null) continue;
+    final pathService = PathFindingService();
+    for (int i = 1; i < geoStops.length; i++) {
+      final from = geoStops[i - 1].place;
+      final to = geoStops[i].place;
+      PathResult? leg = geoStops[i].routeFromPrevious;
+      if (leg == null) {
+        try {
+          leg = await pathService.findPath(
+            departure: from.name,
+            arrival: to.name,
+            departureLat: from.lat,
+            departureLng: from.lng,
+            arrivalLat: to.lat,
+            arrivalLng: to.lng,
+          );
+        } catch (_) {
+          leg = null;
+        }
+        if (renderId != _renderId) return;
+      }
+      if (leg == null || leg.segments.isEmpty) continue;
       await RouteRenderer.render(
         mc,
-        route,
+        leg,
         prefix: 'plan_route_$i',
         drawTransitMarkers: true,
         arrowsOut: allArrows,
       );
-      if (renderId != _renderId) return; // 도중 다른 플랜 선택되면 중단.
+      if (renderId != _renderId) return;
     }
     if (allArrows.isNotEmpty) await mc.updateRouteArrows(allArrows);
+    if (renderId != _renderId) return;
 
-    // stop 번호 마커.
-    for (int i = 0; i < plan.stops.length; i++) {
-      final place = plan.stops[i].place;
-      if (!place.hasCoordinates) continue;
-      final color = _stopColor(i, plan.stops.length);
-      final isEdge = i == 0 || i == plan.stops.length - 1;
+    // ── 3. 중간 stop 번호 마커 (출발/도착은 따로 큰 마커로 덮어씌움). ──
+    for (int i = 1; i < geoStops.length - 1; i++) {
+      final place = geoStops[i].place;
       await mc.addCircleMarker(
         'plan_$i',
         place.lat!,
         place.lng!,
-        color: color,
-        radius: isEdge ? 14 : 10,
+        color: AppColors.accent,
+        radius: 10,
         strokeColor: Colors.white,
-        strokeWidth: isEdge ? 4 : 3,
+        strokeWidth: 3,
+      );
+    }
+
+    // ── 4. 출발 / 도착 큰 마커 (길찾기 _drawRouteOnMap 과 동일 스타일). ──
+    final dep = geoStops.first.place;
+    await mc.addCircleMarker(
+      'plan_dep',
+      dep.lat!,
+      dep.lng!,
+      color: AppColors.success,
+      radius: 14,
+      strokeColor: AppColors.textPrimary,
+      strokeWidth: 4,
+    );
+    if (geoStops.length >= 2) {
+      final arr = geoStops.last.place;
+      await mc.addCircleMarker(
+        'plan_arr',
+        arr.lat!,
+        arr.lng!,
+        color: AppColors.danger,
+        radius: 14,
+        strokeColor: AppColors.textPrimary,
+        strokeWidth: 4,
       );
     }
   }

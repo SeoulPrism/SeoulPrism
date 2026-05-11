@@ -4121,6 +4121,90 @@ abstract class AppL10n {
   /// **'Private'**
   String get roomMembersGhost;
 
+  /// No description provided for @commonSkip.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip'**
+  String get commonSkip;
+
+  /// No description provided for @commonStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Get started'**
+  String get commonStart;
+
+  /// No description provided for @commonNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get commonNext;
+
+  /// No description provided for @welcomePageLanguagesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'한국어 · English · 日本語 · 中文 — The AI replies in your language'**
+  String get welcomePageLanguagesHint;
+
+  /// No description provided for @liveMeetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Go together'**
+  String get liveMeetTitle;
+
+  /// No description provided for @liveMeetBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Set a shared destination in a friend room. Distances for each member update live. An orange pin lands on the map.'**
+  String get liveMeetBody;
+
+  /// No description provided for @liveDmHint.
+  ///
+  /// In en, this message translates to:
+  /// **'1:1 DMs · voice · photo · location'**
+  String get liveDmHint;
+
+  /// No description provided for @liveMusicHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Share what you are playing on Spotify'**
+  String get liveMusicHint;
+
+  /// No description provided for @liveAddFriendHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Add friends via QR or invite links'**
+  String get liveAddFriendHint;
+
+  /// No description provided for @livePointsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Activity turns into points and badges'**
+  String get livePointsHint;
+
+  /// No description provided for @aiVoiceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Just ask out loud'**
+  String get aiVoiceTitle;
+
+  /// No description provided for @aiVoiceBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Talk to the AI naturally. Search, navigate, get picks — by voice. Gemini Live listens and answers live.'**
+  String get aiVoiceBody;
+
+  /// No description provided for @aiDayPlanHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn saved places into a day plan automatically'**
+  String get aiDayPlanHint;
+
+  /// No description provided for @permPagePrivacyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Toggle notifications by type and share location only with chosen groups.'**
+  String get permPagePrivacyHint;
+
   /// No description provided for @roomMembersNearbyHeader.
   ///
   /// In en, this message translates to:

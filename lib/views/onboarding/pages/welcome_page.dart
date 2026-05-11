@@ -57,6 +57,19 @@ class WelcomePage extends StatelessWidget {
             AppL10n.of(context).welcomePageSubtitle,
             style: AppTypography.bodyMd.copyWith(color: subColor),
           ),
+          const SizedBox(height: 18),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: Text(
+              AppL10n.of(context).welcomePageLanguagesHint,
+              textAlign: TextAlign.center,
+              style: AppTypography.bodySm.copyWith(
+                color: subColor.withValues(alpha: 0.85),
+                fontSize: 11.5,
+                height: 1.4,
+              ),
+            ),
+          ),
         ],
       ),
     );

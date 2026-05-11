@@ -2241,6 +2241,48 @@ class AppL10nJa extends AppL10n {
   String get roomMembersGhost => '非公開';
 
   @override
+  String get commonSkip => 'スキップ';
+
+  @override
+  String get commonStart => '始める';
+
+  @override
+  String get commonNext => '次へ';
+
+  @override
+  String get welcomePageLanguagesHint => '한국어 · English · 日本語 · 中文 — AI が同じ言語で答えます';
+
+  @override
+  String get liveMeetTitle => '一緒に行く';
+
+  @override
+  String get liveMeetBody => 'ルームで共通の目的地を決めるとメンバーごとの距離がリアルタイムで表示。マップにはオレンジのピンが自動で。';
+
+  @override
+  String get liveDmHint => '1:1 DM · 音声 · 写真 · 位置';
+
+  @override
+  String get liveMusicHint => '再生中の Spotify 曲を共有';
+
+  @override
+  String get liveAddFriendHint => 'QR や招待リンクで友だち追加';
+
+  @override
+  String get livePointsHint => '活動がポイントとバッジに';
+
+  @override
+  String get aiVoiceTitle => '声で聞いて声で答える';
+
+  @override
+  String get aiVoiceBody => 'AI アシスタントと音声で自然に。検索・道案内・おすすめも音声で。Gemini Live が聞いてすぐ答えます。';
+
+  @override
+  String get aiDayPlanHint => '保存した場所で一日プランを自動生成';
+
+  @override
+  String get permPagePrivacyHint => '通知は種類別にオン/オフ、位置は特定のグループだけに共有しましょう。';
+
+  @override
   String roomMembersNearbyHeader(int count) {
     return '周辺 ${count}人 (500m 以内)';
   }
