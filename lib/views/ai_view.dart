@@ -270,6 +270,10 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
         return 'set_live_visibility';
       case AiAction.toggleLayer:
         return 'toggle_layer';
+      case AiAction.closePanel:
+        return 'close_panel';
+      case AiAction.setWeatherExpanded:
+        return 'set_weather_expanded';
     }
   }
 
@@ -381,6 +385,17 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
         return {
           'status': 'success',
           'message': '$layer 레이어를 토글했어.',
+        };
+      case AiAction.closePanel:
+        return {
+          'status': 'success',
+          'message': '열려있던 패널을 닫고 지도로 돌아갔어.',
+        };
+      case AiAction.setWeatherExpanded:
+        final exp = action.params['expanded'] as bool? ?? true;
+        return {
+          'status': 'success',
+          'message': exp ? '날씨 위젯을 펼쳤어 (주간 예보).' : '날씨 위젯을 접었어.',
         };
     }
   }

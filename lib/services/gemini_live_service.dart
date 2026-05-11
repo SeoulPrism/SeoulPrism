@@ -43,6 +43,8 @@ enum AiAction {
   openSpotify,        // Spotify 뷰 열기
   setLiveVisibility,  // Seoul Live 위치 공유 모드 변경 (ghost / normal)
   toggleLayer,        // 지도 레이어 토글 (지하철·버스·한강버스·항공·역)
+  closePanel,         // 현재 열린 패널 (여행/추천/저장) 닫고 지도로 복귀
+  setWeatherExpanded, // 날씨 위젯 펼치기 / 접기
 }
 
 /// AI가 실행할 액션 데이터
@@ -317,6 +319,8 @@ class GeminiLiveService {
         case 'open_spotify': action = AiAction.openSpotify; break;
         case 'set_live_visibility': action = AiAction.setLiveVisibility; break;
         case 'toggle_layer': action = AiAction.toggleLayer; break;
+        case 'close_panel': action = AiAction.closePanel; break;
+        case 'set_weather_expanded': action = AiAction.setWeatherExpanded; break;
       }
 
       if (action != null) {
@@ -411,6 +415,16 @@ class GeminiLiveService {
         'enable': Schema.boolean(
           description: 'true=켜기, false=끄기. 비우면 현재 상태에서 토글',
           nullable: true,
+        ),
+      }),
+    FunctionDeclaration('close_panel',
+      '현재 열린 패널 (여행/추천/저장) 닫고 지도로 복귀',
+      parameters: {}),
+    FunctionDeclaration('set_weather_expanded',
+      '날씨 위젯 펼치기/접기 (펼치면 주간 예보 표시)',
+      parameters: {
+        'expanded': Schema.boolean(
+          description: 'true=펼침, false=접음',
         ),
       }),
   ];

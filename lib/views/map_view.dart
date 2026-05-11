@@ -291,6 +291,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
   bool _membersPanelOpen = false;
   /// 날씨 위젯 펼침 상태 — 펼치면 다른 상단 위젯들 페이드아웃.
   bool _weatherExpanded = false;
+  /// AI 가 날씨 위젯에 명령 보냈을 때 toggle trigger (false→true 펄스).
+  bool _aiExpandWeather = false;
+  bool _aiCollapseWeather = false;
 
   void _onMultiplayerChanged() {
     if (!mounted) return;
@@ -1421,7 +1424,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         _dayPlanOpen,
                     child: WeatherTimeWidget(
                       environment: _subwayController.environment,
-                      forceCollapse: _membersPanelOpen,
+                      forceCollapse: _membersPanelOpen || _aiCollapseWeather,
+                      forceExpand: _aiExpandWeather,
                       onExpandedChanged: (v) =>
                           setState(() => _weatherExpanded = v),
                     ),
@@ -3052,6 +3056,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
           event.params['enable'] as bool?,
         );
         break;
+      case AiAction.closePanel:
+        _handleAiClosePanel();
+        break;
+      case AiAction.setWeatherExpanded:
+        _handleAiSetWeatherExpanded(
+          event.params['expanded'] as bool? ?? true,
+        );
+        break;
       case AiAction.requestPhoto:
       case AiAction.addPlaces:
       case AiAction.removePlace:
@@ -3098,6 +3110,37 @@ class _DashboardScreenState extends State<DashboardScreen> {
     if (next == current) return;
     setter(next);
     if (mounted) setState(() {});
+  }
+
+  /// AI: 현재 열린 패널 (여행/추천/저장/타임라인) 닫고 지도로 복귀.
+  void _handleAiClosePanel() {
+    final wasOpen =
+        _travelOpen || _recommendOpen || _savedOpen || _timelineOpen;
+    if (!wasOpen) return;
+    setState(() {
+      _travelOpen = false;
+      _recommendOpen = false;
+      _savedOpen = false;
+      _timelineOpen = false;
+    });
+    _delayShowButton();
+  }
+
+  /// AI: 날씨 위젯 펼치기 / 접기.
+  void _handleAiSetWeatherExpanded(bool expanded) {
+    if (expanded) {
+      // false → true 펄스로 weather widget 의 _toggle() 트리거.
+      setState(() => _aiExpandWeather = true);
+      Future.delayed(const Duration(milliseconds: 50), () {
+        if (mounted) setState(() => _aiExpandWeather = false);
+      });
+    } else {
+      // forceCollapse 와 같은 패턴 — true 상태 동안 collapse 유지.
+      setState(() => _aiCollapseWeather = true);
+      Future.delayed(const Duration(milliseconds: 200), () {
+        if (mounted) setState(() => _aiCollapseWeather = false);
+      });
+    }
   }
 
   /// AI: 즐겨찾기 토글. placeName 지정 시 그 장소, 없으면 _selectedPlace.

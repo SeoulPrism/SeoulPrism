@@ -12,12 +12,15 @@ class WeatherTimeWidget extends StatefulWidget {
   final ValueChanged<bool>? onExpandedChanged;
   /// 외부에서 강제 collapse 하고 싶을 때 — true → false 로 토글되면 collapse.
   final bool forceCollapse;
+  /// 외부에서 강제 expand — false → true 로 변경되면 펼침 (AI 명령용).
+  final bool forceExpand;
 
   const WeatherTimeWidget({
     super.key,
     this.environment,
     this.onExpandedChanged,
     this.forceCollapse = false,
+    this.forceExpand = false,
   });
 
   @override
@@ -35,6 +38,10 @@ class _WeatherTimeWidgetState extends State<WeatherTimeWidget> {
     if (widget.forceCollapse && _expanded) {
       setState(() => _expanded = false);
       widget.onExpandedChanged?.call(false);
+    }
+    // false → true 토글 시 펼침 (AI 명령 진입점).
+    if (widget.forceExpand && !old.forceExpand && !_expanded) {
+      _toggle();
     }
   }
 
