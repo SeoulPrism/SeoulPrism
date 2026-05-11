@@ -2650,6 +2650,1074 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'{count}'**
   String hubRecentMeetupsCount(int count);
+
+  /// No description provided for @roomCodeRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a 6-character code.'**
+  String get roomCodeRequired;
+
+  /// No description provided for @roomLeaveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave room'**
+  String get roomLeaveTitle;
+
+  /// No description provided for @roomLeaveBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Leaving ends location sharing and chat.'**
+  String get roomLeaveBody;
+
+  /// No description provided for @roomLeaveConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave'**
+  String get roomLeaveConfirm;
+
+  /// No description provided for @roomTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Room'**
+  String get roomTitle;
+
+  /// No description provided for @roomDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Share location and chat in real time with friends.'**
+  String get roomDescription;
+
+  /// No description provided for @roomCapacityNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Rooms auto-expire after 24 hours. Capacity 8.'**
+  String get roomCapacityNote;
+
+  /// No description provided for @roomCreateButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Create room'**
+  String get roomCreateButton;
+
+  /// No description provided for @roomCodeEntryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter invite code (6 digits)'**
+  String get roomCodeEntryTitle;
+
+  /// No description provided for @roomJoinButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Join'**
+  String get roomJoinButton;
+
+  /// No description provided for @roomExpiresInMin.
+  ///
+  /// In en, this message translates to:
+  /// **'Expires in {min} min'**
+  String roomExpiresInMin(int min);
+
+  /// No description provided for @roomDefaultName.
+  ///
+  /// In en, this message translates to:
+  /// **'Unnamed room'**
+  String get roomDefaultName;
+
+  /// No description provided for @roomInviteCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite code'**
+  String get roomInviteCode;
+
+  /// No description provided for @roomCodeCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Code copied'**
+  String get roomCodeCopied;
+
+  /// No description provided for @roomExpiresInHours.
+  ///
+  /// In en, this message translates to:
+  /// **'Expires in {hour}h'**
+  String roomExpiresInHours(int hour);
+
+  /// No description provided for @roomMembers.
+  ///
+  /// In en, this message translates to:
+  /// **'Members ({current}/{max})'**
+  String roomMembers(int current, int max);
+
+  /// No description provided for @roomChatOpenWithUnread.
+  ///
+  /// In en, this message translates to:
+  /// **'Open chat ({count})'**
+  String roomChatOpenWithUnread(int count);
+
+  /// No description provided for @roomChatOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open chat'**
+  String get roomChatOpen;
+
+  /// No description provided for @roomLeaveButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave room'**
+  String get roomLeaveButton;
+
+  /// No description provided for @roomEditNameTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename room'**
+  String get roomEditNameTitle;
+
+  /// No description provided for @roomEditNameBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Shown to room members'**
+  String get roomEditNameBody;
+
+  /// No description provided for @roomEditNamePlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Gwanghwamun meetup'**
+  String get roomEditNamePlaceholder;
+
+  /// No description provided for @roomGenericError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed: {error}'**
+  String roomGenericError(String error);
+
+  /// No description provided for @roomShareSubject.
+  ///
+  /// In en, this message translates to:
+  /// **'Seoul Live room invite'**
+  String get roomShareSubject;
+
+  /// No description provided for @roomShareBody.
+  ///
+  /// In en, this message translates to:
+  /// **'{nickname} invited you to a Seoul Live room!\n\nCode: {code}\nJoin: com.seoul.prism://room/{code}'**
+  String roomShareBody(String nickname, String code);
+
+  /// No description provided for @roomInviteTextCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite text copied'**
+  String get roomInviteTextCopied;
+
+  /// No description provided for @roomRefreshCodeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh invite code'**
+  String get roomRefreshCodeTitle;
+
+  /// No description provided for @roomRefreshCodeBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The previous code stops working immediately. Continue?'**
+  String get roomRefreshCodeBody;
+
+  /// No description provided for @roomRefreshCodeConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh'**
+  String get roomRefreshCodeConfirm;
+
+  /// No description provided for @roomCodeRefreshed.
+  ///
+  /// In en, this message translates to:
+  /// **'Code refreshed'**
+  String get roomCodeRefreshed;
+
+  /// No description provided for @roomKickTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Kick {nickname}'**
+  String roomKickTitle(String nickname);
+
+  /// No description provided for @roomKickBody.
+  ///
+  /// In en, this message translates to:
+  /// **'They\'ll be removed from the room immediately.'**
+  String get roomKickBody;
+
+  /// No description provided for @roomKickConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Kick'**
+  String get roomKickConfirm;
+
+  /// No description provided for @roomKickFallbackName.
+  ///
+  /// In en, this message translates to:
+  /// **'Member'**
+  String get roomKickFallbackName;
+
+  /// No description provided for @roomNameMe.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} (me)'**
+  String roomNameMe(String name);
+
+  /// No description provided for @roomMeetupBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Meetup'**
+  String get roomMeetupBadge;
+
+  /// No description provided for @roomKickTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Kick'**
+  String get roomKickTooltip;
+
+  /// No description provided for @roomUnknownUser.
+  ///
+  /// In en, this message translates to:
+  /// **'Someone'**
+  String get roomUnknownUser;
+
+  /// No description provided for @roomDestTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'🎯 Together — {name}'**
+  String roomDestTitle(String name);
+
+  /// No description provided for @roomDestSetBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Set by {name}'**
+  String roomDestSetBy(String name);
+
+  /// No description provided for @roomDestDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Destination'**
+  String get roomDestDefault;
+
+  /// No description provided for @roomDestViewMap.
+  ///
+  /// In en, this message translates to:
+  /// **'View on map'**
+  String get roomDestViewMap;
+
+  /// No description provided for @roomDestClear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear destination'**
+  String get roomDestClear;
+
+  /// No description provided for @mpSettingsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Seoul Live settings'**
+  String get mpSettingsTitle;
+
+  /// No description provided for @mpSectionMyStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'My status'**
+  String get mpSectionMyStatus;
+
+  /// No description provided for @mpPause.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause Seoul Live'**
+  String get mpPause;
+
+  /// No description provided for @mpPauseHint.
+  ///
+  /// In en, this message translates to:
+  /// **'✓ Chat / room join / friend request — allowed\n✗ Location send / meetup alerts / pins — blocked\nData stays intact'**
+  String get mpPauseHint;
+
+  /// No description provided for @mpSectionBattery.
+  ///
+  /// In en, this message translates to:
+  /// **'Battery mode'**
+  String get mpSectionBattery;
+
+  /// No description provided for @mpBatteryHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Location update interval — more accurate = more battery'**
+  String get mpBatteryHint;
+
+  /// No description provided for @mpSectionNotifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get mpSectionNotifications;
+
+  /// No description provided for @mpNotificationsFail.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed: {error}'**
+  String mpNotificationsFail(String error);
+
+  /// No description provided for @mpNotificationsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Separate from system notification permission — turn off here to silence pushes.'**
+  String get mpNotificationsHint;
+
+  /// No description provided for @mpSectionTutorial.
+  ///
+  /// In en, this message translates to:
+  /// **'Tutorial'**
+  String get mpSectionTutorial;
+
+  /// No description provided for @mpReplayTutorial.
+  ///
+  /// In en, this message translates to:
+  /// **'Replay Seoul Live tutorial'**
+  String get mpReplayTutorial;
+
+  /// No description provided for @mpTutorialToast.
+  ///
+  /// In en, this message translates to:
+  /// **'Tutorial will show next time you enter'**
+  String get mpTutorialToast;
+
+  /// No description provided for @mpReplayWhatsNew.
+  ///
+  /// In en, this message translates to:
+  /// **'Replay What\'s New'**
+  String get mpReplayWhatsNew;
+
+  /// No description provided for @mpReplayWhatsNewHint.
+  ///
+  /// In en, this message translates to:
+  /// **'v{version} updates'**
+  String mpReplayWhatsNewHint(String version);
+
+  /// No description provided for @mpSectionSafety.
+  ///
+  /// In en, this message translates to:
+  /// **'Safety'**
+  String get mpSectionSafety;
+
+  /// No description provided for @mpBlockList.
+  ///
+  /// In en, this message translates to:
+  /// **'Block list'**
+  String get mpBlockList;
+
+  /// No description provided for @mpBlockListHint.
+  ///
+  /// In en, this message translates to:
+  /// **'View blocked users / unblock'**
+  String get mpBlockListHint;
+
+  /// No description provided for @mpSectionConsent.
+  ///
+  /// In en, this message translates to:
+  /// **'Consent & data'**
+  String get mpSectionConsent;
+
+  /// No description provided for @mpRevokeConsent.
+  ///
+  /// In en, this message translates to:
+  /// **'Revoke location consent'**
+  String get mpRevokeConsent;
+
+  /// No description provided for @mpRevokeConsentHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Revoking disables multiplayer and deletes all data'**
+  String get mpRevokeConsentHint;
+
+  /// No description provided for @mpDownloadMyData.
+  ///
+  /// In en, this message translates to:
+  /// **'Download my data'**
+  String get mpDownloadMyData;
+
+  /// No description provided for @mpDownloadMyDataHint.
+  ///
+  /// In en, this message translates to:
+  /// **'PIPA data portability — email request'**
+  String get mpDownloadMyDataHint;
+
+  /// No description provided for @mpDownloadMyDataToast.
+  ///
+  /// In en, this message translates to:
+  /// **'Please email rush94434@gmail.com (within 10 days)'**
+  String get mpDownloadMyDataToast;
+
+  /// No description provided for @mpSectionOps.
+  ///
+  /// In en, this message translates to:
+  /// **'Operations'**
+  String get mpSectionOps;
+
+  /// No description provided for @mpOpsMonitor.
+  ///
+  /// In en, this message translates to:
+  /// **'Ops monitor'**
+  String get mpOpsMonitor;
+
+  /// No description provided for @mpOpsMonitorHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily metrics · abuse signals · report handling'**
+  String get mpOpsMonitorHint;
+
+  /// No description provided for @mpSectionDanger.
+  ///
+  /// In en, this message translates to:
+  /// **'Danger zone'**
+  String get mpSectionDanger;
+
+  /// No description provided for @mpLeaveSeoulLive.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave Seoul Live'**
+  String get mpLeaveSeoulLive;
+
+  /// No description provided for @mpLeaveSeoulLiveHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Bulk-delete multiplayer data (profile, friends, rooms, chat)'**
+  String get mpLeaveSeoulLiveHint;
+
+  /// No description provided for @mpFootnote.
+  ///
+  /// In en, this message translates to:
+  /// **'※ Your Seoul Vista account remains. Only multiplayer data is deleted.'**
+  String get mpFootnote;
+
+  /// No description provided for @mpRevokeDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Revoke consent'**
+  String get mpRevokeDialogTitle;
+
+  /// No description provided for @mpRevokeDialogBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Revoking location processing consent disables multiplayer\nand deletes profile, friends, rooms, chat data. Continue?'**
+  String get mpRevokeDialogBody;
+
+  /// No description provided for @mpRevokeDialogConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Revoke'**
+  String get mpRevokeDialogConfirm;
+
+  /// No description provided for @mpRevokedToast.
+  ///
+  /// In en, this message translates to:
+  /// **'Consent revoked and data deleted'**
+  String get mpRevokedToast;
+
+  /// No description provided for @mpLeaveDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave Seoul Live'**
+  String get mpLeaveDialogTitle;
+
+  /// No description provided for @mpLeaveDialogBody.
+  ///
+  /// In en, this message translates to:
+  /// **'All multiplayer data will be permanently deleted.\nYou can rejoin, but friends, rooms, and chat history won\'t be restored.'**
+  String get mpLeaveDialogBody;
+
+  /// No description provided for @mpLeaveConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave'**
+  String get mpLeaveConfirm;
+
+  /// No description provided for @mpLeftToast.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ve left Seoul Live'**
+  String get mpLeftToast;
+
+  /// No description provided for @mpNotifCatFriendRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'Friend request'**
+  String get mpNotifCatFriendRequest;
+
+  /// No description provided for @mpNotifCatFriendAccept.
+  ///
+  /// In en, this message translates to:
+  /// **'Friend accepted'**
+  String get mpNotifCatFriendAccept;
+
+  /// No description provided for @mpNotifCatRoomMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat message'**
+  String get mpNotifCatRoomMessage;
+
+  /// No description provided for @mpNotifCatMeetup.
+  ///
+  /// In en, this message translates to:
+  /// **'Meetup detected'**
+  String get mpNotifCatMeetup;
+
+  /// No description provided for @mpNotifCatDestination.
+  ///
+  /// In en, this message translates to:
+  /// **'Destination change'**
+  String get mpNotifCatDestination;
+
+  /// No description provided for @mpNotifCatWelcome.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome'**
+  String get mpNotifCatWelcome;
+
+  /// No description provided for @panelSubway.
+  ///
+  /// In en, this message translates to:
+  /// **'Subway'**
+  String get panelSubway;
+
+  /// No description provided for @panelBus.
+  ///
+  /// In en, this message translates to:
+  /// **'Bus'**
+  String get panelBus;
+
+  /// No description provided for @panelFlights.
+  ///
+  /// In en, this message translates to:
+  /// **'Aircraft'**
+  String get panelFlights;
+
+  /// No description provided for @panelDisplay.
+  ///
+  /// In en, this message translates to:
+  /// **'Display'**
+  String get panelDisplay;
+
+  /// No description provided for @panelLineFilter.
+  ///
+  /// In en, this message translates to:
+  /// **'Line filter'**
+  String get panelLineFilter;
+
+  /// No description provided for @panelPerformance.
+  ///
+  /// In en, this message translates to:
+  /// **'Performance'**
+  String get panelPerformance;
+
+  /// No description provided for @panelLighting.
+  ///
+  /// In en, this message translates to:
+  /// **'Lighting'**
+  String get panelLighting;
+
+  /// No description provided for @panelInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Info'**
+  String get panelInfo;
+
+  /// No description provided for @panelDeveloper.
+  ///
+  /// In en, this message translates to:
+  /// **'Developer'**
+  String get panelDeveloper;
+
+  /// No description provided for @panelDemoRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'DEMO running'**
+  String get panelDemoRunning;
+
+  /// No description provided for @panelLiveRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'LIVE running'**
+  String get panelLiveRunning;
+
+  /// No description provided for @panelOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get panelOff;
+
+  /// No description provided for @panelSwitchToLive.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch to LIVE'**
+  String get panelSwitchToLive;
+
+  /// No description provided for @panelSwitchToDemo.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch to DEMO'**
+  String get panelSwitchToDemo;
+
+  /// No description provided for @panelSubwayOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn subway on'**
+  String get panelSubwayOn;
+
+  /// No description provided for @panelSubwayOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn subway off'**
+  String get panelSubwayOff;
+
+  /// No description provided for @panelTrainCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} trains'**
+  String panelTrainCount(int count);
+
+  /// No description provided for @panelLastUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'Updated {time}'**
+  String panelLastUpdate(String time);
+
+  /// No description provided for @panelBusActive.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} buses showing'**
+  String panelBusActive(int count);
+
+  /// No description provided for @panelSelectRoutes.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a route'**
+  String get panelSelectRoutes;
+
+  /// No description provided for @panelTurnAllOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn all off'**
+  String get panelTurnAllOff;
+
+  /// No description provided for @panelBusPosition.
+  ///
+  /// In en, this message translates to:
+  /// **'Bus positions'**
+  String get panelBusPosition;
+
+  /// No description provided for @panelHanRiverBus.
+  ///
+  /// In en, this message translates to:
+  /// **'🚢 Han River bus'**
+  String get panelHanRiverBus;
+
+  /// No description provided for @panelAddRoute.
+  ///
+  /// In en, this message translates to:
+  /// **'Add route'**
+  String get panelAddRoute;
+
+  /// No description provided for @panelFlightCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{mode} {count} aircraft'**
+  String panelFlightCount(String mode, int count);
+
+  /// No description provided for @panelFlightFallback.
+  ///
+  /// In en, this message translates to:
+  /// **'Aircraft'**
+  String get panelFlightFallback;
+
+  /// No description provided for @panelFlightLegendClimb.
+  ///
+  /// In en, this message translates to:
+  /// **'Climb'**
+  String get panelFlightLegendClimb;
+
+  /// No description provided for @panelFlightLegendCruise.
+  ///
+  /// In en, this message translates to:
+  /// **'Cruise'**
+  String get panelFlightLegendCruise;
+
+  /// No description provided for @panelFlightLegendDescend.
+  ///
+  /// In en, this message translates to:
+  /// **'Descend'**
+  String get panelFlightLegendDescend;
+
+  /// No description provided for @panelFlightLegendTakeoffLanding.
+  ///
+  /// In en, this message translates to:
+  /// **'Takeoff/Landing'**
+  String get panelFlightLegendTakeoffLanding;
+
+  /// No description provided for @panelRouteLines.
+  ///
+  /// In en, this message translates to:
+  /// **'Route lines'**
+  String get panelRouteLines;
+
+  /// No description provided for @panelTrainPosition.
+  ///
+  /// In en, this message translates to:
+  /// **'Train positions'**
+  String get panelTrainPosition;
+
+  /// No description provided for @panelStationDisplay.
+  ///
+  /// In en, this message translates to:
+  /// **'Station display'**
+  String get panelStationDisplay;
+
+  /// No description provided for @panelSelectRoutesToShow.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick routes to show'**
+  String get panelSelectRoutesToShow;
+
+  /// No description provided for @panelAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get panelAll;
+
+  /// No description provided for @panelPresetHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'High'**
+  String get panelPresetHigh;
+
+  /// No description provided for @panelPresetMedium.
+  ///
+  /// In en, this message translates to:
+  /// **'Medium'**
+  String get panelPresetMedium;
+
+  /// No description provided for @panelPresetLow.
+  ///
+  /// In en, this message translates to:
+  /// **'Low'**
+  String get panelPresetLow;
+
+  /// No description provided for @panelFps.
+  ///
+  /// In en, this message translates to:
+  /// **'FPS'**
+  String get panelFps;
+
+  /// No description provided for @panelNaverPolling.
+  ///
+  /// In en, this message translates to:
+  /// **'Naver polling'**
+  String get panelNaverPolling;
+
+  /// No description provided for @panelRenderInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Rendering: {engine} · GeoJSON cache'**
+  String panelRenderInfo(String engine);
+
+  /// No description provided for @panelLightAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto'**
+  String get panelLightAuto;
+
+  /// No description provided for @panelLightDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Day'**
+  String get panelLightDay;
+
+  /// No description provided for @panelLightNight.
+  ///
+  /// In en, this message translates to:
+  /// **'Night'**
+  String get panelLightNight;
+
+  /// No description provided for @panelLightDawn.
+  ///
+  /// In en, this message translates to:
+  /// **'Dawn'**
+  String get panelLightDawn;
+
+  /// No description provided for @panelLightDusk.
+  ///
+  /// In en, this message translates to:
+  /// **'Dusk'**
+  String get panelLightDusk;
+
+  /// No description provided for @panelTierFlagship.
+  ///
+  /// In en, this message translates to:
+  /// **'Flagship'**
+  String get panelTierFlagship;
+
+  /// No description provided for @panelTierHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'High'**
+  String get panelTierHigh;
+
+  /// No description provided for @panelTierMid.
+  ///
+  /// In en, this message translates to:
+  /// **'Mid'**
+  String get panelTierMid;
+
+  /// No description provided for @panelTierLow.
+  ///
+  /// In en, this message translates to:
+  /// **'Low'**
+  String get panelTierLow;
+
+  /// No description provided for @panelMapEngine.
+  ///
+  /// In en, this message translates to:
+  /// **'Map engine'**
+  String get panelMapEngine;
+
+  /// No description provided for @panelDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'Device'**
+  String get panelDevice;
+
+  /// No description provided for @panelPerfTier.
+  ///
+  /// In en, this message translates to:
+  /// **'Performance tier'**
+  String get panelPerfTier;
+
+  /// No description provided for @mapDisplay3D.
+  ///
+  /// In en, this message translates to:
+  /// **'3D buildings'**
+  String get mapDisplay3D;
+
+  /// No description provided for @mapDisplayPois.
+  ///
+  /// In en, this message translates to:
+  /// **'POI icons'**
+  String get mapDisplayPois;
+
+  /// No description provided for @mapDisplayWeather.
+  ///
+  /// In en, this message translates to:
+  /// **'Weather effects (fog/rain)'**
+  String get mapDisplayWeather;
+
+  /// No description provided for @mapDisplayLiveSubway.
+  ///
+  /// In en, this message translates to:
+  /// **'Live subway'**
+  String get mapDisplayLiveSubway;
+
+  /// No description provided for @friendsGroupTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Friend groups'**
+  String get friendsGroupTooltip;
+
+  /// No description provided for @friendsCodeTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Friend code'**
+  String get friendsCodeTooltip;
+
+  /// No description provided for @friendsAddByNickname.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a friend by nickname'**
+  String get friendsAddByNickname;
+
+  /// No description provided for @friendsSearchPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a nickname to search'**
+  String get friendsSearchPlaceholder;
+
+  /// No description provided for @friendsSearching.
+  ///
+  /// In en, this message translates to:
+  /// **'Searching…'**
+  String get friendsSearching;
+
+  /// No description provided for @friendsSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search'**
+  String get friendsSearch;
+
+  /// No description provided for @friendsNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No user matches \"{query}\"'**
+  String friendsNotFound(String query);
+
+  /// No description provided for @friendsSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Nicknames must match exactly. You can also try the 8-char friend code.'**
+  String get friendsSearchHint;
+
+  /// No description provided for @friendsReceivedRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'Received requests ({count})'**
+  String friendsReceivedRequests(int count);
+
+  /// No description provided for @friendsAccept.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept'**
+  String get friendsAccept;
+
+  /// No description provided for @friendsReject.
+  ///
+  /// In en, this message translates to:
+  /// **'Reject'**
+  String get friendsReject;
+
+  /// No description provided for @friendsMyFriends.
+  ///
+  /// In en, this message translates to:
+  /// **'My friends ({count})'**
+  String friendsMyFriends(int count);
+
+  /// No description provided for @friendsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No friends yet. Add by nickname.'**
+  String get friendsEmpty;
+
+  /// No description provided for @friendsCooldownTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Rejected requests can be re-sent after 7 days'**
+  String get friendsCooldownTooltip;
+
+  /// No description provided for @friendsCooldownDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry in {days}d'**
+  String friendsCooldownDays(int days);
+
+  /// No description provided for @friendsCooldownHours.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry in {hours}h'**
+  String friendsCooldownHours(int hours);
+
+  /// No description provided for @friendsBadgeFriend.
+  ///
+  /// In en, this message translates to:
+  /// **'Friend'**
+  String get friendsBadgeFriend;
+
+  /// No description provided for @friendsBadgeRequested.
+  ///
+  /// In en, this message translates to:
+  /// **'Requested'**
+  String get friendsBadgeRequested;
+
+  /// No description provided for @friendsApply.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply'**
+  String get friendsApply;
+
+  /// No description provided for @friendsSendingRequestHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Send friend request to {nickname} — they get a push if accepted'**
+  String friendsSendingRequestHint(String nickname);
+
+  /// No description provided for @friendsDmStartFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t start DM: {error}'**
+  String friendsDmStartFailed(String error);
+
+  /// No description provided for @friendsUnfriend.
+  ///
+  /// In en, this message translates to:
+  /// **'Unfriend'**
+  String get friendsUnfriend;
+
+  /// No description provided for @friendsReport.
+  ///
+  /// In en, this message translates to:
+  /// **'Report'**
+  String get friendsReport;
+
+  /// No description provided for @friendsBlock.
+  ///
+  /// In en, this message translates to:
+  /// **'Block'**
+  String get friendsBlock;
+
+  /// No description provided for @friendsBlockDialogTitleFallback.
+  ///
+  /// In en, this message translates to:
+  /// **'Block this user'**
+  String get friendsBlockDialogTitleFallback;
+
+  /// No description provided for @friendsBlockDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Block {nickname}'**
+  String friendsBlockDialogTitle(String nickname);
+
+  /// No description provided for @friendsBlockDialogBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocking prevents joining the same room and hides their messages.'**
+  String get friendsBlockDialogBody;
+
+  /// No description provided for @friendsBlockConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Block'**
+  String get friendsBlockConfirm;
+
+  /// No description provided for @friendsUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown'**
+  String get friendsUnknown;
+
+  /// No description provided for @friendsRequestSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Friend request sent to {nickname}'**
+  String friendsRequestSent(String nickname);
+
+  /// No description provided for @friendsFailure.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed: {error}'**
+  String friendsFailure(String error);
+
+  /// No description provided for @friendsSuggestionsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Friend suggestions (friends of friends)'**
+  String get friendsSuggestionsTitle;
+
+  /// No description provided for @friendsMutualCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} mutual'**
+  String friendsMutualCount(int count);
+
+  /// No description provided for @friendsAddShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get friendsAddShort;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../../../core/map_interface.dart';
 import '../../../data/seoul_subway_data.dart';
+import '../../../l10n/gen/app_localizations.dart';
 import '../../../models/bus_models.dart';
 import '../../../models/subway_models.dart';
 import '../../../services/device_profile_service.dart';
@@ -83,7 +84,7 @@ class _SettingsPanelState extends State<SettingsPanel> {
           child: Align(
             alignment: Alignment.centerLeft,
             child: Text(
-              '설정',
+              AppL10n.of(context).settingsTitle,
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.w800,
@@ -103,31 +104,31 @@ class _SettingsPanelState extends State<SettingsPanel> {
               MediaQuery.of(context).padding.bottom + 80,
             ),
             children: [
-              _sectionHeader('지하철'),
+              _sectionHeader(AppL10n.of(context).panelSubway),
               _buildSubwaySection(),
               const SizedBox(height: 24),
-              _sectionHeader('버스'),
+              _sectionHeader(AppL10n.of(context).panelBus),
               _buildBusSection(),
               const SizedBox(height: 24),
-              _sectionHeader('항공기'),
+              _sectionHeader(AppL10n.of(context).panelFlights),
               _buildFlightSection(),
               const SizedBox(height: 24),
-              _sectionHeader('표시'),
+              _sectionHeader(AppL10n.of(context).panelDisplay),
               _buildToggleSection(),
               const SizedBox(height: 24),
-              _sectionHeader('노선 필터'),
+              _sectionHeader(AppL10n.of(context).panelLineFilter),
               _buildLineFilterSection(),
               const SizedBox(height: 24),
-              _sectionHeader('성능'),
+              _sectionHeader(AppL10n.of(context).panelPerformance),
               _buildQualitySection(),
               const SizedBox(height: 24),
-              _sectionHeader('라이팅'),
+              _sectionHeader(AppL10n.of(context).panelLighting),
               _buildLightingSection(),
               const SizedBox(height: 24),
-              _sectionHeader('정보'),
+              _sectionHeader(AppL10n.of(context).panelInfo),
               _buildInfoSection(),
               const SizedBox(height: 24),
-              _sectionHeader('개발자'),
+              _sectionHeader(AppL10n.of(context).panelDeveloper),
               _buildDebugSection(),
             ],
           ),

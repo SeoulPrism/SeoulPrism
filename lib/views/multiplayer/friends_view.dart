@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/gen/app_localizations.dart';
 import '../../models/multiplayer_models.dart';
 import '../../services/multiplayer_service.dart';
 import '../../widgets/adaptive/adaptive.dart';
@@ -99,6 +100,7 @@ class _FriendsViewState extends State<FriendsView> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final l = AppL10n.of(context);
     final svc = MultiplayerService.instance;
     final incoming = svc.incomingRequests;
     final accepted = svc.acceptedFriends;
@@ -106,18 +108,18 @@ class _FriendsViewState extends State<FriendsView> {
     return Scaffold(
       backgroundColor: cs.surface,
       appBar: AdaptiveAppBar(
-        title: '친구',
+        title: l.hubFriendsTitle,
         actions: [
           AdaptiveAppBarAction(
             icon: Icons.group_outlined,
-            tooltip: '친구 그룹',
+            tooltip: l.friendsGroupTooltip,
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => const FriendGroupsView()),
             ),
           ),
           AdaptiveAppBarAction(
             icon: Icons.qr_code_rounded,
-            tooltip: '친구 코드',
+            tooltip: l.friendsCodeTooltip,
             onPressed: () => FriendCodeShareSheet.show(context),
           ),
           const SizedBox(width: 4),
@@ -127,17 +129,17 @@ class _FriendsViewState extends State<FriendsView> {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
           children: [
-            _SectionLabel(text: '닉네임으로 친구 추가'),
+            _SectionLabel(text: l.friendsAddByNickname),
             AdaptiveTextField(
               controller: _searchCtrl,
-              placeholder: '닉네임 입력 후 검색',
+              placeholder: l.friendsSearchPlaceholder,
               onSubmitted: _runSearch,
               padding:
                   const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             ),
             const SizedBox(height: 8),
             AdaptiveGlassButton(
-              label: _searching ? '검색 중...' : '검색',
+              label: _searching ? l.friendsSearching : l.friendsSearch,
               onPressed: _searching ? null : () => _runSearch(_searchCtrl.text),
             ),
             // 검색 결과 / 빈 상태.
@@ -154,11 +156,11 @@ class _FriendsViewState extends State<FriendsView> {
                       Icon(Icons.search_off_rounded,
                           size: 36, color: cs.onSurfaceVariant),
                       const SizedBox(height: 8),
-                      Text('"$_lastQuery" 와(과) 일치하는 사용자가 없어요',
+                      Text(l.friendsNotFound(_lastQuery),
                           style:
                               TextStyle(color: cs.onSurfaceVariant)),
                       const SizedBox(height: 4),
-                      Text('닉네임은 정확히 일치해야 해요. 친구코드(8자리)도 시도해보세요.',
+                      Text(l.friendsSearchHint,
                           textAlign: TextAlign.center,
                           style: TextStyle(
                               fontSize: 12,
@@ -184,7 +186,7 @@ class _FriendsViewState extends State<FriendsView> {
 
             if (incoming.isNotEmpty) ...[
               const SizedBox(height: 24),
-              _SectionLabel(text: '받은 친구 신청 (${incoming.length})'),
+              _SectionLabel(text: l.friendsReceivedRequests(incoming.length)),
               AdaptiveSectionCard(
                 children: [
                   for (var i = 0; i < incoming.length; i++) ...[
@@ -201,13 +203,13 @@ class _FriendsViewState extends State<FriendsView> {
                           children: [
                             TextButton(
                               onPressed: () => svc.acceptFriendRequest(f),
-                              child: const Text('수락'),
+                              child: Text(l.friendsAccept),
                             ),
                             TextButton(
                               onPressed: () => svc.removeFriend(other),
                               style: TextButton.styleFrom(
                                   foregroundColor: Theme.of(context).colorScheme.error),
-                              child: const Text('거절'),
+                              child: Text(l.friendsReject),
                             ),
                           ],
                         ),
@@ -220,12 +222,12 @@ class _FriendsViewState extends State<FriendsView> {
 
             const SizedBox(height: 24),
             _SuggestedFriendsSection(),
-            _SectionLabel(text: '내 친구 (${accepted.length})'),
+            _SectionLabel(text: l.friendsMyFriends(accepted.length)),
             if (accepted.isEmpty)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 24),
                 child: Center(
-                  child: Text('아직 친구가 없어요. 닉네임으로 추가해보세요.',
+                  child: Text(l.friendsEmpty,
                       style: TextStyle(color: cs.onSurfaceVariant)),
                 ),
               )
@@ -270,6 +272,7 @@ class _FriendsViewState extends State<FriendsView> {
 
   Widget _buildSearchTrailing(MultiplayerProfile p) {
     final cs = Theme.of(context).colorScheme;
+    final l = AppL10n.of(context);
     final state = _stateFor(p.userId);
     // #19 cooldown 이 있고 친구 아님 — "N일 후 재신청" 표시 (신청 버튼 비활성).
     final cooldown = _cooldowns[p.userId];
@@ -277,21 +280,23 @@ class _FriendsViewState extends State<FriendsView> {
       final hoursLeft = cooldown.difference(DateTime.now()).inHours;
       final daysLeft = (hoursLeft / 24).ceil();
       return Tooltip(
-        message: '거절당한 신청은 7일 후 다시 보낼 수 있어요',
+        message: l.friendsCooldownTooltip,
         child: Text(
-          daysLeft >= 1 ? '$daysLeft일 후 재신청' : '$hoursLeft시간 후',
+          daysLeft >= 1
+              ? l.friendsCooldownDays(daysLeft)
+              : l.friendsCooldownHours(hoursLeft),
           style: TextStyle(
               fontSize: 11, color: cs.onSurfaceVariant.withValues(alpha: 0.7)),
         ),
       );
     }
     return switch (state) {
-      _FriendState.friend => Text('친구',
+      _FriendState.friend => Text(l.friendsBadgeFriend,
           style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w700,
               color: cs.primary)),
-      _FriendState.requested => Text('신청됨',
+      _FriendState.requested => Text(l.friendsBadgeRequested,
           style: TextStyle(
               fontSize: 12, color: cs.onSurfaceVariant)),
       _FriendState.incoming => TextButton(
@@ -302,11 +307,11 @@ class _FriendsViewState extends State<FriendsView> {
             );
             svc.acceptFriendRequest(f);
           },
-          child: const Text('수락'),
+          child: Text(l.friendsAccept),
         ),
       _FriendState.none => TextButton(
           onPressed: () => _sendRequest(p),
-          child: const Text('신청'),
+          child: Text(l.friendsApply),
         ),
     };
   }
@@ -315,9 +320,11 @@ class _FriendsViewState extends State<FriendsView> {
     setState(() => _justRequestedIds.add(p.userId));
     try {
       await MultiplayerService.instance.sendFriendRequest(p.userId);
-      showAppSnackBar(
-          '${p.nickname} 님에게 친구 신청 — 수락하면 푸시 알림이 와요',
-          duration: const Duration(seconds: 4));
+      if (mounted) {
+        showAppSnackBar(
+            AppL10n.of(context).friendsSendingRequestHint(p.nickname),
+            duration: const Duration(seconds: 4));
+      }
     } catch (e) {
       if (mounted) setState(() => _justRequestedIds.remove(p.userId));
       showAppSnackBar(e.toString().replaceFirst('Exception: ', ''));
@@ -333,11 +340,14 @@ class _FriendsViewState extends State<FriendsView> {
         builder: (_) => DmThreadView(threadId: tid, otherUserId: otherUserId),
       ));
     } catch (e) {
-      if (mounted) showAppSnackBar('DM 시작 실패: $e');
+      if (mounted) {
+        showAppSnackBar(AppL10n.of(context).friendsDmStartFailed(e.toString()));
+      }
     }
   }
 
   void _showFriendMenu(String userId, MultiplayerProfile? p) {
+    final l = AppL10n.of(context);
     showModalBottomSheet(
       context: context,
       showDragHandle: true,
@@ -347,7 +357,7 @@ class _FriendsViewState extends State<FriendsView> {
           children: [
             ListTile(
               leading: const Icon(Icons.person_remove_outlined),
-              title: const Text('친구 해제'),
+              title: Text(l.friendsUnfriend),
               onTap: () async {
                 Navigator.pop(context);
                 await MultiplayerService.instance.removeFriend(userId);
@@ -355,8 +365,8 @@ class _FriendsViewState extends State<FriendsView> {
             ),
             ListTile(
               leading: const Icon(Icons.flag_outlined, color: Colors.orange),
-              title: const Text('신고',
-                  style: TextStyle(color: Colors.orange)),
+              title: Text(l.friendsReport,
+                  style: const TextStyle(color: Colors.orange)),
               onTap: () {
                 Navigator.pop(context);
                 ReportSheet.showForUser(context, userId,
@@ -365,14 +375,17 @@ class _FriendsViewState extends State<FriendsView> {
             ),
             ListTile(
               leading: const Icon(Icons.block_rounded, color: Colors.red),
-              title: const Text('차단', style: TextStyle(color: Colors.red)),
+              title: Text(l.friendsBlock,
+                  style: const TextStyle(color: Colors.red)),
               onTap: () {
                 Navigator.pop(context);
                 showAdaptiveConfirmDialog(
                   context: context,
-                  title: '${p?.nickname ?? '이 사용자'} 차단',
-                  content: '차단하면 같은 방 입장이 불가능하고 메시지도 보이지 않습니다.',
-                  confirmText: '차단',
+                  title: p?.nickname != null
+                      ? l.friendsBlockDialogTitle(p!.nickname)
+                      : l.friendsBlockDialogTitleFallback,
+                  content: l.friendsBlockDialogBody,
+                  confirmText: l.friendsBlockConfirm,
                   isDestructive: true,
                   onConfirm: () =>
                       MultiplayerService.instance.blockUser(userId),
@@ -416,7 +429,8 @@ class _PeerRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final name = profile?.nickname ?? (fallbackId?.substring(0, 8) ?? '알 수 없음');
+    final name = profile?.nickname ??
+        (fallbackId?.substring(0, 8) ?? AppL10n.of(context).friendsUnknown);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       child: Row(
@@ -508,9 +522,13 @@ class _SuggestedFriendsSectionState extends State<_SuggestedFriendsSection> {
     setState(() => _busy.add(p.userId));
     try {
       await MultiplayerService.instance.sendFriendRequest(p.userId);
-      if (mounted) showAppSnackBar('${p.nickname} 님에게 친구 신청 보냈어요');
+      if (mounted) {
+        showAppSnackBar(AppL10n.of(context).friendsRequestSent(p.nickname));
+      }
     } catch (e) {
-      if (mounted) showAppSnackBar('실패: $e');
+      if (mounted) {
+        showAppSnackBar(AppL10n.of(context).friendsFailure(e.toString()));
+      }
     } finally {
       if (mounted) setState(() => _busy.remove(p.userId));
     }
@@ -533,7 +551,7 @@ class _SuggestedFriendsSectionState extends State<_SuggestedFriendsSection> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _SectionLabel(text: '추천 친구 (친구의 친구)'),
+        _SectionLabel(text: AppL10n.of(context).friendsSuggestionsTitle),
         AdaptiveSectionCard(
           children: [
             for (var i = 0; i < items.length; i++) ...[
@@ -565,7 +583,7 @@ class _SuggestedFriendsSectionState extends State<_SuggestedFriendsSection> {
                                   fontSize: 14,
                                   fontWeight: FontWeight.w700)),
                           const SizedBox(height: 2),
-                          Text('공통 친구 ${items[i].mutualCount}명',
+                          Text(AppL10n.of(context).friendsMutualCount(items[i].mutualCount),
                               style: TextStyle(
                                   fontSize: 11,
                                   color: cs.onSurfaceVariant)),
@@ -578,7 +596,7 @@ class _SuggestedFriendsSectionState extends State<_SuggestedFriendsSection> {
                             child: CircularProgressIndicator(strokeWidth: 2))
                         : TextButton.icon(
                             icon: const Icon(Icons.person_add_alt_1, size: 18),
-                            label: const Text('추가'),
+                            label: Text(AppL10n.of(context).friendsAddShort),
                             onPressed: () => _add(items[i].profile),
                           ),
                   ],

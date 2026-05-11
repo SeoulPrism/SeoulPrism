@@ -1428,4 +1428,598 @@ class AppL10nJa extends AppL10n {
   String hubRecentMeetupsCount(int count) {
     return '$count回';
   }
+
+  @override
+  String get roomCodeRequired => '6 桁のコードを入力してください。';
+
+  @override
+  String get roomLeaveTitle => 'ルームから退出';
+
+  @override
+  String get roomLeaveBody => '退出すると位置共有とチャットが終了します。';
+
+  @override
+  String get roomLeaveConfirm => '退出';
+
+  @override
+  String get roomTitle => 'ルーム';
+
+  @override
+  String get roomDescription => 'リアルタイムで友だちと位置/チャットを共有します。';
+
+  @override
+  String get roomCapacityNote => 'ルームは 24 時間後に自動失効、定員 8 名。';
+
+  @override
+  String get roomCreateButton => '新しいルームを作成';
+
+  @override
+  String get roomCodeEntryTitle => '招待コードで参加 (6 桁)';
+
+  @override
+  String get roomJoinButton => '参加';
+
+  @override
+  String roomExpiresInMin(int min) {
+    return '$min 分後に失効';
+  }
+
+  @override
+  String get roomDefaultName => '名前のないルーム';
+
+  @override
+  String get roomInviteCode => '招待コード';
+
+  @override
+  String get roomCodeCopied => 'コードをコピーしました';
+
+  @override
+  String roomExpiresInHours(int hour) {
+    return '$hour 時間後に失効';
+  }
+
+  @override
+  String roomMembers(int current, int max) {
+    return 'メンバー ($current/$max)';
+  }
+
+  @override
+  String roomChatOpenWithUnread(int count) {
+    return 'チャットを開く ($count)';
+  }
+
+  @override
+  String get roomChatOpen => 'チャットを開く';
+
+  @override
+  String get roomLeaveButton => 'ルームから退出';
+
+  @override
+  String get roomEditNameTitle => 'ルーム名を変更';
+
+  @override
+  String get roomEditNameBody => 'メンバーに表示される名前です';
+
+  @override
+  String get roomEditNamePlaceholder => '例: 光化門の集まり';
+
+  @override
+  String roomGenericError(String error) {
+    return '失敗: $error';
+  }
+
+  @override
+  String get roomShareSubject => 'Seoul Live ルーム招待';
+
+  @override
+  String roomShareBody(String nickname, String code) {
+    return '$nickname さんから Seoul Live ルームに招待が届きました!\n\nコード: $code\nそのまま参加: com.seoul.prism://room/$code';
+  }
+
+  @override
+  String get roomInviteTextCopied => '招待テキストをコピーしました';
+
+  @override
+  String get roomRefreshCodeTitle => '招待コードを更新';
+
+  @override
+  String get roomRefreshCodeBody => '既存のコードは直ちに無効になります。続行しますか?';
+
+  @override
+  String get roomRefreshCodeConfirm => '更新';
+
+  @override
+  String get roomCodeRefreshed => 'コードを更新しました';
+
+  @override
+  String roomKickTitle(String nickname) {
+    return '$nickname をキック';
+  }
+
+  @override
+  String get roomKickBody => 'ルームからすぐに退出させられます。';
+
+  @override
+  String get roomKickConfirm => 'キック';
+
+  @override
+  String get roomKickFallbackName => 'メンバー';
+
+  @override
+  String roomNameMe(String name) {
+    return '$name (自分)';
+  }
+
+  @override
+  String get roomMeetupBadge => '出会い';
+
+  @override
+  String get roomKickTooltip => 'キック';
+
+  @override
+  String get roomUnknownUser => '誰か';
+
+  @override
+  String roomDestTitle(String name) {
+    return '🎯 一緒に行く — $name';
+  }
+
+  @override
+  String roomDestSetBy(String name) {
+    return '$name さんが設定';
+  }
+
+  @override
+  String get roomDestDefault => '目的地';
+
+  @override
+  String get roomDestViewMap => 'マップで見る';
+
+  @override
+  String get roomDestClear => '目的地を解除';
+
+  @override
+  String get mpSettingsTitle => 'Seoul Live 設定';
+
+  @override
+  String get mpSectionMyStatus => '私の状態';
+
+  @override
+  String get mpPause => 'Seoul Live を一時停止';
+
+  @override
+  String get mpPauseHint =>
+      '✓ チャット / ルーム参加 / 友だち申請 — 可能\n✗ 位置送信 / 出会い通知 / ピン表示 — ブロック\nデータはそのまま保持';
+
+  @override
+  String get mpSectionBattery => 'バッテリーモード';
+
+  @override
+  String get mpBatteryHint => '位置送信の間隔 — 正確なほど消費電力が大';
+
+  @override
+  String get mpSectionNotifications => '通知';
+
+  @override
+  String mpNotificationsFail(String error) {
+    return '失敗: $error';
+  }
+
+  @override
+  String get mpNotificationsHint => 'システム通知権限とは別 — ここで切るとプッシュは送信されてもサイレントに。';
+
+  @override
+  String get mpSectionTutorial => 'チュートリアル';
+
+  @override
+  String get mpReplayTutorial => 'Seoul Live チュートリアルをもう一度';
+
+  @override
+  String get mpTutorialToast => '次回入った時にチュートリアルが再表示されます';
+
+  @override
+  String get mpReplayWhatsNew => '新機能の案内をもう一度';
+
+  @override
+  String mpReplayWhatsNewHint(String version) {
+    return 'v$version の更新内容';
+  }
+
+  @override
+  String get mpSectionSafety => 'セーフティ';
+
+  @override
+  String get mpBlockList => 'ブロックリスト';
+
+  @override
+  String get mpBlockListHint => 'ブロック中のユーザーを表示/解除';
+
+  @override
+  String get mpSectionConsent => '同意とデータ';
+
+  @override
+  String get mpRevokeConsent => '位置情報同意を撤回';
+
+  @override
+  String get mpRevokeConsentHint => '同意を撤回するとマルチプレイが無効になり、すべてのデータが削除されます';
+
+  @override
+  String get mpDownloadMyData => 'マイデータをダウンロード';
+
+  @override
+  String get mpDownloadMyDataHint => 'PIPA データポータビリティ — メールで依頼';
+
+  @override
+  String get mpDownloadMyDataToast =>
+      'rush94434@gmail.com にお問い合わせください (10 日以内に対応)';
+
+  @override
+  String get mpSectionOps => '運営チーム';
+
+  @override
+  String get mpOpsMonitor => '運営モニター';
+
+  @override
+  String get mpOpsMonitorHint => '日次指標 · 不正シグナル · 報告対応';
+
+  @override
+  String get mpSectionDanger => '危険ゾーン';
+
+  @override
+  String get mpLeaveSeoulLive => 'Seoul Live を退会';
+
+  @override
+  String get mpLeaveSeoulLiveHint => 'プロフィール・友だち・ルーム・チャットなどマルチプレイデータを一括削除';
+
+  @override
+  String get mpFootnote => '※ Seoul Vista 本アカウントは保持されます。マルチプレイ関連データのみ削除されます。';
+
+  @override
+  String get mpRevokeDialogTitle => '同意を撤回';
+
+  @override
+  String get mpRevokeDialogBody =>
+      '位置情報処理の同意を撤回するとマルチプレイが無効になり、\nプロフィール・友だち・ルーム・チャットがすべて削除されます。\n続行しますか?';
+
+  @override
+  String get mpRevokeDialogConfirm => '撤回';
+
+  @override
+  String get mpRevokedToast => '同意を撤回しデータを削除しました';
+
+  @override
+  String get mpLeaveDialogTitle => 'Seoul Live 退会';
+
+  @override
+  String get mpLeaveDialogBody =>
+      'すべてのマルチプレイデータが完全に削除されます。\n再加入できますが、友だち・ルーム・チャット履歴は復元されません。';
+
+  @override
+  String get mpLeaveConfirm => '退会';
+
+  @override
+  String get mpLeftToast => 'Seoul Live から退会しました';
+
+  @override
+  String get mpNotifCatFriendRequest => '友だち申請';
+
+  @override
+  String get mpNotifCatFriendAccept => '友だち承認';
+
+  @override
+  String get mpNotifCatRoomMessage => 'チャットメッセージ';
+
+  @override
+  String get mpNotifCatMeetup => '出会い検知';
+
+  @override
+  String get mpNotifCatDestination => '目的地の変更';
+
+  @override
+  String get mpNotifCatWelcome => 'ようこそ';
+
+  @override
+  String get panelSubway => '地下鉄';
+
+  @override
+  String get panelBus => 'バス';
+
+  @override
+  String get panelFlights => '航空機';
+
+  @override
+  String get panelDisplay => '表示';
+
+  @override
+  String get panelLineFilter => '路線フィルター';
+
+  @override
+  String get panelPerformance => 'パフォーマンス';
+
+  @override
+  String get panelLighting => 'ライティング';
+
+  @override
+  String get panelInfo => '情報';
+
+  @override
+  String get panelDeveloper => '開発者';
+
+  @override
+  String get panelDemoRunning => 'DEMO 実行中';
+
+  @override
+  String get panelLiveRunning => 'LIVE 実行中';
+
+  @override
+  String get panelOff => 'オフ';
+
+  @override
+  String get panelSwitchToLive => 'LIVE モードに切替';
+
+  @override
+  String get panelSwitchToDemo => 'DEMO モードに切替';
+
+  @override
+  String get panelSubwayOn => '地下鉄をオン';
+
+  @override
+  String get panelSubwayOff => '地下鉄をオフ';
+
+  @override
+  String panelTrainCount(int count) {
+    return '列車 $count 本';
+  }
+
+  @override
+  String panelLastUpdate(String time) {
+    return '更新 $time';
+  }
+
+  @override
+  String panelBusActive(int count) {
+    return 'バス $count 台表示中';
+  }
+
+  @override
+  String get panelSelectRoutes => '路線を選んでください';
+
+  @override
+  String get panelTurnAllOff => 'すべてオフ';
+
+  @override
+  String get panelBusPosition => 'バス位置';
+
+  @override
+  String get panelHanRiverBus => '🚢 漢江バス';
+
+  @override
+  String get panelAddRoute => '路線を追加';
+
+  @override
+  String panelFlightCount(String mode, int count) {
+    return '$mode $count 機';
+  }
+
+  @override
+  String get panelFlightFallback => '航空機';
+
+  @override
+  String get panelFlightLegendClimb => '上昇';
+
+  @override
+  String get panelFlightLegendCruise => '巡航';
+
+  @override
+  String get panelFlightLegendDescend => '下降';
+
+  @override
+  String get panelFlightLegendTakeoffLanding => '離着陸';
+
+  @override
+  String get panelRouteLines => '路線経路';
+
+  @override
+  String get panelTrainPosition => '列車位置';
+
+  @override
+  String get panelStationDisplay => '駅表示';
+
+  @override
+  String get panelSelectRoutesToShow => '表示する路線を選択';
+
+  @override
+  String get panelAll => 'すべて';
+
+  @override
+  String get panelPresetHigh => '高';
+
+  @override
+  String get panelPresetMedium => '中';
+
+  @override
+  String get panelPresetLow => '低';
+
+  @override
+  String get panelFps => 'FPS';
+
+  @override
+  String get panelNaverPolling => 'Naver ポーリング';
+
+  @override
+  String panelRenderInfo(String engine) {
+    return 'レンダリング: $engine · GeoJSON キャッシュ';
+  }
+
+  @override
+  String get panelLightAuto => '自動';
+
+  @override
+  String get panelLightDay => '昼';
+
+  @override
+  String get panelLightNight => '夜';
+
+  @override
+  String get panelLightDawn => '夜明け';
+
+  @override
+  String get panelLightDusk => '夕暮れ';
+
+  @override
+  String get panelTierFlagship => 'フラッグシップ';
+
+  @override
+  String get panelTierHigh => 'ハイ';
+
+  @override
+  String get panelTierMid => 'ミドル';
+
+  @override
+  String get panelTierLow => 'ロー';
+
+  @override
+  String get panelMapEngine => 'マップエンジン';
+
+  @override
+  String get panelDevice => 'デバイス';
+
+  @override
+  String get panelPerfTier => 'パフォーマンスティア';
+
+  @override
+  String get mapDisplay3D => '3D 建物表示';
+
+  @override
+  String get mapDisplayPois => 'POI アイコン表示';
+
+  @override
+  String get mapDisplayWeather => '天気エフェクト (霧/雨)';
+
+  @override
+  String get mapDisplayLiveSubway => 'リアルタイム地下鉄';
+
+  @override
+  String get friendsGroupTooltip => '友だちグループ';
+
+  @override
+  String get friendsCodeTooltip => '友だちコード';
+
+  @override
+  String get friendsAddByNickname => 'ニックネームで友だち追加';
+
+  @override
+  String get friendsSearchPlaceholder => 'ニックネームを入力して検索';
+
+  @override
+  String get friendsSearching => '検索中…';
+
+  @override
+  String get friendsSearch => '検索';
+
+  @override
+  String friendsNotFound(String query) {
+    return '\"$query\" に一致するユーザーが見つかりません';
+  }
+
+  @override
+  String get friendsSearchHint => 'ニックネームは完全一致が必要です。友だちコード (8 桁) もお試しください。';
+
+  @override
+  String friendsReceivedRequests(int count) {
+    return '受信した申請 ($count)';
+  }
+
+  @override
+  String get friendsAccept => '承認';
+
+  @override
+  String get friendsReject => '拒否';
+
+  @override
+  String friendsMyFriends(int count) {
+    return '私の友だち ($count)';
+  }
+
+  @override
+  String get friendsEmpty => '友だちはまだいません。ニックネームで追加してみてください。';
+
+  @override
+  String get friendsCooldownTooltip => '拒否された申請は 7 日後に再送信できます';
+
+  @override
+  String friendsCooldownDays(int days) {
+    return '$days 日後に再申請';
+  }
+
+  @override
+  String friendsCooldownHours(int hours) {
+    return '$hours 時間後';
+  }
+
+  @override
+  String get friendsBadgeFriend => '友だち';
+
+  @override
+  String get friendsBadgeRequested => '申請済';
+
+  @override
+  String get friendsApply => '申請';
+
+  @override
+  String friendsSendingRequestHint(String nickname) {
+    return '$nickname さんに友だち申請 — 承認されると通知が届きます';
+  }
+
+  @override
+  String friendsDmStartFailed(String error) {
+    return 'DM 開始に失敗: $error';
+  }
+
+  @override
+  String get friendsUnfriend => '友だち解除';
+
+  @override
+  String get friendsReport => '通報';
+
+  @override
+  String get friendsBlock => 'ブロック';
+
+  @override
+  String get friendsBlockDialogTitleFallback => 'このユーザーをブロック';
+
+  @override
+  String friendsBlockDialogTitle(String nickname) {
+    return '$nickname をブロック';
+  }
+
+  @override
+  String get friendsBlockDialogBody => 'ブロックすると同じルームに入れず、メッセージも表示されません。';
+
+  @override
+  String get friendsBlockConfirm => 'ブロック';
+
+  @override
+  String get friendsUnknown => '不明';
+
+  @override
+  String friendsRequestSent(String nickname) {
+    return '$nickname さんに友だち申請を送りました';
+  }
+
+  @override
+  String friendsFailure(String error) {
+    return '失敗: $error';
+  }
+
+  @override
+  String get friendsSuggestionsTitle => 'おすすめの友だち (友だちの友だち)';
+
+  @override
+  String friendsMutualCount(int count) {
+    return '共通の友だち $count 人';
+  }
+
+  @override
+  String get friendsAddShort => '追加';
 }

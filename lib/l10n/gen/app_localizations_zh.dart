@@ -1419,4 +1419,596 @@ class AppL10nZh extends AppL10n {
   String hubRecentMeetupsCount(int count) {
     return '$count 次';
   }
+
+  @override
+  String get roomCodeRequired => '请输入 6 位代码。';
+
+  @override
+  String get roomLeaveTitle => '退出房间';
+
+  @override
+  String get roomLeaveBody => '退出后将结束位置共享与聊天。';
+
+  @override
+  String get roomLeaveConfirm => '退出';
+
+  @override
+  String get roomTitle => '好友房间';
+
+  @override
+  String get roomDescription => '实时与好友共享位置和聊天。';
+
+  @override
+  String get roomCapacityNote => '房间 24 小时后自动失效,容量 8 人。';
+
+  @override
+  String get roomCreateButton => '新建房间';
+
+  @override
+  String get roomCodeEntryTitle => '使用邀请码加入 (6 位)';
+
+  @override
+  String get roomJoinButton => '加入';
+
+  @override
+  String roomExpiresInMin(int min) {
+    return '$min 分钟后失效';
+  }
+
+  @override
+  String get roomDefaultName => '未命名房间';
+
+  @override
+  String get roomInviteCode => '邀请码';
+
+  @override
+  String get roomCodeCopied => '已复制代码';
+
+  @override
+  String roomExpiresInHours(int hour) {
+    return '$hour 小时后失效';
+  }
+
+  @override
+  String roomMembers(int current, int max) {
+    return '成员 ($current/$max)';
+  }
+
+  @override
+  String roomChatOpenWithUnread(int count) {
+    return '打开聊天 ($count)';
+  }
+
+  @override
+  String get roomChatOpen => '打开聊天';
+
+  @override
+  String get roomLeaveButton => '退出房间';
+
+  @override
+  String get roomEditNameTitle => '修改房间名';
+
+  @override
+  String get roomEditNameBody => '显示给房间成员';
+
+  @override
+  String get roomEditNamePlaceholder => '例如:光化门聚会';
+
+  @override
+  String roomGenericError(String error) {
+    return '失败:$error';
+  }
+
+  @override
+  String get roomShareSubject => 'Seoul Live 房间邀请';
+
+  @override
+  String roomShareBody(String nickname, String code) {
+    return '$nickname 向你发送了 Seoul Live 房间邀请!\n\n代码:$code\n直接加入:com.seoul.prism://room/$code';
+  }
+
+  @override
+  String get roomInviteTextCopied => '已复制邀请文本';
+
+  @override
+  String get roomRefreshCodeTitle => '更新邀请码';
+
+  @override
+  String get roomRefreshCodeBody => '旧代码会立即失效。继续吗?';
+
+  @override
+  String get roomRefreshCodeConfirm => '更新';
+
+  @override
+  String get roomCodeRefreshed => '代码已更新';
+
+  @override
+  String roomKickTitle(String nickname) {
+    return '踢出 $nickname';
+  }
+
+  @override
+  String get roomKickBody => '对方将立即被请出房间。';
+
+  @override
+  String get roomKickConfirm => '踢出';
+
+  @override
+  String get roomKickFallbackName => '成员';
+
+  @override
+  String roomNameMe(String name) {
+    return '$name (我)';
+  }
+
+  @override
+  String get roomMeetupBadge => '相遇';
+
+  @override
+  String get roomKickTooltip => '踢出';
+
+  @override
+  String get roomUnknownUser => '某人';
+
+  @override
+  String roomDestTitle(String name) {
+    return '🎯 一起前往 — $name';
+  }
+
+  @override
+  String roomDestSetBy(String name) {
+    return '由 $name 设定';
+  }
+
+  @override
+  String get roomDestDefault => '目的地';
+
+  @override
+  String get roomDestViewMap => '在地图中查看';
+
+  @override
+  String get roomDestClear => '取消目的地';
+
+  @override
+  String get mpSettingsTitle => 'Seoul Live 设置';
+
+  @override
+  String get mpSectionMyStatus => '我的状态';
+
+  @override
+  String get mpPause => '暂停 Seoul Live';
+
+  @override
+  String get mpPauseHint =>
+      '✓ 聊天 / 加入房间 / 好友申请 — 允许\n✗ 位置发送 / 相遇通知 / 图钉显示 — 屏蔽\n数据将保留';
+
+  @override
+  String get mpSectionBattery => '省电模式';
+
+  @override
+  String get mpBatteryHint => '位置发送间隔 — 越精准,耗电越多';
+
+  @override
+  String get mpSectionNotifications => '通知';
+
+  @override
+  String mpNotificationsFail(String error) {
+    return '失败:$error';
+  }
+
+  @override
+  String get mpNotificationsHint => '与系统通知权限独立 — 这里关闭后推送仍发送但静音。';
+
+  @override
+  String get mpSectionTutorial => '引导';
+
+  @override
+  String get mpReplayTutorial => '重新查看 Seoul Live 引导';
+
+  @override
+  String get mpTutorialToast => '下次进入时会再次显示引导';
+
+  @override
+  String get mpReplayWhatsNew => '重新查看新功能';
+
+  @override
+  String mpReplayWhatsNewHint(String version) {
+    return 'v$version 更新内容';
+  }
+
+  @override
+  String get mpSectionSafety => '安全';
+
+  @override
+  String get mpBlockList => '屏蔽列表';
+
+  @override
+  String get mpBlockListHint => '查看/解除已屏蔽用户';
+
+  @override
+  String get mpSectionConsent => '同意与数据';
+
+  @override
+  String get mpRevokeConsent => '撤回位置信息同意';
+
+  @override
+  String get mpRevokeConsentHint => '撤回同意后将禁用多人功能并删除所有数据';
+
+  @override
+  String get mpDownloadMyData => '下载我的数据';
+
+  @override
+  String get mpDownloadMyDataHint => 'PIPA 数据可携权 — 通过邮件申请';
+
+  @override
+  String get mpDownloadMyDataToast => '请发送邮件到 rush94434@gmail.com (10 日内处理)';
+
+  @override
+  String get mpSectionOps => '运营组';
+
+  @override
+  String get mpOpsMonitor => '运营监控';
+
+  @override
+  String get mpOpsMonitorHint => '每日指标 · 滥用信号 · 举报处理';
+
+  @override
+  String get mpSectionDanger => '危险区';
+
+  @override
+  String get mpLeaveSeoulLive => '退出 Seoul Live';
+
+  @override
+  String get mpLeaveSeoulLiveHint => '一键删除资料·好友·房间·聊天等多人数据';
+
+  @override
+  String get mpFootnote => '※ Seoul Vista 主账号会保留。只删除多人相关数据。';
+
+  @override
+  String get mpRevokeDialogTitle => '撤回同意';
+
+  @override
+  String get mpRevokeDialogBody =>
+      '撤回位置信息处理同意后将禁用多人功能,\n并删除资料·好友·房间·聊天数据。\n继续吗?';
+
+  @override
+  String get mpRevokeDialogConfirm => '撤回';
+
+  @override
+  String get mpRevokedToast => '已撤回同意并删除数据';
+
+  @override
+  String get mpLeaveDialogTitle => '退出 Seoul Live';
+
+  @override
+  String get mpLeaveDialogBody => '所有多人数据将被永久删除。\n可以重新加入,但好友·房间·聊天记录不会恢复。';
+
+  @override
+  String get mpLeaveConfirm => '退出';
+
+  @override
+  String get mpLeftToast => '已退出 Seoul Live';
+
+  @override
+  String get mpNotifCatFriendRequest => '好友申请';
+
+  @override
+  String get mpNotifCatFriendAccept => '好友接受';
+
+  @override
+  String get mpNotifCatRoomMessage => '聊天消息';
+
+  @override
+  String get mpNotifCatMeetup => '相遇检测';
+
+  @override
+  String get mpNotifCatDestination => '目的地变更';
+
+  @override
+  String get mpNotifCatWelcome => '欢迎';
+
+  @override
+  String get panelSubway => '地铁';
+
+  @override
+  String get panelBus => '公交';
+
+  @override
+  String get panelFlights => '飞机';
+
+  @override
+  String get panelDisplay => '显示';
+
+  @override
+  String get panelLineFilter => '线路筛选';
+
+  @override
+  String get panelPerformance => '性能';
+
+  @override
+  String get panelLighting => '光照';
+
+  @override
+  String get panelInfo => '信息';
+
+  @override
+  String get panelDeveloper => '开发者';
+
+  @override
+  String get panelDemoRunning => 'DEMO 运行中';
+
+  @override
+  String get panelLiveRunning => 'LIVE 运行中';
+
+  @override
+  String get panelOff => '已关闭';
+
+  @override
+  String get panelSwitchToLive => '切换到 LIVE 模式';
+
+  @override
+  String get panelSwitchToDemo => '切换到 DEMO 模式';
+
+  @override
+  String get panelSubwayOn => '开启地铁';
+
+  @override
+  String get panelSubwayOff => '关闭地铁';
+
+  @override
+  String panelTrainCount(int count) {
+    return '列车 $count 列';
+  }
+
+  @override
+  String panelLastUpdate(String time) {
+    return '更新 $time';
+  }
+
+  @override
+  String panelBusActive(int count) {
+    return '正在显示 $count 辆公交';
+  }
+
+  @override
+  String get panelSelectRoutes => '请选择线路';
+
+  @override
+  String get panelTurnAllOff => '全部关闭';
+
+  @override
+  String get panelBusPosition => '公交位置';
+
+  @override
+  String get panelHanRiverBus => '🚢 汉江公交';
+
+  @override
+  String get panelAddRoute => '添加线路';
+
+  @override
+  String panelFlightCount(String mode, int count) {
+    return '$mode $count 架';
+  }
+
+  @override
+  String get panelFlightFallback => '飞机';
+
+  @override
+  String get panelFlightLegendClimb => '爬升';
+
+  @override
+  String get panelFlightLegendCruise => '巡航';
+
+  @override
+  String get panelFlightLegendDescend => '下降';
+
+  @override
+  String get panelFlightLegendTakeoffLanding => '起降';
+
+  @override
+  String get panelRouteLines => '线路路径';
+
+  @override
+  String get panelTrainPosition => '列车位置';
+
+  @override
+  String get panelStationDisplay => '站点显示';
+
+  @override
+  String get panelSelectRoutesToShow => '选择要显示的线路';
+
+  @override
+  String get panelAll => '全部';
+
+  @override
+  String get panelPresetHigh => '高';
+
+  @override
+  String get panelPresetMedium => '中';
+
+  @override
+  String get panelPresetLow => '低';
+
+  @override
+  String get panelFps => '帧率';
+
+  @override
+  String get panelNaverPolling => 'Naver 轮询';
+
+  @override
+  String panelRenderInfo(String engine) {
+    return '渲染:$engine · GeoJSON 缓存';
+  }
+
+  @override
+  String get panelLightAuto => '自动';
+
+  @override
+  String get panelLightDay => '白天';
+
+  @override
+  String get panelLightNight => '夜晚';
+
+  @override
+  String get panelLightDawn => '黎明';
+
+  @override
+  String get panelLightDusk => '黄昏';
+
+  @override
+  String get panelTierFlagship => '旗舰';
+
+  @override
+  String get panelTierHigh => '高端';
+
+  @override
+  String get panelTierMid => '中端';
+
+  @override
+  String get panelTierLow => '入门';
+
+  @override
+  String get panelMapEngine => '地图引擎';
+
+  @override
+  String get panelDevice => '设备';
+
+  @override
+  String get panelPerfTier => '性能等级';
+
+  @override
+  String get mapDisplay3D => '3D 建筑显示';
+
+  @override
+  String get mapDisplayPois => 'POI 图标显示';
+
+  @override
+  String get mapDisplayWeather => '天气效果 (雾/雨)';
+
+  @override
+  String get mapDisplayLiveSubway => '实时地铁';
+
+  @override
+  String get friendsGroupTooltip => '好友分组';
+
+  @override
+  String get friendsCodeTooltip => '好友代码';
+
+  @override
+  String get friendsAddByNickname => '用昵称加好友';
+
+  @override
+  String get friendsSearchPlaceholder => '输入昵称后搜索';
+
+  @override
+  String get friendsSearching => '搜索中……';
+
+  @override
+  String get friendsSearch => '搜索';
+
+  @override
+  String friendsNotFound(String query) {
+    return '没有与 \"$query\" 匹配的用户';
+  }
+
+  @override
+  String get friendsSearchHint => '昵称需精确匹配。也可尝试好友代码 (8 位)。';
+
+  @override
+  String friendsReceivedRequests(int count) {
+    return '收到的申请 ($count)';
+  }
+
+  @override
+  String get friendsAccept => '接受';
+
+  @override
+  String get friendsReject => '拒绝';
+
+  @override
+  String friendsMyFriends(int count) {
+    return '我的好友 ($count)';
+  }
+
+  @override
+  String get friendsEmpty => '暂无好友。用昵称试着添加吧。';
+
+  @override
+  String get friendsCooldownTooltip => '被拒绝的申请 7 天后可再次发送';
+
+  @override
+  String friendsCooldownDays(int days) {
+    return '$days 天后可再申请';
+  }
+
+  @override
+  String friendsCooldownHours(int hours) {
+    return '$hours 小时后';
+  }
+
+  @override
+  String get friendsBadgeFriend => '好友';
+
+  @override
+  String get friendsBadgeRequested => '已申请';
+
+  @override
+  String get friendsApply => '申请';
+
+  @override
+  String friendsSendingRequestHint(String nickname) {
+    return '向 $nickname 发送好友申请 — 接受后会收到推送通知';
+  }
+
+  @override
+  String friendsDmStartFailed(String error) {
+    return '私信开启失败:$error';
+  }
+
+  @override
+  String get friendsUnfriend => '解除好友';
+
+  @override
+  String get friendsReport => '举报';
+
+  @override
+  String get friendsBlock => '屏蔽';
+
+  @override
+  String get friendsBlockDialogTitleFallback => '屏蔽该用户';
+
+  @override
+  String friendsBlockDialogTitle(String nickname) {
+    return '屏蔽 $nickname';
+  }
+
+  @override
+  String get friendsBlockDialogBody => '屏蔽后无法进入同一房间,消息也不再可见。';
+
+  @override
+  String get friendsBlockConfirm => '屏蔽';
+
+  @override
+  String get friendsUnknown => '未知';
+
+  @override
+  String friendsRequestSent(String nickname) {
+    return '已向 $nickname 发送好友申请';
+  }
+
+  @override
+  String friendsFailure(String error) {
+    return '失败:$error';
+  }
+
+  @override
+  String get friendsSuggestionsTitle => '推荐好友 (朋友的朋友)';
+
+  @override
+  String friendsMutualCount(int count) {
+    return '共同好友 $count 人';
+  }
+
+  @override
+  String get friendsAddShort => '添加';
 }

@@ -843,11 +843,11 @@ class _MapDisplaySettingsViewState extends State<MapDisplaySettingsView> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         child: Column(
           children: [
-            _SectionHeader(label: '지도 표시'),
+            _SectionHeader(label: AppL10n.of(context).settingsSectionMapDisplay),
             AdaptiveSectionCard(
               children: [
                 _SwitchItem(
-                  label: '3D 건물 표시',
+                  label: AppL10n.of(context).mapDisplay3D,
                   value: SettingsService.instance
                       .getBool('show3DBuildings', defaultValue: true),
                   onChanged: (v) {
@@ -857,7 +857,7 @@ class _MapDisplaySettingsViewState extends State<MapDisplaySettingsView> {
                 ),
                 const _ItemDivider(),
                 _SwitchItem(
-                  label: 'POI 아이콘 표시',
+                  label: AppL10n.of(context).mapDisplayPois,
                   value: SettingsService.instance
                       .getBool('showPOI', defaultValue: true),
                   onChanged: (v) {
@@ -867,7 +867,7 @@ class _MapDisplaySettingsViewState extends State<MapDisplaySettingsView> {
                 ),
                 const _ItemDivider(),
                 _SwitchItem(
-                  label: '날씨 효과 (안개/비)',
+                  label: AppL10n.of(context).mapDisplayWeather,
                   value: SettingsService.instance
                       .getBool('weatherEffect', defaultValue: true),
                   onChanged: (v) {
@@ -877,7 +877,7 @@ class _MapDisplaySettingsViewState extends State<MapDisplaySettingsView> {
                 ),
                 const _ItemDivider(),
                 _SwitchItem(
-                  label: '실시간 지하철',
+                  label: AppL10n.of(context).mapDisplayLiveSubway,
                   value: SettingsService.instance
                       .getBool('showSubway', defaultValue: true),
                   onChanged: (v) {
@@ -887,7 +887,7 @@ class _MapDisplaySettingsViewState extends State<MapDisplaySettingsView> {
                 ),
                 const _ItemDivider(),
                 _SwitchItem(
-                  label: '지하철 노선',
+                  label: AppL10n.of(context).settingsLineSubway,
                   value: SettingsService.instance.showRoutes,
                   onChanged: (v) {
                     SettingsService.instance.setShowRoutes(v);
@@ -896,7 +896,7 @@ class _MapDisplaySettingsViewState extends State<MapDisplaySettingsView> {
                 ),
                 const _ItemDivider(),
                 _SwitchItem(
-                  label: '지하철 열차 위치',
+                  label: AppL10n.of(context).settingsTrainPos,
                   value: SettingsService.instance.showTrains,
                   onChanged: (v) {
                     SettingsService.instance.setShowTrains(v);
@@ -905,7 +905,7 @@ class _MapDisplaySettingsViewState extends State<MapDisplaySettingsView> {
                 ),
                 const _ItemDivider(),
                 _SwitchItem(
-                  label: '지하철 역',
+                  label: AppL10n.of(context).settingsStations,
                   value: SettingsService.instance.showStations,
                   onChanged: (v) {
                     SettingsService.instance.setShowStations(v);
@@ -914,7 +914,7 @@ class _MapDisplaySettingsViewState extends State<MapDisplaySettingsView> {
                 ),
                 const _ItemDivider(),
                 _SwitchItem(
-                  label: '시내버스',
+                  label: AppL10n.of(context).settingsBuses,
                   value: SettingsService.instance.showBuses,
                   onChanged: (v) {
                     SettingsService.instance.setShowBuses(v);
@@ -923,7 +923,7 @@ class _MapDisplaySettingsViewState extends State<MapDisplaySettingsView> {
                 ),
                 const _ItemDivider(),
                 _SwitchItem(
-                  label: '한강버스',
+                  label: AppL10n.of(context).settingsRiverBus,
                   value: SettingsService.instance.showRiverBus,
                   onChanged: (v) {
                     SettingsService.instance.setShowRiverBus(v);
@@ -932,7 +932,7 @@ class _MapDisplaySettingsViewState extends State<MapDisplaySettingsView> {
                 ),
                 const _ItemDivider(),
                 _SwitchItem(
-                  label: '항공기',
+                  label: AppL10n.of(context).settingsFlights,
                   value: SettingsService.instance.showFlights,
                   onChanged: (v) {
                     SettingsService.instance.setShowFlights(v);
@@ -943,29 +943,36 @@ class _MapDisplaySettingsViewState extends State<MapDisplaySettingsView> {
             ),
             _RestartHint(),
             const SizedBox(height: 16),
-            _SectionHeader(label: '데이터 소스'),
+            _SectionHeader(label: AppL10n.of(context).settingsSectionDataSource),
             AdaptiveSectionCard(
               children: [
                 _TrailingTextItem(
-                  label: '지하철 모드',
+                  label: AppL10n.of(context).settingsSubwayMode,
                   trailing:
-                      '${SettingsService.instance.mode == 'live' ? '실시간' : '데모'} >',
-                  onTap: () => showAdaptivePicker(
-                    context: context,
-                    title: '지하철 모드',
-                    options: const ['실시간', '데모'],
-                    selected:
-                        SettingsService.instance.mode == 'live' ? '실시간' : '데모',
-                    onSelected: (v) {
-                      SettingsService.instance
-                          .setMode(v == '실시간' ? 'live' : 'demo');
-                      setState(() {});
-                    },
-                  ),
+                      '${_subwayModeLabelStatic(context, SettingsService.instance.mode)} >',
+                  onTap: () {
+                    final codes = ['live', 'demo'];
+                    final labels = codes
+                        .map((c) => _subwayModeLabelStatic(context, c))
+                        .toList();
+                    showAdaptivePicker(
+                      context: context,
+                      title: AppL10n.of(context).settingsSubwayMode,
+                      options: labels,
+                      selected: _subwayModeLabelStatic(
+                          context, SettingsService.instance.mode),
+                      onSelected: (v) {
+                        final idx = labels.indexOf(v);
+                        if (idx < 0) return;
+                        SettingsService.instance.setMode(codes[idx]);
+                        setState(() {});
+                      },
+                    );
+                  },
                 ),
                 const _ItemDivider(),
                 _SwitchItem(
-                  label: '서울시 공공 API (60s)',
+                  label: AppL10n.of(context).settingsSeoulApi,
                   value: SettingsService.instance.useSeoulApi,
                   onChanged: (v) {
                     SettingsService.instance.setUseSeoulApi(v);
@@ -974,7 +981,7 @@ class _MapDisplaySettingsViewState extends State<MapDisplaySettingsView> {
                 ),
                 const _ItemDivider(),
                 _SwitchItem(
-                  label: '네이버 API (5s 단위 보정)',
+                  label: AppL10n.of(context).settingsNaverApi,
                   value: SettingsService.instance.useNaverApi,
                   onChanged: (v) {
                     SettingsService.instance.setUseNaverApi(v);
@@ -984,11 +991,11 @@ class _MapDisplaySettingsViewState extends State<MapDisplaySettingsView> {
               ],
             ),
             const SizedBox(height: 16),
-            _SectionHeader(label: '라이팅'),
+            _SectionHeader(label: AppL10n.of(context).settingsSectionLighting),
             AdaptiveSectionCard(
               children: [
                 _SwitchItem(
-                  label: '자동 (시간대 + 날씨)',
+                  label: AppL10n.of(context).settingsAutoLighting,
                   value: SettingsService.instance.autoLighting,
                   onChanged: (v) {
                     SettingsService.instance.setAutoLighting(v);
@@ -998,21 +1005,28 @@ class _MapDisplaySettingsViewState extends State<MapDisplaySettingsView> {
                 if (!SettingsService.instance.autoLighting) ...[
                   const _ItemDivider(),
                   _TrailingTextItem(
-                    label: '라이트 프리셋',
+                    label: AppL10n.of(context).settingsLightPreset,
                     trailing:
-                        '${_lightLabelStatic(SettingsService.instance.lightPreset)} >',
-                    onTap: () => showAdaptivePicker(
-                      context: context,
-                      title: '라이트 프리셋',
-                      options: const ['새벽', '낮', '저녁', '밤'],
-                      selected: _lightLabelStatic(
-                          SettingsService.instance.lightPreset),
-                      onSelected: (v) {
-                        SettingsService.instance
-                            .setLightPreset(_lightKeyStatic(v));
-                        setState(() {});
-                      },
-                    ),
+                        '${_lightLabelStatic(context, SettingsService.instance.lightPreset)} >',
+                    onTap: () {
+                      final codes = ['dawn', 'day', 'dusk', 'night'];
+                      final labels = codes
+                          .map((c) => _lightLabelStatic(context, c))
+                          .toList();
+                      showAdaptivePicker(
+                        context: context,
+                        title: AppL10n.of(context).settingsLightPreset,
+                        options: labels,
+                        selected: _lightLabelStatic(
+                            context, SettingsService.instance.lightPreset),
+                        onSelected: (v) {
+                          final idx = labels.indexOf(v);
+                          if (idx < 0) return;
+                          SettingsService.instance.setLightPreset(codes[idx]);
+                          setState(() {});
+                        },
+                      );
+                    },
                   ),
                 ],
               ],
@@ -1024,23 +1038,22 @@ class _MapDisplaySettingsViewState extends State<MapDisplaySettingsView> {
     );
   }
 
-  // 라이트 프리셋 라벨 매핑 — _SettingsViewState 의 static 과 동일.
-  static String _lightLabelStatic(String key) => switch (key) {
-        'auto' => '자동',
-        'dawn' => '새벽',
-        'day' => '낮',
-        'dusk' => '저녁',
-        'night' => '밤',
-        _ => key,
-      };
-  static String _lightKeyStatic(String label) => switch (label) {
-        '자동' => 'auto',
-        '새벽' => 'dawn',
-        '낮' => 'day',
-        '저녁' => 'dusk',
-        '밤' => 'night',
-        _ => label,
-      };
+  // 라이트 프리셋 라벨 매핑.
+  static String _lightLabelStatic(BuildContext ctx, String key) {
+    final l = AppL10n.of(ctx);
+    return switch (key) {
+      'dawn' => l.settingsLightDawn,
+      'day' => l.settingsLightDay,
+      'dusk' => l.settingsLightDusk,
+      'night' => l.settingsLightNight,
+      _ => l.settingsLightAuto,
+    };
+  }
+
+  static String _subwayModeLabelStatic(BuildContext ctx, String code) {
+    final l = AppL10n.of(ctx);
+    return code == 'live' ? l.settingsSubwayModeLive : l.settingsSubwayModeDemo;
+  }
 }
 
 

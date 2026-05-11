@@ -1428,4 +1428,598 @@ class AppL10nKo extends AppL10n {
   String hubRecentMeetupsCount(int count) {
     return '$count회';
   }
+
+  @override
+  String get roomCodeRequired => '6자리 코드를 입력해주세요.';
+
+  @override
+  String get roomLeaveTitle => '방 나가기';
+
+  @override
+  String get roomLeaveBody => '나가면 위치 공유와 채팅이 종료됩니다.';
+
+  @override
+  String get roomLeaveConfirm => '나가기';
+
+  @override
+  String get roomTitle => '친구방';
+
+  @override
+  String get roomDescription => '실시간으로 친구와 위치/채팅을 공유합니다.';
+
+  @override
+  String get roomCapacityNote => '방은 24시간 후 자동 만료, 정원 8명입니다.';
+
+  @override
+  String get roomCreateButton => '새 방 만들기';
+
+  @override
+  String get roomCodeEntryTitle => '초대 코드로 입장 (6자리)';
+
+  @override
+  String get roomJoinButton => '입장';
+
+  @override
+  String roomExpiresInMin(int min) {
+    return '$min분 후 방이 만료돼요';
+  }
+
+  @override
+  String get roomDefaultName => '이름 없는 친구방';
+
+  @override
+  String get roomInviteCode => '초대 코드';
+
+  @override
+  String get roomCodeCopied => '코드 복사됨';
+
+  @override
+  String roomExpiresInHours(int hour) {
+    return '$hour시간 후 만료';
+  }
+
+  @override
+  String roomMembers(int current, int max) {
+    return '멤버 ($current/$max)';
+  }
+
+  @override
+  String roomChatOpenWithUnread(int count) {
+    return '채팅 열기 ($count)';
+  }
+
+  @override
+  String get roomChatOpen => '채팅 열기';
+
+  @override
+  String get roomLeaveButton => '방 나가기';
+
+  @override
+  String get roomEditNameTitle => '방 이름 변경';
+
+  @override
+  String get roomEditNameBody => '친구방 멤버에게 표시되는 이름이에요';
+
+  @override
+  String get roomEditNamePlaceholder => '예: 광화문 모임';
+
+  @override
+  String roomGenericError(String error) {
+    return '실패: $error';
+  }
+
+  @override
+  String get roomShareSubject => 'Seoul Live 친구방 초대';
+
+  @override
+  String roomShareBody(String nickname, String code) {
+    return '$nickname 님이 Seoul Live 친구방에 초대했어요!\n\n코드: $code\n바로 입장: com.seoul.prism://room/$code';
+  }
+
+  @override
+  String get roomInviteTextCopied => '초대 텍스트 복사됨';
+
+  @override
+  String get roomRefreshCodeTitle => '초대 코드 갱신';
+
+  @override
+  String get roomRefreshCodeBody => '기존 코드는 즉시 무효화됩니다. 계속할까요?';
+
+  @override
+  String get roomRefreshCodeConfirm => '갱신';
+
+  @override
+  String get roomCodeRefreshed => '새 코드로 갱신됐어요';
+
+  @override
+  String roomKickTitle(String nickname) {
+    return '$nickname 강퇴';
+  }
+
+  @override
+  String get roomKickBody => '강퇴하면 즉시 방에서 내보내져요.';
+
+  @override
+  String get roomKickConfirm => '강퇴';
+
+  @override
+  String get roomKickFallbackName => '멤버';
+
+  @override
+  String roomNameMe(String name) {
+    return '$name (나)';
+  }
+
+  @override
+  String get roomMeetupBadge => '만남';
+
+  @override
+  String get roomKickTooltip => '강퇴';
+
+  @override
+  String get roomUnknownUser => '누군가';
+
+  @override
+  String roomDestTitle(String name) {
+    return '🎯 같이 가기 — $name';
+  }
+
+  @override
+  String roomDestSetBy(String name) {
+    return '$name 님이 설정';
+  }
+
+  @override
+  String get roomDestDefault => '목적지';
+
+  @override
+  String get roomDestViewMap => '지도에서 보기';
+
+  @override
+  String get roomDestClear => '목적지 해제';
+
+  @override
+  String get mpSettingsTitle => 'Seoul Live 설정';
+
+  @override
+  String get mpSectionMyStatus => '내 상태';
+
+  @override
+  String get mpPause => 'Seoul Live 일시정지';
+
+  @override
+  String get mpPauseHint =>
+      '✓ 채팅 / 친구방 입장 / 친구 신청 — 가능\n✗ 위치 송신 / 만남 알림 / 핀 표시 — 차단\n데이터는 그대로 유지';
+
+  @override
+  String get mpSectionBattery => '배터리 모드';
+
+  @override
+  String get mpBatteryHint => '위치 송신 주기 — 정확할수록 배터리 소모';
+
+  @override
+  String get mpSectionNotifications => '알림';
+
+  @override
+  String mpNotificationsFail(String error) {
+    return '실패: $error';
+  }
+
+  @override
+  String get mpNotificationsHint => '시스템 알림 권한과 별개 — 여기서 끄면 푸시는 보내지지만 무음 처리.';
+
+  @override
+  String get mpSectionTutorial => '튜토리얼';
+
+  @override
+  String get mpReplayTutorial => 'Seoul Live 튜토리얼 다시 보기';
+
+  @override
+  String get mpTutorialToast => '다음 진입 시 튜토리얼이 다시 나와요';
+
+  @override
+  String get mpReplayWhatsNew => '새 기능 다시 보기';
+
+  @override
+  String mpReplayWhatsNewHint(String version) {
+    return 'v$version 업데이트 내역';
+  }
+
+  @override
+  String get mpSectionSafety => '안전';
+
+  @override
+  String get mpBlockList => '차단 목록';
+
+  @override
+  String get mpBlockListHint => '차단한 사용자 보기 / 해제';
+
+  @override
+  String get mpSectionConsent => '동의 및 데이터';
+
+  @override
+  String get mpRevokeConsent => '위치정보 동의 철회';
+
+  @override
+  String get mpRevokeConsentHint => '동의를 철회하면 멀티플레이가 비활성화되고 모든 데이터가 삭제돼요';
+
+  @override
+  String get mpDownloadMyData => '내 데이터 다운로드';
+
+  @override
+  String get mpDownloadMyDataHint => 'PIPA 데이터 이동권 — 이메일로 요청';
+
+  @override
+  String get mpDownloadMyDataToast =>
+      'rush94434@gmail.com 으로 요청해주세요 (10일 이내 처리)';
+
+  @override
+  String get mpSectionOps => '운영팀';
+
+  @override
+  String get mpOpsMonitor => '운영 모니터';
+
+  @override
+  String get mpOpsMonitorHint => '일일 지표 · 어뷰즈 신호 · 신고 처리';
+
+  @override
+  String get mpSectionDanger => '위험 영역';
+
+  @override
+  String get mpLeaveSeoulLive => 'Seoul Live 탈퇴';
+
+  @override
+  String get mpLeaveSeoulLiveHint => '프로필·친구·방·채팅 등 멀티플레이 데이터 일괄 삭제';
+
+  @override
+  String get mpFootnote => '※ Seoul Vista 본 계정은 유지돼요. 멀티플레이 관련 데이터만 삭제됩니다.';
+
+  @override
+  String get mpRevokeDialogTitle => '동의 철회';
+
+  @override
+  String get mpRevokeDialogBody =>
+      '위치정보 처리 동의를 철회하면 멀티플레이가 비활성화되고\n프로필·친구·방·채팅 데이터가 모두 삭제됩니다.\n계속할까요?';
+
+  @override
+  String get mpRevokeDialogConfirm => '철회';
+
+  @override
+  String get mpRevokedToast => '동의를 철회하고 데이터를 삭제했어요';
+
+  @override
+  String get mpLeaveDialogTitle => 'Seoul Live 탈퇴';
+
+  @override
+  String get mpLeaveDialogBody =>
+      '모든 멀티플레이 데이터가 영구 삭제됩니다.\n다시 가입할 수 있지만 친구·방·채팅 기록은 복구되지 않아요.';
+
+  @override
+  String get mpLeaveConfirm => '탈퇴';
+
+  @override
+  String get mpLeftToast => 'Seoul Live 에서 탈퇴했어요';
+
+  @override
+  String get mpNotifCatFriendRequest => '친구 신청';
+
+  @override
+  String get mpNotifCatFriendAccept => '친구 수락';
+
+  @override
+  String get mpNotifCatRoomMessage => '채팅 메시지';
+
+  @override
+  String get mpNotifCatMeetup => '만남 감지';
+
+  @override
+  String get mpNotifCatDestination => '목적지 변경';
+
+  @override
+  String get mpNotifCatWelcome => '환영';
+
+  @override
+  String get panelSubway => '지하철';
+
+  @override
+  String get panelBus => '버스';
+
+  @override
+  String get panelFlights => '항공기';
+
+  @override
+  String get panelDisplay => '표시';
+
+  @override
+  String get panelLineFilter => '노선 필터';
+
+  @override
+  String get panelPerformance => '성능';
+
+  @override
+  String get panelLighting => '라이팅';
+
+  @override
+  String get panelInfo => '정보';
+
+  @override
+  String get panelDeveloper => '개발자';
+
+  @override
+  String get panelDemoRunning => 'DEMO 실행 중';
+
+  @override
+  String get panelLiveRunning => 'LIVE 실행 중';
+
+  @override
+  String get panelOff => '꺼짐';
+
+  @override
+  String get panelSwitchToLive => 'LIVE 모드로 전환';
+
+  @override
+  String get panelSwitchToDemo => 'DEMO 모드로 전환';
+
+  @override
+  String get panelSubwayOn => '지하철 켜기';
+
+  @override
+  String get panelSubwayOff => '지하철 끄기';
+
+  @override
+  String panelTrainCount(int count) {
+    return '열차 $count대';
+  }
+
+  @override
+  String panelLastUpdate(String time) {
+    return '갱신 $time';
+  }
+
+  @override
+  String panelBusActive(int count) {
+    return '버스 $count대 표시 중';
+  }
+
+  @override
+  String get panelSelectRoutes => '노선을 선택하세요';
+
+  @override
+  String get panelTurnAllOff => '전체 끄기';
+
+  @override
+  String get panelBusPosition => '버스 위치';
+
+  @override
+  String get panelHanRiverBus => '🚢 한강 한강버스';
+
+  @override
+  String get panelAddRoute => '노선 추가';
+
+  @override
+  String panelFlightCount(String mode, int count) {
+    return '$mode $count대';
+  }
+
+  @override
+  String get panelFlightFallback => '항공기';
+
+  @override
+  String get panelFlightLegendClimb => '상승';
+
+  @override
+  String get panelFlightLegendCruise => '순항';
+
+  @override
+  String get panelFlightLegendDescend => '하강';
+
+  @override
+  String get panelFlightLegendTakeoffLanding => '이착륙';
+
+  @override
+  String get panelRouteLines => '노선 경로';
+
+  @override
+  String get panelTrainPosition => '열차 위치';
+
+  @override
+  String get panelStationDisplay => '역 표시';
+
+  @override
+  String get panelSelectRoutesToShow => '표시할 노선 선택';
+
+  @override
+  String get panelAll => '전체';
+
+  @override
+  String get panelPresetHigh => '높음';
+
+  @override
+  String get panelPresetMedium => '보통';
+
+  @override
+  String get panelPresetLow => '낮음';
+
+  @override
+  String get panelFps => '프레임';
+
+  @override
+  String get panelNaverPolling => '네이버 폴링';
+
+  @override
+  String panelRenderInfo(String engine) {
+    return '렌더링: $engine · GeoJSON 캐싱';
+  }
+
+  @override
+  String get panelLightAuto => '자동';
+
+  @override
+  String get panelLightDay => '주간';
+
+  @override
+  String get panelLightNight => '야간';
+
+  @override
+  String get panelLightDawn => '새벽';
+
+  @override
+  String get panelLightDusk => '석양';
+
+  @override
+  String get panelTierFlagship => '플래그십';
+
+  @override
+  String get panelTierHigh => '상위';
+
+  @override
+  String get panelTierMid => '중급';
+
+  @override
+  String get panelTierLow => '저사양';
+
+  @override
+  String get panelMapEngine => '맵 엔진';
+
+  @override
+  String get panelDevice => '기기';
+
+  @override
+  String get panelPerfTier => '성능 등급';
+
+  @override
+  String get mapDisplay3D => '3D 건물 표시';
+
+  @override
+  String get mapDisplayPois => 'POI 아이콘 표시';
+
+  @override
+  String get mapDisplayWeather => '날씨 효과 (안개/비)';
+
+  @override
+  String get mapDisplayLiveSubway => '실시간 지하철';
+
+  @override
+  String get friendsGroupTooltip => '친구 그룹';
+
+  @override
+  String get friendsCodeTooltip => '친구 코드';
+
+  @override
+  String get friendsAddByNickname => '닉네임으로 친구 추가';
+
+  @override
+  String get friendsSearchPlaceholder => '닉네임 입력 후 검색';
+
+  @override
+  String get friendsSearching => '검색 중...';
+
+  @override
+  String get friendsSearch => '검색';
+
+  @override
+  String friendsNotFound(String query) {
+    return '\"$query\" 와(과) 일치하는 사용자가 없어요';
+  }
+
+  @override
+  String get friendsSearchHint => '닉네임은 정확히 일치해야 해요. 친구코드(8자리)도 시도해보세요.';
+
+  @override
+  String friendsReceivedRequests(int count) {
+    return '받은 친구 신청 ($count)';
+  }
+
+  @override
+  String get friendsAccept => '수락';
+
+  @override
+  String get friendsReject => '거절';
+
+  @override
+  String friendsMyFriends(int count) {
+    return '내 친구 ($count)';
+  }
+
+  @override
+  String get friendsEmpty => '아직 친구가 없어요. 닉네임으로 추가해보세요.';
+
+  @override
+  String get friendsCooldownTooltip => '거절당한 신청은 7일 후 다시 보낼 수 있어요';
+
+  @override
+  String friendsCooldownDays(int days) {
+    return '$days일 후 재신청';
+  }
+
+  @override
+  String friendsCooldownHours(int hours) {
+    return '$hours시간 후';
+  }
+
+  @override
+  String get friendsBadgeFriend => '친구';
+
+  @override
+  String get friendsBadgeRequested => '신청됨';
+
+  @override
+  String get friendsApply => '신청';
+
+  @override
+  String friendsSendingRequestHint(String nickname) {
+    return '$nickname 님에게 친구 신청 — 수락하면 푸시 알림이 와요';
+  }
+
+  @override
+  String friendsDmStartFailed(String error) {
+    return 'DM 시작 실패: $error';
+  }
+
+  @override
+  String get friendsUnfriend => '친구 해제';
+
+  @override
+  String get friendsReport => '신고';
+
+  @override
+  String get friendsBlock => '차단';
+
+  @override
+  String get friendsBlockDialogTitleFallback => '이 사용자 차단';
+
+  @override
+  String friendsBlockDialogTitle(String nickname) {
+    return '$nickname 차단';
+  }
+
+  @override
+  String get friendsBlockDialogBody => '차단하면 같은 방 입장이 불가능하고 메시지도 보이지 않습니다.';
+
+  @override
+  String get friendsBlockConfirm => '차단';
+
+  @override
+  String get friendsUnknown => '알 수 없음';
+
+  @override
+  String friendsRequestSent(String nickname) {
+    return '$nickname 님에게 친구 신청 보냈어요';
+  }
+
+  @override
+  String friendsFailure(String error) {
+    return '실패: $error';
+  }
+
+  @override
+  String get friendsSuggestionsTitle => '추천 친구 (친구의 친구)';
+
+  @override
+  String friendsMutualCount(int count) {
+    return '공통 친구 $count명';
+  }
+
+  @override
+  String get friendsAddShort => '추가';
 }

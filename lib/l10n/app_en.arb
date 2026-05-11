@@ -684,5 +684,281 @@
   "hubRecentMeetupsCount": "{count}",
   "@hubRecentMeetupsCount": {
     "placeholders": { "count": { "type": "int" } }
-  }
+  },
+
+  "roomCodeRequired": "Please enter a 6-character code.",
+  "roomLeaveTitle": "Leave room",
+  "roomLeaveBody": "Leaving ends location sharing and chat.",
+  "roomLeaveConfirm": "Leave",
+  "roomTitle": "Room",
+  "roomDescription": "Share location and chat in real time with friends.",
+  "roomCapacityNote": "Rooms auto-expire after 24 hours. Capacity 8.",
+  "roomCreateButton": "Create room",
+  "roomCodeEntryTitle": "Enter invite code (6 digits)",
+  "roomJoinButton": "Join",
+  "roomExpiresInMin": "Expires in {min} min",
+  "@roomExpiresInMin": {
+    "placeholders": { "min": { "type": "int" } }
+  },
+  "roomDefaultName": "Unnamed room",
+  "roomInviteCode": "Invite code",
+  "roomCodeCopied": "Code copied",
+  "roomExpiresInHours": "Expires in {hour}h",
+  "@roomExpiresInHours": {
+    "placeholders": { "hour": { "type": "int" } }
+  },
+  "roomMembers": "Members ({current}/{max})",
+  "@roomMembers": {
+    "placeholders": {
+      "current": { "type": "int" },
+      "max": { "type": "int" }
+    }
+  },
+  "roomChatOpenWithUnread": "Open chat ({count})",
+  "@roomChatOpenWithUnread": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "roomChatOpen": "Open chat",
+  "roomLeaveButton": "Leave room",
+  "roomEditNameTitle": "Rename room",
+  "roomEditNameBody": "Shown to room members",
+  "roomEditNamePlaceholder": "e.g. Gwanghwamun meetup",
+  "roomGenericError": "Failed: {error}",
+  "@roomGenericError": {
+    "placeholders": { "error": { "type": "String" } }
+  },
+  "roomShareSubject": "Seoul Live room invite",
+  "roomShareBody": "{nickname} invited you to a Seoul Live room!\n\nCode: {code}\nJoin: com.seoul.prism://room/{code}",
+  "@roomShareBody": {
+    "placeholders": {
+      "nickname": { "type": "String" },
+      "code": { "type": "String" }
+    }
+  },
+  "roomInviteTextCopied": "Invite text copied",
+  "roomRefreshCodeTitle": "Refresh invite code",
+  "roomRefreshCodeBody": "The previous code stops working immediately. Continue?",
+  "roomRefreshCodeConfirm": "Refresh",
+  "roomCodeRefreshed": "Code refreshed",
+  "roomKickTitle": "Kick {nickname}",
+  "@roomKickTitle": {
+    "placeholders": { "nickname": { "type": "String" } }
+  },
+  "roomKickBody": "They'll be removed from the room immediately.",
+  "roomKickConfirm": "Kick",
+  "roomKickFallbackName": "Member",
+  "roomNameMe": "{name} (me)",
+  "@roomNameMe": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "roomMeetupBadge": "Meetup",
+  "roomKickTooltip": "Kick",
+  "roomUnknownUser": "Someone",
+  "roomDestTitle": "🎯 Together — {name}",
+  "@roomDestTitle": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "roomDestSetBy": "Set by {name}",
+  "@roomDestSetBy": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "roomDestDefault": "Destination",
+  "roomDestViewMap": "View on map",
+  "roomDestClear": "Clear destination",
+
+  "mpSettingsTitle": "Seoul Live settings",
+  "mpSectionMyStatus": "My status",
+  "mpPause": "Pause Seoul Live",
+  "mpPauseHint": "✓ Chat / room join / friend request — allowed\n✗ Location send / meetup alerts / pins — blocked\nData stays intact",
+  "mpSectionBattery": "Battery mode",
+  "mpBatteryHint": "Location update interval — more accurate = more battery",
+  "mpSectionNotifications": "Notifications",
+  "mpNotificationsFail": "Failed: {error}",
+  "@mpNotificationsFail": {
+    "placeholders": { "error": { "type": "String" } }
+  },
+  "mpNotificationsHint": "Separate from system notification permission — turn off here to silence pushes.",
+  "mpSectionTutorial": "Tutorial",
+  "mpReplayTutorial": "Replay Seoul Live tutorial",
+  "mpTutorialToast": "Tutorial will show next time you enter",
+  "mpReplayWhatsNew": "Replay What's New",
+  "mpReplayWhatsNewHint": "v{version} updates",
+  "@mpReplayWhatsNewHint": {
+    "placeholders": { "version": { "type": "String" } }
+  },
+  "mpSectionSafety": "Safety",
+  "mpBlockList": "Block list",
+  "mpBlockListHint": "View blocked users / unblock",
+  "mpSectionConsent": "Consent & data",
+  "mpRevokeConsent": "Revoke location consent",
+  "mpRevokeConsentHint": "Revoking disables multiplayer and deletes all data",
+  "mpDownloadMyData": "Download my data",
+  "mpDownloadMyDataHint": "PIPA data portability — email request",
+  "mpDownloadMyDataToast": "Please email rush94434@gmail.com (within 10 days)",
+  "mpSectionOps": "Operations",
+  "mpOpsMonitor": "Ops monitor",
+  "mpOpsMonitorHint": "Daily metrics · abuse signals · report handling",
+  "mpSectionDanger": "Danger zone",
+  "mpLeaveSeoulLive": "Leave Seoul Live",
+  "mpLeaveSeoulLiveHint": "Bulk-delete multiplayer data (profile, friends, rooms, chat)",
+  "mpFootnote": "※ Your Seoul Vista account remains. Only multiplayer data is deleted.",
+  "mpRevokeDialogTitle": "Revoke consent",
+  "mpRevokeDialogBody": "Revoking location processing consent disables multiplayer\nand deletes profile, friends, rooms, chat data. Continue?",
+  "mpRevokeDialogConfirm": "Revoke",
+  "mpRevokedToast": "Consent revoked and data deleted",
+  "mpLeaveDialogTitle": "Leave Seoul Live",
+  "mpLeaveDialogBody": "All multiplayer data will be permanently deleted.\nYou can rejoin, but friends, rooms, and chat history won't be restored.",
+  "mpLeaveConfirm": "Leave",
+  "mpLeftToast": "You've left Seoul Live",
+  "mpNotifCatFriendRequest": "Friend request",
+  "mpNotifCatFriendAccept": "Friend accepted",
+  "mpNotifCatRoomMessage": "Chat message",
+  "mpNotifCatMeetup": "Meetup detected",
+  "mpNotifCatDestination": "Destination change",
+  "mpNotifCatWelcome": "Welcome",
+
+  "panelSubway": "Subway",
+  "panelBus": "Bus",
+  "panelFlights": "Aircraft",
+  "panelDisplay": "Display",
+  "panelLineFilter": "Line filter",
+  "panelPerformance": "Performance",
+  "panelLighting": "Lighting",
+  "panelInfo": "Info",
+  "panelDeveloper": "Developer",
+  "panelDemoRunning": "DEMO running",
+  "panelLiveRunning": "LIVE running",
+  "panelOff": "Off",
+  "panelSwitchToLive": "Switch to LIVE",
+  "panelSwitchToDemo": "Switch to DEMO",
+  "panelSubwayOn": "Turn subway on",
+  "panelSubwayOff": "Turn subway off",
+  "panelTrainCount": "{count} trains",
+  "@panelTrainCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "panelLastUpdate": "Updated {time}",
+  "@panelLastUpdate": {
+    "placeholders": { "time": { "type": "String" } }
+  },
+  "panelBusActive": "{count} buses showing",
+  "@panelBusActive": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "panelSelectRoutes": "Pick a route",
+  "panelTurnAllOff": "Turn all off",
+  "panelBusPosition": "Bus positions",
+  "panelHanRiverBus": "🚢 Han River bus",
+  "panelAddRoute": "Add route",
+  "panelFlightCount": "{mode} {count} aircraft",
+  "@panelFlightCount": {
+    "placeholders": {
+      "mode": { "type": "String" },
+      "count": { "type": "int" }
+    }
+  },
+  "panelFlightFallback": "Aircraft",
+  "panelFlightLegendClimb": "Climb",
+  "panelFlightLegendCruise": "Cruise",
+  "panelFlightLegendDescend": "Descend",
+  "panelFlightLegendTakeoffLanding": "Takeoff/Landing",
+  "panelRouteLines": "Route lines",
+  "panelTrainPosition": "Train positions",
+  "panelStationDisplay": "Station display",
+  "panelSelectRoutesToShow": "Pick routes to show",
+  "panelAll": "All",
+  "panelPresetHigh": "High",
+  "panelPresetMedium": "Medium",
+  "panelPresetLow": "Low",
+  "panelFps": "FPS",
+  "panelNaverPolling": "Naver polling",
+  "panelRenderInfo": "Rendering: {engine} · GeoJSON cache",
+  "@panelRenderInfo": {
+    "placeholders": { "engine": { "type": "String" } }
+  },
+  "panelLightAuto": "Auto",
+  "panelLightDay": "Day",
+  "panelLightNight": "Night",
+  "panelLightDawn": "Dawn",
+  "panelLightDusk": "Dusk",
+  "panelTierFlagship": "Flagship",
+  "panelTierHigh": "High",
+  "panelTierMid": "Mid",
+  "panelTierLow": "Low",
+  "panelMapEngine": "Map engine",
+  "panelDevice": "Device",
+  "panelPerfTier": "Performance tier",
+
+  "mapDisplay3D": "3D buildings",
+  "mapDisplayPois": "POI icons",
+  "mapDisplayWeather": "Weather effects (fog/rain)",
+  "mapDisplayLiveSubway": "Live subway",
+
+  "friendsGroupTooltip": "Friend groups",
+  "friendsCodeTooltip": "Friend code",
+  "friendsAddByNickname": "Add a friend by nickname",
+  "friendsSearchPlaceholder": "Enter a nickname to search",
+  "friendsSearching": "Searching…",
+  "friendsSearch": "Search",
+  "friendsNotFound": "No user matches \"{query}\"",
+  "@friendsNotFound": {
+    "placeholders": { "query": { "type": "String" } }
+  },
+  "friendsSearchHint": "Nicknames must match exactly. You can also try the 8-char friend code.",
+  "friendsReceivedRequests": "Received requests ({count})",
+  "@friendsReceivedRequests": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "friendsAccept": "Accept",
+  "friendsReject": "Reject",
+  "friendsMyFriends": "My friends ({count})",
+  "@friendsMyFriends": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "friendsEmpty": "No friends yet. Add by nickname.",
+  "friendsCooldownTooltip": "Rejected requests can be re-sent after 7 days",
+  "friendsCooldownDays": "Retry in {days}d",
+  "@friendsCooldownDays": {
+    "placeholders": { "days": { "type": "int" } }
+  },
+  "friendsCooldownHours": "Retry in {hours}h",
+  "@friendsCooldownHours": {
+    "placeholders": { "hours": { "type": "int" } }
+  },
+  "friendsBadgeFriend": "Friend",
+  "friendsBadgeRequested": "Requested",
+  "friendsApply": "Apply",
+  "friendsSendingRequestHint": "Send friend request to {nickname} — they get a push if accepted",
+  "@friendsSendingRequestHint": {
+    "placeholders": { "nickname": { "type": "String" } }
+  },
+  "friendsDmStartFailed": "Couldn't start DM: {error}",
+  "@friendsDmStartFailed": {
+    "placeholders": { "error": { "type": "String" } }
+  },
+  "friendsUnfriend": "Unfriend",
+  "friendsReport": "Report",
+  "friendsBlock": "Block",
+  "friendsBlockDialogTitleFallback": "Block this user",
+  "friendsBlockDialogTitle": "Block {nickname}",
+  "@friendsBlockDialogTitle": {
+    "placeholders": { "nickname": { "type": "String" } }
+  },
+  "friendsBlockDialogBody": "Blocking prevents joining the same room and hides their messages.",
+  "friendsBlockConfirm": "Block",
+  "friendsUnknown": "Unknown",
+  "friendsRequestSent": "Friend request sent to {nickname}",
+  "@friendsRequestSent": {
+    "placeholders": { "nickname": { "type": "String" } }
+  },
+  "friendsFailure": "Failed: {error}",
+  "@friendsFailure": {
+    "placeholders": { "error": { "type": "String" } }
+  },
+  "friendsSuggestionsTitle": "Friend suggestions (friends of friends)",
+  "friendsMutualCount": "{count} mutual",
+  "@friendsMutualCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "friendsAddShort": "Add"
 }

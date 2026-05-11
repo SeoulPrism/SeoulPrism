@@ -4,6 +4,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../l10n/gen/app_localizations.dart';
 import '../../models/multiplayer_models.dart';
 import '../../services/multiplayer_service.dart';
 import '../../widgets/adaptive/adaptive.dart';
@@ -57,7 +58,7 @@ class _RoomViewState extends State<RoomView> {
   Future<void> _join() async {
     final code = _codeCtrl.text.trim();
     if (code.length != 6) {
-      setState(() => _error = '6자리 코드를 입력해주세요.');
+      setState(() => _error = AppL10n.of(context).roomCodeRequired);
       return;
     }
     setState(() {
@@ -74,11 +75,12 @@ class _RoomViewState extends State<RoomView> {
   }
 
   void _leave() {
+    final l = AppL10n.of(context);
     showAdaptiveConfirmDialog(
       context: context,
-      title: '방 나가기',
-      content: '나가면 위치 공유와 채팅이 종료됩니다.',
-      confirmText: '나가기',
+      title: l.roomLeaveTitle,
+      content: l.roomLeaveBody,
+      confirmText: l.roomLeaveConfirm,
       isDestructive: true,
       onConfirm: () async {
         await MultiplayerService.instance.leaveCurrentRoom();
@@ -92,7 +94,7 @@ class _RoomViewState extends State<RoomView> {
     final room = MultiplayerService.instance.currentRoom;
     return Scaffold(
       backgroundColor: cs.surface,
-      appBar: const AdaptiveAppBar(title: '친구방'),
+      appBar: AdaptiveAppBar(title: AppL10n.of(context).roomTitle),
       body: SafeArea(
         child: room == null ? _buildLobby() : _buildRoom(room),
       ),
@@ -101,25 +103,26 @@ class _RoomViewState extends State<RoomView> {
 
   Widget _buildLobby() {
     final cs = Theme.of(context).colorScheme;
+    final l = AppL10n.of(context);
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
       children: [
-        Text('실시간으로 친구와 위치/채팅을 공유합니다.',
+        Text(l.roomDescription,
             style: TextStyle(color: cs.onSurfaceVariant)),
         const SizedBox(height: 4),
-        Text('방은 24시간 후 자동 만료, 정원 8명입니다.',
+        Text(l.roomCapacityNote,
             style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
         const SizedBox(height: 24),
 
         AdaptiveGlassButton(
-          label: _busy ? '...' : '새 방 만들기',
+          label: _busy ? '...' : l.roomCreateButton,
           onPressed: _busy ? null : _create,
         ),
 
         const SizedBox(height: 24),
         Padding(
           padding: const EdgeInsets.only(left: 4, bottom: 8),
-          child: Text('초대 코드로 입장 (6자리)',
+          child: Text(l.roomCodeEntryTitle,
               style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
@@ -132,7 +135,7 @@ class _RoomViewState extends State<RoomView> {
         ),
         const SizedBox(height: 8),
         AdaptiveGlassButton(
-          label: _busy ? '...' : '입장',
+          label: _busy ? '...' : l.roomJoinButton,
           onPressed: _busy ? null : _join,
         ),
 
@@ -155,6 +158,7 @@ class _RoomViewState extends State<RoomView> {
 
   Widget _buildRoom(Room room) {
     final cs = Theme.of(context).colorScheme;
+    final l = AppL10n.of(context);
     final svc = MultiplayerService.instance;
     final members = svc.currentRoomMembers;
     final isOwner = svc.myId == room.ownerId;
@@ -182,7 +186,7 @@ class _RoomViewState extends State<RoomView> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      '$remainingMin분 후 방이 만료돼요',
+                      l.roomExpiresInMin(remainingMin),
                       style: TextStyle(
                           fontSize: 13, color: cs.onErrorContainer),
                     ),
@@ -203,7 +207,7 @@ class _RoomViewState extends State<RoomView> {
                   Row(
                     children: [
                       Expanded(
-                        child: Text(room.name ?? '이름 없는 친구방',
+                        child: Text(room.name ?? l.roomDefaultName,
                             style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w800,
@@ -217,7 +221,7 @@ class _RoomViewState extends State<RoomView> {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  Text('초대 코드',
+                  Text(l.roomInviteCode,
                       style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
@@ -236,7 +240,7 @@ class _RoomViewState extends State<RoomView> {
                         onPressed: () async {
                           await Clipboard.setData(
                               ClipboardData(text: room.inviteCode));
-                          showAppSnackBar('코드 복사됨');
+                          showAppSnackBar(AppL10n.of(context).roomCodeCopied);
                         },
                       ),
                       const SizedBox(width: 6),
@@ -257,8 +261,8 @@ class _RoomViewState extends State<RoomView> {
                   const SizedBox(height: 4),
                   Text(
                     remainingMin >= 60
-                        ? '${remainingMin ~/ 60}시간 후 만료'
-                        : '$remainingMin분 후 만료',
+                        ? l.roomExpiresInHours(remainingMin ~/ 60)
+                        : l.roomExpiresInMin(remainingMin),
                     style: TextStyle(
                         fontSize: 12, color: cs.onSurfaceVariant),
                   ),
@@ -276,7 +280,7 @@ class _RoomViewState extends State<RoomView> {
         Padding(
           padding: const EdgeInsets.only(left: 4, bottom: 8),
           child: Text(
-              '멤버 (${members.length}/${MultiplayerService.kRoomCapacity})',
+              l.roomMembers(members.length, MultiplayerService.kRoomCapacity),
               style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
@@ -320,8 +324,8 @@ class _RoomViewState extends State<RoomView> {
         const SizedBox(height: 20),
         AdaptiveGlassButton(
           label: svc.unreadCount(room.id) > 0
-              ? '채팅 열기 (${svc.unreadCount(room.id)})'
-              : '채팅 열기',
+              ? l.roomChatOpenWithUnread(svc.unreadCount(room.id))
+              : l.roomChatOpen,
           onPressed: () => ChatSheet.show(context),
         ),
         const SizedBox(height: 12),
@@ -329,7 +333,7 @@ class _RoomViewState extends State<RoomView> {
           child: TextButton.icon(
             onPressed: _leave,
             icon: const Icon(Icons.logout_rounded),
-            label: const Text('방 나가기'),
+            label: Text(l.roomLeaveButton),
             style: TextButton.styleFrom(foregroundColor: cs.error),
           ),
         ),
@@ -345,6 +349,7 @@ class _RoomViewState extends State<RoomView> {
       isScrollControlled: true,
       showDragHandle: true,
       builder: (_) {
+        final l = AppL10n.of(context);
         final inset = MediaQuery.of(context).viewInsets.bottom;
         return Padding(
           padding: EdgeInsets.fromLTRB(20, 4, 20, inset + 24),
@@ -352,24 +357,24 @@ class _RoomViewState extends State<RoomView> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('방 이름 변경',
-                  style: TextStyle(
+              Text(l.roomEditNameTitle,
+                  style: const TextStyle(
                       fontSize: 20, fontWeight: FontWeight.w800)),
               const SizedBox(height: 4),
-              Text('친구방 멤버에게 표시되는 이름이에요',
+              Text(l.roomEditNameBody,
                   style: TextStyle(
                       fontSize: 12,
                       color: Theme.of(context).colorScheme.onSurfaceVariant)),
               const SizedBox(height: 20),
               AdaptiveTextField(
                 controller: ctrl,
-                placeholder: '예: 광화문 모임',
+                placeholder: l.roomEditNamePlaceholder,
                 padding: const EdgeInsets.symmetric(
                     horizontal: 14, vertical: 12),
               ),
               const SizedBox(height: 16),
               AdaptiveGlassButton(
-                label: '저장',
+                label: l.commonSave,
                 onPressed: () {
                   newName = ctrl.text.trim();
                   Navigator.pop(context);
@@ -385,63 +390,64 @@ class _RoomViewState extends State<RoomView> {
       await MultiplayerService.instance.updateRoomName(newName!);
     } catch (e) {
       if (!mounted) return;
-      showAppSnackBar('실패: $e');
+      showAppSnackBar(AppL10n.of(context).roomGenericError(e.toString()));
     }
   }
 
   Future<void> _shareInviteLink(Room room) async {
-    final me = MultiplayerService.instance.myProfile?.nickname ?? '친구';
-    final text =
-        '$me 님이 Seoul Live 친구방에 초대했어요!\n\n코드: ${room.inviteCode}\n'
-        '바로 입장: com.seoul.prism://room/${room.inviteCode}';
+    final l = AppL10n.of(context);
+    final me = MultiplayerService.instance.myProfile?.nickname ?? l.dmDefaultPeer;
+    final text = l.roomShareBody(me, room.inviteCode);
     final box = context.findRenderObject() as RenderBox?;
     try {
       await SharePlus.instance.share(
         ShareParams(
           text: text,
-          subject: 'Seoul Live 친구방 초대',
+          subject: l.roomShareSubject,
           sharePositionOrigin:
               box != null ? box.localToGlobal(Offset.zero) & box.size : null,
         ),
       );
     } catch (_) {
       await Clipboard.setData(ClipboardData(text: text));
-      if (mounted) showAppSnackBar('초대 텍스트 복사됨');
+      if (mounted) showAppSnackBar(AppL10n.of(context).roomInviteTextCopied);
     }
   }
 
   Future<void> _rotateCode() async {
+    final l = AppL10n.of(context);
     showAdaptiveConfirmDialog(
       context: context,
-      title: '초대 코드 갱신',
-      content: '기존 코드는 즉시 무효화됩니다. 계속할까요?',
-      confirmText: '갱신',
+      title: l.roomRefreshCodeTitle,
+      content: l.roomRefreshCodeBody,
+      confirmText: l.roomRefreshCodeConfirm,
       onConfirm: () async {
         try {
           await MultiplayerService.instance.rotateInviteCode();
           if (!mounted) return;
-          showAppSnackBar('새 코드로 갱신됐어요');
+          showAppSnackBar(AppL10n.of(context).roomCodeRefreshed);
         } catch (e) {
           if (!mounted) return;
-          showAppSnackBar('실패: $e');
+          showAppSnackBar(AppL10n.of(context).roomGenericError(e.toString()));
         }
       },
     );
   }
 
   void _confirmKick(String userId, String? nickname) {
+    final l = AppL10n.of(context);
     showAdaptiveConfirmDialog(
       context: context,
-      title: '${nickname ?? '멤버'} 강퇴',
-      content: '강퇴하면 즉시 방에서 내보내져요.',
-      confirmText: '강퇴',
+      title: l.roomKickTitle(nickname ?? l.roomKickFallbackName),
+      content: l.roomKickBody,
+      confirmText: l.roomKickConfirm,
       isDestructive: true,
       onConfirm: () async {
         try {
           await MultiplayerService.instance.kickMember(userId);
         } catch (e) {
           if (!mounted) return;
-          showAppSnackBar('실패: $e');
+          showAppSnackBar(AppL10n.of(context).roomGenericError(e.toString()));
         }
       },
     );
@@ -478,6 +484,7 @@ class _MemberRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final l = AppL10n.of(context);
     final name = profile?.nickname ?? fallbackId.substring(0, 8);
     return InkWell(
       onTap: onTap,
@@ -495,7 +502,7 @@ class _MemberRow extends StatelessWidget {
             ),
           const SizedBox(width: 12),
           Expanded(
-            child: Text('$name${isMe ? ' (나)' : ''}',
+            child: Text(isMe ? l.roomNameMe(name) : name,
                 style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
@@ -519,7 +526,7 @@ class _MemberRow extends StatelessWidget {
                 color: cs.primaryContainer,
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Text('만남',
+              child: Text(l.roomMeetupBadge,
                   style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
@@ -531,7 +538,7 @@ class _MemberRow extends StatelessWidget {
               icon: Icon(Icons.person_remove_rounded,
                   size: 18, color: cs.error),
               onPressed: onKick,
-              tooltip: '강퇴',
+              tooltip: l.roomKickTooltip,
             ),
           ],
         ],
@@ -579,10 +586,11 @@ class _DestinationBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final l = AppL10n.of(context);
     final svc = MultiplayerService.instance;
     final setBy = room.destSetBy != null
-        ? svc.peerProfile(room.destSetBy!)?.nickname ?? '누군가'
-        : '누군가';
+        ? svc.peerProfile(room.destSetBy!)?.nickname ?? l.roomUnknownUser
+        : l.roomUnknownUser;
     return AdaptiveSurfaceCard(
       borderRadius: 14,
       padding: const EdgeInsets.fromLTRB(14, 12, 8, 12),
@@ -602,11 +610,11 @@ class _DestinationBanner extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('🎯 같이 가기 — ${room.destName ?? '목적지'}',
+                Text(l.roomDestTitle(room.destName ?? l.roomDestDefault),
                     style: const TextStyle(
                         fontSize: 14, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 2),
-                Text('$setBy 님이 설정',
+                Text(l.roomDestSetBy(setBy),
                     style: TextStyle(
                         fontSize: 11, color: cs.onSurfaceVariant)),
               ],
@@ -614,7 +622,7 @@ class _DestinationBanner extends StatelessWidget {
           ),
           IconButton(
             icon: const Icon(Icons.map_outlined, size: 20),
-            tooltip: '지도에서 보기',
+            tooltip: l.roomDestViewMap,
             onPressed: () {
               if (room.destLat == null || room.destLng == null) return;
               svc.requestMapJump(
@@ -627,7 +635,7 @@ class _DestinationBanner extends StatelessWidget {
           ),
           IconButton(
             icon: const Icon(Icons.close_rounded, size: 20),
-            tooltip: '목적지 해제',
+            tooltip: l.roomDestClear,
             onPressed: () async {
               try {
                 await svc.clearRoomDestination();

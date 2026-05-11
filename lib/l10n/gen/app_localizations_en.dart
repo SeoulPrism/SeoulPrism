@@ -1453,4 +1453,611 @@ class AppL10nEn extends AppL10n {
   String hubRecentMeetupsCount(int count) {
     return '$count';
   }
+
+  @override
+  String get roomCodeRequired => 'Please enter a 6-character code.';
+
+  @override
+  String get roomLeaveTitle => 'Leave room';
+
+  @override
+  String get roomLeaveBody => 'Leaving ends location sharing and chat.';
+
+  @override
+  String get roomLeaveConfirm => 'Leave';
+
+  @override
+  String get roomTitle => 'Room';
+
+  @override
+  String get roomDescription =>
+      'Share location and chat in real time with friends.';
+
+  @override
+  String get roomCapacityNote =>
+      'Rooms auto-expire after 24 hours. Capacity 8.';
+
+  @override
+  String get roomCreateButton => 'Create room';
+
+  @override
+  String get roomCodeEntryTitle => 'Enter invite code (6 digits)';
+
+  @override
+  String get roomJoinButton => 'Join';
+
+  @override
+  String roomExpiresInMin(int min) {
+    return 'Expires in $min min';
+  }
+
+  @override
+  String get roomDefaultName => 'Unnamed room';
+
+  @override
+  String get roomInviteCode => 'Invite code';
+
+  @override
+  String get roomCodeCopied => 'Code copied';
+
+  @override
+  String roomExpiresInHours(int hour) {
+    return 'Expires in ${hour}h';
+  }
+
+  @override
+  String roomMembers(int current, int max) {
+    return 'Members ($current/$max)';
+  }
+
+  @override
+  String roomChatOpenWithUnread(int count) {
+    return 'Open chat ($count)';
+  }
+
+  @override
+  String get roomChatOpen => 'Open chat';
+
+  @override
+  String get roomLeaveButton => 'Leave room';
+
+  @override
+  String get roomEditNameTitle => 'Rename room';
+
+  @override
+  String get roomEditNameBody => 'Shown to room members';
+
+  @override
+  String get roomEditNamePlaceholder => 'e.g. Gwanghwamun meetup';
+
+  @override
+  String roomGenericError(String error) {
+    return 'Failed: $error';
+  }
+
+  @override
+  String get roomShareSubject => 'Seoul Live room invite';
+
+  @override
+  String roomShareBody(String nickname, String code) {
+    return '$nickname invited you to a Seoul Live room!\n\nCode: $code\nJoin: com.seoul.prism://room/$code';
+  }
+
+  @override
+  String get roomInviteTextCopied => 'Invite text copied';
+
+  @override
+  String get roomRefreshCodeTitle => 'Refresh invite code';
+
+  @override
+  String get roomRefreshCodeBody =>
+      'The previous code stops working immediately. Continue?';
+
+  @override
+  String get roomRefreshCodeConfirm => 'Refresh';
+
+  @override
+  String get roomCodeRefreshed => 'Code refreshed';
+
+  @override
+  String roomKickTitle(String nickname) {
+    return 'Kick $nickname';
+  }
+
+  @override
+  String get roomKickBody => 'They\'ll be removed from the room immediately.';
+
+  @override
+  String get roomKickConfirm => 'Kick';
+
+  @override
+  String get roomKickFallbackName => 'Member';
+
+  @override
+  String roomNameMe(String name) {
+    return '$name (me)';
+  }
+
+  @override
+  String get roomMeetupBadge => 'Meetup';
+
+  @override
+  String get roomKickTooltip => 'Kick';
+
+  @override
+  String get roomUnknownUser => 'Someone';
+
+  @override
+  String roomDestTitle(String name) {
+    return '🎯 Together — $name';
+  }
+
+  @override
+  String roomDestSetBy(String name) {
+    return 'Set by $name';
+  }
+
+  @override
+  String get roomDestDefault => 'Destination';
+
+  @override
+  String get roomDestViewMap => 'View on map';
+
+  @override
+  String get roomDestClear => 'Clear destination';
+
+  @override
+  String get mpSettingsTitle => 'Seoul Live settings';
+
+  @override
+  String get mpSectionMyStatus => 'My status';
+
+  @override
+  String get mpPause => 'Pause Seoul Live';
+
+  @override
+  String get mpPauseHint =>
+      '✓ Chat / room join / friend request — allowed\n✗ Location send / meetup alerts / pins — blocked\nData stays intact';
+
+  @override
+  String get mpSectionBattery => 'Battery mode';
+
+  @override
+  String get mpBatteryHint =>
+      'Location update interval — more accurate = more battery';
+
+  @override
+  String get mpSectionNotifications => 'Notifications';
+
+  @override
+  String mpNotificationsFail(String error) {
+    return 'Failed: $error';
+  }
+
+  @override
+  String get mpNotificationsHint =>
+      'Separate from system notification permission — turn off here to silence pushes.';
+
+  @override
+  String get mpSectionTutorial => 'Tutorial';
+
+  @override
+  String get mpReplayTutorial => 'Replay Seoul Live tutorial';
+
+  @override
+  String get mpTutorialToast => 'Tutorial will show next time you enter';
+
+  @override
+  String get mpReplayWhatsNew => 'Replay What\'s New';
+
+  @override
+  String mpReplayWhatsNewHint(String version) {
+    return 'v$version updates';
+  }
+
+  @override
+  String get mpSectionSafety => 'Safety';
+
+  @override
+  String get mpBlockList => 'Block list';
+
+  @override
+  String get mpBlockListHint => 'View blocked users / unblock';
+
+  @override
+  String get mpSectionConsent => 'Consent & data';
+
+  @override
+  String get mpRevokeConsent => 'Revoke location consent';
+
+  @override
+  String get mpRevokeConsentHint =>
+      'Revoking disables multiplayer and deletes all data';
+
+  @override
+  String get mpDownloadMyData => 'Download my data';
+
+  @override
+  String get mpDownloadMyDataHint => 'PIPA data portability — email request';
+
+  @override
+  String get mpDownloadMyDataToast =>
+      'Please email rush94434@gmail.com (within 10 days)';
+
+  @override
+  String get mpSectionOps => 'Operations';
+
+  @override
+  String get mpOpsMonitor => 'Ops monitor';
+
+  @override
+  String get mpOpsMonitorHint =>
+      'Daily metrics · abuse signals · report handling';
+
+  @override
+  String get mpSectionDanger => 'Danger zone';
+
+  @override
+  String get mpLeaveSeoulLive => 'Leave Seoul Live';
+
+  @override
+  String get mpLeaveSeoulLiveHint =>
+      'Bulk-delete multiplayer data (profile, friends, rooms, chat)';
+
+  @override
+  String get mpFootnote =>
+      '※ Your Seoul Vista account remains. Only multiplayer data is deleted.';
+
+  @override
+  String get mpRevokeDialogTitle => 'Revoke consent';
+
+  @override
+  String get mpRevokeDialogBody =>
+      'Revoking location processing consent disables multiplayer\nand deletes profile, friends, rooms, chat data. Continue?';
+
+  @override
+  String get mpRevokeDialogConfirm => 'Revoke';
+
+  @override
+  String get mpRevokedToast => 'Consent revoked and data deleted';
+
+  @override
+  String get mpLeaveDialogTitle => 'Leave Seoul Live';
+
+  @override
+  String get mpLeaveDialogBody =>
+      'All multiplayer data will be permanently deleted.\nYou can rejoin, but friends, rooms, and chat history won\'t be restored.';
+
+  @override
+  String get mpLeaveConfirm => 'Leave';
+
+  @override
+  String get mpLeftToast => 'You\'ve left Seoul Live';
+
+  @override
+  String get mpNotifCatFriendRequest => 'Friend request';
+
+  @override
+  String get mpNotifCatFriendAccept => 'Friend accepted';
+
+  @override
+  String get mpNotifCatRoomMessage => 'Chat message';
+
+  @override
+  String get mpNotifCatMeetup => 'Meetup detected';
+
+  @override
+  String get mpNotifCatDestination => 'Destination change';
+
+  @override
+  String get mpNotifCatWelcome => 'Welcome';
+
+  @override
+  String get panelSubway => 'Subway';
+
+  @override
+  String get panelBus => 'Bus';
+
+  @override
+  String get panelFlights => 'Aircraft';
+
+  @override
+  String get panelDisplay => 'Display';
+
+  @override
+  String get panelLineFilter => 'Line filter';
+
+  @override
+  String get panelPerformance => 'Performance';
+
+  @override
+  String get panelLighting => 'Lighting';
+
+  @override
+  String get panelInfo => 'Info';
+
+  @override
+  String get panelDeveloper => 'Developer';
+
+  @override
+  String get panelDemoRunning => 'DEMO running';
+
+  @override
+  String get panelLiveRunning => 'LIVE running';
+
+  @override
+  String get panelOff => 'Off';
+
+  @override
+  String get panelSwitchToLive => 'Switch to LIVE';
+
+  @override
+  String get panelSwitchToDemo => 'Switch to DEMO';
+
+  @override
+  String get panelSubwayOn => 'Turn subway on';
+
+  @override
+  String get panelSubwayOff => 'Turn subway off';
+
+  @override
+  String panelTrainCount(int count) {
+    return '$count trains';
+  }
+
+  @override
+  String panelLastUpdate(String time) {
+    return 'Updated $time';
+  }
+
+  @override
+  String panelBusActive(int count) {
+    return '$count buses showing';
+  }
+
+  @override
+  String get panelSelectRoutes => 'Pick a route';
+
+  @override
+  String get panelTurnAllOff => 'Turn all off';
+
+  @override
+  String get panelBusPosition => 'Bus positions';
+
+  @override
+  String get panelHanRiverBus => '🚢 Han River bus';
+
+  @override
+  String get panelAddRoute => 'Add route';
+
+  @override
+  String panelFlightCount(String mode, int count) {
+    return '$mode $count aircraft';
+  }
+
+  @override
+  String get panelFlightFallback => 'Aircraft';
+
+  @override
+  String get panelFlightLegendClimb => 'Climb';
+
+  @override
+  String get panelFlightLegendCruise => 'Cruise';
+
+  @override
+  String get panelFlightLegendDescend => 'Descend';
+
+  @override
+  String get panelFlightLegendTakeoffLanding => 'Takeoff/Landing';
+
+  @override
+  String get panelRouteLines => 'Route lines';
+
+  @override
+  String get panelTrainPosition => 'Train positions';
+
+  @override
+  String get panelStationDisplay => 'Station display';
+
+  @override
+  String get panelSelectRoutesToShow => 'Pick routes to show';
+
+  @override
+  String get panelAll => 'All';
+
+  @override
+  String get panelPresetHigh => 'High';
+
+  @override
+  String get panelPresetMedium => 'Medium';
+
+  @override
+  String get panelPresetLow => 'Low';
+
+  @override
+  String get panelFps => 'FPS';
+
+  @override
+  String get panelNaverPolling => 'Naver polling';
+
+  @override
+  String panelRenderInfo(String engine) {
+    return 'Rendering: $engine · GeoJSON cache';
+  }
+
+  @override
+  String get panelLightAuto => 'Auto';
+
+  @override
+  String get panelLightDay => 'Day';
+
+  @override
+  String get panelLightNight => 'Night';
+
+  @override
+  String get panelLightDawn => 'Dawn';
+
+  @override
+  String get panelLightDusk => 'Dusk';
+
+  @override
+  String get panelTierFlagship => 'Flagship';
+
+  @override
+  String get panelTierHigh => 'High';
+
+  @override
+  String get panelTierMid => 'Mid';
+
+  @override
+  String get panelTierLow => 'Low';
+
+  @override
+  String get panelMapEngine => 'Map engine';
+
+  @override
+  String get panelDevice => 'Device';
+
+  @override
+  String get panelPerfTier => 'Performance tier';
+
+  @override
+  String get mapDisplay3D => '3D buildings';
+
+  @override
+  String get mapDisplayPois => 'POI icons';
+
+  @override
+  String get mapDisplayWeather => 'Weather effects (fog/rain)';
+
+  @override
+  String get mapDisplayLiveSubway => 'Live subway';
+
+  @override
+  String get friendsGroupTooltip => 'Friend groups';
+
+  @override
+  String get friendsCodeTooltip => 'Friend code';
+
+  @override
+  String get friendsAddByNickname => 'Add a friend by nickname';
+
+  @override
+  String get friendsSearchPlaceholder => 'Enter a nickname to search';
+
+  @override
+  String get friendsSearching => 'Searching…';
+
+  @override
+  String get friendsSearch => 'Search';
+
+  @override
+  String friendsNotFound(String query) {
+    return 'No user matches \"$query\"';
+  }
+
+  @override
+  String get friendsSearchHint =>
+      'Nicknames must match exactly. You can also try the 8-char friend code.';
+
+  @override
+  String friendsReceivedRequests(int count) {
+    return 'Received requests ($count)';
+  }
+
+  @override
+  String get friendsAccept => 'Accept';
+
+  @override
+  String get friendsReject => 'Reject';
+
+  @override
+  String friendsMyFriends(int count) {
+    return 'My friends ($count)';
+  }
+
+  @override
+  String get friendsEmpty => 'No friends yet. Add by nickname.';
+
+  @override
+  String get friendsCooldownTooltip =>
+      'Rejected requests can be re-sent after 7 days';
+
+  @override
+  String friendsCooldownDays(int days) {
+    return 'Retry in ${days}d';
+  }
+
+  @override
+  String friendsCooldownHours(int hours) {
+    return 'Retry in ${hours}h';
+  }
+
+  @override
+  String get friendsBadgeFriend => 'Friend';
+
+  @override
+  String get friendsBadgeRequested => 'Requested';
+
+  @override
+  String get friendsApply => 'Apply';
+
+  @override
+  String friendsSendingRequestHint(String nickname) {
+    return 'Send friend request to $nickname — they get a push if accepted';
+  }
+
+  @override
+  String friendsDmStartFailed(String error) {
+    return 'Couldn\'t start DM: $error';
+  }
+
+  @override
+  String get friendsUnfriend => 'Unfriend';
+
+  @override
+  String get friendsReport => 'Report';
+
+  @override
+  String get friendsBlock => 'Block';
+
+  @override
+  String get friendsBlockDialogTitleFallback => 'Block this user';
+
+  @override
+  String friendsBlockDialogTitle(String nickname) {
+    return 'Block $nickname';
+  }
+
+  @override
+  String get friendsBlockDialogBody =>
+      'Blocking prevents joining the same room and hides their messages.';
+
+  @override
+  String get friendsBlockConfirm => 'Block';
+
+  @override
+  String get friendsUnknown => 'Unknown';
+
+  @override
+  String friendsRequestSent(String nickname) {
+    return 'Friend request sent to $nickname';
+  }
+
+  @override
+  String friendsFailure(String error) {
+    return 'Failed: $error';
+  }
+
+  @override
+  String get friendsSuggestionsTitle =>
+      'Friend suggestions (friends of friends)';
+
+  @override
+  String friendsMutualCount(int count) {
+    return '$count mutual';
+  }
+
+  @override
+  String get friendsAddShort => 'Add';
 }
