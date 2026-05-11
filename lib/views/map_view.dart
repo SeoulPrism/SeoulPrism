@@ -13,6 +13,7 @@ import '../core/map_interface.dart';
 import '../core/api_keys.dart';
 import '../core/geo_distance.dart';
 import '../core/format_utils.dart';
+import '../l10n/gen/app_localizations.dart';
 import '../map_engines/mapbox_engine.dart';
 import '../models/subway_models.dart';
 import '../widgets/subway_overlay.dart';
@@ -423,13 +424,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   void _onLocationDenied() {
     if (!mounted) return;
-    showAppSnackBar('위치 권한이 없어서 친구가 내 핀을 못 봐요. 설정 → 위치 에서 허용해주세요.');
+    if (mounted) showAppSnackBar(AppL10n.of(context).mapNoLocationPermission);
   }
 
   void _onKicked() {
     if (!mounted) return;
     setState(() => _membersPanelOpen = false);
-    showAppSnackBar('친구방에서 나가졌어요');
+    if (mounted) showAppSnackBar(AppL10n.of(context).mapLeftRoom);
   }
 
   void _onMapJumpRequested() {
@@ -441,7 +442,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
     if (lat == null || lng == null) return;
     _mapController?.moveTo(lat, lng, zoom: 16.5, pitch: 50.0);
     final name = payload['name'] as String?;
-    if (name != null) showAppSnackBar('지도에서 "$name" 보기');
+    if (name != null && mounted) {
+      showAppSnackBar(AppL10n.of(context).mapShowOnMap(name));
+    }
     // 일회성 — 즉시 비움 (다음 호출이 같은 좌표여도 트리거되도록).
     MultiplayerService.instance.pendingMapJump.value = null;
   }
@@ -1343,7 +1346,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ],
                       ),
                       child: Text(
-                        '🏢 ${BuildingPresenceTracker.instance.myBuilding?.displayName} 안에 있어요',
+                        AppL10n.of(context).mapBuildingInside(
+                            BuildingPresenceTracker.instance.myBuilding?.displayName ?? ''),
                         style: const TextStyle(
                             color: Colors.white,
                             fontSize: 12,
@@ -1479,8 +1483,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     iconSize: 22,
                     tint: const Color(0xFF4A90D9),
                     onPressed: () async {
+                      final l = AppL10n.of(context);
                       debugPrint('[Loc] 내 위치 버튼 눌림');
-                      showAppSnackBar('위치 확인 중...');
+                      showAppSnackBar(l.mapLocationChecking);
                       try {
                         var permission = await geo.Geolocator.checkPermission();
                         debugPrint('[Loc] checkPermission: $permission');
@@ -1491,15 +1496,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         if (permission == geo.LocationPermission.denied ||
                             permission ==
                                 geo.LocationPermission.deniedForever) {
-                          showAppSnackBar(
-                              '위치 권한 거부됨 → iOS 설정 → Seoul Vista → 위치');
+                          if (mounted) {
+                            showAppSnackBar(
+                                AppL10n.of(context).mapLocationPermissionDenied);
+                          }
                           return;
                         }
                         final svc =
                             await geo.Geolocator.isLocationServiceEnabled();
                         debugPrint('[Loc] serviceEnabled: $svc');
                         if (!svc) {
-                          showAppSnackBar('iOS 설정 → 개인정보 → 위치 서비스 가 꺼져있어요');
+                          if (mounted) {
+                            showAppSnackBar(
+                                AppL10n.of(context).mapLocationServiceOff);
+                          }
                           return;
                         }
                         // 직접 GPS fix 받아서 카메라 이동.
@@ -1516,10 +1526,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             pos.latitude, pos.longitude);
                         _mapController?.moveTo(pos.latitude, pos.longitude,
                             zoom: 16.0, pitch: 50.0);
-                        showAppSnackBar('내 위치로 이동했어요');
+                        if (mounted) {
+                          showAppSnackBar(AppL10n.of(context).mapMyLocationMoved);
+                        }
                       } catch (e) {
                         debugPrint('[Loc] 실패: $e');
-                        showAppSnackBar('위치 가져오기 실패: ${e.toString().substring(0, 50)}');
+                        if (mounted) {
+                          showAppSnackBar(AppL10n.of(context)
+                              .mapLocationFetchFailed(
+                                  e.toString().substring(0, 50)));
+                        }
                       }
                     },
                   ),
@@ -2532,7 +2548,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final from = _resolveStationCoord(_routeResult!.departure);
     final to = _resolveStationCoord(_routeResult!.arrival);
     if (from == null || to == null) {
-      showAppSnackBar('출발/도착 좌표를 찾을 수 없어요');
+      if (mounted) showAppSnackBar(AppL10n.of(context).mapNoCoords);
       return;
     }
     final ds = DirectionsService.instance;
@@ -2540,14 +2556,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final future = mode == 1
         ? ds.getDrivingRoute(from[0], from[1], to[0], to[1])
         : ds.getWalkingRoute(from[0], from[1], to[0], to[1]);
-    showAppSnackBar(mode == 1 ? '자동차 경로 불러오는 중...' : '도보 경로 불러오는 중...');
+    if (mounted) {
+      showAppSnackBar(mode == 1
+          ? AppL10n.of(context).mapDirectionsRoadFetching
+          : AppL10n.of(context).mapDirectionsWalkFetching);
+    }
     future.then((r) {
       if (!mounted) return;
       // 사용자가 그 사이 다른 모드로 다시 전환했으면 무시.
       if (_routeAnimId != fetchAnimId || _transportMode != mode) return;
       if (r == null) {
         // TMAP 에서 받은 실제 사유 노출 — '...' 만 떠 있는 문제 진단용.
-        final err = ds.lastError ?? '경로를 불러오지 못했어요';
+        final err = ds.lastError ?? (mounted ? AppL10n.of(context).mapDirectionsFailed : '');
         showAppSnackBar(err);
         return;
       }
@@ -3227,12 +3247,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
       // Seoul Live 활성 시 가운데 탭이 '지도'→'세계' (Icons.map→Icons.public_rounded) 로 모핑.
       // 같은 탭 인덱스(2) 를 유지해 onTap 동작은 동일.
       items: [
-        const AdaptiveTabItem(label: '추천', icon: Icons.explore),
-        const AdaptiveTabItem(label: '저장', icon: Icons.bookmark),
+        AdaptiveTabItem(label: AppL10n.of(context).mapTabRecommend, icon: Icons.explore),
+        AdaptiveTabItem(label: AppL10n.of(context).mapTabSave, icon: Icons.bookmark),
         liveActive
-            ? const AdaptiveTabItem(label: '세계', icon: Icons.public_rounded)
-            : const AdaptiveTabItem(label: '지도', icon: Icons.map),
-        const AdaptiveTabItem(label: '여행', icon: Icons.calendar_month),
+            ? AdaptiveTabItem(label: AppL10n.of(context).mapTabWorld, icon: Icons.public_rounded)
+            : AdaptiveTabItem(label: AppL10n.of(context).mapTabMap, icon: Icons.map),
+        AdaptiveTabItem(label: AppL10n.of(context).mapTabTrip, icon: Icons.calendar_month),
         const AdaptiveTabItem(label: 'AI', icon: Icons.auto_awesome),
       ],
     );
@@ -4037,7 +4057,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            '장소가 더 필요해요 — 즐겨찾기/방문 기록 ${SavedPlacesPlanBuilder.minPlaces}곳 이상이면 자동 생성돼요',
+            AppL10n.of(context).mapInsufficientSavedPlaces(
+                SavedPlacesPlanBuilder.minPlaces),
           ),
           duration: const Duration(seconds: 3),
         ),

@@ -539,10 +539,11 @@ class TrainDetailPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppL10n.of(context);
     final lineColor = SubwayColors.getColor(train.subwayId);
     final lineName = SubwayColors.lineNames[train.subwayId] ?? train.subwayName;
-    final directionText = _directionText(train.subwayId, train.direction);
-    final trainTypeText = _trainTypeText(train.expressType);
+    final directionText = _directionText(context, train.subwayId, train.direction);
+    final trainTypeText = _trainTypeText(context, train.expressType);
     final prevStation = _getPrevStation();
     final nextStation = _getNextStation();
     final currentStation = train.stationName;
@@ -627,7 +628,7 @@ class TrainDetailPanel extends StatelessWidget {
                 AppCircleButton(
                   icon: Icons.close,
                   onTap: onClose ?? () {},
-                  semanticLabel: '열차 상세 닫기',
+                  semanticLabel: l.subwayPanelCloseDetail,
                 ),
               ],
             ),
@@ -641,18 +642,18 @@ class TrainDetailPanel extends StatelessWidget {
                 Icon(Icons.train, size: 14, color: lineColor),
                 const SizedBox(width: AppSpacing.sm),
                 Text(
-                  '열차 #${train.trainNo}',
+                  l.subwayPanelTrainNo(train.trainNo),
                   style: AppTypography.bodySm.copyWith(fontWeight: FontWeight.w600),
                 ),
                 const SizedBox(width: AppSpacing.sm),
-                _statusChip(train.trainStatus, lineColor),
+                _statusChip(context, train.trainStatus, lineColor),
                 if (delayMinutes >= 2) ...[
                   const SizedBox(width: AppSpacing.sm),
-                  AppBadge(text: '$delayMinutes분 지연', color: AppColors.danger),
+                  AppBadge(text: l.subwayPanelDelayedBadge(delayMinutes), color: AppColors.danger),
                 ],
                 if (train.isLastTrain) ...[
                   const SizedBox(width: AppSpacing.sm),
-                  AppBadge(text: '막차', color: AppColors.danger),
+                  AppBadge(text: l.subwayPanelLastTrainBadge, color: AppColors.danger),
                 ],
               ],
             ),
@@ -664,6 +665,7 @@ class TrainDetailPanel extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
             child: _buildStationProgress(
+              context: context,
               prevStation: prevStation,
               currentStation: currentStation,
               nextStation: nextStation,
@@ -682,7 +684,7 @@ class TrainDetailPanel extends StatelessWidget {
                 Icon(Icons.flag, size: AppSpacing.md, color: AppColors.textDisabled),
                 const SizedBox(width: AppSpacing.sm),
                 Text(
-                  '${train.terminalName}행',
+                  l.subwayPanelTerminalDestination(train.terminalName),
                   style: AppTypography.bodySm.copyWith(color: AppColors.textTertiary),
                 ),
               ],
@@ -696,12 +698,14 @@ class TrainDetailPanel extends StatelessWidget {
 
   /// 역 진행 위젯 (이전역 → 현재역 → 다음역)
   Widget _buildStationProgress({
+    required BuildContext context,
     required String? prevStation,
     required String currentStation,
     required String? nextStation,
     required Color lineColor,
     required bool isMoving,
   }) {
+    final l = AppL10n.of(context);
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
@@ -713,7 +717,7 @@ class TrainDetailPanel extends StatelessWidget {
           // 이전역
           Expanded(
             child: _stationCell(
-              label: '이전역',
+              label: l.subwayPanelPrevStation,
               name: prevStation ?? '-',
               alignment: CrossAxisAlignment.start,
               isActive: false,
@@ -726,7 +730,7 @@ class TrainDetailPanel extends StatelessWidget {
           Expanded(
             flex: 2,
             child: _stationCell(
-              label: isMoving ? '출발역' : '현재역',
+              label: isMoving ? l.subwayPanelDepartureStation : l.subwayPanelCurrentStation,
               name: currentStation,
               alignment: CrossAxisAlignment.center,
               isActive: true,
@@ -738,7 +742,7 @@ class TrainDetailPanel extends StatelessWidget {
           // 다음역
           Expanded(
             child: _stationCell(
-              label: '다음역',
+              label: l.subwayPanelNextStation,
               name: nextStation ?? '-',
               alignment: CrossAxisAlignment.end,
               isActive: false,
@@ -799,28 +803,29 @@ class TrainDetailPanel extends StatelessWidget {
     );
   }
 
-  Widget _statusChip(int status, Color lineColor) {
+  Widget _statusChip(BuildContext context, int status, Color lineColor) {
+    final l = AppL10n.of(context);
     String text;
     Color chipColor;
     switch (status) {
       case 0:
-        text = '곧 도착';
+        text = l.subwayPanelStateArriving;
         chipColor = Colors.amber;
         break;
       case 1:
-        text = '정차중';
+        text = l.subwayPanelStateStopped;
         chipColor = AppColors.success;
         break;
       case 2:
-        text = '출발';
+        text = l.subwayPanelStateDeparted;
         chipColor = lineColor;
         break;
       case 3:
-        text = '이동중';
+        text = l.subwayPanelStateMoving;
         chipColor = lineColor;
         break;
       default:
-        text = '운행';
+        text = l.subwayPanelStateOperating;
         chipColor = lineColor;
     }
     return Container(
@@ -835,19 +840,21 @@ class TrainDetailPanel extends StatelessWidget {
   }
 
   /// 2호선 등 순환선 방향 텍스트
-  String _directionText(String subwayId, int direction) {
+  String _directionText(BuildContext ctx, String subwayId, int direction) {
+    final l = AppL10n.of(ctx);
     if (subwayId == '1002') {
-      return direction == 0 ? '내선 순환' : '외선 순환';
+      return direction == 0 ? l.subwayPanelDirInnerLoop : l.subwayPanelDirOuterLoop;
     }
-    return direction == 0 ? '상행' : '하행';
+    return direction == 0 ? l.subwayPanelDirUp : l.subwayPanelDirDown;
   }
 
   /// 열차 종류 텍스트
-  String _trainTypeText(int expressType) {
+  String _trainTypeText(BuildContext ctx, int expressType) {
+    final l = AppL10n.of(ctx);
     switch (expressType) {
-      case 1: return '급행';
-      case 7: return '특급';
-      default: return '보통';
+      case 1: return l.subwayPanelTrainTypeExpress;
+      case 7: return l.subwayPanelTrainTypeSpecial;
+      default: return l.subwayPanelTrainTypeRegular;
     }
   }
 
