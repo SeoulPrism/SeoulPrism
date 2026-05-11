@@ -3399,4 +3399,234 @@ class AppL10nZh extends AppL10n {
   String stationDetailClosureCount(int count) {
     return '设施关闭 $count 项';
   }
+
+  @override
+  String get visitTimelineTitle => '我的足迹';
+
+  @override
+  String visitTimelineSummary(int count, String ago) {
+    return '$count 处 · 最近 $ago';
+  }
+
+  @override
+  String get visitTimelineEmpty => '暂无访问记录。';
+
+  @override
+  String get visitTimelineClose => '关闭';
+
+  @override
+  String visitTimelineExpand(int count) {
+    return '查看更多 $count 处';
+  }
+
+  @override
+  String get visitTimelineCollapse => '收起';
+
+  @override
+  String get visitTimelineDateToday => '今天';
+
+  @override
+  String get visitTimelineDateYesterday => '昨天';
+
+  @override
+  String visitTimelineDateDaysAgo(int days) {
+    return '$days 天前';
+  }
+
+  @override
+  String visitTimelineDateMonthDay(int month, int day) {
+    return '$month/$day';
+  }
+
+  @override
+  String get visitTimelineAgoNone => '无';
+
+  @override
+  String visitTimelineAgoMin(int min) {
+    return '$min 分钟前';
+  }
+
+  @override
+  String visitTimelineAgoHour(int hour) {
+    return '$hour 小时前';
+  }
+
+  @override
+  String visitTimelineAgoDay(int day) {
+    return '$day 天前';
+  }
+
+  @override
+  String visitTimelineVisitCount(int count) {
+    return '$count 次';
+  }
+
+  @override
+  String get permPageTitle => '权限设置';
+
+  @override
+  String get permPageBody => '提前一次性配置好以下权限,\n使用过程中就不会被打断。';
+
+  @override
+  String get permPageFooter => '拒绝也能使用,只是相应功能受限。';
+
+  @override
+  String get permPageRequesting => '请求中...';
+
+  @override
+  String get permPageAllGranted => '✓ 全部已允许';
+
+  @override
+  String get permPageRequestAll => '一键允许';
+
+  @override
+  String get permItemLocation => '位置';
+
+  @override
+  String get permItemLocationDesc => '在地图上显示我的位置 + 朋友房间实时共享';
+
+  @override
+  String get permItemNotification => '通知';
+
+  @override
+  String get permItemNotificationDesc => '好友申请 / 聊天 / 见面提醒';
+
+  @override
+  String get permItemCamera => '相机';
+
+  @override
+  String get permItemCameraDesc => '地点照片分析 + 朋友聊天的照片';
+
+  @override
+  String get permItemPhotos => '照片';
+
+  @override
+  String get permItemPhotosDesc => '在聊天中分享相册照片';
+
+  @override
+  String get permItemMicrophone => '麦克风';
+
+  @override
+  String get permItemMicrophoneDesc => 'AI 语音对话 + 语音消息';
+
+  @override
+  String permTapToSettings(String desc) {
+    return '$desc (点击打开设置)';
+  }
+
+  @override
+  String get livingCityTitle => '首尔正在跃动';
+
+  @override
+  String get livingCityBody => '点击图标,相机就会飞到那个场景。';
+
+  @override
+  String get livingCityVehSubway => '地铁';
+
+  @override
+  String get livingCityVehBus => '公交';
+
+  @override
+  String get livingCityVehRiverBus => '汉江巴士';
+
+  @override
+  String get livingCityVehFlight => '航空器';
+
+  @override
+  String get infoBarsTierFlagship => '旗舰';
+
+  @override
+  String get infoBarsTierHigh => '高端';
+
+  @override
+  String get infoBarsTierMid => '中端';
+
+  @override
+  String get infoBarsTierLow => '入门';
+
+  @override
+  String infoBarsProfileToast(String model, String tier, int fps, int pollMs) {
+    return '$model · $tier\n$fps fps · 轮询 ${pollMs}ms 已应用优化';
+  }
+
+  @override
+  String get navBannerNext => '下一步';
+
+  @override
+  String navBannerWalkTo(String station) {
+    return '步行至 $station';
+  }
+
+  @override
+  String navBannerBoardAt(String station, String line) {
+    return '在 $station 乘坐 $line';
+  }
+
+  @override
+  String navBannerWalkDetail(int min) {
+    return '步行 $min 分钟';
+  }
+
+  @override
+  String navBannerTransitDetail(String station, int min) {
+    return '$station 方向 · $min 分钟';
+  }
+
+  @override
+  String get readyPageTitle => '准备就绪';
+
+  @override
+  String get readyPageBody => '点击下方开始按钮,\n实时首尔即刻呈现。';
+
+  @override
+  String get welcomePageSubtitle => '用新视角看首尔';
+
+  @override
+  String get pathfindingPageTitle => '今天想要怎样的旅程?';
+
+  @override
+  String get pathfindingPageBody => 'AI 助手会根据你的心情为你定制路线。\n之后随时可以更改。';
+
+  @override
+  String riverBusStopLabel(String name) {
+    return '$name 码头';
+  }
+
+  @override
+  String get riverBusRouteEnded => '已停航';
+
+  @override
+  String riverBusNextTime(String time) {
+    return '下一班 $time';
+  }
+
+  @override
+  String get riverBusMaintenance => '维护中';
+
+  @override
+  String get riverBusDeparture => '出发';
+
+  @override
+  String get riverBusArrival => '到达';
+
+  @override
+  String get qualityPreviewDemoLabel => 'DEMO · 地铁';
+
+  @override
+  String get qualityPresetHigh => '高品质';
+
+  @override
+  String get qualityPresetMedium => '流畅';
+
+  @override
+  String get qualityPresetLow => '省电';
+
+  @override
+  String get qualityPresetHighDetail => '60 fps · 特效开启';
+
+  @override
+  String get qualityPresetMediumDetail => '30 fps · 部分特效';
+
+  @override
+  String get qualityPresetLowDetail => '10 fps · 特效关闭';
 }

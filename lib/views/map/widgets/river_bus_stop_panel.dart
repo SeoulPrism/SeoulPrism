@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../data/river_bus_data.dart';
+import '../../../l10n/gen/app_localizations.dart';
 import 'place_action_button.dart';
 
 /// 한강버스 선착장 상세 패널.
@@ -20,12 +21,13 @@ class RiverBusStopPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final l = AppL10n.of(context);
     final routes = RiverBusData.routes
         .where((r) => r.stopIds.contains(stop.id))
         .toList();
     final now = DateTime.now();
     final currentMin = now.hour * 60 + now.minute;
-    final stopLabel = '${stop.name} 선착장';
+    final stopLabel = l.riverBusStopLabel(stop.name);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -90,7 +92,8 @@ class RiverBusStopPanel extends StatelessWidget {
             const SizedBox(height: 12),
             ...routes.map((r) {
               final isActive = r.isActive;
-              String nextTime = '운항 종료';
+              String nextTimeRaw = l.riverBusRouteEnded;
+              bool hasTime = false;
               if (isActive) {
                 for (
                   int dep = r.firstDeparture;
@@ -100,8 +103,9 @@ class RiverBusStopPanel extends StatelessWidget {
                   if (dep > currentMin) {
                     final h = dep ~/ 60;
                     final m = dep % 60;
-                    nextTime =
+                    nextTimeRaw =
                         '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}';
+                    hasTime = true;
                     break;
                   }
                 }
@@ -139,7 +143,11 @@ class RiverBusStopPanel extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      isActive ? '다음 $nextTime' : '정비 중',
+                      isActive
+                          ? (hasTime
+                              ? l.riverBusNextTime(nextTimeRaw)
+                              : l.riverBusRouteEnded)
+                          : l.riverBusMaintenance,
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
@@ -157,7 +165,7 @@ class RiverBusStopPanel extends StatelessWidget {
               children: [
                 PlaceActionButton(
                   icon: Icons.trip_origin,
-                  label: '출발',
+                  label: l.riverBusDeparture,
                   color: cs.primary,
                   onTap: () {
                     onClose();
@@ -167,7 +175,7 @@ class RiverBusStopPanel extends StatelessWidget {
                 const SizedBox(width: 8),
                 PlaceActionButton(
                   icon: Icons.place,
-                  label: '도착',
+                  label: l.riverBusArrival,
                   color: Colors.redAccent,
                   onTap: () {
                     onClose();

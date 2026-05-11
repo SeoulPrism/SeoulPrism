@@ -4,6 +4,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 
+import '../../../l10n/gen/app_localizations.dart';
 import '../../../theme/app_typography.dart';
 import '../../../widgets/adaptive/adaptive.dart';
 
@@ -22,53 +23,44 @@ enum _PermState { idle, granted, denied }
 class _PermItem {
   final String key;
   final IconData icon;
-  final String name;
-  final String desc;
-  _PermState state;
-  _PermItem({
-    required this.key,
-    required this.icon,
-    required this.name,
-    required this.desc,
-    this.state = _PermState.idle,
-  });
+  _PermState state = _PermState.idle;
+  _PermItem({required this.key, required this.icon});
 }
 
 class _PermissionsPageState extends State<PermissionsPage> {
   bool _requesting = false;
 
   late final List<_PermItem> _items = [
-    _PermItem(
-      key: 'location',
-      icon: Icons.location_on_rounded,
-      name: '위치',
-      desc: '지도에 내 위치 표시 + 친구방 실시간 공유',
-    ),
-    _PermItem(
-      key: 'notification',
-      icon: Icons.notifications_rounded,
-      name: '알림',
-      desc: '친구 신청 / 채팅 / 만남 알림',
-    ),
-    _PermItem(
-      key: 'camera',
-      icon: Icons.camera_alt_rounded,
-      name: '카메라',
-      desc: '장소 사진 분석 + 친구 채팅 사진',
-    ),
-    _PermItem(
-      key: 'photos',
-      icon: Icons.photo_library_rounded,
-      name: '사진',
-      desc: '갤러리 사진을 채팅에 공유',
-    ),
-    _PermItem(
-      key: 'microphone',
-      icon: Icons.mic_rounded,
-      name: '마이크',
-      desc: 'AI 음성 대화 + 음성 메시지',
-    ),
+    _PermItem(key: 'location', icon: Icons.location_on_rounded),
+    _PermItem(key: 'notification', icon: Icons.notifications_rounded),
+    _PermItem(key: 'camera', icon: Icons.camera_alt_rounded),
+    _PermItem(key: 'photos', icon: Icons.photo_library_rounded),
+    _PermItem(key: 'microphone', icon: Icons.mic_rounded),
   ];
+
+  String _permName(BuildContext ctx, String key) {
+    final l = AppL10n.of(ctx);
+    return switch (key) {
+      'location' => l.permItemLocation,
+      'notification' => l.permItemNotification,
+      'camera' => l.permItemCamera,
+      'photos' => l.permItemPhotos,
+      'microphone' => l.permItemMicrophone,
+      _ => key,
+    };
+  }
+
+  String _permDesc(BuildContext ctx, String key) {
+    final l = AppL10n.of(ctx);
+    return switch (key) {
+      'location' => l.permItemLocationDesc,
+      'notification' => l.permItemNotificationDesc,
+      'camera' => l.permItemCameraDesc,
+      'photos' => l.permItemPhotosDesc,
+      'microphone' => l.permItemMicrophoneDesc,
+      _ => '',
+    };
+  }
 
   @override
   void initState() {
@@ -217,6 +209,7 @@ class _PermissionsPageState extends State<PermissionsPage> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final l = AppL10n.of(context);
     final isIos = Platform.isIOS;
     final titleColor = isIos ? Colors.white : cs.onSurface;
     final bodyColor =
@@ -248,7 +241,7 @@ class _PermissionsPageState extends State<PermissionsPage> {
             ),
             const SizedBox(height: 18),
             Text(
-              '권한 설정',
+              l.permPageTitle,
               style: AppTypography.displayLg.copyWith(
                 color: titleColor,
                 fontSize: 26,
@@ -257,7 +250,7 @@ class _PermissionsPageState extends State<PermissionsPage> {
             ),
             const SizedBox(height: 6),
             Text(
-              '아래 권한을 한 번에 설정해두면\n앱을 쓰다가 멈추는 일이 없어요.',
+              l.permPageBody,
               textAlign: TextAlign.center,
               style: AppTypography.bodyMd.copyWith(
                 color: bodyColor,
@@ -266,20 +259,20 @@ class _PermissionsPageState extends State<PermissionsPage> {
               ),
             ),
             const SizedBox(height: 18),
-            ..._items.map((it) => _row(it, isIos, cs)),
+            ..._items.map((it) => _row(context, it, isIos, cs)),
             const SizedBox(height: 18),
             SizedBox(
               width: double.infinity,
               child: AdaptiveGlassButton(
                 label: _requesting
-                    ? '요청 중...'
-                    : (allGranted ? '✓ 모두 허용됨' : '한 번에 허용'),
+                    ? l.permPageRequesting
+                    : (allGranted ? l.permPageAllGranted : l.permPageRequestAll),
                 onPressed: _requesting || allGranted ? null : _requestAll,
               ),
             ),
             const SizedBox(height: 8),
             Text(
-              '거부해도 앱은 동작해요. 해당 기능만 제한됨.',
+              l.permPageFooter,
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: bodyColor.withValues(alpha: 0.8),
@@ -292,9 +285,11 @@ class _PermissionsPageState extends State<PermissionsPage> {
     );
   }
 
-  Widget _row(_PermItem it, bool isIos, ColorScheme cs) {
+  Widget _row(BuildContext ctx, _PermItem it, bool isIos, ColorScheme cs) {
     final fg = isIos ? Colors.white : cs.onSurface;
     final sub = isIos ? Colors.white.withValues(alpha: 0.6) : cs.onSurfaceVariant;
+    final name = _permName(ctx, it.key);
+    final desc = _permDesc(ctx, it.key);
     final indicator = switch (it.state) {
       _PermState.granted => const Icon(Icons.check_circle_rounded,
           color: Color(0xFF34C759), size: 22),
@@ -334,7 +329,7 @@ class _PermissionsPageState extends State<PermissionsPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(it.name,
+                  Text(name,
                       style: TextStyle(
                           color: fg,
                           fontSize: 14,
@@ -342,8 +337,8 @@ class _PermissionsPageState extends State<PermissionsPage> {
                   const SizedBox(height: 1),
                   Text(
                       it.state == _PermState.denied
-                          ? '${it.desc} (탭하면 설정 열기)'
-                          : it.desc,
+                          ? AppL10n.of(ctx).permTapToSettings(desc)
+                          : desc,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(color: sub, fontSize: 11)),

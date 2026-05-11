@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../../data/travel_styles.dart';
+import '../../../l10n/gen/app_localizations.dart';
 import '../../../services/settings_service.dart';
 import '../../../theme/app_typography.dart';
 import '../../ai_mode_view.dart';
@@ -91,7 +92,7 @@ class _PathfindingPageState extends State<PathfindingPage>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '오늘은 어떤 여행?',
+                        AppL10n.of(context).pathfindingPageTitle,
                         style: AppTypography.displayLg.copyWith(
                           color: titleColor,
                           fontSize: 26,
@@ -100,7 +101,7 @@ class _PathfindingPageState extends State<PathfindingPage>
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'AI 비서가 너의 무드에 맞춰 코스를 짜줄게.\n나중에 언제든 바꿀 수 있어.',
+                        AppL10n.of(context).pathfindingPageBody,
                         style: AppTypography.bodyMd.copyWith(
                           color: bodyColor,
                           height: 1.45,

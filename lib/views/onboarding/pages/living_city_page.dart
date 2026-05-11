@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import '../../../l10n/gen/app_localizations.dart';
 import '../../../theme/app_typography.dart';
 import '../widgets/onboarding_map_background.dart';
 
@@ -16,12 +17,22 @@ class LivingCityPage extends StatefulWidget {
 class _LivingCityPageState extends State<LivingCityPage> {
   _Vehicle? _active;
 
-  static const _items = [
-    (_Vehicle.subway, Icons.directions_subway, Color(0xFF00B0FF), '지하철'),
-    (_Vehicle.bus, Icons.directions_bus, Color(0xFF00E676), '버스'),
-    (_Vehicle.riverBus, Icons.directions_boat, Color(0xFF00ACC1), '한강버스'),
-    (_Vehicle.flight, Icons.flight, Color(0xFFFFC400), '항공기'),
+  static const _iconItems = [
+    (_Vehicle.subway, Icons.directions_subway, Color(0xFF00B0FF)),
+    (_Vehicle.bus, Icons.directions_bus, Color(0xFF00E676)),
+    (_Vehicle.riverBus, Icons.directions_boat, Color(0xFF00ACC1)),
+    (_Vehicle.flight, Icons.flight, Color(0xFFFFC400)),
   ];
+
+  String _vehicleLabel(BuildContext ctx, _Vehicle v) {
+    final l = AppL10n.of(ctx);
+    return switch (v) {
+      _Vehicle.subway => l.livingCityVehSubway,
+      _Vehicle.bus => l.livingCityVehBus,
+      _Vehicle.riverBus => l.livingCityVehRiverBus,
+      _Vehicle.flight => l.livingCityVehFlight,
+    };
+  }
 
   void _select(_Vehicle v) {
     setState(() => _active = v);
@@ -41,6 +52,7 @@ class _LivingCityPageState extends State<LivingCityPage> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final l = AppL10n.of(context);
     final isIos = Platform.isIOS;
     final titleColor = isIos ? Colors.white : cs.onSurface;
     final bodyColor =
@@ -60,7 +72,7 @@ class _LivingCityPageState extends State<LivingCityPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '서울이 살아 움직여요',
+            l.livingCityTitle,
             style: AppTypography.displayLg.copyWith(
               color: titleColor,
               fontSize: 24,
@@ -75,7 +87,7 @@ class _LivingCityPageState extends State<LivingCityPage> {
           ),
           const SizedBox(height: 6),
           Text(
-            '아이콘을 누르면 카메라가 그 장면으로 날아가요.',
+            l.livingCityBody,
             style: AppTypography.bodySm.copyWith(
               color: bodyColor,
               height: 1.4,
@@ -90,12 +102,12 @@ class _LivingCityPageState extends State<LivingCityPage> {
           const Spacer(),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: _items.map((it) {
-              final (vehicle, icon, color, label) = it;
+            children: _iconItems.map((it) {
+              final (vehicle, icon, color) = it;
               return _IconButton(
                 icon: icon,
                 color: color,
-                label: label,
+                label: _vehicleLabel(context, vehicle),
                 selected: _active == vehicle,
                 onTap: () => _select(vehicle),
               );

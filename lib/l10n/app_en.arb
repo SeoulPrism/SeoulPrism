@@ -1599,5 +1599,146 @@
   "stationDetailClosureCount": "{count} closures",
   "@stationDetailClosureCount": {
     "placeholders": { "count": { "type": "int" } }
-  }
+  },
+
+  "visitTimelineTitle": "My footprints",
+  "visitTimelineSummary": "{count} places · last visit {ago}",
+  "@visitTimelineSummary": {
+    "placeholders": {
+      "count": { "type": "int" },
+      "ago": { "type": "String" }
+    }
+  },
+  "visitTimelineEmpty": "No visit history yet.",
+  "visitTimelineClose": "Close",
+  "visitTimelineExpand": "Show {count} more",
+  "@visitTimelineExpand": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "visitTimelineCollapse": "Collapse",
+  "visitTimelineDateToday": "Today",
+  "visitTimelineDateYesterday": "Yesterday",
+  "visitTimelineDateDaysAgo": "{days}d ago",
+  "@visitTimelineDateDaysAgo": {
+    "placeholders": { "days": { "type": "int" } }
+  },
+  "visitTimelineDateMonthDay": "{month}/{day}",
+  "@visitTimelineDateMonthDay": {
+    "placeholders": {
+      "month": { "type": "int" },
+      "day": { "type": "int" }
+    }
+  },
+  "visitTimelineAgoNone": "—",
+  "visitTimelineAgoMin": "{min} min ago",
+  "@visitTimelineAgoMin": {
+    "placeholders": { "min": { "type": "int" } }
+  },
+  "visitTimelineAgoHour": "{hour}h ago",
+  "@visitTimelineAgoHour": {
+    "placeholders": { "hour": { "type": "int" } }
+  },
+  "visitTimelineAgoDay": "{day}d ago",
+  "@visitTimelineAgoDay": {
+    "placeholders": { "day": { "type": "int" } }
+  },
+  "visitTimelineVisitCount": "{count}×",
+  "@visitTimelineVisitCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+
+  "permPageTitle": "Permissions",
+  "permPageBody": "Grant these up front\nso the app doesn't stop mid-flow.",
+  "permPageFooter": "Denying is fine — only that feature is limited.",
+  "permPageRequesting": "Requesting…",
+  "permPageAllGranted": "✓ All allowed",
+  "permPageRequestAll": "Allow all",
+  "permItemLocation": "Location",
+  "permItemLocationDesc": "Show your pin on the map + live share in rooms",
+  "permItemNotification": "Notifications",
+  "permItemNotificationDesc": "Friend requests / chat / meetup alerts",
+  "permItemCamera": "Camera",
+  "permItemCameraDesc": "Place photo analysis + chat photos",
+  "permItemPhotos": "Photos",
+  "permItemPhotosDesc": "Share gallery photos in chat",
+  "permItemMicrophone": "Microphone",
+  "permItemMicrophoneDesc": "AI voice chat + voice messages",
+  "permTapToSettings": "{desc} (tap to open Settings)",
+  "@permTapToSettings": {
+    "placeholders": { "desc": { "type": "String" } }
+  },
+
+  "livingCityTitle": "Seoul is alive",
+  "livingCityBody": "Tap an icon and the camera flies to that scene.",
+  "livingCityVehSubway": "Subway",
+  "livingCityVehBus": "Bus",
+  "livingCityVehRiverBus": "Han River bus",
+  "livingCityVehFlight": "Aircraft",
+
+  "infoBarsTierFlagship": "Flagship",
+  "infoBarsTierHigh": "High",
+  "infoBarsTierMid": "Mid",
+  "infoBarsTierLow": "Low",
+  "infoBarsProfileToast": "{model} · {tier}\n{fps} fps · {pollMs}ms polling — optimized",
+  "@infoBarsProfileToast": {
+    "placeholders": {
+      "model": { "type": "String" },
+      "tier": { "type": "String" },
+      "fps": { "type": "int" },
+      "pollMs": { "type": "int" }
+    }
+  },
+
+  "navBannerNext": "Next",
+  "navBannerWalkTo": "Walk to {station}",
+  "@navBannerWalkTo": {
+    "placeholders": { "station": { "type": "String" } }
+  },
+  "navBannerBoardAt": "Board {line} at {station}",
+  "@navBannerBoardAt": {
+    "placeholders": {
+      "station": { "type": "String" },
+      "line": { "type": "String" }
+    }
+  },
+  "navBannerWalkDetail": "{min} min walk",
+  "@navBannerWalkDetail": {
+    "placeholders": { "min": { "type": "int" } }
+  },
+  "navBannerTransitDetail": "Toward {station} · {min} min",
+  "@navBannerTransitDetail": {
+    "placeholders": {
+      "station": { "type": "String" },
+      "min": { "type": "int" }
+    }
+  },
+
+  "readyPageTitle": "Ready",
+  "readyPageBody": "Tap Start below\nand the live Seoul opens up.",
+
+  "welcomePageSubtitle": "Seoul, in a new light",
+
+  "pathfindingPageTitle": "What's the vibe today?",
+  "pathfindingPageBody": "Your AI assistant will build a course around your mood.\nYou can change this anytime later.",
+
+  "riverBusStopLabel": "{name} ferry pier",
+  "@riverBusStopLabel": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "riverBusRouteEnded": "Service ended",
+  "riverBusNextTime": "Next {time}",
+  "@riverBusNextTime": {
+    "placeholders": { "time": { "type": "String" } }
+  },
+  "riverBusMaintenance": "Maintenance",
+  "riverBusDeparture": "Start",
+  "riverBusArrival": "End",
+
+  "qualityPreviewDemoLabel": "DEMO · Subway",
+  "qualityPresetHigh": "High",
+  "qualityPresetMedium": "Smooth",
+  "qualityPresetLow": "Battery saver",
+  "qualityPresetHighDetail": "60 fps · effects on",
+  "qualityPresetMediumDetail": "30 fps · partial effects",
+  "qualityPresetLowDetail": "10 fps · effects off"
 }

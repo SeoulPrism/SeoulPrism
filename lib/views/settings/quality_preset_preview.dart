@@ -2,6 +2,8 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
+import '../../l10n/gen/app_localizations.dart';
+
 /// 품질 프리셋 미리보기 — 실제 앱의 지하철 3D 시각화 (FillExtrusion 박스 +
 /// 복선 트랙 + MiniTokyo3D 풍 캡슐 역) 을 축소판으로 재현.
 /// preset: 'high' | 'medium' | 'low'
@@ -137,7 +139,7 @@ class _DemoPill extends StatelessWidget {
           ),
           const SizedBox(width: 6),
           Text(
-            'DEMO · 지하철',
+            AppL10n.of(context).qualityPreviewDemoLabel,
             style: TextStyle(
               color: Colors.white.withValues(alpha: 0.9),
               fontSize: 10.5,
@@ -513,15 +515,15 @@ class QualityPresetSegmented extends StatelessWidget {
     required this.onChanged,
   });
 
-  static const _items = [
-    ('high', '고품질', '60 fps · 효과 ON'),
-    ('medium', '부드러움', '30 fps · 효과 일부'),
-    ('low', '배터리 절약', '10 fps · 효과 OFF'),
-  ];
-
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final l = AppL10n.of(context);
+    final items = [
+      ('high', l.qualityPresetHigh, l.qualityPresetHighDetail),
+      ('medium', l.qualityPresetMedium, l.qualityPresetMediumDetail),
+      ('low', l.qualityPresetLow, l.qualityPresetLowDetail),
+    ];
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 14),
       child: Column(
@@ -529,21 +531,21 @@ class QualityPresetSegmented extends StatelessWidget {
         children: [
           Row(
             children: [
-              for (int i = 0; i < _items.length; i++) ...[
+              for (int i = 0; i < items.length; i++) ...[
                 Expanded(
                   child: _SegmentButton(
-                    label: _items[i].$2,
-                    selected: selected == _items[i].$1,
-                    onTap: () => onChanged(_items[i].$1),
+                    label: items[i].$2,
+                    selected: selected == items[i].$1,
+                    onTap: () => onChanged(items[i].$1),
                   ),
                 ),
-                if (i < _items.length - 1) const SizedBox(width: 6),
+                if (i < items.length - 1) const SizedBox(width: 6),
               ],
             ],
           ),
           const SizedBox(height: 10),
           Text(
-            _items.firstWhere((e) => e.$1 == selected, orElse: () => _items[0]).$3,
+            items.firstWhere((e) => e.$1 == selected, orElse: () => items[0]).$3,
             textAlign: TextAlign.center,
             style: TextStyle(
               color: cs.onSurfaceVariant,

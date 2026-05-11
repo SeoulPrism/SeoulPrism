@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import '../../../l10n/gen/app_localizations.dart';
 import '../../../services/visit_history_service.dart';
 import '../../../theme/app_typography.dart';
 
@@ -28,6 +29,7 @@ class _VisitTimelinePanelState extends State<VisitTimelinePanel> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final l = AppL10n.of(context);
     final isLight = Theme.of(context).brightness == Brightness.light;
     final isM3 = Platform.isAndroid;
     final visits = VisitHistoryService.instance.recentVisits;
@@ -67,7 +69,7 @@ class _VisitTimelinePanelState extends State<VisitTimelinePanel> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '내 발자국',
+                      l.visitTimelineTitle,
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.w800,
@@ -77,7 +79,10 @@ class _VisitTimelinePanelState extends State<VisitTimelinePanel> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${visits.length}곳 · 가장 최근 ${_relativeTime(visits.isNotEmpty ? visits.first.visitedAt : null)}',
+                      l.visitTimelineSummary(
+                        visits.length,
+                        _relativeTime(context, visits.isNotEmpty ? visits.first.visitedAt : null),
+                      ),
                       style: AppTypography.bodySm.copyWith(color: txtMuted),
                     ),
                   ],
@@ -86,7 +91,7 @@ class _VisitTimelinePanelState extends State<VisitTimelinePanel> {
               IconButton(
                 icon: Icon(Icons.close, color: txtMuted, size: 20),
                 onPressed: widget.onClose,
-                tooltip: '닫기',
+                tooltip: l.visitTimelineClose,
                 visualDensity: VisualDensity.compact,
               ),
             ],
@@ -99,7 +104,7 @@ class _VisitTimelinePanelState extends State<VisitTimelinePanel> {
                   child: Padding(
                     padding: const EdgeInsets.all(32),
                     child: Text(
-                      '방문 기록이 없어요.',
+                      l.visitTimelineEmpty,
                       textAlign: TextAlign.center,
                       style: AppTypography.bodySm
                           .copyWith(color: txtMuted, height: 1.5),
@@ -198,7 +203,9 @@ class _VisitTimelinePanelState extends State<VisitTimelinePanel> {
                 size: 18,
               ),
               label: Text(
-                _expandedAll ? '접기' : '$remaining곳 더 보기',
+                _expandedAll
+                    ? AppL10n.of(context).visitTimelineCollapse
+                    : AppL10n.of(context).visitTimelineExpand(remaining),
                 style: const TextStyle(fontWeight: FontWeight.w600),
               ),
               style: TextButton.styleFrom(
@@ -232,7 +239,7 @@ class _VisitTimelinePanelState extends State<VisitTimelinePanel> {
     final color = _categoryColor(v.category);
     final timeStr =
         '${v.visitedAt.hour.toString().padLeft(2, '0')}:${v.visitedAt.minute.toString().padLeft(2, '0')}';
-    final dateStr = _shortDate(v.visitedAt);
+    final dateStr = _shortDate(context, v.visitedAt);
     final isFirst = index == 0;
     return InkWell(
       onTap: () => widget.onPlaceTap(v.lat, v.lng, v.name),
@@ -313,7 +320,7 @@ class _VisitTimelinePanelState extends State<VisitTimelinePanel> {
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
-                            '${v.visitCount}회',
+                            AppL10n.of(context).visitTimelineVisitCount(v.visitCount),
                             style: TextStyle(
                               fontSize: 10,
                               color: color,
@@ -333,23 +340,25 @@ class _VisitTimelinePanelState extends State<VisitTimelinePanel> {
     );
   }
 
-  String _shortDate(DateTime d) {
+  String _shortDate(BuildContext ctx, DateTime d) {
+    final l = AppL10n.of(ctx);
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final dDay = DateTime(d.year, d.month, d.day);
     final diff = today.difference(dDay).inDays;
-    if (diff == 0) return '오늘';
-    if (diff == 1) return '어제';
-    if (diff < 7) return '$diff일 전';
-    return '${d.month}/${d.day}';
+    if (diff == 0) return l.visitTimelineDateToday;
+    if (diff == 1) return l.visitTimelineDateYesterday;
+    if (diff < 7) return l.visitTimelineDateDaysAgo(diff);
+    return l.visitTimelineDateMonthDay(d.month, d.day);
   }
 
-  String _relativeTime(DateTime? d) {
-    if (d == null) return '없음';
+  String _relativeTime(BuildContext ctx, DateTime? d) {
+    final l = AppL10n.of(ctx);
+    if (d == null) return l.visitTimelineAgoNone;
     final ago = DateTime.now().difference(d);
-    if (ago.inMinutes < 60) return '${ago.inMinutes}분 전';
-    if (ago.inHours < 24) return '${ago.inHours}시간 전';
-    return '${ago.inDays}일 전';
+    if (ago.inMinutes < 60) return l.visitTimelineAgoMin(ago.inMinutes);
+    if (ago.inHours < 24) return l.visitTimelineAgoHour(ago.inHours);
+    return l.visitTimelineAgoDay(ago.inDays);
   }
 
   Color _categoryColor(String cat) {

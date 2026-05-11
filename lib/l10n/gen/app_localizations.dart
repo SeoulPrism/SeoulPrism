@@ -6250,6 +6250,402 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'{count} closures'**
   String stationDetailClosureCount(int count);
+
+  /// No description provided for @visitTimelineTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'My footprints'**
+  String get visitTimelineTitle;
+
+  /// No description provided for @visitTimelineSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} places · last visit {ago}'**
+  String visitTimelineSummary(int count, String ago);
+
+  /// No description provided for @visitTimelineEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No visit history yet.'**
+  String get visitTimelineEmpty;
+
+  /// No description provided for @visitTimelineClose.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get visitTimelineClose;
+
+  /// No description provided for @visitTimelineExpand.
+  ///
+  /// In en, this message translates to:
+  /// **'Show {count} more'**
+  String visitTimelineExpand(int count);
+
+  /// No description provided for @visitTimelineCollapse.
+  ///
+  /// In en, this message translates to:
+  /// **'Collapse'**
+  String get visitTimelineCollapse;
+
+  /// No description provided for @visitTimelineDateToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get visitTimelineDateToday;
+
+  /// No description provided for @visitTimelineDateYesterday.
+  ///
+  /// In en, this message translates to:
+  /// **'Yesterday'**
+  String get visitTimelineDateYesterday;
+
+  /// No description provided for @visitTimelineDateDaysAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{days}d ago'**
+  String visitTimelineDateDaysAgo(int days);
+
+  /// No description provided for @visitTimelineDateMonthDay.
+  ///
+  /// In en, this message translates to:
+  /// **'{month}/{day}'**
+  String visitTimelineDateMonthDay(int month, int day);
+
+  /// No description provided for @visitTimelineAgoNone.
+  ///
+  /// In en, this message translates to:
+  /// **'—'**
+  String get visitTimelineAgoNone;
+
+  /// No description provided for @visitTimelineAgoMin.
+  ///
+  /// In en, this message translates to:
+  /// **'{min} min ago'**
+  String visitTimelineAgoMin(int min);
+
+  /// No description provided for @visitTimelineAgoHour.
+  ///
+  /// In en, this message translates to:
+  /// **'{hour}h ago'**
+  String visitTimelineAgoHour(int hour);
+
+  /// No description provided for @visitTimelineAgoDay.
+  ///
+  /// In en, this message translates to:
+  /// **'{day}d ago'**
+  String visitTimelineAgoDay(int day);
+
+  /// No description provided for @visitTimelineVisitCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}×'**
+  String visitTimelineVisitCount(int count);
+
+  /// No description provided for @permPageTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Permissions'**
+  String get permPageTitle;
+
+  /// No description provided for @permPageBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Grant these up front\nso the app doesn\'t stop mid-flow.'**
+  String get permPageBody;
+
+  /// No description provided for @permPageFooter.
+  ///
+  /// In en, this message translates to:
+  /// **'Denying is fine — only that feature is limited.'**
+  String get permPageFooter;
+
+  /// No description provided for @permPageRequesting.
+  ///
+  /// In en, this message translates to:
+  /// **'Requesting…'**
+  String get permPageRequesting;
+
+  /// No description provided for @permPageAllGranted.
+  ///
+  /// In en, this message translates to:
+  /// **'✓ All allowed'**
+  String get permPageAllGranted;
+
+  /// No description provided for @permPageRequestAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow all'**
+  String get permPageRequestAll;
+
+  /// No description provided for @permItemLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Location'**
+  String get permItemLocation;
+
+  /// No description provided for @permItemLocationDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Show your pin on the map + live share in rooms'**
+  String get permItemLocationDesc;
+
+  /// No description provided for @permItemNotification.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get permItemNotification;
+
+  /// No description provided for @permItemNotificationDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Friend requests / chat / meetup alerts'**
+  String get permItemNotificationDesc;
+
+  /// No description provided for @permItemCamera.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera'**
+  String get permItemCamera;
+
+  /// No description provided for @permItemCameraDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Place photo analysis + chat photos'**
+  String get permItemCameraDesc;
+
+  /// No description provided for @permItemPhotos.
+  ///
+  /// In en, this message translates to:
+  /// **'Photos'**
+  String get permItemPhotos;
+
+  /// No description provided for @permItemPhotosDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Share gallery photos in chat'**
+  String get permItemPhotosDesc;
+
+  /// No description provided for @permItemMicrophone.
+  ///
+  /// In en, this message translates to:
+  /// **'Microphone'**
+  String get permItemMicrophone;
+
+  /// No description provided for @permItemMicrophoneDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'AI voice chat + voice messages'**
+  String get permItemMicrophoneDesc;
+
+  /// No description provided for @permTapToSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'{desc} (tap to open Settings)'**
+  String permTapToSettings(String desc);
+
+  /// No description provided for @livingCityTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Seoul is alive'**
+  String get livingCityTitle;
+
+  /// No description provided for @livingCityBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap an icon and the camera flies to that scene.'**
+  String get livingCityBody;
+
+  /// No description provided for @livingCityVehSubway.
+  ///
+  /// In en, this message translates to:
+  /// **'Subway'**
+  String get livingCityVehSubway;
+
+  /// No description provided for @livingCityVehBus.
+  ///
+  /// In en, this message translates to:
+  /// **'Bus'**
+  String get livingCityVehBus;
+
+  /// No description provided for @livingCityVehRiverBus.
+  ///
+  /// In en, this message translates to:
+  /// **'Han River bus'**
+  String get livingCityVehRiverBus;
+
+  /// No description provided for @livingCityVehFlight.
+  ///
+  /// In en, this message translates to:
+  /// **'Aircraft'**
+  String get livingCityVehFlight;
+
+  /// No description provided for @infoBarsTierFlagship.
+  ///
+  /// In en, this message translates to:
+  /// **'Flagship'**
+  String get infoBarsTierFlagship;
+
+  /// No description provided for @infoBarsTierHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'High'**
+  String get infoBarsTierHigh;
+
+  /// No description provided for @infoBarsTierMid.
+  ///
+  /// In en, this message translates to:
+  /// **'Mid'**
+  String get infoBarsTierMid;
+
+  /// No description provided for @infoBarsTierLow.
+  ///
+  /// In en, this message translates to:
+  /// **'Low'**
+  String get infoBarsTierLow;
+
+  /// No description provided for @infoBarsProfileToast.
+  ///
+  /// In en, this message translates to:
+  /// **'{model} · {tier}\n{fps} fps · {pollMs}ms polling — optimized'**
+  String infoBarsProfileToast(String model, String tier, int fps, int pollMs);
+
+  /// No description provided for @navBannerNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get navBannerNext;
+
+  /// No description provided for @navBannerWalkTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Walk to {station}'**
+  String navBannerWalkTo(String station);
+
+  /// No description provided for @navBannerBoardAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Board {line} at {station}'**
+  String navBannerBoardAt(String station, String line);
+
+  /// No description provided for @navBannerWalkDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'{min} min walk'**
+  String navBannerWalkDetail(int min);
+
+  /// No description provided for @navBannerTransitDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Toward {station} · {min} min'**
+  String navBannerTransitDetail(String station, int min);
+
+  /// No description provided for @readyPageTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready'**
+  String get readyPageTitle;
+
+  /// No description provided for @readyPageBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap Start below\nand the live Seoul opens up.'**
+  String get readyPageBody;
+
+  /// No description provided for @welcomePageSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Seoul, in a new light'**
+  String get welcomePageSubtitle;
+
+  /// No description provided for @pathfindingPageTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What\'s the vibe today?'**
+  String get pathfindingPageTitle;
+
+  /// No description provided for @pathfindingPageBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your AI assistant will build a course around your mood.\nYou can change this anytime later.'**
+  String get pathfindingPageBody;
+
+  /// No description provided for @riverBusStopLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} ferry pier'**
+  String riverBusStopLabel(String name);
+
+  /// No description provided for @riverBusRouteEnded.
+  ///
+  /// In en, this message translates to:
+  /// **'Service ended'**
+  String get riverBusRouteEnded;
+
+  /// No description provided for @riverBusNextTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Next {time}'**
+  String riverBusNextTime(String time);
+
+  /// No description provided for @riverBusMaintenance.
+  ///
+  /// In en, this message translates to:
+  /// **'Maintenance'**
+  String get riverBusMaintenance;
+
+  /// No description provided for @riverBusDeparture.
+  ///
+  /// In en, this message translates to:
+  /// **'Start'**
+  String get riverBusDeparture;
+
+  /// No description provided for @riverBusArrival.
+  ///
+  /// In en, this message translates to:
+  /// **'End'**
+  String get riverBusArrival;
+
+  /// No description provided for @qualityPreviewDemoLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'DEMO · Subway'**
+  String get qualityPreviewDemoLabel;
+
+  /// No description provided for @qualityPresetHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'High'**
+  String get qualityPresetHigh;
+
+  /// No description provided for @qualityPresetMedium.
+  ///
+  /// In en, this message translates to:
+  /// **'Smooth'**
+  String get qualityPresetMedium;
+
+  /// No description provided for @qualityPresetLow.
+  ///
+  /// In en, this message translates to:
+  /// **'Battery saver'**
+  String get qualityPresetLow;
+
+  /// No description provided for @qualityPresetHighDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'60 fps · effects on'**
+  String get qualityPresetHighDetail;
+
+  /// No description provided for @qualityPresetMediumDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'30 fps · partial effects'**
+  String get qualityPresetMediumDetail;
+
+  /// No description provided for @qualityPresetLowDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'10 fps · effects off'**
+  String get qualityPresetLowDetail;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

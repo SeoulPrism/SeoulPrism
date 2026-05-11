@@ -3500,4 +3500,240 @@ class AppL10nEn extends AppL10n {
   String stationDetailClosureCount(int count) {
     return '$count closures';
   }
+
+  @override
+  String get visitTimelineTitle => 'My footprints';
+
+  @override
+  String visitTimelineSummary(int count, String ago) {
+    return '$count places · last visit $ago';
+  }
+
+  @override
+  String get visitTimelineEmpty => 'No visit history yet.';
+
+  @override
+  String get visitTimelineClose => 'Close';
+
+  @override
+  String visitTimelineExpand(int count) {
+    return 'Show $count more';
+  }
+
+  @override
+  String get visitTimelineCollapse => 'Collapse';
+
+  @override
+  String get visitTimelineDateToday => 'Today';
+
+  @override
+  String get visitTimelineDateYesterday => 'Yesterday';
+
+  @override
+  String visitTimelineDateDaysAgo(int days) {
+    return '${days}d ago';
+  }
+
+  @override
+  String visitTimelineDateMonthDay(int month, int day) {
+    return '$month/$day';
+  }
+
+  @override
+  String get visitTimelineAgoNone => '—';
+
+  @override
+  String visitTimelineAgoMin(int min) {
+    return '$min min ago';
+  }
+
+  @override
+  String visitTimelineAgoHour(int hour) {
+    return '${hour}h ago';
+  }
+
+  @override
+  String visitTimelineAgoDay(int day) {
+    return '${day}d ago';
+  }
+
+  @override
+  String visitTimelineVisitCount(int count) {
+    return '$count×';
+  }
+
+  @override
+  String get permPageTitle => 'Permissions';
+
+  @override
+  String get permPageBody =>
+      'Grant these up front\nso the app doesn\'t stop mid-flow.';
+
+  @override
+  String get permPageFooter =>
+      'Denying is fine — only that feature is limited.';
+
+  @override
+  String get permPageRequesting => 'Requesting…';
+
+  @override
+  String get permPageAllGranted => '✓ All allowed';
+
+  @override
+  String get permPageRequestAll => 'Allow all';
+
+  @override
+  String get permItemLocation => 'Location';
+
+  @override
+  String get permItemLocationDesc =>
+      'Show your pin on the map + live share in rooms';
+
+  @override
+  String get permItemNotification => 'Notifications';
+
+  @override
+  String get permItemNotificationDesc =>
+      'Friend requests / chat / meetup alerts';
+
+  @override
+  String get permItemCamera => 'Camera';
+
+  @override
+  String get permItemCameraDesc => 'Place photo analysis + chat photos';
+
+  @override
+  String get permItemPhotos => 'Photos';
+
+  @override
+  String get permItemPhotosDesc => 'Share gallery photos in chat';
+
+  @override
+  String get permItemMicrophone => 'Microphone';
+
+  @override
+  String get permItemMicrophoneDesc => 'AI voice chat + voice messages';
+
+  @override
+  String permTapToSettings(String desc) {
+    return '$desc (tap to open Settings)';
+  }
+
+  @override
+  String get livingCityTitle => 'Seoul is alive';
+
+  @override
+  String get livingCityBody =>
+      'Tap an icon and the camera flies to that scene.';
+
+  @override
+  String get livingCityVehSubway => 'Subway';
+
+  @override
+  String get livingCityVehBus => 'Bus';
+
+  @override
+  String get livingCityVehRiverBus => 'Han River bus';
+
+  @override
+  String get livingCityVehFlight => 'Aircraft';
+
+  @override
+  String get infoBarsTierFlagship => 'Flagship';
+
+  @override
+  String get infoBarsTierHigh => 'High';
+
+  @override
+  String get infoBarsTierMid => 'Mid';
+
+  @override
+  String get infoBarsTierLow => 'Low';
+
+  @override
+  String infoBarsProfileToast(String model, String tier, int fps, int pollMs) {
+    return '$model · $tier\n$fps fps · ${pollMs}ms polling — optimized';
+  }
+
+  @override
+  String get navBannerNext => 'Next';
+
+  @override
+  String navBannerWalkTo(String station) {
+    return 'Walk to $station';
+  }
+
+  @override
+  String navBannerBoardAt(String station, String line) {
+    return 'Board $line at $station';
+  }
+
+  @override
+  String navBannerWalkDetail(int min) {
+    return '$min min walk';
+  }
+
+  @override
+  String navBannerTransitDetail(String station, int min) {
+    return 'Toward $station · $min min';
+  }
+
+  @override
+  String get readyPageTitle => 'Ready';
+
+  @override
+  String get readyPageBody => 'Tap Start below\nand the live Seoul opens up.';
+
+  @override
+  String get welcomePageSubtitle => 'Seoul, in a new light';
+
+  @override
+  String get pathfindingPageTitle => 'What\'s the vibe today?';
+
+  @override
+  String get pathfindingPageBody =>
+      'Your AI assistant will build a course around your mood.\nYou can change this anytime later.';
+
+  @override
+  String riverBusStopLabel(String name) {
+    return '$name ferry pier';
+  }
+
+  @override
+  String get riverBusRouteEnded => 'Service ended';
+
+  @override
+  String riverBusNextTime(String time) {
+    return 'Next $time';
+  }
+
+  @override
+  String get riverBusMaintenance => 'Maintenance';
+
+  @override
+  String get riverBusDeparture => 'Start';
+
+  @override
+  String get riverBusArrival => 'End';
+
+  @override
+  String get qualityPreviewDemoLabel => 'DEMO · Subway';
+
+  @override
+  String get qualityPresetHigh => 'High';
+
+  @override
+  String get qualityPresetMedium => 'Smooth';
+
+  @override
+  String get qualityPresetLow => 'Battery saver';
+
+  @override
+  String get qualityPresetHighDetail => '60 fps · effects on';
+
+  @override
+  String get qualityPresetMediumDetail => '30 fps · partial effects';
+
+  @override
+  String get qualityPresetLowDetail => '10 fps · effects off';
 }

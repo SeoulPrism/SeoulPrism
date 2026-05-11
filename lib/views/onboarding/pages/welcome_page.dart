@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import '../../../l10n/gen/app_localizations.dart';
 import '../../../theme/app_typography.dart';
 
 class WelcomePage extends StatelessWidget {
@@ -53,7 +54,7 @@ class WelcomePage extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            '서울을 새로운 시각으로',
+            AppL10n.of(context).welcomePageSubtitle,
             style: AppTypography.bodyMd.copyWith(color: subColor),
           ),
         ],

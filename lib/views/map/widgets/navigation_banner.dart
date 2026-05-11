@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../l10n/gen/app_localizations.dart';
 import '../../../services/path_finding_service.dart';
 import 'route_timeline.dart';
 
@@ -21,18 +22,20 @@ class NavigationBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     final seg = activeSegment;
     if (seg == null) return const SizedBox.shrink();
+    final l = AppL10n.of(context);
     final segColor = segmentColorForBar(seg);
     final icon = seg.mode == TransportMode.walk
         ? Icons.directions_walk
         : seg.mode == TransportMode.bus
             ? Icons.directions_bus
             : Icons.train;
+    final minutes = (seg.travelTimeSec / 60).ceil();
     final action = seg.mode == TransportMode.walk
-        ? '${seg.stations.last}까지 도보'
-        : '${seg.stations.first}에서 ${seg.lineName} 승차';
+        ? l.navBannerWalkTo(seg.stations.last)
+        : l.navBannerBoardAt(seg.stations.first, seg.lineName);
     final detail = seg.mode == TransportMode.walk
-        ? '${(seg.travelTimeSec / 60).ceil()}분 이동'
-        : '${seg.stations.last} 방면 · ${(seg.travelTimeSec / 60).ceil()}분';
+        ? l.navBannerWalkDetail(minutes)
+        : l.navBannerTransitDetail(seg.stations.last, minutes);
 
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 10, 10, 10),
@@ -81,7 +84,7 @@ class NavigationBanner extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
-                '다음',
+                l.navBannerNext,
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w800,

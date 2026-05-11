@@ -3425,4 +3425,235 @@ class AppL10nKo extends AppL10n {
   String stationDetailClosureCount(int count) {
     return '시설 폐쇄 $count건';
   }
+
+  @override
+  String get visitTimelineTitle => '내 발자국';
+
+  @override
+  String visitTimelineSummary(int count, String ago) {
+    return '$count곳 · 가장 최근 $ago';
+  }
+
+  @override
+  String get visitTimelineEmpty => '방문 기록이 없어요.';
+
+  @override
+  String get visitTimelineClose => '닫기';
+
+  @override
+  String visitTimelineExpand(int count) {
+    return '$count곳 더 보기';
+  }
+
+  @override
+  String get visitTimelineCollapse => '접기';
+
+  @override
+  String get visitTimelineDateToday => '오늘';
+
+  @override
+  String get visitTimelineDateYesterday => '어제';
+
+  @override
+  String visitTimelineDateDaysAgo(int days) {
+    return '$days일 전';
+  }
+
+  @override
+  String visitTimelineDateMonthDay(int month, int day) {
+    return '$month/$day';
+  }
+
+  @override
+  String get visitTimelineAgoNone => '없음';
+
+  @override
+  String visitTimelineAgoMin(int min) {
+    return '$min분 전';
+  }
+
+  @override
+  String visitTimelineAgoHour(int hour) {
+    return '$hour시간 전';
+  }
+
+  @override
+  String visitTimelineAgoDay(int day) {
+    return '$day일 전';
+  }
+
+  @override
+  String visitTimelineVisitCount(int count) {
+    return '$count회';
+  }
+
+  @override
+  String get permPageTitle => '권한 설정';
+
+  @override
+  String get permPageBody => '아래 권한을 한 번에 설정해두면\n앱을 쓰다가 멈추는 일이 없어요.';
+
+  @override
+  String get permPageFooter => '거부해도 앱은 동작해요. 해당 기능만 제한됨.';
+
+  @override
+  String get permPageRequesting => '요청 중...';
+
+  @override
+  String get permPageAllGranted => '✓ 모두 허용됨';
+
+  @override
+  String get permPageRequestAll => '한 번에 허용';
+
+  @override
+  String get permItemLocation => '위치';
+
+  @override
+  String get permItemLocationDesc => '지도에 내 위치 표시 + 친구방 실시간 공유';
+
+  @override
+  String get permItemNotification => '알림';
+
+  @override
+  String get permItemNotificationDesc => '친구 신청 / 채팅 / 만남 알림';
+
+  @override
+  String get permItemCamera => '카메라';
+
+  @override
+  String get permItemCameraDesc => '장소 사진 분석 + 친구 채팅 사진';
+
+  @override
+  String get permItemPhotos => '사진';
+
+  @override
+  String get permItemPhotosDesc => '갤러리 사진을 채팅에 공유';
+
+  @override
+  String get permItemMicrophone => '마이크';
+
+  @override
+  String get permItemMicrophoneDesc => 'AI 음성 대화 + 음성 메시지';
+
+  @override
+  String permTapToSettings(String desc) {
+    return '$desc (탭하면 설정 열기)';
+  }
+
+  @override
+  String get livingCityTitle => '서울이 살아 움직여요';
+
+  @override
+  String get livingCityBody => '아이콘을 누르면 카메라가 그 장면으로 날아가요.';
+
+  @override
+  String get livingCityVehSubway => '지하철';
+
+  @override
+  String get livingCityVehBus => '버스';
+
+  @override
+  String get livingCityVehRiverBus => '한강버스';
+
+  @override
+  String get livingCityVehFlight => '항공기';
+
+  @override
+  String get infoBarsTierFlagship => '플래그십';
+
+  @override
+  String get infoBarsTierHigh => '상위';
+
+  @override
+  String get infoBarsTierMid => '중급';
+
+  @override
+  String get infoBarsTierLow => '저사양';
+
+  @override
+  String infoBarsProfileToast(String model, String tier, int fps, int pollMs) {
+    return '$model · $tier\n${fps}fps · 폴링 ${pollMs}ms 최적화 적용';
+  }
+
+  @override
+  String get navBannerNext => '다음';
+
+  @override
+  String navBannerWalkTo(String station) {
+    return '$station까지 도보';
+  }
+
+  @override
+  String navBannerBoardAt(String station, String line) {
+    return '$station에서 $line 승차';
+  }
+
+  @override
+  String navBannerWalkDetail(int min) {
+    return '$min분 이동';
+  }
+
+  @override
+  String navBannerTransitDetail(String station, int min) {
+    return '$station 방면 · $min분';
+  }
+
+  @override
+  String get readyPageTitle => '준비됐어요';
+
+  @override
+  String get readyPageBody => '아래 시작 버튼을 누르면\n실시간 서울이 펼쳐져요.';
+
+  @override
+  String get welcomePageSubtitle => '서울을 새로운 시각으로';
+
+  @override
+  String get pathfindingPageTitle => '오늘은 어떤 여행?';
+
+  @override
+  String get pathfindingPageBody =>
+      'AI 비서가 너의 무드에 맞춰 코스를 짜줄게.\n나중에 언제든 바꿀 수 있어.';
+
+  @override
+  String riverBusStopLabel(String name) {
+    return '$name 선착장';
+  }
+
+  @override
+  String get riverBusRouteEnded => '운항 종료';
+
+  @override
+  String riverBusNextTime(String time) {
+    return '다음 $time';
+  }
+
+  @override
+  String get riverBusMaintenance => '정비 중';
+
+  @override
+  String get riverBusDeparture => '출발';
+
+  @override
+  String get riverBusArrival => '도착';
+
+  @override
+  String get qualityPreviewDemoLabel => 'DEMO · 지하철';
+
+  @override
+  String get qualityPresetHigh => '고품질';
+
+  @override
+  String get qualityPresetMedium => '부드러움';
+
+  @override
+  String get qualityPresetLow => '배터리 절약';
+
+  @override
+  String get qualityPresetHighDetail => '60 fps · 효과 ON';
+
+  @override
+  String get qualityPresetMediumDetail => '30 fps · 효과 일부';
+
+  @override
+  String get qualityPresetLowDetail => '10 fps · 효과 OFF';
 }
