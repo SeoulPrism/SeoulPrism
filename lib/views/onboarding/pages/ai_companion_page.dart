@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../l10n/gen/app_localizations.dart';
 import '../../../theme/app_typography.dart';
-import '../widgets/ai_voice_wave_mock.dart';
+import '../widgets/onboarding_ai_glow_demo.dart';
 
 /// 페이지 6 — AI Companion (음성 AI).
-/// 풀스크린 보라/시안 그라데이션 위에 마이크 글로우 + 파형 + mock 채팅 풍선.
-/// 배경맵을 가리도록 페이지 root 가 opaque 그라데이션을 그림.
+/// ai_view.dart 의 무드 Glow UI 와 동일한 풀스크린 ring + sweep gradient 데모를
+/// 배경맵 위에 직접 얹는다 (별도 opaque 베이스 안 깔아서 지도가 그대로 비치게).
+/// 상단엔 mock 채팅 풍선 2개 (Q + A) 로 음성 어시스턴트의 결과 예시를 보여줌.
+/// 무드 팔레트는 Pathfinding 페이지에서 사용자가 고른 스타일 (없으면 기본).
 class AiCompanionPage extends StatelessWidget {
   static const id = 'ai_companion_v1';
   const AiCompanionPage({super.key});
@@ -17,37 +19,50 @@ class AiCompanionPage extends StatelessWidget {
 
     return Stack(
       children: [
-        // 풀스크린 보라/시안 그라데이션 — 배경맵을 가림.
-        Positioned.fill(
-          child: Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Color(0xFF1E1240), Color(0xFF3A1A5C), Color(0xFF6B1F62)],
-              ),
-            ),
+        // 무드 Glow ring — 풀스크린. 배경맵이 비치도록 검은 베이스는 안 깐다.
+        const Positioned.fill(child: OnboardingAiGlowDemo()),
+        // 상단 mock 채팅 시퀀스 — 음성 어시스턴트가 다룰 수 있는 3가지 인터랙션
+        // (장소 검색, 일정 생성, 자연어 follow-up). ring 안쪽 상단에 떠 있게.
+        Positioned(
+          top: 84,
+          left: 24,
+          right: 24,
+          child: Column(
+            children: const [
+              _ChatBubble(text: '서울역이 어디야?', fromAi: false, delay: 360),
+              SizedBox(height: 6),
+              _ChatBubble(text: '🗺 여기예요 (지도에 핀)', fromAi: true, delay: 760),
+              SizedBox(height: 10),
+              _ChatBubble(
+                  text: '영등포구 근처 여행 계획 짜줘',
+                  fromAi: false,
+                  delay: 1240),
+              SizedBox(height: 6),
+              _ChatBubble(
+                  text: '📋 여의도공원 · IFC몰 · 노들섬 · 선유도...',
+                  fromAi: true,
+                  delay: 1700),
+              SizedBox(height: 10),
+              _ChatBubble(
+                  text: '여기서 몇 개 빼고 이대로 해줘',
+                  fromAi: false,
+                  delay: 2200),
+              SizedBox(height: 6),
+              _ChatBubble(
+                  text: '✅ 4곳 · 약 5시간 확정',
+                  fromAi: true,
+                  delay: 2620),
+            ],
           ),
         ),
-        // Blob pulse (좌상/우하).
-        const _BackgroundBlob(
-          color: Color(0xFF8B5CF6),
-          alignment: Alignment(-0.7, -0.5),
-        ),
-        const _BackgroundBlob(
-          color: Color(0xFFEC4899),
-          alignment: Alignment(0.8, 0.6),
-        ),
-        // 컨텐츠.
-        SafeArea(
+        // 텍스트 — ring 안쪽 하단.
+        Align(
+          alignment: Alignment.bottomCenter,
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(24, 56, 24, 120),
+            padding: const EdgeInsets.fromLTRB(36, 0, 36, 140),
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                // 데모: 채팅 + 마이크 + 파형 — 상단 영역 fill.
-                const Expanded(child: AiVoiceWaveMock()),
-                const SizedBox(height: 16),
-                // 텍스트.
                 Text(
                   l.aiVoiceTitle,
                   textAlign: TextAlign.center,
@@ -63,15 +78,15 @@ class AiCompanionPage extends StatelessWidget {
                       end: 0,
                       duration: 500.ms,
                       curve: Curves.easeOutCubic,
-                      delay: 160.ms,
+                      delay: 380.ms,
                     )
-                    .fadeIn(duration: 400.ms, delay: 160.ms),
+                    .fadeIn(duration: 400.ms, delay: 380.ms),
                 const SizedBox(height: 10),
                 Text(
                   l.aiVoiceBody,
                   textAlign: TextAlign.center,
                   style: AppTypography.bodyMd.copyWith(
-                    color: Colors.white.withValues(alpha: 0.82),
+                    color: Colors.white.withValues(alpha: 0.9),
                     height: 1.45,
                     fontSize: 13,
                   ),
@@ -82,9 +97,9 @@ class AiCompanionPage extends StatelessWidget {
                       end: 0,
                       duration: 500.ms,
                       curve: Curves.easeOutCubic,
-                      delay: 320.ms,
+                      delay: 520.ms,
                     )
-                    .fadeIn(duration: 400.ms, delay: 320.ms),
+                    .fadeIn(duration: 400.ms, delay: 520.ms),
                 const SizedBox(height: 14),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -93,8 +108,9 @@ class AiCompanionPage extends StatelessWidget {
                     Flexible(
                       child: Text(
                         l.aiDayPlanHint,
+                        textAlign: TextAlign.center,
                         style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.78),
+                          color: Colors.white.withValues(alpha: 0.85),
                           fontSize: 12,
                           height: 1.4,
                         ),
@@ -108,9 +124,9 @@ class AiCompanionPage extends StatelessWidget {
                       end: 0,
                       duration: 420.ms,
                       curve: Curves.easeOutCubic,
-                      delay: 480.ms,
+                      delay: 680.ms,
                     )
-                    .fadeIn(duration: 320.ms, delay: 480.ms),
+                    .fadeIn(duration: 320.ms, delay: 680.ms),
               ],
             ),
           ),
@@ -120,35 +136,59 @@ class AiCompanionPage extends StatelessWidget {
   }
 }
 
-class _BackgroundBlob extends StatelessWidget {
-  final Color color;
-  final Alignment alignment;
-  const _BackgroundBlob({required this.color, required this.alignment});
+/// mock 채팅 풍선. fromAi=true 면 좌측 정렬 + 흰 배경, false 면 우측 정렬 + 반투명 흰 테두리.
+class _ChatBubble extends StatelessWidget {
+  final String text;
+  final bool fromAi;
+  final int delay;
+  const _ChatBubble({
+    required this.text,
+    required this.fromAi,
+    required this.delay,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Align(
-      alignment: alignment,
-      child: Container(
-        width: 320,
-        height: 320,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: RadialGradient(
-            colors: [
-              color.withValues(alpha: 0.45),
-              color.withValues(alpha: 0.0),
-            ],
-          ),
+    final bubble = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      decoration: BoxDecoration(
+        color: fromAi
+            ? Colors.white.withValues(alpha: 0.95)
+            : Colors.black.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(16),
+        border: fromAi
+            ? null
+            : Border.all(color: Colors.white.withValues(alpha: 0.45)),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: fromAi ? const Color(0xFF1E1E2E) : Colors.white,
+          fontSize: 12.5,
+          fontWeight: FontWeight.w600,
         ),
-      )
-          .animate(onPlay: (c) => c.repeat(reverse: true))
-          .scale(
-            begin: const Offset(0.85, 0.85),
-            end: const Offset(1.15, 1.15),
-            duration: 4500.ms,
-            curve: Curves.easeInOut,
-          ),
+      ),
+    );
+    return Row(
+      mainAxisAlignment:
+          fromAi ? MainAxisAlignment.start : MainAxisAlignment.end,
+      children: [
+        Flexible(
+          child: bubble
+              .animate()
+              .slideY(
+                begin: -0.4,
+                end: 0,
+                duration: 480.ms,
+                curve: Curves.easeOutCubic,
+                delay: Duration(milliseconds: delay),
+              )
+              .fadeIn(
+                duration: 360.ms,
+                delay: Duration(milliseconds: delay),
+              ),
+        ),
+      ],
     );
   }
 }

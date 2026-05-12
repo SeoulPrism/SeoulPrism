@@ -1,5 +1,5 @@
 import 'dart:math' as math;
-import 'dart:ui';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
@@ -268,14 +268,10 @@ class _CityPulseLoadingViewState extends State<CityPulseLoadingView>
 // Isometric city painter
 // ─────────────────────────────────────────────────────────────────
 
+/// 빌딩 종류 — 랜드마크는 특수 렌더링 (N타워 = 기둥+돔, 롯데 = 테이퍼, 63 = 골드).
+enum _BuildingKind { normal, nSeoulTower, lotteTower, building63 }
+
 /// 빌딩 정의 (월드 좌표).
-///   worldX: 동(+) ~ 서(-)
-///   worldZ: 남(+) ~ 북(-)
-///   targetHeight: 솟아오를 최종 높이 (월드 y)
-///   width/depth: footprint
-///   color: 색상 (랜드마크는 강조 색)
-///   isLandmark: 글로우 효과
-///   riseDelay: 0~1, 글로벌 progress 안에서 솟기 시작 시점
 class _Building {
   final double wx;
   final double wz;
@@ -283,8 +279,8 @@ class _Building {
   final double width;
   final double depth;
   final Color color;
-  final bool isLandmark;
-  final double riseDelay;
+  final _BuildingKind kind;
+  final double riseDelay; // 0~1, 글로벌 progress 안에서 솟기 시작 시점
   const _Building({
     required this.wx,
     required this.wz,
@@ -293,7 +289,7 @@ class _Building {
     required this.depth,
     required this.color,
     required this.riseDelay,
-    this.isLandmark = false,
+    this.kind = _BuildingKind.normal,
   });
 }
 
@@ -305,68 +301,35 @@ class _IsoCityPainter extends CustomPainter {
   static const double _cos30 = 0.866;
   static const double _sin30 = 0.5;
 
-  // 빌딩 라인업 — 광화문 일대 + 한강 양안 클러스터.
-  // 좌표는 -8~8 정도 범위, 높이는 1.5~10.
+  // 5개 빌딩, 모두 같은 깊이 라인 (wx+wz=0) — 화면상 일렬로 배치 → occlusion 없음.
+  // 중앙 N서울타워가 hero, 양옆으로 대칭. 중앙→바깥 순서로 1개씩 솟음.
+  static const Color _bldg = Color(0xFF3F4D7A);
   static const List<_Building> _buildings = [
-    // ── N서울타워 (중앙, 가장 높은 골드 랜드마크) ──
+    // 중앙 (hero, 첫 번째로 솟음).
     _Building(
-      wx: -0.5, wz: -2.5, targetHeight: 9, width: 0.9, depth: 0.9,
-      color: Color(0xFFFFD700), isLandmark: true, riseDelay: 0.5,
+      wx: 0, wz: 0, targetHeight: 7.5, width: 0.35, depth: 0.35,
+      color: Color(0xFFFFD27A),
+      kind: _BuildingKind.nSeoulTower,
+      riseDelay: 0.00,
     ),
-    // ── 롯데타워 (동남, 가장 높은 청색 랜드마크) ──
+    // 좌1 — 광화문 / 우1 — 동대문. 중심에서 2.3 unit 떨어짐.
+    _Building(wx: -2.3, wz: 2.3, targetHeight: 4.5, width: 1.1, depth: 1.0,
+        color: _bldg, riseDelay: 0.18),
+    _Building(wx:  2.3, wz: -2.3, targetHeight: 4.5, width: 1.0, depth: 1.1,
+        color: _bldg, riseDelay: 0.18),
+    // 좌2 — 63빌딩 (골드 슬랩) / 우2 — 롯데타워 (tapered). 중심 4.6 unit.
     _Building(
-      wx: 5.0, wz: 3.0, targetHeight: 11, width: 1.0, depth: 1.0,
-      color: Color(0xFF8FE3FF), isLandmark: true, riseDelay: 0.6,
+      wx: -4.6, wz: 4.6, targetHeight: 7.0, width: 0.55, depth: 0.9,
+      color: Color(0xFFE8C775),
+      kind: _BuildingKind.building63,
+      riseDelay: 0.36,
     ),
-    // ── 63빌딩 (서쪽 강남, 라이트블루) ──
     _Building(
-      wx: -5.0, wz: 1.5, targetHeight: 6.5, width: 0.8, depth: 0.8,
-      color: Color(0xFFCFE9FF), isLandmark: true, riseDelay: 0.4,
+      wx: 4.6, wz: -4.6, targetHeight: 11, width: 0.9, depth: 0.9,
+      color: Color(0xFFA8DCF7),
+      kind: _BuildingKind.lotteTower,
+      riseDelay: 0.36,
     ),
-    // ── 광화문/시청 클러스터 (중앙 북쪽) ──
-    _Building(wx: 0.0, wz: -1.0, targetHeight: 3, width: 1, depth: 1,
-        color: Color(0xFF2C3654), riseDelay: 0.05),
-    _Building(wx: 1.5, wz: -0.5, targetHeight: 4, width: 1, depth: 1,
-        color: Color(0xFF2C3654), riseDelay: 0.10),
-    _Building(wx: -1.5, wz: -0.5, targetHeight: 3.5, width: 1, depth: 1,
-        color: Color(0xFF2C3654), riseDelay: 0.08),
-    _Building(wx: 0.8, wz: -2.0, targetHeight: 4.5, width: 1.2, depth: 1.0,
-        color: Color(0xFF2C3654), riseDelay: 0.15),
-    _Building(wx: -2.5, wz: -1.8, targetHeight: 2.5, width: 1, depth: 1,
-        color: Color(0xFF2C3654), riseDelay: 0.12),
-    _Building(wx: 2.8, wz: -1.5, targetHeight: 3.2, width: 1, depth: 1,
-        color: Color(0xFF2C3654), riseDelay: 0.18),
-    _Building(wx: -3.5, wz: -2.5, targetHeight: 2, width: 1, depth: 1,
-        color: Color(0xFF2C3654), riseDelay: 0.20),
-    // ── 강남 클러스터 (남동) ──
-    _Building(wx: 3.5, wz: 2.5, targetHeight: 5, width: 1.1, depth: 1.1,
-        color: Color(0xFF2C3654), riseDelay: 0.25),
-    _Building(wx: 4.5, wz: 1.5, targetHeight: 6, width: 1.0, depth: 1.0,
-        color: Color(0xFF2C3654), riseDelay: 0.30),
-    _Building(wx: 6.0, wz: 4.0, targetHeight: 4, width: 1, depth: 1,
-        color: Color(0xFF2C3654), riseDelay: 0.35),
-    _Building(wx: 3.0, wz: 4.5, targetHeight: 5.5, width: 1.2, depth: 1.2,
-        color: Color(0xFF2C3654), riseDelay: 0.32),
-    // ── 영등포/마포 (서남) ──
-    _Building(wx: -4.0, wz: 2.5, targetHeight: 3.5, width: 1, depth: 1,
-        color: Color(0xFF2C3654), riseDelay: 0.22),
-    _Building(wx: -3.0, wz: 3.5, targetHeight: 5, width: 1, depth: 1,
-        color: Color(0xFF2C3654), riseDelay: 0.28),
-    _Building(wx: -6.0, wz: 3.0, targetHeight: 3, width: 1, depth: 1,
-        color: Color(0xFF2C3654), riseDelay: 0.18),
-    // ── 외곽 채움 ──
-    _Building(wx: 7.0, wz: -1.0, targetHeight: 2.5, width: 0.9, depth: 0.9,
-        color: Color(0xFF2C3654), riseDelay: 0.35),
-    _Building(wx: -7.0, wz: -1.0, targetHeight: 2.5, width: 0.9, depth: 0.9,
-        color: Color(0xFF2C3654), riseDelay: 0.30),
-    _Building(wx: 5.5, wz: -3.0, targetHeight: 3, width: 0.9, depth: 0.9,
-        color: Color(0xFF2C3654), riseDelay: 0.40),
-    _Building(wx: -5.5, wz: -3.5, targetHeight: 2.5, width: 0.9, depth: 0.9,
-        color: Color(0xFF2C3654), riseDelay: 0.42),
-    _Building(wx: 0.0, wz: 5.5, targetHeight: 2, width: 0.9, depth: 0.9,
-        color: Color(0xFF2C3654), riseDelay: 0.38),
-    _Building(wx: -1.5, wz: -4.5, targetHeight: 2, width: 0.9, depth: 0.9,
-        color: Color(0xFF2C3654), riseDelay: 0.40),
   ];
 
   @override
@@ -387,18 +350,78 @@ class _IsoCityPainter extends CustomPainter {
     _drawGround(canvas, project, scale);
     _drawHanRiver(canvas, project, scale);
 
-    // 빌딩 — depth 정렬 (먼 것 = wx+wz 큰 것 부터 = 화면상 위쪽).
-    final sorted = [..._buildings]
-      ..sort((a, b) => (b.wx + b.wz).compareTo(a.wx + a.wz));
+    // 5개 빌딩 모두 wx+wz=0 (같은 깊이) 라 occlusion 무관, 그래도 wx 기준 정렬
+    // (back-to-front = 작은 wx 가 화면 좌측 = 좌→우 paint).
+    final sorted = [..._buildings]..sort((a, b) => a.wx.compareTo(b.wx));
+
     for (final b in sorted) {
-      // 각 빌딩의 로컬 진행도.
-      final localT = ((progress - b.riseDelay) / 0.5).clamp(0.0, 1.0);
-      if (localT <= 0) continue;
+      // 명시 riseDelay 후 0.40 progress 동안 솟아오름.
+      final localT = ((progress - b.riseDelay) / 0.40).clamp(0.0, 1.0);
+      if (localT <= 0) continue; // 아직 안 솟은 빌딩은 footprint 도 안 그림.
       final easedT = 1 - math.pow(1 - localT, 3).toDouble();
       final h = b.targetHeight * easedT;
-      if (h < 0.05) continue;
-      _drawCuboid(canvas, project, b, h);
+      if (h < 0.08) {
+        _drawFootprint(canvas, project, b, 1.0);
+      } else {
+        _drawGroundShadow(canvas, project, b, h);
+        _drawCuboid(canvas, project, b, h);
+      }
     }
+  }
+
+  /// 빌딩 바닥 그림자 (ambient occlusion) — footprint 보다 살짝 크고 어두운 폴리곤.
+  /// 빌딩을 지면에 anchor 시킴.
+  void _drawGroundShadow(
+    Canvas canvas,
+    Offset Function(double, double, double) project,
+    _Building b,
+    double height,
+  ) {
+    final expand = 0.18; // footprint 보다 0.18 unit 넓게 펴진 그림자.
+    final hw = b.width / 2 + expand;
+    final hd = b.depth / 2 + expand;
+    final p00 = project(b.wx - hw, 0, b.wz - hd);
+    final p10 = project(b.wx + hw, 0, b.wz - hd);
+    final p11 = project(b.wx + hw, 0, b.wz + hd);
+    final p01 = project(b.wx - hw, 0, b.wz + hd);
+    final path = Path()
+      ..moveTo(p00.dx, p00.dy)
+      ..lineTo(p10.dx, p10.dy)
+      ..lineTo(p11.dx, p11.dy)
+      ..lineTo(p01.dx, p01.dy)
+      ..close();
+    final alpha = (height / 6.0).clamp(0.15, 0.55);
+    canvas.drawPath(
+      path,
+      Paint()..color = Colors.black.withValues(alpha: alpha),
+    );
+  }
+
+  /// 평면 footprint — 빌딩 색의 평평한 폴리곤. alpha 로 fade-in 제어.
+  void _drawFootprint(
+    Canvas canvas,
+    Offset Function(double, double, double) project,
+    _Building b,
+    double alpha,
+  ) {
+    if (alpha <= 0) return;
+    final hw = b.width / 2;
+    final hd = b.depth / 2;
+    final p00 = project(b.wx - hw, 0, b.wz - hd);
+    final p10 = project(b.wx + hw, 0, b.wz - hd);
+    final p11 = project(b.wx + hw, 0, b.wz + hd);
+    final p01 = project(b.wx - hw, 0, b.wz + hd);
+    final path = Path()
+      ..moveTo(p00.dx, p00.dy)
+      ..lineTo(p10.dx, p10.dy)
+      ..lineTo(p11.dx, p11.dy)
+      ..lineTo(p01.dx, p01.dy)
+      ..close();
+    final fillColor = _shade(b.color, 0.75);
+    canvas.drawPath(
+      path,
+      Paint()..color = fillColor.withValues(alpha: fillColor.a * alpha),
+    );
   }
 
   // ── 격자 ground plane ──
@@ -469,8 +492,30 @@ class _IsoCityPainter extends CustomPainter {
     );
   }
 
-  // ── cuboid 한 채 그리기 (3 면: 우측, 정면, 윗면) ──
+  // ── cuboid 한 채 그리기 — landmark 별 분기 ──
   void _drawCuboid(
+    Canvas canvas,
+    Offset Function(double, double, double) project,
+    _Building b,
+    double height,
+  ) {
+    switch (b.kind) {
+      case _BuildingKind.nSeoulTower:
+        _drawNSeoulTower(canvas, project, b, height);
+        return;
+      case _BuildingKind.lotteTower:
+        _drawLotteTower(canvas, project, b, height);
+        return;
+      case _BuildingKind.building63:
+      case _BuildingKind.normal:
+        _drawNormalCuboid(canvas, project, b, height);
+        return;
+    }
+  }
+
+  /// 일반 cuboid — 3면 + 강한 face contrast + window grid + 랜덤 lit window +
+  /// 모든 visible edge highlight + 모서리 vertical rim light.
+  void _drawNormalCuboid(
     Canvas canvas,
     Offset Function(double, double, double) project,
     _Building b,
@@ -479,7 +524,6 @@ class _IsoCityPainter extends CustomPainter {
     final hw = b.width / 2;
     final hd = b.depth / 2;
 
-    // 7 visible 모서리 (back-bottom 모서리 p000 은 항상 가려짐).
     final p100 = project(b.wx + hw, 0, b.wz - hd);
     final p001 = project(b.wx - hw, 0, b.wz + hd);
     final p101 = project(b.wx + hw, 0, b.wz + hd);
@@ -488,67 +532,331 @@ class _IsoCityPainter extends CustomPainter {
     final p011 = project(b.wx - hw, height, b.wz + hd);
     final p111 = project(b.wx + hw, height, b.wz + hd);
 
-    // 면 색 — 윗면 brightest, 우측 mid, 정면(앞) darkest.
-    final topColor = _shade(b.color, 1.0);
-    final rightColor = _shade(b.color, 0.65);
-    final frontColor = _shade(b.color, 0.45);
+    // 강한 face contrast — 윗면 매우 밝게, 정면 매우 어둡게.
+    final topColor = _shade(b.color, 1.20);
+    final rightColor = _shade(b.color, 0.82);
+    final frontColor = _shade(b.color, 0.42);
 
-    // 정면 (남쪽 face — z+ 방향).
-    final front = Path()
+    // 정면 — 위 → 아래 vertical gradient.
+    final frontPath = Path()
       ..moveTo(p001.dx, p001.dy)
       ..lineTo(p101.dx, p101.dy)
       ..lineTo(p111.dx, p111.dy)
       ..lineTo(p011.dx, p011.dy)
       ..close();
-    canvas.drawPath(front, Paint()..color = frontColor);
+    canvas.drawPath(
+      frontPath,
+      Paint()
+        ..shader = ui.Gradient.linear(
+          Offset((p011.dx + p111.dx) / 2, (p011.dy + p111.dy) / 2),
+          Offset((p001.dx + p101.dx) / 2, (p001.dy + p101.dy) / 2),
+          [frontColor, _shade(frontColor, 0.65)],
+        ),
+    );
 
-    // 우측 (동쪽 face — x+ 방향).
-    final right = Path()
+    // 우측 — 같은 패턴.
+    final rightPath = Path()
       ..moveTo(p100.dx, p100.dy)
       ..lineTo(p101.dx, p101.dy)
       ..lineTo(p111.dx, p111.dy)
       ..lineTo(p110.dx, p110.dy)
       ..close();
-    canvas.drawPath(right, Paint()..color = rightColor);
+    canvas.drawPath(
+      rightPath,
+      Paint()
+        ..shader = ui.Gradient.linear(
+          Offset((p110.dx + p111.dx) / 2, (p110.dy + p111.dy) / 2),
+          Offset((p100.dx + p101.dx) / 2, (p100.dy + p101.dy) / 2),
+          [rightColor, _shade(rightColor, 0.65)],
+        ),
+    );
 
     // 윗면.
-    final top = Path()
+    final topPath = Path()
       ..moveTo(p010.dx, p010.dy)
       ..lineTo(p110.dx, p110.dy)
       ..lineTo(p111.dx, p111.dy)
       ..lineTo(p011.dx, p011.dy)
       ..close();
-    canvas.drawPath(top, Paint()..color = topColor);
+    canvas.drawPath(topPath, Paint()..color = topColor);
 
-    // (모서리 stroke 제거 — 23 빌딩 × 2 stroke pass = 46 draw call 절감.
-    // 시각 차이 미미하고, 윗면/우측 면의 _shade 차이로 모서리 라인 자체가
-    // 자연스럽게 보인다.)
+    // Window grid + lit windows — face 1.5 unit 이상에서만.
+    if (height > 1.5) {
+      // 정면 (남쪽 face): bl=p001, br=p101, tr=p111, tl=p011
+      _drawWindowGrid(canvas, p001, p101, p111, p011, height, b.width,
+          frontColor, _seedFor(b, 0));
+      // 우측 (동쪽 face): bl=p100, br=p101, tr=p111, tl=p110
+      _drawWindowGrid(canvas, p100, p101, p111, p110, height, b.depth,
+          rightColor, _seedFor(b, 1));
+    }
 
-    // 랜드마크 — 꼭대기 글로우. blur 대신 동심원 alpha 계단으로 글로우 표현
-    // (iOS Impeller jank 회피).
-    if (b.isLandmark) {
-      final topCenter = project(b.wx, height, b.wz);
-      canvas.drawCircle(
-        topCenter, 18,
-        Paint()..color = b.color.withValues(alpha: 0.10),
+    // Top edge highlight — 윗면 가장자리 + 수직 모서리 rim light (3 visible).
+    final topEdge = Paint()
+      ..color = _shade(b.color, 1.45).withValues(alpha: 0.95)
+      ..strokeWidth = 1.0
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+    canvas.drawLine(p010, p110, topEdge);
+    canvas.drawLine(p110, p111, topEdge);
+    canvas.drawLine(p111, p011, topEdge);
+
+    // 수직 rim — front-right 모서리만 highlight (가장 light-facing).
+    final rim = Paint()
+      ..color = _shade(b.color, 1.25).withValues(alpha: 0.7)
+      ..strokeWidth = 0.7
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+    canvas.drawLine(p101, p111, rim);
+  }
+
+  /// 빌딩 위치 기반 deterministic seed — lit window 패턴 고정 (매 프레임 동일).
+  int _seedFor(_Building b, int faceIdx) =>
+      (b.wx * 137 + b.wz * 53 + faceIdx * 19).toInt() + 1000;
+
+  /// Window grid — face 위에 수직 + 수평 라인 그리고, 일부 셀에 lit dot.
+  /// faceWidth 는 월드 단위 가로 길이 (정면 = b.width, 우측 = b.depth).
+  void _drawWindowGrid(
+    Canvas canvas,
+    Offset a, Offset b, Offset c, Offset d,
+    double height,
+    double faceWidth,
+    Color faceColor,
+    int seed,
+  ) {
+    // 0.45 unit 당 1 floor, 0.4 unit 당 1 column.
+    final floorCount = (height / 0.45).clamp(2, 14).toInt();
+    final colCount = (faceWidth / 0.32).clamp(2, 6).toInt();
+
+    final linePaint = Paint()
+      ..color = _shade(faceColor, 0.55).withValues(alpha: 0.65)
+      ..strokeWidth = 0.45
+      ..strokeCap = StrokeCap.round;
+
+    // 수평 floor 라인.
+    for (int j = 1; j <= floorCount; j++) {
+      final t = j / (floorCount + 1);
+      final pLeft = Offset.lerp(a, d, t)!;
+      final pRight = Offset.lerp(b, c, t)!;
+      canvas.drawLine(pLeft, pRight, linePaint);
+    }
+    // 수직 column 라인.
+    for (int i = 1; i <= colCount; i++) {
+      final t = i / (colCount + 1);
+      final pBot = Offset.lerp(a, b, t)!;
+      final pTop = Offset.lerp(d, c, t)!;
+      canvas.drawLine(pBot, pTop, linePaint);
+    }
+
+    // Lit windows — 일부 셀에 작은 warm 빛. deterministic seed 로 stable.
+    final rng = math.Random(seed);
+    final litPaint = Paint()..color = const Color(0xFFFFD080);
+    final litGlow = Paint()
+      ..color = const Color(0xFFFFD080).withValues(alpha: 0.25);
+    for (int j = 0; j < floorCount; j++) {
+      for (int i = 0; i < colCount; i++) {
+        if (rng.nextDouble() < 0.18) {
+          // 셀 중심 위치 — 양방향 bilinear interp.
+          final u = (i + 0.5) / colCount;
+          final v = (j + 0.5) / floorCount;
+          // 위쪽(v=1) ↔ 아래쪽(v=0) lerp on horizontal.
+          final bottomEdgePt = Offset.lerp(a, b, u)!;
+          final topEdgePt = Offset.lerp(d, c, u)!;
+          final cell = Offset.lerp(bottomEdgePt, topEdgePt, v)!;
+          // 글로우 + 코어.
+          canvas.drawCircle(cell, 1.6, litGlow);
+          canvas.drawCircle(cell, 0.9, litPaint);
+        }
+      }
+    }
+  }
+
+  /// N서울타워: 가는 기둥 (0~75%) + 관측대 dome (75~87%) + 안테나 (87~100%).
+  /// height 가 자라면서 부위가 순차적으로 나타남. targetHeight 절대 초과 안 함.
+  void _drawNSeoulTower(
+    Canvas canvas,
+    Offset Function(double, double, double) project,
+    _Building b,
+    double height,
+  ) {
+    final th = b.targetHeight;
+    // 1) 기둥 — y 0 ~ 0.75*th. 처음에는 height 만큼만 자람.
+    final pillarTop = math.min(height, th * 0.75);
+    if (pillarTop > 0.02) {
+      _drawCuboidAt(canvas, project, b, 0, pillarTop);
+    }
+
+    // 2) Dome — y 0.75*th ~ 0.87*th. 기둥 다 자란 뒤 등장.
+    if (height > th * 0.75) {
+      final domeBase = th * 0.75;
+      final domeTop = math.min(height, th * 0.87);
+      final domeH = domeTop - domeBase;
+      final domeBldg = _Building(
+        wx: b.wx, wz: b.wz,
+        targetHeight: domeH,
+        width: b.width * 2.6, depth: b.depth * 2.6,
+        color: _shade(b.color, 0.95),
+        riseDelay: 0,
       );
-      canvas.drawCircle(
-        topCenter, 12,
-        Paint()..color = b.color.withValues(alpha: 0.25),
+      _drawCuboidAt(canvas, project, domeBldg, domeBase, domeH);
+    }
+
+    // 3) 안테나 — y 0.87*th ~ th. dome 다 자란 뒤 등장.
+    if (height > th * 0.87) {
+      final antBase = th * 0.87;
+      final antTop = math.min(height, th);
+      final base = project(b.wx, antBase, b.wz);
+      final top = project(b.wx, antTop, b.wz);
+      canvas.drawLine(
+        base, top,
+        Paint()
+          ..color = b.color
+          ..strokeWidth = 1.5
+          ..strokeCap = StrokeCap.round,
       );
-      canvas.drawCircle(
-        topCenter, 7,
-        Paint()..color = b.color.withValues(alpha: 0.55),
+      // 끝 광점 — 안테나 다 자란 후에만.
+      if (antTop >= th * 0.99) {
+        canvas.drawCircle(top, 2.5, Paint()..color = b.color);
+        canvas.drawCircle(
+          top, 1.2,
+          Paint()..color = Colors.white.withValues(alpha: 0.95),
+        );
+      }
+    }
+  }
+
+  /// 롯데타워: 위로 갈수록 좁아지는 tapered 4-stage tower.
+  void _drawLotteTower(
+    Canvas canvas,
+    Offset Function(double, double, double) project,
+    _Building b,
+    double height,
+  ) {
+    // 4단으로 쪼개서 각 단마다 width 가 작아짐.
+    const stages = 4;
+    for (int i = 0; i < stages; i++) {
+      final stageBaseT = i / stages;
+      final stageTopT = (i + 1) / stages;
+      if (height * stageBaseT > height) break;
+      final stageBaseY = b.targetHeight * stageBaseT;
+      if (height < stageBaseY) break;
+      final stageH = math.min(
+        height - stageBaseY,
+        b.targetHeight * (stageTopT - stageBaseT),
       );
+      // width: 1.0 → 0.55 점진적 감소.
+      final widthFactor = 1.0 - stageBaseT * 0.45;
+      final stageBldg = _Building(
+        wx: b.wx, wz: b.wz,
+        targetHeight: stageH,
+        width: b.width * widthFactor,
+        depth: b.depth * widthFactor,
+        color: b.color,
+        riseDelay: 0,
+      );
+      _drawCuboidAt(canvas, project, stageBldg, stageBaseY, stageH);
+    }
+    // 꼭대기 점 highlight.
+    if (height >= b.targetHeight * 0.95) {
+      final top = project(b.wx, height, b.wz);
       canvas.drawCircle(
-        topCenter, 4,
+        top, 2.5,
         Paint()..color = b.color,
       );
-      canvas.drawCircle(
-        topCenter, 2,
-        Paint()..color = Colors.white.withValues(alpha: 0.95),
-      );
     }
+  }
+
+  /// cuboid 를 임의의 y offset 부터 그림 — _drawNormalCuboid 와 동일한 품질
+  /// (gradient + window grid + edge highlight + rim light) but base y 가 자유.
+  void _drawCuboidAt(
+    Canvas canvas,
+    Offset Function(double, double, double) project,
+    _Building b,
+    double baseY,
+    double height,
+  ) {
+    if (height < 0.02) return;
+    final hw = b.width / 2;
+    final hd = b.depth / 2;
+    final topY = baseY + height;
+
+    final p100 = project(b.wx + hw, baseY, b.wz - hd);
+    final p001 = project(b.wx - hw, baseY, b.wz + hd);
+    final p101 = project(b.wx + hw, baseY, b.wz + hd);
+    final p010 = project(b.wx - hw, topY, b.wz - hd);
+    final p110 = project(b.wx + hw, topY, b.wz - hd);
+    final p011 = project(b.wx - hw, topY, b.wz + hd);
+    final p111 = project(b.wx + hw, topY, b.wz + hd);
+
+    final topColor = _shade(b.color, 1.20);
+    final rightColor = _shade(b.color, 0.82);
+    final frontColor = _shade(b.color, 0.42);
+
+    final frontPath = Path()
+      ..moveTo(p001.dx, p001.dy)
+      ..lineTo(p101.dx, p101.dy)
+      ..lineTo(p111.dx, p111.dy)
+      ..lineTo(p011.dx, p011.dy)
+      ..close();
+    canvas.drawPath(
+      frontPath,
+      Paint()
+        ..shader = ui.Gradient.linear(
+          Offset((p011.dx + p111.dx) / 2, (p011.dy + p111.dy) / 2),
+          Offset((p001.dx + p101.dx) / 2, (p001.dy + p101.dy) / 2),
+          [frontColor, _shade(frontColor, 0.65)],
+        ),
+    );
+
+    final rightPath = Path()
+      ..moveTo(p100.dx, p100.dy)
+      ..lineTo(p101.dx, p101.dy)
+      ..lineTo(p111.dx, p111.dy)
+      ..lineTo(p110.dx, p110.dy)
+      ..close();
+    canvas.drawPath(
+      rightPath,
+      Paint()
+        ..shader = ui.Gradient.linear(
+          Offset((p110.dx + p111.dx) / 2, (p110.dy + p111.dy) / 2),
+          Offset((p100.dx + p101.dx) / 2, (p100.dy + p101.dy) / 2),
+          [rightColor, _shade(rightColor, 0.65)],
+        ),
+    );
+
+    final topPath = Path()
+      ..moveTo(p010.dx, p010.dy)
+      ..lineTo(p110.dx, p110.dy)
+      ..lineTo(p111.dx, p111.dy)
+      ..lineTo(p011.dx, p011.dy)
+      ..close();
+    canvas.drawPath(topPath, Paint()..color = topColor);
+
+    // Window grid — face width 0.5+ 이고 height 1.0+ 일 때만.
+    if (height > 1.0 && b.width > 0.5 && b.depth > 0.5) {
+      _drawWindowGrid(canvas, p001, p101, p111, p011, height, b.width,
+          frontColor, _seedFor(b, baseY.round() * 7));
+      _drawWindowGrid(canvas, p100, p101, p111, p110, height, b.depth,
+          rightColor, _seedFor(b, baseY.round() * 7 + 1));
+    }
+
+    // Top edge + 수직 rim.
+    final topEdge = Paint()
+      ..color = _shade(b.color, 1.45).withValues(alpha: 0.95)
+      ..strokeWidth = 1.0
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+    canvas.drawLine(p010, p110, topEdge);
+    canvas.drawLine(p110, p111, topEdge);
+    canvas.drawLine(p111, p011, topEdge);
+
+    final rim = Paint()
+      ..color = _shade(b.color, 1.25).withValues(alpha: 0.7)
+      ..strokeWidth = 0.7
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+    canvas.drawLine(p101, p111, rim);
   }
 
   /// 색 brightness 조절 — alpha 유지.

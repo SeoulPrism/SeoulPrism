@@ -61,6 +61,45 @@ class _SeoulLivePageState extends State<SeoulLivePage> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Seoul Live 활성화 후 사용 가능 — 보라 배지.
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF7C5CFF).withValues(alpha: 0.22),
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(
+                      color: const Color(0xFF7C5CFF).withValues(alpha: 0.55),
+                      width: 1,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.lock_outline_rounded,
+                          size: 12, color: Color(0xFFB6A8FF)),
+                      const SizedBox(width: 5),
+                      Text(
+                        l.liveActivationHint,
+                        style: const TextStyle(
+                          color: Color(0xFFE0D6FF),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.1,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+                    .animate()
+                    .slideX(
+                      begin: -0.2,
+                      end: 0,
+                      duration: 420.ms,
+                      curve: Curves.easeOutCubic,
+                      delay: 60.ms,
+                    )
+                    .fadeIn(duration: 320.ms, delay: 60.ms),
+                const SizedBox(height: 8),
                 Text(
                   l.liveMeetTitle,
                   style: AppTypography.displayLg.copyWith(

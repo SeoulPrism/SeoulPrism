@@ -59,8 +59,10 @@ const _sceneCameras = <_Scene, _SceneCamera>{
   _Scene.riverBus: _SceneCamera(lat: 37.5310, lng: 126.9367, zoom: 14.6, pitch: 65, bearing: 90),
   // 인천공항 — 비행기는 빠르게 움직이므로 더 줌인 + pitch 살짝 낮춰 비행 동선 잘 보이게.
   _Scene.flight: _SceneCamera(lat: 37.4486, lng: 126.4505, zoom: 15.6, pitch: 60, bearing: 25),
-  // Seoul Live — 명동/홍대 부근. 차량 follow 없이 정적 카메라 (친구 dot 데모는 위 오버레이에서).
-  _Scene.liveMeet: _SceneCamera(lat: 37.5563, lng: 126.9236, zoom: 14.5, pitch: 50, bearing: -10),
+  // Seoul Live — 광화문 광장. 친구 dot 데모(화면 좌표) 가 빌딩에 묻히지 않게
+  // 광장 빈 공간 + 경복궁 위주의 시야로. pitch 55 로 살짝 낮춰 dot 가 빌딩
+  // 입면에 가려지는 일을 줄임 (3D extrusion 은 zoom 16 + pitch 55 에서도 충분히 보임).
+  _Scene.liveMeet: _SceneCamera(lat: 37.5731, lng: 126.9763, zoom: 16.0, pitch: 55, bearing: 0),
 };
 
 /// 온보딩 백그라운드 — 실제 MapboxEngine + 실 컨트롤러 (실시간 데이터 + 3D 렌더).

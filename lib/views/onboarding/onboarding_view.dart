@@ -147,7 +147,9 @@ class _OnboardingViewState extends State<OnboardingView>
 
   bool get _isMapVisiblePage {
     final id = widget.pages[_progress.round().clamp(0, widget.pages.length - 1)].id;
-    return id == LivingCityPage.id || id == SeoulLivePage.id;
+    return id == LivingCityPage.id ||
+        id == SeoulLivePage.id ||
+        id == AiCompanionPage.id;
   }
 
   Widget _buildBackdropOverlay() {
