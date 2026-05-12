@@ -963,6 +963,15 @@ class AppL10nZh extends AppL10n {
   String get settingsResetTutorial => '重新查看引导';
 
   @override
+  String get settingsDeveloperModeEnabled => '已启用开发者模式';
+
+  @override
+  String get settingsDeveloperModeDisabled => '已关闭开发者模式';
+
+  @override
+  String get settingsDeveloperModeDisable => '关闭开发者模式';
+
+  @override
   String get settingsReplayWhatsNew => '重新查看新功能';
 
   @override
@@ -1590,6 +1599,52 @@ class AppL10nZh extends AppL10n {
 
   @override
   String get roomDestClear => '取消目的地';
+
+  @override
+  String get roomOwnerBadge => '房主';
+
+  @override
+  String get roomDestOwnerOnly => '只有房主可以设定';
+
+  @override
+  String get roomDestSearchHint => '在哪里集合？';
+
+  @override
+  String get roomDestSearchAction => '搜索';
+
+  @override
+  String get roomDestSearchEmpty => '没有结果';
+
+  @override
+  String get roomDestSearchSearching => '搜索中…';
+
+  @override
+  String get roomDestProposeVote => '投票决定';
+
+  @override
+  String get roomDestSetNow => '立即设定';
+
+  @override
+  String get roomDestProposalVoting => '投票进行中';
+
+  @override
+  String roomDestProposalBy(String name) {
+    return '$name 提议';
+  }
+
+  @override
+  String roomDestProposalCounts(int yes, int no) {
+    return '赞成 $yes · 反对 $no';
+  }
+
+  @override
+  String get roomDestVoteYes => '赞成';
+
+  @override
+  String get roomDestVoteNo => '反对';
+
+  @override
+  String get roomDestProposalCancel => '撤销提议';
 
   @override
   String get mpSettingsTitle => 'Seoul Live 设置';
@@ -2232,7 +2287,10 @@ class AppL10nZh extends AppL10n {
   String get commonNext => '下一步';
 
   @override
-  String get welcomePageLanguagesHint => '한국어 · English · 日本語 · 中文 — AI 助手用相同语言回答';
+  String get welcomePageLanguagesHint => '한국어 · English · 日本語 · 中文 — 设置中随时切换';
+
+  @override
+  String get liveActivationHint => '启用 Seoul Live 后可用';
 
   @override
   String get liveMeetTitle => '一起出发';
@@ -2266,7 +2324,7 @@ class AppL10nZh extends AppL10n {
 
   @override
   String roomMembersNearbyHeader(int count) {
-    return '附近 ${count} 人 (500m 内)';
+    return '附近 $count 人 (500m 内)';
   }
 
   @override
@@ -2274,7 +2332,7 @@ class AppL10nZh extends AppL10n {
 
   @override
   String roomMembersSeeAllPublic(int count) {
-    return '查看全部 (${count} 人)';
+    return '查看全部 ($count 人)';
   }
 
   @override
@@ -2282,7 +2340,7 @@ class AppL10nZh extends AppL10n {
 
   @override
   String liveBadgeSharingPublic(int count) {
-    return '对 ${count} 人公开中';
+    return '对 $count 人公开中';
   }
 
   @override
@@ -3732,4 +3790,55 @@ class AppL10nZh extends AppL10n {
 
   @override
   String get qualityPresetLowDetail => '10 fps · 特效关闭';
+
+  @override
+  String get commonReset => '重置';
+
+  @override
+  String get profileResetFavoritesTitle => '重置收藏';
+
+  @override
+  String get profileResetFavoritesBody => '所有已保存的收藏将被删除。此操作无法撤销。';
+
+  @override
+  String get profileResetFavoritesToast => '已重置收藏';
+
+  @override
+  String get profileResetVisitsTitle => '重置访问记录';
+
+  @override
+  String get profileResetVisitsBody => '最近访问和常去地点的记录将一起删除。此操作无法撤销。';
+
+  @override
+  String get profileResetVisitsToast => '已清除访问记录';
+
+  @override
+  String get settingsSectionWeather => '天气';
+
+  @override
+  String get settingsAutoWeather => '自动 (实时天气)';
+
+  @override
+  String get settingsWeatherOverride => '天气状况';
+
+  @override
+  String get weatherClear => '晴';
+
+  @override
+  String get weatherCloudy => '多云';
+
+  @override
+  String get weatherRain => '雨';
+
+  @override
+  String get weatherDrizzle => '毛毛雨';
+
+  @override
+  String get weatherSnow => '雪';
+
+  @override
+  String get weatherFog => '雾';
+
+  @override
+  String get weatherThunderstorm => '雷雨';
 }

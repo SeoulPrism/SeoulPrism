@@ -972,6 +972,15 @@ class AppL10nJa extends AppL10n {
   String get settingsResetTutorial => 'チュートリアルを再生';
 
   @override
+  String get settingsDeveloperModeEnabled => 'デベロッパーモードが有効になりました';
+
+  @override
+  String get settingsDeveloperModeDisabled => 'デベロッパーモードを無効にしました';
+
+  @override
+  String get settingsDeveloperModeDisable => 'デベロッパーモードをオフ';
+
+  @override
   String get settingsReplayWhatsNew => '新機能の案内をもう一度';
 
   @override
@@ -1602,6 +1611,52 @@ class AppL10nJa extends AppL10n {
 
   @override
   String get roomDestClear => '目的地を解除';
+
+  @override
+  String get roomOwnerBadge => 'オーナー';
+
+  @override
+  String get roomDestOwnerOnly => 'オーナーだけが設定できます';
+
+  @override
+  String get roomDestSearchHint => 'どこで集まる？';
+
+  @override
+  String get roomDestSearchAction => '検索';
+
+  @override
+  String get roomDestSearchEmpty => '結果がありません';
+
+  @override
+  String get roomDestSearchSearching => '検索中…';
+
+  @override
+  String get roomDestProposeVote => '投票で決める';
+
+  @override
+  String get roomDestSetNow => 'すぐ確定';
+
+  @override
+  String get roomDestProposalVoting => '投票中';
+
+  @override
+  String roomDestProposalBy(String name) {
+    return '$name さんが提案';
+  }
+
+  @override
+  String roomDestProposalCounts(int yes, int no) {
+    return '賛成 $yes · 反対 $no';
+  }
+
+  @override
+  String get roomDestVoteYes => '賛成';
+
+  @override
+  String get roomDestVoteNo => '反対';
+
+  @override
+  String get roomDestProposalCancel => '候補を取り消し';
 
   @override
   String get mpSettingsTitle => 'Seoul Live 設定';
@@ -2250,13 +2305,18 @@ class AppL10nJa extends AppL10n {
   String get commonNext => '次へ';
 
   @override
-  String get welcomePageLanguagesHint => '한국어 · English · 日本語 · 中文 — AI が同じ言語で答えます';
+  String get welcomePageLanguagesHint =>
+      '한국어 · English · 日本語 · 中文 — 設定でいつでも切り替えできます';
+
+  @override
+  String get liveActivationHint => 'Seoul Live を有効にすると使えます';
 
   @override
   String get liveMeetTitle => '一緒に行く';
 
   @override
-  String get liveMeetBody => 'ルームで共通の目的地を決めるとメンバーごとの距離がリアルタイムで表示。マップにはオレンジのピンが自動で。';
+  String get liveMeetBody =>
+      'ルームで共通の目的地を決めるとメンバーごとの距離がリアルタイムで表示。マップにはオレンジのピンが自動で。';
 
   @override
   String get liveDmHint => '1:1 DM · 音声 · 写真 · 位置';
@@ -2274,7 +2334,8 @@ class AppL10nJa extends AppL10n {
   String get aiVoiceTitle => '声で聞いて声で答える';
 
   @override
-  String get aiVoiceBody => 'AI アシスタントと音声で自然に。検索・道案内・おすすめも音声で。Gemini Live が聞いてすぐ答えます。';
+  String get aiVoiceBody =>
+      'AI アシスタントと音声で自然に。検索・道案内・おすすめも音声で。Gemini Live が聞いてすぐ答えます。';
 
   @override
   String get aiDayPlanHint => '保存した場所で一日プランを自動生成';
@@ -2284,7 +2345,7 @@ class AppL10nJa extends AppL10n {
 
   @override
   String roomMembersNearbyHeader(int count) {
-    return '周辺 ${count}人 (500m 以内)';
+    return '周辺 $count人 (500m 以内)';
   }
 
   @override
@@ -2292,7 +2353,7 @@ class AppL10nJa extends AppL10n {
 
   @override
   String roomMembersSeeAllPublic(int count) {
-    return '全体を見る (${count}人)';
+    return '全体を見る ($count人)';
   }
 
   @override
@@ -2300,7 +2361,7 @@ class AppL10nJa extends AppL10n {
 
   @override
   String liveBadgeSharingPublic(int count) {
-    return '${count}人に公開中';
+    return '$count人に公開中';
   }
 
   @override
@@ -3756,4 +3817,56 @@ class AppL10nJa extends AppL10n {
 
   @override
   String get qualityPresetLowDetail => '10 fps · 効果 OFF';
+
+  @override
+  String get commonReset => 'リセット';
+
+  @override
+  String get profileResetFavoritesTitle => 'お気に入りをリセット';
+
+  @override
+  String get profileResetFavoritesBody => '保存されたお気に入りがすべて削除されます。この操作は取り消せません。';
+
+  @override
+  String get profileResetFavoritesToast => 'お気に入りをリセットしました';
+
+  @override
+  String get profileResetVisitsTitle => '訪問履歴をリセット';
+
+  @override
+  String get profileResetVisitsBody =>
+      '最近の訪問と頻繁な訪問の履歴がすべて一緒に削除されます。この操作は取り消せません。';
+
+  @override
+  String get profileResetVisitsToast => '訪問履歴をリセットしました';
+
+  @override
+  String get settingsSectionWeather => '天気';
+
+  @override
+  String get settingsAutoWeather => '自動 (リアルタイム天気)';
+
+  @override
+  String get settingsWeatherOverride => '天気の状態';
+
+  @override
+  String get weatherClear => '晴れ';
+
+  @override
+  String get weatherCloudy => '曇り';
+
+  @override
+  String get weatherRain => '雨';
+
+  @override
+  String get weatherDrizzle => '霧雨';
+
+  @override
+  String get weatherSnow => '雪';
+
+  @override
+  String get weatherFog => '霧';
+
+  @override
+  String get weatherThunderstorm => '雷雨';
 }

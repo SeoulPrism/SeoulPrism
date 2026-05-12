@@ -1805,6 +1805,24 @@ abstract class AppL10n {
   /// **'Replay tutorial'**
   String get settingsResetTutorial;
 
+  /// No description provided for @settingsDeveloperModeEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Developer mode enabled'**
+  String get settingsDeveloperModeEnabled;
+
+  /// No description provided for @settingsDeveloperModeDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Developer mode disabled'**
+  String get settingsDeveloperModeDisabled;
+
+  /// No description provided for @settingsDeveloperModeDisable.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn off developer mode'**
+  String get settingsDeveloperModeDisable;
+
   /// No description provided for @settingsReplayWhatsNew.
   ///
   /// In en, this message translates to:
@@ -2950,6 +2968,90 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Clear destination'**
   String get roomDestClear;
+
+  /// No description provided for @roomOwnerBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Owner'**
+  String get roomOwnerBadge;
+
+  /// No description provided for @roomDestOwnerOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Only the owner can set this'**
+  String get roomDestOwnerOnly;
+
+  /// No description provided for @roomDestSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Where should we meet?'**
+  String get roomDestSearchHint;
+
+  /// No description provided for @roomDestSearchAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Search'**
+  String get roomDestSearchAction;
+
+  /// No description provided for @roomDestSearchEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No results'**
+  String get roomDestSearchEmpty;
+
+  /// No description provided for @roomDestSearchSearching.
+  ///
+  /// In en, this message translates to:
+  /// **'Searching…'**
+  String get roomDestSearchSearching;
+
+  /// No description provided for @roomDestProposeVote.
+  ///
+  /// In en, this message translates to:
+  /// **'Put to a vote'**
+  String get roomDestProposeVote;
+
+  /// No description provided for @roomDestSetNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Set now'**
+  String get roomDestSetNow;
+
+  /// No description provided for @roomDestProposalVoting.
+  ///
+  /// In en, this message translates to:
+  /// **'Voting in progress'**
+  String get roomDestProposalVoting;
+
+  /// No description provided for @roomDestProposalBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Proposed by {name}'**
+  String roomDestProposalBy(String name);
+
+  /// No description provided for @roomDestProposalCounts.
+  ///
+  /// In en, this message translates to:
+  /// **'Yes {yes} · No {no}'**
+  String roomDestProposalCounts(int yes, int no);
+
+  /// No description provided for @roomDestVoteYes.
+  ///
+  /// In en, this message translates to:
+  /// **'Yes'**
+  String get roomDestVoteYes;
+
+  /// No description provided for @roomDestVoteNo.
+  ///
+  /// In en, this message translates to:
+  /// **'No'**
+  String get roomDestVoteNo;
+
+  /// No description provided for @roomDestProposalCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel proposal'**
+  String get roomDestProposalCancel;
 
   /// No description provided for @mpSettingsTitle.
   ///
@@ -4142,8 +4244,14 @@ abstract class AppL10n {
   /// No description provided for @welcomePageLanguagesHint.
   ///
   /// In en, this message translates to:
-  /// **'한국어 · English · 日本語 · 中文 — The AI replies in your language'**
+  /// **'한국어 · English · 日本語 · 中文 — Switch anytime in settings'**
   String get welcomePageLanguagesHint;
+
+  /// No description provided for @liveActivationHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Available after enabling Seoul Live'**
+  String get liveActivationHint;
 
   /// No description provided for @liveMeetTitle.
   ///
@@ -4232,7 +4340,7 @@ abstract class AppL10n {
   /// No description provided for @liveBadgeSharingPublic.
   ///
   /// In en, this message translates to:
-  /// **'Visible to {count} people'**
+  /// **'Visible to {count} {count, plural, one{person} other{people}}'**
   String liveBadgeSharingPublic(int count);
 
   /// No description provided for @roomMembersDisconnected.
@@ -6838,6 +6946,108 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'10 fps · effects off'**
   String get qualityPresetLowDetail;
+
+  /// No description provided for @commonReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset'**
+  String get commonReset;
+
+  /// No description provided for @profileResetFavoritesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset favorites'**
+  String get profileResetFavoritesTitle;
+
+  /// No description provided for @profileResetFavoritesBody.
+  ///
+  /// In en, this message translates to:
+  /// **'All saved favorites will be removed. This cannot be undone.'**
+  String get profileResetFavoritesBody;
+
+  /// No description provided for @profileResetFavoritesToast.
+  ///
+  /// In en, this message translates to:
+  /// **'Favorites cleared'**
+  String get profileResetFavoritesToast;
+
+  /// No description provided for @profileResetVisitsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset visit history'**
+  String get profileResetVisitsTitle;
+
+  /// No description provided for @profileResetVisitsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Both recent and frequent visit records will be cleared together. This cannot be undone.'**
+  String get profileResetVisitsBody;
+
+  /// No description provided for @profileResetVisitsToast.
+  ///
+  /// In en, this message translates to:
+  /// **'Visit history cleared'**
+  String get profileResetVisitsToast;
+
+  /// No description provided for @settingsSectionWeather.
+  ///
+  /// In en, this message translates to:
+  /// **'Weather'**
+  String get settingsSectionWeather;
+
+  /// No description provided for @settingsAutoWeather.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto (live weather)'**
+  String get settingsAutoWeather;
+
+  /// No description provided for @settingsWeatherOverride.
+  ///
+  /// In en, this message translates to:
+  /// **'Weather condition'**
+  String get settingsWeatherOverride;
+
+  /// No description provided for @weatherClear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get weatherClear;
+
+  /// No description provided for @weatherCloudy.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloudy'**
+  String get weatherCloudy;
+
+  /// No description provided for @weatherRain.
+  ///
+  /// In en, this message translates to:
+  /// **'Rain'**
+  String get weatherRain;
+
+  /// No description provided for @weatherDrizzle.
+  ///
+  /// In en, this message translates to:
+  /// **'Drizzle'**
+  String get weatherDrizzle;
+
+  /// No description provided for @weatherSnow.
+  ///
+  /// In en, this message translates to:
+  /// **'Snow'**
+  String get weatherSnow;
+
+  /// No description provided for @weatherFog.
+  ///
+  /// In en, this message translates to:
+  /// **'Fog'**
+  String get weatherFog;
+
+  /// No description provided for @weatherThunderstorm.
+  ///
+  /// In en, this message translates to:
+  /// **'Thunderstorm'**
+  String get weatherThunderstorm;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

@@ -986,6 +986,15 @@ class AppL10nEn extends AppL10n {
   String get settingsResetTutorial => 'Replay tutorial';
 
   @override
+  String get settingsDeveloperModeEnabled => 'Developer mode enabled';
+
+  @override
+  String get settingsDeveloperModeDisabled => 'Developer mode disabled';
+
+  @override
+  String get settingsDeveloperModeDisable => 'Turn off developer mode';
+
+  @override
   String get settingsReplayWhatsNew => 'Replay What\'s New';
 
   @override
@@ -1630,6 +1639,52 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get roomDestClear => 'Clear destination';
+
+  @override
+  String get roomOwnerBadge => 'Owner';
+
+  @override
+  String get roomDestOwnerOnly => 'Only the owner can set this';
+
+  @override
+  String get roomDestSearchHint => 'Where should we meet?';
+
+  @override
+  String get roomDestSearchAction => 'Search';
+
+  @override
+  String get roomDestSearchEmpty => 'No results';
+
+  @override
+  String get roomDestSearchSearching => 'Searching…';
+
+  @override
+  String get roomDestProposeVote => 'Put to a vote';
+
+  @override
+  String get roomDestSetNow => 'Set now';
+
+  @override
+  String get roomDestProposalVoting => 'Voting in progress';
+
+  @override
+  String roomDestProposalBy(String name) {
+    return 'Proposed by $name';
+  }
+
+  @override
+  String roomDestProposalCounts(int yes, int no) {
+    return 'Yes $yes · No $no';
+  }
+
+  @override
+  String get roomDestVoteYes => 'Yes';
+
+  @override
+  String get roomDestVoteNo => 'No';
+
+  @override
+  String get roomDestProposalCancel => 'Cancel proposal';
 
   @override
   String get mpSettingsTitle => 'Seoul Live settings';
@@ -2302,13 +2357,18 @@ class AppL10nEn extends AppL10n {
   String get commonNext => 'Next';
 
   @override
-  String get welcomePageLanguagesHint => '한국어 · English · 日本語 · 中文 — The AI replies in your language';
+  String get welcomePageLanguagesHint =>
+      '한국어 · English · 日本語 · 中文 — Switch anytime in settings';
+
+  @override
+  String get liveActivationHint => 'Available after enabling Seoul Live';
 
   @override
   String get liveMeetTitle => 'Go together';
 
   @override
-  String get liveMeetBody => 'Set a shared destination in a friend room. Distances for each member update live. An orange pin lands on the map.';
+  String get liveMeetBody =>
+      'Set a shared destination in a friend room. Distances for each member update live. An orange pin lands on the map.';
 
   @override
   String get liveDmHint => '1:1 DMs · voice · photo · location';
@@ -2326,17 +2386,19 @@ class AppL10nEn extends AppL10n {
   String get aiVoiceTitle => 'Just ask out loud';
 
   @override
-  String get aiVoiceBody => 'Talk to the AI naturally. Search, navigate, get picks — by voice. Gemini Live listens and answers live.';
+  String get aiVoiceBody =>
+      'Talk to the AI naturally. Search, navigate, get picks — by voice. Gemini Live listens and answers live.';
 
   @override
   String get aiDayPlanHint => 'Turn saved places into a day plan automatically';
 
   @override
-  String get permPagePrivacyHint => 'Toggle notifications by type and share location only with chosen groups.';
+  String get permPagePrivacyHint =>
+      'Toggle notifications by type and share location only with chosen groups.';
 
   @override
   String roomMembersNearbyHeader(int count) {
-    return '${count} nearby (within 500m)';
+    return '$count nearby (within 500m)';
   }
 
   @override
@@ -2344,7 +2406,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String roomMembersSeeAllPublic(int count) {
-    return 'See all (${count})';
+    return 'See all ($count)';
   }
 
   @override
@@ -2358,7 +2420,7 @@ class AppL10nEn extends AppL10n {
       other: 'people',
       one: 'person',
     );
-    return 'Visible to ${count} ${_temp0}';
+    return 'Visible to $count $_temp0';
   }
 
   @override
@@ -3847,4 +3909,57 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get qualityPresetLowDetail => '10 fps · effects off';
+
+  @override
+  String get commonReset => 'Reset';
+
+  @override
+  String get profileResetFavoritesTitle => 'Reset favorites';
+
+  @override
+  String get profileResetFavoritesBody =>
+      'All saved favorites will be removed. This cannot be undone.';
+
+  @override
+  String get profileResetFavoritesToast => 'Favorites cleared';
+
+  @override
+  String get profileResetVisitsTitle => 'Reset visit history';
+
+  @override
+  String get profileResetVisitsBody =>
+      'Both recent and frequent visit records will be cleared together. This cannot be undone.';
+
+  @override
+  String get profileResetVisitsToast => 'Visit history cleared';
+
+  @override
+  String get settingsSectionWeather => 'Weather';
+
+  @override
+  String get settingsAutoWeather => 'Auto (live weather)';
+
+  @override
+  String get settingsWeatherOverride => 'Weather condition';
+
+  @override
+  String get weatherClear => 'Clear';
+
+  @override
+  String get weatherCloudy => 'Cloudy';
+
+  @override
+  String get weatherRain => 'Rain';
+
+  @override
+  String get weatherDrizzle => 'Drizzle';
+
+  @override
+  String get weatherSnow => 'Snow';
+
+  @override
+  String get weatherFog => 'Fog';
+
+  @override
+  String get weatherThunderstorm => 'Thunderstorm';
 }
