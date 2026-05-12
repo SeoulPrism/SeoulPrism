@@ -14,6 +14,7 @@ import '../services/user_avatar_service.dart';
 import '../services/visit_history_service.dart';
 import '../widgets/app_snackbar.dart';
 import '../widgets/profile_avatar.dart';
+import 'auth_view.dart';
 import 'notifications_view.dart';
 import 'profile/avatar_picker.dart';
 import 'settings_view.dart';
@@ -272,6 +273,24 @@ class _ProfileViewState extends State<ProfileView> {
                       color: cs.onSurfaceVariant,
                     ),
                   ),
+                  if (isGuest) ...[
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: 200,
+                      child: AdaptiveGlassButton(
+                        label: l.authTabSignIn,
+                        minHeight: 44,
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const AuthView(),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
                 ],
               );
             },
@@ -422,7 +441,13 @@ class _ProfileViewState extends State<ProfileView> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          Align(
+            alignment: Alignment.centerRight,
+            child: _buildResetButton(cs),
+          ),
+          const SizedBox(height: 4),
           ...visible,
           if (hasMore) ...[
             const SizedBox(height: 8),
@@ -430,6 +455,58 @@ class _ProfileViewState extends State<ProfileView> {
           ],
         ],
       ),
+    );
+  }
+
+  // 현재 탭 (즐겨찾기 / 최근방문 / 자주방문) 의 데이터를 초기화하는 작은 버튼.
+  // 최근/자주 방문은 동일한 저장소를 공유하므로 한 쪽을 비우면 양쪽 모두 비워진다 —
+  // 확인 다이얼로그 본문에서 그 사실을 명시.
+  Widget _buildResetButton(ColorScheme cs) {
+    final l = AppL10n.of(context);
+    return TextButton.icon(
+      onPressed: _confirmResetCurrentCategory,
+      icon: Icon(Icons.delete_sweep_outlined, size: 18, color: cs.error),
+      label: Text(
+        l.commonReset,
+        style: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          color: cs.error,
+        ),
+      ),
+      style: TextButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        minimumSize: Size.zero,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      ),
+    );
+  }
+
+  void _confirmResetCurrentCategory() {
+    final l = AppL10n.of(context);
+    final isFavorites = _selectedCategoryIndex == 0;
+    showAdaptiveConfirmDialog(
+      context: context,
+      title: isFavorites
+          ? l.profileResetFavoritesTitle
+          : l.profileResetVisitsTitle,
+      content: isFavorites
+          ? l.profileResetFavoritesBody
+          : l.profileResetVisitsBody,
+      confirmText: l.commonReset,
+      isDestructive: true,
+      onConfirm: () async {
+        if (isFavorites) {
+          await FavoritesService.instance.clear();
+        } else {
+          await VisitHistoryService.instance.clear();
+        }
+        if (!mounted) return;
+        setState(() => _expandedAll = false);
+        showAppSnackBar(isFavorites
+            ? l.profileResetFavoritesToast
+            : l.profileResetVisitsToast);
+      },
     );
   }
 
@@ -885,7 +962,7 @@ class _ProfileViewState extends State<ProfileView> {
           ),
           const SizedBox(height: 20),
           Text(
-            'Seoul Prism',
+            'Seoul Vista',
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,

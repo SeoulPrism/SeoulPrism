@@ -76,8 +76,12 @@ Future<void> main() async {
 
   // Crashlytics — debug 빌드는 보내지 않고 release 만 수집. (Firebase init 후)
   if (!kDebugMode) {
-    FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+    FlutterError.onError = (details) {
+      if (_isExpectedUserException(details.exception)) return;
+      FirebaseCrashlytics.instance.recordFlutterFatalError(details);
+    };
     PlatformDispatcher.instance.onError = (error, stack) {
+      if (_isExpectedUserException(error)) return true;
       FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
       return true;
     };
@@ -127,6 +131,17 @@ Future<void> main() async {
   DeepLinkRouter.instance.start();
 
   runApp(SeoulPrismApp(key: _appStateKey));
+}
+
+/// 사용자에게 토스트로 안내되는 의도된 throw — Crashlytics 노이즈 차단용.
+/// rate-limit, 길이 초과 등은 정상 흐름이라 fatal 로 보고하면 안 됨.
+bool _isExpectedUserException(Object error) {
+  if (error is! Exception) return false;
+  final msg = error.toString();
+  return msg.contains('너무 빨리 보내고 있어요') ||
+      msg.contains('메시지가 너무 길어요') ||
+      msg.contains('방에 입장해 있어야 해요') ||
+      msg.contains('코드가 잘못됐어요');
 }
 
 final supabase = Supabase.instance.client;
