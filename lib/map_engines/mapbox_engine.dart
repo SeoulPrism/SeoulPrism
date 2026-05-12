@@ -396,17 +396,24 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
     setLightPreset(lightPreset);
 
     // 2) Fog (안개/시정 효과) — Standard style atmosphere config
-    if (fogOpacity > 0) {
-      try {
-        // Standard style의 fog 설정 — config property 사용
-        _mapboxMap!.style.setStyleImportConfigProperty(
-          "basemap",
-          "fog",
-          fogOpacity > 0.3 ? "high" : "low",
-        );
-      } catch (e) {
-        DebugLog.log('[MapboxEngine] fog 설정 실패 (무시): $e');
+    // 항상 호출 — fogOpacity==0 일 때 "none" 으로 명시적 클리어. (이전엔 if (>0)
+    // 가드 때문에 rain → clear 전환 시 fog 가 안 지워지는 버그 있었음)
+    try {
+      final String fogLevel;
+      if (fogOpacity <= 0) {
+        fogLevel = 'none';
+      } else if (fogOpacity > 0.3) {
+        fogLevel = 'high';
+      } else {
+        fogLevel = 'low';
       }
+      _mapboxMap!.style.setStyleImportConfigProperty(
+        "basemap",
+        "fog",
+        fogLevel,
+      );
+    } catch (e) {
+      DebugLog.log('[MapboxEngine] fog 설정 실패 (무시): $e');
     }
   }
 
@@ -697,19 +704,28 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
     Color strokeColor = Colors.white,
     double strokeWidth = 2.0,
   }) async {
-    if (_circleAnnotationManager == null) return;
+    if (_disposed || _circleAnnotationManager == null) return;
 
-    await _circleAnnotationManager?.create(
-      CircleAnnotationOptions(
-        geometry: Point(coordinates: Position(lng, lat)),
-        circleColor: color.toARGB32(),
-        circleRadius: radius,
-        circleStrokeColor: strokeColor.toARGB32(),
-        circleStrokeWidth: strokeWidth,
-        circleSortKey: 10, // 노선 위에 렌더링
-      ),
-    );
-    _circleMarkerIds.add(id);
+    try {
+      await _circleAnnotationManager?.create(
+        CircleAnnotationOptions(
+          geometry: Point(coordinates: Position(lng, lat)),
+          circleColor: color.toARGB32(),
+          circleRadius: radius,
+          circleStrokeColor: strokeColor.toARGB32(),
+          circleStrokeWidth: strokeWidth,
+          circleSortKey: 10, // 노선 위에 렌더링
+        ),
+      );
+      _circleMarkerIds.add(id);
+    } catch (e) {
+      // 디스포즈 직후 잔여 호출의 channel-error 는 무시 — 화면 사라진 뒤 잔존 작업.
+      final msg = e.toString();
+      if (!msg.contains('channel-error') &&
+          !msg.contains('Unable to establish connection')) {
+        DebugLog.log('[MapboxEngine] circle marker 추가 실패: $e');
+      }
+    }
   }
 
   @override
@@ -937,18 +953,26 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
     Color color = Colors.white,
     double radius = 3.0,
   }) async {
-    if (_circleAnnotationManager == null) return;
+    if (_disposed || _circleAnnotationManager == null) return;
 
-    await _circleAnnotationManager?.create(
-      CircleAnnotationOptions(
-        geometry: Point(coordinates: Position(lng, lat)),
-        circleColor: color.toARGB32(),
-        circleRadius: radius,
-        circleStrokeColor: Colors.black.toARGB32(),
-        circleStrokeWidth: 1.0,
-        circleSortKey: 5,
-      ),
-    );
+    try {
+      await _circleAnnotationManager?.create(
+        CircleAnnotationOptions(
+          geometry: Point(coordinates: Position(lng, lat)),
+          circleColor: color.toARGB32(),
+          circleRadius: radius,
+          circleStrokeColor: Colors.black.toARGB32(),
+          circleStrokeWidth: 1.0,
+          circleSortKey: 5,
+        ),
+      );
+    } catch (e) {
+      final msg = e.toString();
+      if (!msg.contains('channel-error') &&
+          !msg.contains('Unable to establish connection')) {
+        DebugLog.log('[MapboxEngine] station marker 추가 실패: $e');
+      }
+    }
   }
 
   /// Color 밝게 만들기 (amount: 0.0~1.0)
@@ -1648,9 +1672,13 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
     try {
       await _mapboxMap!.style.setStyleSourceProperty(sourceId, 'data', geojson);
     } catch (e) {
-      // 채널 에러는 디스포즈 직후 잔여 호출. 한 번만 로그 후 추가 호출 차단.
+      // 1) 채널 에러: 디스포즈 직후 잔여 호출. 한 번만 로그 후 추가 호출 차단.
+      // 2) "is not in style": 스타일 reload 후 소스가 사라진 케이스 (또는 init
+      //    실패 후 잔여 호출). 마찬가지로 차단해야 매 프레임마다 throw 안 함.
       final msg = e.toString();
-      if (msg.contains('channel-error') || msg.contains('Unable to establish connection')) {
+      if (msg.contains('channel-error') ||
+          msg.contains('Unable to establish connection') ||
+          msg.contains('is not in style')) {
         _failedSources.add(sourceId);
         return;
       }

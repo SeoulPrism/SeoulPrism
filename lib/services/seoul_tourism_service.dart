@@ -99,9 +99,10 @@ class SeoulTourismService {
       // limit 보다 넉넉히 가져와서 진행 중 우선 필터.
       final fetch = (limit * 3).clamp(30, 100);
       final url = '$_baseUrl/$key/json/culturalEventInfo/1/$fetch/';
+      // 서울 열린데이터광장 API 는 콜드 호출/피크시간에 7~10초가 흔함 — 8초는 자주 타임아웃.
       final res = await http
           .get(Uri.parse(url))
-          .timeout(const Duration(seconds: 8));
+          .timeout(const Duration(seconds: 15));
       if (res.statusCode != 200) return _cachedEvents ?? const [];
 
       final data = jsonDecode(utf8.decode(res.bodyBytes));

@@ -36,6 +36,10 @@ class _SettingsViewState extends State<SettingsView> {
   // 'default' | 'myLocation' | 'recent'. picker 표시 시 현지화 매핑.
   String _mapHomeCode = 'default';
 
+  // 개발자 모드 이스터에그: 앱 버전 행 5회 탭 (3초 window 내).
+  int _versionTapCount = 0;
+  DateTime? _versionFirstTapAt;
+
   String _themeLabel(BuildContext ctx, String code) {
     final l = AppL10n.of(ctx);
     return code == 'light' ? l.settingsThemeLight : l.settingsThemeDark;
@@ -65,6 +69,30 @@ class _SettingsViewState extends State<SettingsView> {
       _ => l.settingsLightAuto,
     };
   }
+
+  String _weatherLabel(BuildContext ctx, String code) {
+    final l = AppL10n.of(ctx);
+    return switch (code) {
+      'clear' => l.weatherClear,
+      'cloudy' => l.weatherCloudy,
+      'rain' => l.weatherRain,
+      'drizzle' => l.weatherDrizzle,
+      'snow' => l.weatherSnow,
+      'fog' => l.weatherFog,
+      'thunderstorm' => l.weatherThunderstorm,
+      _ => l.settingsAutoWeather,
+    };
+  }
+
+  static const _kWeatherCodes = [
+    'clear',
+    'cloudy',
+    'rain',
+    'drizzle',
+    'snow',
+    'fog',
+    'thunderstorm',
+  ];
 
   static const _appLangCodes = ['system', 'ko', 'en', 'ja', 'zh'];
 
@@ -272,6 +300,49 @@ class _SettingsViewState extends State<SettingsView> {
                           final idx = labels.indexOf(v);
                           if (idx < 0) return;
                           SettingsService.instance.setLightPreset(codes[idx]);
+                          setState(() {});
+                        },
+                      );
+                    },
+                  ),
+                ],
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // Section 1.9: 날씨 (수동 오버라이드)
+            _SectionHeader(label: AppL10n.of(context).settingsSectionWeather),
+            AdaptiveSectionCard(
+              children: [
+                _SwitchItem(
+                  label: AppL10n.of(context).settingsAutoWeather,
+                  value: SettingsService.instance.weatherOverride == 'auto',
+                  onChanged: (v) {
+                    SettingsService.instance
+                        .setWeatherOverride(v ? 'auto' : 'clear');
+                    setState(() {});
+                  },
+                ),
+                if (SettingsService.instance.weatherOverride != 'auto') ...[
+                  const _ItemDivider(),
+                  _TrailingTextItem(
+                    label: AppL10n.of(context).settingsWeatherOverride,
+                    trailing:
+                        '${_weatherLabel(context, SettingsService.instance.weatherOverride)} >',
+                    onTap: () {
+                      final labels = _kWeatherCodes
+                          .map((c) => _weatherLabel(context, c))
+                          .toList();
+                      _showPicker(
+                        title: AppL10n.of(context).settingsWeatherOverride,
+                        options: labels,
+                        selected: _weatherLabel(
+                            context, SettingsService.instance.weatherOverride),
+                        onSelected: (v) {
+                          final idx = labels.indexOf(v);
+                          if (idx < 0) return;
+                          SettingsService.instance
+                              .setWeatherOverride(_kWeatherCodes[idx]);
                           setState(() {});
                         },
                       );
@@ -520,33 +591,47 @@ class _SettingsViewState extends State<SettingsView> {
             ),
             const SizedBox(height: 16),
 
-            // Section 5.5: 개발자
-            _SectionHeader(label: AppL10n.of(context).settingsSectionDeveloper),
-            AdaptiveSectionCard(
-              children: [
-                _SwitchItem(
-                  label: AppL10n.of(context).settingsDebugLogs,
-                  value: SettingsService.instance.debugLogs,
-                  onChanged: (v) {
-                    SettingsService.instance.setDebugLogs(v);
-                    setState(() {});
-                  },
-                ),
-                const _ItemDivider(),
-                _ChevronItem(
-                  label: AppL10n.of(context).settingsResetTutorial,
-                  onTap: () => _confirmResetTutorial(),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
+            // Section 5.5: 개발자 — 평상시 숨김, 앱 버전 5회 탭으로 활성화.
+            if (SettingsService.instance.developerMode) ...[
+              _SectionHeader(
+                  label: AppL10n.of(context).settingsSectionDeveloper),
+              AdaptiveSectionCard(
+                children: [
+                  _SwitchItem(
+                    label: AppL10n.of(context).settingsDebugLogs,
+                    value: SettingsService.instance.debugLogs,
+                    onChanged: (v) {
+                      SettingsService.instance.setDebugLogs(v);
+                      setState(() {});
+                    },
+                  ),
+                  const _ItemDivider(),
+                  _ChevronItem(
+                    label: AppL10n.of(context).settingsResetTutorial,
+                    onTap: () => _confirmResetTutorial(),
+                  ),
+                  const _ItemDivider(),
+                  _ChevronItem(
+                    label:
+                        AppL10n.of(context).settingsDeveloperModeDisable,
+                    isDestructive: true,
+                    onTap: _disableDeveloperMode,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+            ],
 
             // Section 6: 앱 정보
             AdaptiveSectionCard(
               children: [
-                _InfoItem(
-                    label: AppL10n.of(context).settingsAppVersion,
-                    value: 'v$kAppVersion'),
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: _onVersionTap,
+                  child: _InfoItem(
+                      label: AppL10n.of(context).settingsAppVersion,
+                      value: 'v$kAppVersion'),
+                ),
                 const _ItemDivider(),
                 _ChevronItem(
                   label: AppL10n.of(context).settingsPrivacy,
@@ -775,6 +860,34 @@ class _SettingsViewState extends State<SettingsView> {
       confirmText: l.settingsResetTutorialConfirm,
       onConfirm: () => OnboardingService.instance.reset(),
     );
+  }
+
+  // 앱 버전 행 5회 탭 — 평상시 숨겨둔 개발자 섹션을 노출.
+  // 3초 안에 5회 연속이어야 활성화 (실수 방지). 이미 켜져 있으면 무반응.
+  void _onVersionTap() {
+    if (SettingsService.instance.developerMode) return;
+    final now = DateTime.now();
+    if (_versionFirstTapAt == null ||
+        now.difference(_versionFirstTapAt!) > const Duration(seconds: 3)) {
+      _versionFirstTapAt = now;
+      _versionTapCount = 1;
+    } else {
+      _versionTapCount++;
+    }
+    if (_versionTapCount < 5) return;
+    _versionTapCount = 0;
+    _versionFirstTapAt = null;
+    SettingsService.instance.setDeveloperMode(true);
+    HapticFeedback.mediumImpact();
+    showAppSnackBar(AppL10n.of(context).settingsDeveloperModeEnabled);
+    setState(() {});
+  }
+
+  void _disableDeveloperMode() {
+    SettingsService.instance.setDeveloperMode(false);
+    HapticFeedback.selectionClick();
+    showAppSnackBar(AppL10n.of(context).settingsDeveloperModeDisabled);
+    setState(() {});
   }
 }
 
@@ -1015,11 +1128,77 @@ class _MapDisplaySettingsViewState extends State<MapDisplaySettingsView> {
                 ],
               ],
             ),
+            const SizedBox(height: 16),
+            _SectionHeader(label: AppL10n.of(context).settingsSectionWeather),
+            AdaptiveSectionCard(
+              children: [
+                _SwitchItem(
+                  label: AppL10n.of(context).settingsAutoWeather,
+                  value: SettingsService.instance.weatherOverride == 'auto',
+                  onChanged: (v) {
+                    SettingsService.instance
+                        .setWeatherOverride(v ? 'auto' : 'clear');
+                    setState(() {});
+                  },
+                ),
+                if (SettingsService.instance.weatherOverride != 'auto') ...[
+                  const _ItemDivider(),
+                  _TrailingTextItem(
+                    label: AppL10n.of(context).settingsWeatherOverride,
+                    trailing:
+                        '${_weatherLabelStatic(context, SettingsService.instance.weatherOverride)} >',
+                    onTap: () {
+                      const codes = [
+                        'clear',
+                        'cloudy',
+                        'rain',
+                        'drizzle',
+                        'snow',
+                        'fog',
+                        'thunderstorm',
+                      ];
+                      final labels = codes
+                          .map((c) => _weatherLabelStatic(context, c))
+                          .toList();
+                      showAdaptivePicker(
+                        context: context,
+                        title: AppL10n.of(context).settingsWeatherOverride,
+                        options: labels,
+                        selected: _weatherLabelStatic(
+                            context, SettingsService.instance.weatherOverride),
+                        onSelected: (v) {
+                          final idx = labels.indexOf(v);
+                          if (idx < 0) return;
+                          SettingsService.instance
+                              .setWeatherOverride(codes[idx]);
+                          setState(() {});
+                        },
+                      );
+                    },
+                  ),
+                ],
+              ],
+            ),
             const SizedBox(height: 24),
           ],
         ),
       ),
     );
+  }
+
+  // 날씨 라벨 매핑.
+  static String _weatherLabelStatic(BuildContext ctx, String code) {
+    final l = AppL10n.of(ctx);
+    return switch (code) {
+      'clear' => l.weatherClear,
+      'cloudy' => l.weatherCloudy,
+      'rain' => l.weatherRain,
+      'drizzle' => l.weatherDrizzle,
+      'snow' => l.weatherSnow,
+      'fog' => l.weatherFog,
+      'thunderstorm' => l.weatherThunderstorm,
+      _ => l.settingsAutoWeather,
+    };
   }
 
   // 라이트 프리셋 라벨 매핑.

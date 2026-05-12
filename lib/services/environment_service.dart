@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'settings_service.dart';
 
 /// 서울 좌표
 const double _seoulLat = 37.5665;
@@ -71,6 +72,18 @@ class EnvironmentService {
   EnvironmentData? _current;
   VoidCallback? onUpdated;
 
+  // ── 마지막 API fetch 결과 캐시 (override 즉시 재적용용) ──
+  // _update() 가 raw 값을 여기에 저장해두면, weatherOverride 변경 시
+  // API 재호출 없이 _rebuildFromCache() 로 _current 만 다시 만들 수 있음.
+  WeatherCondition _rawWeather = WeatherCondition.clear;
+  double _rawTemp = 20.0;
+  double _rawCloud = 0.0;
+  double _rawVis = 10.0;
+  double _rawWind = 0.0;
+  double _rawPrecip = 0.0;
+  String _rawDesc = '맑음';
+  IconData _rawIcon = Icons.wb_sunny;
+
   EnvironmentData? get current => _current;
 
   /// 서비스 시작 (즉시 1회 + 5분 주기)
@@ -87,47 +100,58 @@ class EnvironmentService {
   void dispose() => stop();
 
   Future<void> _update() async {
+    try {
+      final weatherData = await _fetchWeather();
+      if (weatherData != null) {
+        _rawWeather = weatherData['condition'] as WeatherCondition;
+        _rawTemp = weatherData['temperature'] as double;
+        _rawCloud = weatherData['cloudCover'] as double;
+        _rawVis = weatherData['visibility'] as double;
+        _rawWind = weatherData['windSpeed'] as double;
+        _rawPrecip = weatherData['precipitation'] as double;
+        _rawDesc = weatherData['description'] as String;
+        _rawIcon = weatherData['icon'] as IconData;
+      }
+    } catch (e) {
+      DebugLog.log('[EnvironmentService] 날씨 fetch 실패: $e');
+    }
+
+    _rebuildFromCache();
+  }
+
+  /// 캐시된 raw 값 + 현재 SettingsService.weatherOverride 로 _current 재빌드.
+  /// API 재호출 없이 즉시 반영 — 설정 화면에서 날씨 픽 시 사용.
+  void _rebuildFromCache() {
     final now = DateTime.now();
     final sunrise = _calcSunrise(now, _seoulLat, _seoulLng);
     final sunset = _calcSunset(now, _seoulLat, _seoulLng);
     final tod = _getDayPhase(now, sunrise, sunset);
     final lightPreset = _toLightPreset(tod);
 
-    // 날씨 데이터 fetch
-    WeatherCondition weather = WeatherCondition.clear;
-    double temp = 20.0;
-    double cloud = 0.0;
-    double vis = 10.0;
-    double wind = 0.0;
-    double precip = 0.0;
-    String desc = '맑음';
-    IconData icon = Icons.wb_sunny;
-
-    try {
-      final weatherData = await _fetchWeather();
-      if (weatherData != null) {
-        weather = weatherData['condition'] as WeatherCondition;
-        temp = weatherData['temperature'] as double;
-        cloud = weatherData['cloudCover'] as double;
-        vis = weatherData['visibility'] as double;
-        wind = weatherData['windSpeed'] as double;
-        precip = weatherData['precipitation'] as double;
-        desc = weatherData['description'] as String;
-        icon = weatherData['icon'] as IconData;
-      }
-    } catch (e) {
-      DebugLog.log('[EnvironmentService] 날씨 fetch 실패: $e');
+    final override = SettingsService.instance.weatherOverride;
+    final WeatherCondition weather;
+    final String desc;
+    final IconData icon;
+    if (override == 'auto') {
+      weather = _rawWeather;
+      desc = _rawDesc;
+      icon = _rawIcon;
+    } else {
+      weather = _conditionFromCode(override);
+      final wd = _descIconForCondition(weather);
+      desc = wd.$1;
+      icon = wd.$2;
     }
 
     _current = EnvironmentData(
       timeOfDay: tod,
       lightPreset: lightPreset,
       weather: weather,
-      temperature: temp,
-      cloudCover: cloud,
-      visibility: vis,
-      windSpeed: wind,
-      precipitation: precip,
+      temperature: _rawTemp,
+      cloudCover: _rawCloud,
+      visibility: _rawVis,
+      windSpeed: _rawWind,
+      precipitation: _rawPrecip,
       weatherDescription: desc,
       weatherIcon: icon,
       sunrise: sunrise,
@@ -135,6 +159,34 @@ class EnvironmentService {
     );
 
     onUpdated?.call();
+  }
+
+  /// 외부에서 호출 — weatherOverride 가 바뀐 직후 즉시 _current 갱신.
+  void applyOverrideNow() => _rebuildFromCache();
+
+  static WeatherCondition _conditionFromCode(String code) {
+    switch (code) {
+      case 'clear': return WeatherCondition.clear;
+      case 'cloudy': return WeatherCondition.cloudy;
+      case 'rain': return WeatherCondition.rain;
+      case 'drizzle': return WeatherCondition.drizzle;
+      case 'snow': return WeatherCondition.snow;
+      case 'fog': return WeatherCondition.fog;
+      case 'thunderstorm': return WeatherCondition.thunderstorm;
+      default: return WeatherCondition.clear;
+    }
+  }
+
+  static (String, IconData) _descIconForCondition(WeatherCondition c) {
+    switch (c) {
+      case WeatherCondition.clear: return ('맑음', Icons.wb_sunny);
+      case WeatherCondition.cloudy: return ('흐림', Icons.cloud);
+      case WeatherCondition.rain: return ('비', Icons.water_drop);
+      case WeatherCondition.drizzle: return ('이슬비', Icons.grain);
+      case WeatherCondition.snow: return ('눈', Icons.ac_unit);
+      case WeatherCondition.fog: return ('안개', Icons.foggy);
+      case WeatherCondition.thunderstorm: return ('뇌우', Icons.flash_on);
+    }
   }
 
   // ── 일출/일몰 계산 (간이 SunCalc) ──

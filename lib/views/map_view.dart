@@ -24,6 +24,7 @@ import '../services/flight_service.dart';
 import '../models/bus_models.dart';
 import '../services/seoul_bus_service.dart';
 import '../widgets/weather_widget.dart';
+import '../widgets/weather_overlay.dart';
 import '../widgets/subway_panel.dart';
 import '../services/multiplayer_service.dart';
 import '../services/building_presence_tracker.dart';
@@ -1239,6 +1240,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
               child: MapboxEngine(
                 initialCamera: _cameraInfo,
                 onMapCreated: _onMapCreated,
+              ),
+            ),
+
+            // 강수 효과 오버레이 (비/눈/뇌우) — Mapbox SDK 미지원 보완
+            Positioned.fill(
+              child: WeatherOverlay(
+                environment: _subwayController.environment,
               ),
             ),
 

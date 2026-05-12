@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:ui' show VoidCallback;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/debug_log.dart';
 
@@ -43,6 +44,9 @@ class SettingsService {
   static const _kMode = 'subway_mode'; // 'live' | 'demo'
   static const _kAutoLighting = 'auto_lighting';
   static const _kLightPreset = 'light_preset';
+  /// 'auto' | 'clear' | 'cloudy' | 'rain' | 'drizzle' | 'snow' | 'fog' | 'thunderstorm'
+  /// auto 면 OpenMeteo 실제 날씨 사용. 그 외엔 강제 오버라이드 (지도 fog + 위젯 표시 모두).
+  static const _kWeatherOverride = 'weather_override';
   static const _kSelectedLines = 'selected_lines'; // comma-separated or null
   static const _kQualityPreset = 'quality_preset'; // 'high' | 'medium' | 'low'
   static const _kUseSeoulApi = 'use_seoul_api';
@@ -56,6 +60,8 @@ class SettingsService {
   // UI 표시 언어. 'system' = OS 설정 추종, 그 외 'ko'|'en'|'ja'|'zh'.
   // aiLanguage 는 Gemini 응답 언어로 별개 (의도적 분리: 영문 UI + 한국어 AI 같은 조합 허용).
   static const _kAppLanguage = 'app_language';
+  // 평상시 숨겨진 개발자 섹션 노출 토글. 설정 화면의 앱 버전 행을 5회 탭하면 켜짐.
+  static const _kDeveloperMode = 'developer_mode';
 
   // ── Getters ──
   bool get showRoutes => _prefs.getBool(_kShowRoutes) ?? true;
@@ -64,6 +70,7 @@ class SettingsService {
   String get mode => _prefs.getString(_kMode) ?? 'demo';
   bool get autoLighting => _prefs.getBool(_kAutoLighting) ?? true;
   String get lightPreset => _prefs.getString(_kLightPreset) ?? 'auto';
+  String get weatherOverride => _prefs.getString(_kWeatherOverride) ?? 'auto';
 
   String get qualityPreset =>
       _prefs.getString(_kQualityPreset) ?? (Platform.isAndroid ? 'medium' : 'high');
@@ -76,6 +83,7 @@ class SettingsService {
   bool get showFlights => _prefs.getBool(_kShowFlights) ?? true;
   String get aiLanguage => _prefs.getString(_kAiLanguage) ?? 'ko';
   String get appLanguage => _prefs.getString(_kAppLanguage) ?? 'system';
+  bool get developerMode => _prefs.getBool(_kDeveloperMode) ?? false;
 
   Set<String>? get selectedLines {
     final val = _prefs.getString(_kSelectedLines);
@@ -88,8 +96,34 @@ class SettingsService {
   Future<void> setShowTrains(bool v) => _prefs.setBool(_kShowTrains, v);
   Future<void> setShowStations(bool v) => _prefs.setBool(_kShowStations, v);
   Future<void> setMode(String v) => _prefs.setString(_kMode, v);
-  Future<void> setAutoLighting(bool v) => _prefs.setBool(_kAutoLighting, v);
-  Future<void> setLightPreset(String v) => _prefs.setString(_kLightPreset, v);
+  Future<void> setAutoLighting(bool v) async {
+    await _prefs.setBool(_kAutoLighting, v);
+    _notifyEnvironment();
+  }
+  Future<void> setLightPreset(String v) async {
+    await _prefs.setString(_kLightPreset, v);
+    _notifyEnvironment();
+  }
+  Future<void> setWeatherOverride(String v) async {
+    await _prefs.setString(_kWeatherOverride, v);
+    _notifyEnvironment();
+  }
+
+  // ── 환경(라이팅/날씨) 변경 리스너 ──
+  // Settings 화면에서 라이팅/날씨를 바꿔도 살아있는 지도에 즉시 반영하기 위함.
+  // SubwayOverlayController 가 등록 → 변경 시 mapController 에 push.
+  final List<VoidCallback> _envListeners = [];
+  void addEnvironmentListener(VoidCallback cb) => _envListeners.add(cb);
+  void removeEnvironmentListener(VoidCallback cb) => _envListeners.remove(cb);
+  void _notifyEnvironment() {
+    for (final cb in List<VoidCallback>.from(_envListeners)) {
+      try {
+        cb();
+      } catch (e) {
+        DebugLog.log('[SettingsService] env listener 실패: $e');
+      }
+    }
+  }
   Future<void> setQualityPreset(String v) => _prefs.setString(_kQualityPreset, v);
   Future<void> setUseSeoulApi(bool v) => _prefs.setBool(_kUseSeoulApi, v);
   Future<void> setUseNaverApi(bool v) => _prefs.setBool(_kUseNaverApi, v);
@@ -103,6 +137,7 @@ class SettingsService {
   Future<void> setShowFlights(bool v) => _prefs.setBool(_kShowFlights, v);
   Future<void> setAiLanguage(String v) => _prefs.setString(_kAiLanguage, v);
   Future<void> setAppLanguage(String v) => _prefs.setString(_kAppLanguage, v);
+  Future<void> setDeveloperMode(bool v) => _prefs.setBool(_kDeveloperMode, v);
 
   Future<void> setSelectedLines(Set<String>? lines) async {
     if (lines == null) {
