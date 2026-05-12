@@ -149,6 +149,13 @@ class MultiplayerService with WidgetsBindingObserver {
   RealtimeChannel? _messagesChannel;
   RealtimeChannel? _membersChannel;
   RealtimeChannel? _roomMetaChannel; // rooms 테이블 자체의 update (목적지 등).
+  RealtimeChannel? _proposalChannel; // 방 목적지 후보(투표).
+  RealtimeChannel? _voteChannel;     // 후보 투표 변경.
+
+  // 방 목적지 후보 (Phase B6 v2 — 투표 시스템).
+  DestinationProposal? _activeProposal;
+  // proposal_id → {userId → vote}. 활성 proposal 만 채워짐.
+  final Map<String, Map<String, bool>> _proposalVotes = {};
   RealtimeChannel? _friendsChannel;
   /// 전 세계 공개 사용자 채널 (visibility=public).
   RealtimeChannel? _worldChannel;
@@ -1554,10 +1561,16 @@ class MultiplayerService with WidgetsBindingObserver {
         await _messagesChannel?.unsubscribe();
         await _membersChannel?.unsubscribe();
         await _roomMetaChannel?.unsubscribe();
+        await _proposalChannel?.unsubscribe();
+        await _voteChannel?.unsubscribe();
       } catch (_) {}
       _presenceChannel = null;
       _messagesChannel = null;
       _membersChannel = null;
+      _proposalChannel = null;
+      _voteChannel = null;
+      _activeProposal = null;
+      _proposalVotes.clear();
     }
 
     _currentRoom = room;
@@ -1576,6 +1589,8 @@ class MultiplayerService with WidgetsBindingObserver {
     _subscribeRoomMembers();
     _subscribeRoomMessages();
     _subscribeRoomMeta();
+    _subscribeRoomProposals();
+    await _refreshActiveProposal();
     _subscribeFriendProfiles();
     _startPresence();
     _startLocationBroadcast();
@@ -1603,12 +1618,18 @@ class MultiplayerService with WidgetsBindingObserver {
     await _messagesChannel?.unsubscribe();
     await _membersChannel?.unsubscribe();
     await _roomMetaChannel?.unsubscribe();
+    await _proposalChannel?.unsubscribe();
+    await _voteChannel?.unsubscribe();
     await _profilesChannel?.unsubscribe();
     _presenceChannel = null;
     _messagesChannel = null;
     _membersChannel = null;
     _roomMetaChannel = null;
+    _proposalChannel = null;
+    _voteChannel = null;
     _profilesChannel = null;
+    _activeProposal = null;
+    _proposalVotes.clear();
     try {
       await _sb
           .from('room_members')
@@ -2325,7 +2346,172 @@ class MultiplayerService with WidgetsBindingObserver {
       _notify();
     } catch (e) {
       debugPrint('[Multi] clearRoomDestination 실패: $e');
+      rethrow;
     }
+  }
+
+  // ──────────────────────────────────────────────────────────────────
+  // 방 목적지 후보 / 투표 (Phase B6 v2)
+  // ──────────────────────────────────────────────────────────────────
+
+  DestinationProposal? get activeProposal => _activeProposal;
+
+  /// proposal_id 의 투표 — user_id → vote (true=yes, false=no).
+  Map<String, bool> votesFor(String proposalId) =>
+      _proposalVotes[proposalId] ?? const {};
+
+  Future<String?> proposeRoomDestination({
+    required String name,
+    required double lat,
+    required double lng,
+    String? address,
+  }) async {
+    if (_currentRoom == null) throw Exception('방에 입장해 있어야 해요.');
+    try {
+      final res = await _sb.rpc('propose_room_destination', params: {
+        'p_room_id': _currentRoom!.id,
+        'p_name': name,
+        'p_lat': lat,
+        'p_lng': lng,
+        'p_address': address,
+      });
+      logActivity('destination_proposed', payload: {'name': name});
+      await _refreshActiveProposal();
+      return res as String?;
+    } catch (e) {
+      debugPrint('[Multi] proposeRoomDestination 실패: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> voteRoomDestination(String proposalId, bool vote) async {
+    try {
+      await _sb.rpc('vote_room_destination', params: {
+        'p_proposal_id': proposalId,
+        'p_vote': vote,
+      });
+      // 본인 vote 즉시 반영 — realtime broadcast 도 곧 옴.
+      _proposalVotes.putIfAbsent(proposalId, () => <String, bool>{});
+      if (myId != null) _proposalVotes[proposalId]![myId!] = vote;
+      _notify();
+      // 임계 도달 시 active proposal 상태가 바뀌었을 수 있으므로 refetch.
+      await _refreshActiveProposal();
+    } catch (e) {
+      debugPrint('[Multi] voteRoomDestination 실패: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> cancelRoomDestinationProposal(String proposalId) async {
+    try {
+      await _sb.rpc('cancel_room_destination_proposal',
+          params: {'p_proposal_id': proposalId});
+      await _refreshActiveProposal();
+    } catch (e) {
+      debugPrint('[Multi] cancelRoomDestinationProposal 실패: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> _refreshActiveProposal() async {
+    if (_currentRoom == null) {
+      _activeProposal = null;
+      _proposalVotes.clear();
+      _notify();
+      return;
+    }
+    try {
+      final res = await _sb
+          .from('room_destination_proposals')
+          .select()
+          .eq('room_id', _currentRoom!.id)
+          .eq('status', 'voting')
+          .order('created_at', ascending: false)
+          .limit(1)
+          .maybeSingle();
+      if (res != null) {
+        _activeProposal = DestinationProposal.fromJson(res);
+        await _refreshProposalVotes(_activeProposal!.id);
+      } else {
+        _activeProposal = null;
+      }
+      _notify();
+    } catch (e) {
+      debugPrint('[Multi] _refreshActiveProposal 실패: $e');
+    }
+  }
+
+  Future<void> _refreshProposalVotes(String proposalId) async {
+    try {
+      final res = await _sb
+          .from('room_destination_votes')
+          .select()
+          .eq('proposal_id', proposalId);
+      final map = <String, bool>{};
+      for (final r in (res as List)) {
+        map[r['user_id'] as String] = r['vote'] as bool;
+      }
+      _proposalVotes[proposalId] = map;
+      _notify();
+    } catch (e) {
+      debugPrint('[Multi] _refreshProposalVotes 실패: $e');
+    }
+  }
+
+  void _subscribeRoomProposals() {
+    if (_currentRoom == null) return;
+    final roomId = _currentRoom!.id;
+    _proposalChannel = _sb
+        .channel('room_proposals_$roomId')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'room_destination_proposals',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'room_id',
+            value: roomId,
+          ),
+          callback: (_) => _refreshActiveProposal(),
+        )
+        .subscribe(_onChannelStatus(
+          'room.proposals',
+          () async {
+            try { await _proposalChannel?.unsubscribe(); } catch (_) {}
+            _proposalChannel = null;
+            _subscribeRoomProposals();
+          },
+          stillNeeded: () => _currentRoom?.id == roomId,
+        ));
+
+    // votes 채널 — proposal_id 필터를 active 만으로 좁히면 active 가 바뀔 때마다
+    // 재구독해야 해서 복잡. 그냥 모든 vote 변경 받고, active 일 때만 refresh.
+    _voteChannel = _sb
+        .channel('room_votes_$roomId')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'room_destination_votes',
+          callback: (payload) {
+            final newRow = payload.newRecord;
+            final oldRow = payload.oldRecord;
+            final pid = (newRow['proposal_id'] ??
+                oldRow['proposal_id']) as String?;
+            if (pid == null) return;
+            if (_activeProposal?.id == pid) {
+              _refreshProposalVotes(pid);
+            }
+          },
+        )
+        .subscribe(_onChannelStatus(
+          'room.votes',
+          () async {
+            try { await _voteChannel?.unsubscribe(); } catch (_) {}
+            _voteChannel = null;
+            _subscribeRoomProposals();
+          },
+          stillNeeded: () => _currentRoom?.id == roomId,
+        ));
   }
 
   /// 클라이언트 throttle — 마지막 sendMessage 후 _minSendInterval 안 호출은

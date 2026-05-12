@@ -1,26 +1,20 @@
 {
   "@@locale": "ko",
-
   "appTitle": "Seoul Vista",
-
   "commonCancel": "취소",
   "commonConfirm": "확인",
   "commonOk": "확인",
   "commonSave": "저장",
   "commonClose": "닫기",
   "commonLater": "나중에",
-
   "settingsAppLanguageTitle": "언어",
-
   "languageSystem": "시스템 설정",
   "languageKo": "한국어",
   "languageEn": "English",
   "languageJa": "日本語",
   "languageZh": "简体中文",
-
   "languageChangedTitle": "언어 저장됨",
   "languageChangedBody": "새 언어를 완전히 적용하려면 앱 전환기에서 앱을 위로 밀어 종료한 뒤 다시 열어주세요.",
-
   "routeUnitHour": "시간",
   "routeUnitMin": "분",
   "routeTransfersCount": "환승 {count}회",
@@ -34,7 +28,6 @@
   "routeSegmentShort": "{from} · {min}분",
   "routeShowStops": "정류장 보기 ▼",
   "routeCollapse": "접기 ▲",
-
   "snsTitle": "AI 플랜",
   "snsSubtitle": "SNS 콘텐츠로 서울 하루 플랜 만들기",
   "snsSectionPhotos": "사진",
@@ -46,14 +39,12 @@
   "snsAnalyzeError": "분석 실패: {error}",
   "snsImageGallery": "갤러리",
   "snsImageCamera": "카메라",
-
   "dayPlanTitle": "하루 플랜",
   "dayPlanNavigateAll": "전체 길찾기",
   "dayPlanTransitSummary": "🚇 {min}분",
   "dayPlanTransfersSummary": "🔄 {count}회",
   "dayPlanStyleStats": "{count}곳 · {min}분",
   "dayPlanNavigateStop": "길찾기",
-
   "whatsNewClose": "닫기",
   "whatsNewSkip": "건너뛰기",
   "whatsNewStart": "시작하기",
@@ -82,7 +73,6 @@
   "whatsNewPage11Body": "한국어·영어·일본어·중국어.\nAI 비서도 같은 언어로 답해요.\n기기 언어에 자동으로 맞춰져요.",
   "whatsNewPage12Title": "말로 묻고 답 받기",
   "whatsNewPage12Body": "AI 비서랑 음성으로 자연스럽게.\n검색·길찾기·추천도 음성으로.\nGemini Live 가 듣고 바로 답해요.",
-
   "profileCategoryFavorites": "즐겨찾기",
   "profileCategoryRecent": "최근 방문",
   "profileCategoryFrequent": "자주 방문",
@@ -111,7 +101,6 @@
   "profileMore": "더보기",
   "profileEmptyMapPlaces": "방문지가 쌓이면 여기 지도에 표시돼요",
   "profileRecentPlaceCount": "최근 {count}곳",
-
   "chatSendFailed": "전송 실패: {error}",
   "chatRoomDestSet": "🎯 방 목적지로 설정됨",
   "chatActionFailed": "실패: {error}",
@@ -148,13 +137,11 @@
   "spotifyOpenInApp": "Spotify 에서 열기",
   "spotifyShareFailed": "공유 실패: {error}",
   "spotifyNoTrack": "재생 중인 곡이 없어요",
-
   "dmAccessDenied": "대화에 접근할 수 없어요",
   "dmSendFailed": "전송 실패: {error}",
   "dmDefaultPeer": "친구",
   "dmEmptyHint": "첫 메시지를 보내보세요",
   "dmMessageHint": "메시지",
-
   "friendCodeLengthError": "8자리 코드를 입력해주세요.",
   "friendCodeNotFound": "코드와 일치하는 사용자를 찾을 수 없어요.",
   "friendRequestSent": "{nickname} 님에게 친구 신청을 보냈어요.",
@@ -171,7 +158,6 @@
   "friendAddByCodeHint": "받은 8글자 코드를 입력하거나 QR 을 스캔하세요",
   "friendCodePlaceholder": "예: AB12CD34",
   "friendSendRequest": "친구 신청 보내기",
-
   "peerFriendCode": "친구 코드 {code}",
   "peerOwnPin": "나의 핀이에요",
   "peerReport": "신고",
@@ -190,7 +176,6 @@
   "peerRequestSent": "{nickname} 에게 신청을 보냈어요",
   "peerDistanceMeters": "{meters}m 거리",
   "peerDistanceKm": "{km}km 거리",
-
   "spotifyRoomRequired": "친구방에 입장한 뒤 다시 시도해주세요",
   "spotifyShareSuccess": "🎵 친구방에 공유했어요",
   "spotifyDisconnectTitle": "Spotify 연결 해제",
@@ -209,23 +194,19 @@
   "spotifyDisconnect": "연결 해제",
   "spotifyConnectedNoTrack": "Spotify 연결됨 (재생 없음)",
   "spotifyNowPlaying": "지금 듣는 곡",
-
   "departureTimePickerTitle": "출발 시각",
   "departureTimePickerHint": "지정된 시각 기준으로 도착 시각이 계산됩니다.",
   "departureTimeNow": "지금",
   "departureTime30min": "30분 후",
   "departureTime1hour": "1시간 후",
   "departureTimeCustom": "직접 지정",
-
   "placeActionDepart": "출발",
   "placeActionArrive": "도착",
   "placeActionInfo": "정보",
   "placeDetailTapHint": "탭하여 사진·리뷰·영업시간 보기",
-
   "savedPanelTitle": "저장",
   "savedEmptyFavorites": "저장한 장소가 없습니다",
   "savedRemoveFavoriteTooltip": "즐겨찾기 해제",
-
   "travelThemeTitle": "테마 추천",
   "travelThemeSubtitle": "탭 한 번으로 코스 자동 생성",
   "travelTitle": "여행",
@@ -249,11 +230,9 @@
   "travelMoodIntense": "강렬한 비트엔",
   "travelMoodCalm": "차분한 분위기엔",
   "travelTodayMoodLabel": "오늘의 분위기",
-
   "notificationsTitle": "알림",
   "notificationsEmptyTitle": "알림이 없습니다",
   "notificationsEmptySubtitle": "새로운 소식이 있으면 여기에 표시됩니다",
-
   "settingsTitle": "설정",
   "settingsSectionRealtime": "실시간 시각화",
   "settingsLineSubway": "지하철 노선",
@@ -305,6 +284,9 @@
   "settingsSectionDeveloper": "개발자",
   "settingsDebugLogs": "디버그 로그 출력",
   "settingsResetTutorial": "튜토리얼 다시 보기",
+  "settingsDeveloperModeEnabled": "개발자 모드가 활성화되었습니다",
+  "settingsDeveloperModeDisabled": "개발자 모드가 해제되었습니다",
+  "settingsDeveloperModeDisable": "개발자 모드 끄기",
   "settingsReplayWhatsNew": "새 기능 다시 보기",
   "settingsWhatsNewToast": "다음 앱 실행 시 새 기능 안내가 다시 나와요",
   "settingsAppVersion": "앱 버전",
@@ -338,7 +320,6 @@
   "settingsResetTutorialConfirm": "다시 보기",
   "settingsMapDisplayTitle": "지도 표시 및 데이터",
   "settingsSectionMapDisplay": "지도 표시",
-
   "aiStatusSearchingCourse": "코스 검색 중...",
   "aiPlacesFound": "{count}개 장소를 찾았어요! 아래에서 확인하세요.",
   "aiStatusFindingInfo": "정보 찾는 중...",
@@ -357,7 +338,6 @@
   "aiVoiceCommandHint": "\"카페 추가해줘\", \"경복궁 빼줘\", \"이걸로 확정해\" 등 말해보세요",
   "aiPlaceStationDistance": "{station}역 · {minutes}분",
   "aiDefaultSearch": "서울 여행 추천 코스",
-
   "recommendTitle": "추천",
   "recommendSubtitleNearbyArea": "{area} 근처에서 지금 인기있는 곳",
   "recommendSubtitleNearbyDefault": "지금 가까이서 인기있는 곳",
@@ -373,7 +353,6 @@
   "recommendTabShopping": "🛍 쇼핑",
   "recommendTabOutdoor": "🌳 공원·야경",
   "recommendTabEvents": "🎭 문화",
-
   "authTabSignUp": "회원가입",
   "authTabSignIn": "로그인",
   "authProcessing": "처리 중...",
@@ -422,7 +401,6 @@
   "authFindIdEmailHint": "가입한 이메일을 입력해주세요",
   "authFindIdSubmit": "아이디 찾기",
   "authFindPasswordSubmit": "재설정 링크 받기",
-
   "hubSettingsTooltip": "설정",
   "hubAuthExploreSeoulTitle": "친구와 함께 서울을 탐험하기",
   "hubAuthCreateProfileSubtitle": "닉네임과 핀을 만들어 시작하세요.",
@@ -457,7 +435,6 @@
   "hubAgoDay": "{day}일 전",
   "hubRecentMeetupsTitle": "🎉 최근 만남",
   "hubRecentMeetupsCount": "{count}회",
-
   "roomCodeRequired": "6자리 코드를 입력해주세요.",
   "roomLeaveTitle": "방 나가기",
   "roomLeaveBody": "나가면 위치 공유와 채팅이 종료됩니다.",
@@ -501,7 +478,37 @@
   "roomDestDefault": "목적지",
   "roomDestViewMap": "지도에서 보기",
   "roomDestClear": "목적지 해제",
-
+  "roomOwnerBadge": "방장",
+  "roomDestOwnerOnly": "방장만 정할 수 있어요",
+  "roomDestSearchHint": "어디로 모일까요?",
+  "roomDestSearchAction": "검색",
+  "roomDestSearchEmpty": "검색 결과가 없어요",
+  "roomDestSearchSearching": "검색 중…",
+  "roomDestProposeVote": "투표로 정하기",
+  "roomDestSetNow": "바로 확정",
+  "roomDestProposalVoting": "투표 진행 중",
+  "roomDestProposalBy": "{name} 님 제안",
+  "@roomDestProposalBy": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "roomDestProposalCounts": "찬성 {yes} · 반대 {no}",
+  "@roomDestProposalCounts": {
+    "placeholders": {
+      "yes": {
+        "type": "int"
+      },
+      "no": {
+        "type": "int"
+      }
+    }
+  },
+  "roomDestVoteYes": "찬성",
+  "roomDestVoteNo": "반대",
+  "roomDestProposalCancel": "후보 취소",
   "mpSettingsTitle": "Seoul Live 설정",
   "mpSectionMyStatus": "내 상태",
   "mpPause": "Seoul Live 일시정지",
@@ -546,7 +553,6 @@
   "mpNotifCatMeetup": "만남 감지",
   "mpNotifCatDestination": "목적지 변경",
   "mpNotifCatWelcome": "환영",
-
   "panelSubway": "지하철",
   "panelBus": "버스",
   "panelFlights": "항공기",
@@ -600,12 +606,10 @@
   "panelMapEngine": "맵 엔진",
   "panelDevice": "기기",
   "panelPerfTier": "성능 등급",
-
   "mapDisplay3D": "3D 건물 표시",
   "mapDisplayPois": "POI 아이콘 표시",
   "mapDisplayWeather": "날씨 효과 (안개/비)",
   "mapDisplayLiveSubway": "실시간 지하철",
-
   "friendsGroupTooltip": "친구 그룹",
   "friendsCodeTooltip": "친구 코드",
   "friendsAddByNickname": "닉네임으로 친구 추가",
@@ -640,7 +644,6 @@
   "friendsSuggestionsTitle": "추천 친구 (친구의 친구)",
   "friendsMutualCount": "공통 친구 {count}명",
   "friendsAddShort": "추가",
-
   "searchRouteNotFound": "경로를 찾지 못했어요. 출발지/도착지를 확인해 주세요.",
   "searchLocationUnavailable": "현재 위치를 가져올 수 없어요. 위치 권한과 GPS 를 확인해 주세요.",
   "searchTabRoute": "길찾기",
@@ -679,7 +682,6 @@
   "searchCatCity": "도시",
   "searchCatNeighborhood": "동네",
   "searchCatRoad": "도로",
-
   "liveBadgePeerTrack": "{nickname} 가 {track} 듣고 있어요",
   "liveBadgeSharing": "{count}명에게 위치 공유 중",
   "liveBadgeStopped": "위치 공유를 중지했어요",
@@ -705,7 +707,8 @@
   "commonSkip": "건너뛰기",
   "commonStart": "시작하기",
   "commonNext": "다음",
-  "welcomePageLanguagesHint": "한국어 · English · 日本語 · 中文 — AI 비서가 같은 언어로 답해요",
+  "welcomePageLanguagesHint": "한국어 · English · 日本語 · 中文 — 설정에서 언제든 바꿀 수 있어요",
+  "liveActivationHint": "Seoul Live 활성화 후 사용해요",
   "liveMeetTitle": "같이 가기",
   "liveMeetBody": "친구방에서 공통 목적지를 정하면 멤버별 거리가 실시간으로 보여요. 맵에는 주황 핀이 자동으로.",
   "liveDmHint": "1:1 DM · 음성 · 사진 · 위치",
@@ -717,17 +720,34 @@
   "aiDayPlanHint": "저장한 장소로 하루 코스 자동 생성",
   "permPagePrivacyHint": "알림은 종류별로 켜고 끄고, 위치는 특정 그룹에게만 공유하세요.",
   "roomMembersNearbyHeader": "주변 {count}명 (500m 이내)",
-  "@roomMembersNearbyHeader": { "placeholders": { "count": { "type": "int" } } },
+  "@roomMembersNearbyHeader": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "roomMembersPublicSectionHeader": "전체 공개 사용자",
   "roomMembersSeeAllPublic": "전체 보기 ({count}명)",
-  "@roomMembersSeeAllPublic": { "placeholders": { "count": { "type": "int" } } },
+  "@roomMembersSeeAllPublic": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "roomMembersHidePublic": "전체 숨기기",
   "liveBadgeSharingPublic": "{count}명에게 공개 중",
-  "@liveBadgeSharingPublic": { "placeholders": { "count": { "type": "int" } } },
+  "@liveBadgeSharingPublic": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "roomMembersDisconnected": "연결 안됨",
   "roomMembersRealtime": "실시간",
   "roomMembersStale": "잠시 떨어짐",
-
   "dmListAgoJust": "방금",
   "dmListAgoMin": "{min}분",
   "dmListAgoHour": "{hour}시간",
@@ -738,7 +758,6 @@
   "dmListKindSpotify": "🎵 노래",
   "dmListEmpty": "아직 DM 이 없어요",
   "dmListEmptyHint": "친구 화면에서 메시지 버튼을 눌러 시작",
-
   "friendGroupsNewTitle": "새 그룹",
   "friendGroupsNewTooltip": "새 그룹",
   "friendGroupsEmpty": "아직 그룹이 없어요",
@@ -759,11 +778,9 @@
   "friendGroupsMembersTitle": "{emoji} {name} 멤버",
   "friendGroupsEditMembers": "멤버 편집",
   "friendGroupsEmptyFriendsBox": "아직 친구가 없어요",
-
   "loginRequiredTitle": "로그인이 필요해요",
   "loginRequiredBody": "멀티플레이는 정식 로그인 사용자만 이용할 수 있어요.\n게스트(익명) 계정은 30일 미사용 시 자동 삭제되어\n친구·방 정보가 사라질 수 있기 때문이에요.",
   "loginRequiredCta": "로그인하기",
-
   "reportReasonSpam": "스팸/광고",
   "reportReasonHate": "욕설/혐오 표현",
   "reportReasonSexual": "성적/불쾌한 콘텐츠",
@@ -780,13 +797,11 @@
   "reportSubmit": "신고하기",
   "reportSubmitting": "전송 중...",
   "reportFallbackUser": "사용자",
-
   "blockedUsersTitle": "차단 목록",
   "blockedUsersEmpty": "차단한 사용자가 없어요",
   "blockedUsersUnblockTitle": "{name} 차단 해제",
   "blockedUsersUnblockBody": "차단을 해제하면 다시 만날 수 있고 메시지도 보입니다.",
   "blockedUsersUnblockConfirm": "해제",
-
   "activityTitle": "활동 분석",
   "activityCatMeetup": "🎉 만남",
   "activityCatFriend": "🤝 친구",
@@ -810,13 +825,11 @@
   "activityWeekdayFri": "금",
   "activityWeekdaySat": "토",
   "activityWeekdaySun": "일",
-
   "peerNowPlayingBtnFriend": "친구입니다 ✓",
   "peerNowPlayingBtnRequested": "신청 보냄",
   "peerNowPlayingBtnAccept": "친구 신청 수락",
   "peerNowPlayingBtnSendRequest": "친구 신청 보내기",
   "peerNowPlayingOpenInSpotify": "Spotify에서 듣기",
-
   "mapNoLocationPermission": "위치 권한이 없어서 친구가 내 핀을 못 봐요. 설정 → 위치 에서 허용해주세요.",
   "mapLeftRoom": "친구방에서 나가졌어요",
   "mapShowOnMap": "지도에서 \"{name}\" 보기",
@@ -837,7 +850,6 @@
   "mapNoCoords": "출발/도착 좌표를 찾을 수 없어요",
   "mapDirectionsFailed": "경로를 불러오지 못했어요",
   "mapInsufficientSavedPlaces": "장소가 더 필요해요 — 즐겨찾기/방문 기록 {min}곳 이상이면 자동 생성돼요",
-
   "subwayPanelExpand": "패널 펼치기",
   "subwayPanelCollapse": "패널 접기",
   "subwayPanelDelayedTrains": "지연 열차 {count}대",
@@ -881,9 +893,7 @@
   "subwayPanelTrainTypeExpress": "급행",
   "subwayPanelTrainTypeSpecial": "특급",
   "subwayPanelTrainTypeRegular": "보통",
-
   "searchTileSubway": "지하철",
-
   "profileEditNicknameInvalid": "닉네임은 1~20자로 입력해주세요.",
   "profileEditBirthInvalid": "출생연도(YYYY) 를 정확히 입력해주세요.",
   "profileEditAgeRestriction": "14세 미만은 멀티플레이를 이용할 수 없습니다.",
@@ -919,7 +929,6 @@
   "profileEditVisibilityGroupDesc": "아래에서 선택한 그룹의 친구만 내 위치를 볼 수 있어요.",
   "profileEditVisibilityPublicDesc": "⚠️ Seoul Live 사용자 누구나 내 위치를 볼 수 있어요. 친구방에서도 동일하게 송신돼요.",
   "profileEditNoGroups": "그룹이 없어요. 친구 → 그룹 에서 만들어주세요.",
-
   "adminMonitorTitle": "운영 모니터",
   "adminRefresh": "새로고침",
   "adminTabMetrics": "지표",
@@ -945,7 +954,6 @@
   "adminAgoMin": "{min}분 전",
   "adminAgoHour": "{hour}시간 전",
   "adminAgoDay": "{day}일 전",
-
   "liveDiagTitle": "실시간 진단",
   "liveDiagMyId": "내 ID",
   "liveDiagVisibility": "공개 범위",
@@ -972,7 +980,6 @@
   "liveDiagRoomLabel": "{code} ({count}명)",
   "liveDiagGpsHas": "있음",
   "liveDiagGpsNo": "없음",
-
   "mpConsentLocationDenied": "설정 > 위치 에서 위치 권한을 허용해주세요.",
   "mpConsentTitle": "멀티플레이 시작 전 안내",
   "mpConsentHeading": "Seoul Live 동의",
@@ -993,7 +1000,6 @@
   "mpConsentLaterButton": "나중에",
   "mpConsentSubmitBusy": "처리 중...",
   "mpConsentLbsTermsBody": "이 약관은 Seoul Vista 가 제공하는 Seoul Live(이하 \"서비스\")의 위치기반서비스 이용에 관한 사항을 정합니다.",
-
   "optTitle": "내 기기에 맞춰",
   "optSubtitle": "실시간 시각화는 GPU 부담이 커요.\n기기에 맞게 골라주세요.",
   "optPresetHighTitle": "고품질",
@@ -1013,7 +1019,6 @@
   "optLayerFlightsSub": "인천공항 주변 실시간 항공기",
   "optDetectedTier": "{tier} 등급으로 감지됨",
   "optRecommended": "권장",
-
   "vehicleCongestion": "혼잡도",
   "vehicleCongestionNone": "정보없음",
   "vehicleCongestionFree": "여유",
@@ -1043,33 +1048,27 @@
   "vehicleRiverPhaseStop": "정차",
   "vehicleNext": "다음",
   "vehicleProgress": "진행",
-
   "deepLinkRoomLoginRequired": "정식 로그인 후 방에 입장할 수 있어요",
   "deepLinkRoomEntered": "방 입장 — 코드 {code}",
   "deepLinkRoomFailure": "방 입장 실패: {error}",
-
   "snsAnalysisTitle": "분석 결과",
   "snsAnalysisEmpty": "추출된 장소가 없습니다",
   "snsAnalysisCreatePlans": "일정 만들기 ({count}곳)",
   "snsAnalysisPlanFailure": "플랜 생성 실패: {error}",
   "snsAnalysisNearestStation": "📍 {station}역 · {minutes}분",
-
   "avatarMyPin": "나의 핀",
   "avatarNoRoomHint": "친구방에 들어가면 친구들이 여기에 보여요",
   "avatarNoRoomMembers": "아직 같이 있는 친구가 없어요",
   "avatarRoomMembersCount": "같이 있는 친구 {count}명",
   "avatarNoTrack": "지금 듣는 곡 없음",
-
   "qrScanTitle": "QR 스캔",
   "qrScanCameraError": "카메라를 사용할 수 없어요\n{error}",
   "qrScanHint": "친구 QR 을 프레임 안에 맞춰 주세요",
-
   "buildingOccupantsFallbackName": "건물",
   "buildingOccupantsInside": "{count}명이 안에 있어요",
   "buildingOccupantsEmpty": "건물을 떠났어요",
   "buildingOccupantsListening": "🎵 {name} · {artist} 듣는 중",
   "buildingOccupantsInBuilding": "🏢 건물 안에 있어요",
-
   "weatherWeeklyLabel": "주간",
   "weatherToday": "오늘",
   "weatherDayMon": "월",
@@ -1079,7 +1078,6 @@
   "weatherDayFri": "금",
   "weatherDaySat": "토",
   "weatherDaySun": "일",
-
   "locPermTitle": "위치 권한이 필요해요",
   "locPermBody": "현재 위치를 지도에 표시하고\n주변 정보 / 길찾기를 정확하게 안내하기 위해\n위치 권한이 필요해요.",
   "locPermRequesting": "요청 중...",
@@ -1087,7 +1085,6 @@
   "locPermGranted": "✓ 위치 권한 허용됨",
   "locPermDenied": "거부됨 — 설정에서 직접 허용할 수 있어요",
   "locPermRetry": "다시 시도",
-
   "groupEditorTitle": "친구 그룹",
   "groupEditorNew": "새 그룹",
   "groupEditorEmpty": "아직 그룹이 없어요",
@@ -1101,10 +1098,8 @@
   "groupEditorDeleteBody": "그룹만 삭제되고 친구는 유지돼요.",
   "groupEditorDelete": "삭제",
   "groupEditorAddFriendsHint": "친구를 먼저 추가하세요.",
-
   "peerPinDestinationFallback": "목적지",
   "peerPinDestinationLabel": "🎯 {name}",
-
   "stationDetailCloseLabel": "역 상세 닫기",
   "stationDetailDeparture": "출발",
   "stationDetailArrival": "도착",
@@ -1118,7 +1113,6 @@
   "stationDetailBoardingCount": "승차 {count}명",
   "stationDetailAlightingCount": "하차 {count}명",
   "stationDetailClosureCount": "시설 폐쇄 {count}건",
-
   "visitTimelineTitle": "내 발자국",
   "visitTimelineSummary": "{count}곳 · 가장 최근 {ago}",
   "visitTimelineEmpty": "방문 기록이 없어요.",
@@ -1134,7 +1128,6 @@
   "visitTimelineAgoHour": "{hour}시간 전",
   "visitTimelineAgoDay": "{day}일 전",
   "visitTimelineVisitCount": "{count}회",
-
   "permPageTitle": "권한 설정",
   "permPageBody": "아래 권한을 한 번에 설정해두면\n앱을 쓰다가 멈추는 일이 없어요.",
   "permPageFooter": "거부해도 앱은 동작해요. 해당 기능만 제한됨.",
@@ -1152,46 +1145,55 @@
   "permItemMicrophone": "마이크",
   "permItemMicrophoneDesc": "AI 음성 대화 + 음성 메시지",
   "permTapToSettings": "{desc} (탭하면 설정 열기)",
-
   "livingCityTitle": "서울이 살아 움직여요",
   "livingCityBody": "아이콘을 누르면 카메라가 그 장면으로 날아가요.",
   "livingCityVehSubway": "지하철",
   "livingCityVehBus": "버스",
   "livingCityVehRiverBus": "한강버스",
   "livingCityVehFlight": "항공기",
-
   "infoBarsTierFlagship": "플래그십",
   "infoBarsTierHigh": "상위",
   "infoBarsTierMid": "중급",
   "infoBarsTierLow": "저사양",
   "infoBarsProfileToast": "{model} · {tier}\n{fps}fps · 폴링 {pollMs}ms 최적화 적용",
-
   "navBannerNext": "다음",
   "navBannerWalkTo": "{station}까지 도보",
   "navBannerBoardAt": "{station}에서 {line} 승차",
   "navBannerWalkDetail": "{min}분 이동",
   "navBannerTransitDetail": "{station} 방면 · {min}분",
-
   "readyPageTitle": "준비됐어요",
   "readyPageBody": "아래 시작 버튼을 누르면\n실시간 서울이 펼쳐져요.",
-
   "welcomePageSubtitle": "서울을 새로운 시각으로",
-
   "pathfindingPageTitle": "오늘은 어떤 여행?",
   "pathfindingPageBody": "AI 비서가 너의 무드에 맞춰 코스를 짜줄게.\n나중에 언제든 바꿀 수 있어.",
-
   "riverBusStopLabel": "{name} 선착장",
   "riverBusRouteEnded": "운항 종료",
   "riverBusNextTime": "다음 {time}",
   "riverBusMaintenance": "정비 중",
   "riverBusDeparture": "출발",
   "riverBusArrival": "도착",
-
   "qualityPreviewDemoLabel": "DEMO · 지하철",
   "qualityPresetHigh": "고품질",
   "qualityPresetMedium": "부드러움",
   "qualityPresetLow": "배터리 절약",
   "qualityPresetHighDetail": "60 fps · 효과 ON",
   "qualityPresetMediumDetail": "30 fps · 효과 일부",
-  "qualityPresetLowDetail": "10 fps · 효과 OFF"
+  "qualityPresetLowDetail": "10 fps · 효과 OFF",
+  "commonReset": "초기화",
+  "profileResetFavoritesTitle": "즐겨찾기 초기화",
+  "profileResetFavoritesBody": "저장된 즐겨찾기가 모두 삭제됩니다. 이 작업은 되돌릴 수 없습니다.",
+  "profileResetFavoritesToast": "즐겨찾기가 초기화되었습니다",
+  "profileResetVisitsTitle": "방문 기록 초기화",
+  "profileResetVisitsBody": "최근 방문과 자주 방문 기록이 모두 함께 삭제됩니다. 이 작업은 되돌릴 수 없습니다.",
+  "profileResetVisitsToast": "방문 기록이 초기화되었습니다",
+  "settingsSectionWeather": "날씨",
+  "settingsAutoWeather": "자동 (실시간 날씨)",
+  "settingsWeatherOverride": "날씨 상태",
+  "weatherClear": "맑음",
+  "weatherCloudy": "흐림",
+  "weatherRain": "비",
+  "weatherDrizzle": "이슬비",
+  "weatherSnow": "눈",
+  "weatherFog": "안개",
+  "weatherThunderstorm": "뇌우"
 }

@@ -540,12 +540,17 @@ class _ChatSheetState extends State<ChatSheet> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 6),
-                  _placeAction(
-                    icon: Icons.flag_rounded,
-                    label: l.chatActionRoomDest,
-                    onTap: () => _setRoomDestination(name, lat, lng),
-                  ),
+                  // 방 목적지 설정 — 방장만. 비-방장은 액션 숨김 (DB RPC 도 방장
+                  // 검증하므로 우회 시도 시 거부됨).
+                  if (MultiplayerService.instance.currentRoom?.ownerId ==
+                      MultiplayerService.instance.myId) ...[
+                    const SizedBox(height: 6),
+                    _placeAction(
+                      icon: Icons.flag_rounded,
+                      label: l.chatActionRoomDest,
+                      onTap: () => _setRoomDestination(name, lat, lng),
+                    ),
+                  ],
                 ],
               ),
             ),

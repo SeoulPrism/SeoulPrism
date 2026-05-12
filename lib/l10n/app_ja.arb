@@ -1,26 +1,20 @@
 {
   "@@locale": "ja",
-
   "appTitle": "Seoul Vista",
-
   "commonCancel": "キャンセル",
   "commonConfirm": "確認",
   "commonOk": "OK",
   "commonSave": "保存",
   "commonClose": "閉じる",
   "commonLater": "あとで",
-
   "settingsAppLanguageTitle": "言語",
-
   "languageSystem": "システム設定",
   "languageKo": "한국어",
   "languageEn": "English",
   "languageJa": "日本語",
   "languageZh": "简体中文",
-
   "languageChangedTitle": "言語を保存しました",
   "languageChangedBody": "新しい言語を完全に適用するには、Appスイッチャーで上にスワイプしてアプリを閉じ、もう一度開いてください。",
-
   "routeUnitHour": "時間",
   "routeUnitMin": "分",
   "routeTransfersCount": "乗換 {count}回",
@@ -34,7 +28,6 @@
   "routeSegmentShort": "{from} · {min}分",
   "routeShowStops": "停留所を表示 ▼",
   "routeCollapse": "折りたたむ ▲",
-
   "snsTitle": "AI プラン",
   "snsSubtitle": "SNS コンテンツでソウル 1 日プランを作成",
   "snsSectionPhotos": "写真",
@@ -46,14 +39,12 @@
   "snsAnalyzeError": "分析に失敗しました: {error}",
   "snsImageGallery": "ギャラリー",
   "snsImageCamera": "カメラ",
-
   "dayPlanTitle": "1 日プラン",
   "dayPlanNavigateAll": "全体ルート",
   "dayPlanTransitSummary": "🚇 {min}分",
   "dayPlanTransfersSummary": "🔄 {count}回",
   "dayPlanStyleStats": "{count}ヶ所 · {min}分",
   "dayPlanNavigateStop": "ルート",
-
   "whatsNewClose": "閉じる",
   "whatsNewSkip": "スキップ",
   "whatsNewStart": "はじめる",
@@ -82,7 +73,6 @@
   "whatsNewPage11Body": "韓国語・英語・日本語・中国語。\nAIアシスタントも同じ言語で。\n端末の言語に自動で合わせます。",
   "whatsNewPage12Title": "声でたずねる",
   "whatsNewPage12Body": "AIアシスタントと声で自然に。\n検索・経路・おすすめも声で。\nGemini Live が聞いてその場で答えます。",
-
   "profileCategoryFavorites": "お気に入り",
   "profileCategoryRecent": "最近の訪問",
   "profileCategoryFrequent": "よく行く",
@@ -111,7 +101,6 @@
   "profileMore": "もっと見る",
   "profileEmptyMapPlaces": "訪問が貯まると、ここのマップに表示されます",
   "profileRecentPlaceCount": "最近の {count} ヶ所",
-
   "chatSendFailed": "送信に失敗しました: {error}",
   "chatRoomDestSet": "🎯 ルームの目的地に設定しました",
   "chatActionFailed": "失敗: {error}",
@@ -148,13 +137,11 @@
   "spotifyOpenInApp": "Spotify で開く",
   "spotifyShareFailed": "共有に失敗: {error}",
   "spotifyNoTrack": "再生中の曲はありません",
-
   "dmAccessDenied": "この会話にアクセスできません",
   "dmSendFailed": "送信に失敗: {error}",
   "dmDefaultPeer": "友だち",
   "dmEmptyHint": "最初のメッセージを送ってみましょう",
   "dmMessageHint": "メッセージ",
-
   "friendCodeLengthError": "8 桁のコードを入力してください。",
   "friendCodeNotFound": "コードに一致するユーザーが見つかりません。",
   "friendRequestSent": "{nickname} さんに友だち申請を送りました。",
@@ -171,7 +158,6 @@
   "friendAddByCodeHint": "受け取った 8 桁のコードを入力するか QR をスキャン",
   "friendCodePlaceholder": "例: AB12CD34",
   "friendSendRequest": "友だち申請を送る",
-
   "peerFriendCode": "友だちコード {code}",
   "peerOwnPin": "自分のピンです",
   "peerReport": "報告",
@@ -190,7 +176,6 @@
   "peerRequestSent": "{nickname} に申請を送りました",
   "peerDistanceMeters": "{meters}m 先",
   "peerDistanceKm": "{km}km 先",
-
   "spotifyRoomRequired": "ルームに参加してからもう一度お試しください",
   "spotifyShareSuccess": "🎵 ルームに共有しました",
   "spotifyDisconnectTitle": "Spotify 連携を解除",
@@ -209,23 +194,19 @@
   "spotifyDisconnect": "連携を解除",
   "spotifyConnectedNoTrack": "Spotify 接続中 (再生なし)",
   "spotifyNowPlaying": "再生中の曲",
-
   "departureTimePickerTitle": "出発時刻",
   "departureTimePickerHint": "指定した時刻を基準に到着時刻を計算します。",
   "departureTimeNow": "今すぐ",
   "departureTime30min": "30 分後",
   "departureTime1hour": "1 時間後",
   "departureTimeCustom": "時刻を指定",
-
   "placeActionDepart": "出発",
   "placeActionArrive": "到着",
   "placeActionInfo": "詳細",
   "placeDetailTapHint": "タップして写真・レビュー・営業時間を見る",
-
   "savedPanelTitle": "保存",
   "savedEmptyFavorites": "保存された場所はありません",
   "savedRemoveFavoriteTooltip": "お気に入りから外す",
-
   "travelThemeTitle": "テーマのおすすめ",
   "travelThemeSubtitle": "ワンタップでコースを自動生成",
   "travelTitle": "旅",
@@ -249,11 +230,9 @@
   "travelMoodIntense": "激しいビートには",
   "travelMoodCalm": "落ち着いた雰囲気には",
   "travelTodayMoodLabel": "今日の気分",
-
   "notificationsTitle": "通知",
   "notificationsEmptyTitle": "通知はありません",
   "notificationsEmptySubtitle": "新しいお知らせはここに表示されます",
-
   "settingsTitle": "設定",
   "settingsSectionRealtime": "リアルタイム表示",
   "settingsLineSubway": "地下鉄路線",
@@ -305,6 +284,9 @@
   "settingsSectionDeveloper": "開発者",
   "settingsDebugLogs": "デバッグログ出力",
   "settingsResetTutorial": "チュートリアルを再生",
+  "settingsDeveloperModeEnabled": "デベロッパーモードが有効になりました",
+  "settingsDeveloperModeDisabled": "デベロッパーモードを無効にしました",
+  "settingsDeveloperModeDisable": "デベロッパーモードをオフ",
   "settingsReplayWhatsNew": "新機能の案内をもう一度",
   "settingsWhatsNewToast": "次回のアプリ起動時に新機能の案内が表示されます",
   "settingsAppVersion": "アプリのバージョン",
@@ -338,7 +320,6 @@
   "settingsResetTutorialConfirm": "再生",
   "settingsMapDisplayTitle": "マップ表示とデータ",
   "settingsSectionMapDisplay": "マップ表示",
-
   "aiStatusSearchingCourse": "コースを検索中…",
   "aiPlacesFound": "{count}件の場所が見つかりました。下からご確認ください。",
   "aiStatusFindingInfo": "情報を検索中…",
@@ -357,7 +338,6 @@
   "aiVoiceCommandHint": "「カフェを追加して」「景福宮を外して」「これで確定」など、話しかけてください",
   "aiPlaceStationDistance": "{station}駅 · {minutes}分",
   "aiDefaultSearch": "ソウル旅行のおすすめコース",
-
   "recommendTitle": "おすすめ",
   "recommendSubtitleNearbyArea": "{area} 近くで今人気のスポット",
   "recommendSubtitleNearbyDefault": "今近くで人気のスポット",
@@ -373,7 +353,6 @@
   "recommendTabShopping": "🛍 ショッピング",
   "recommendTabOutdoor": "🌳 公園・夜景",
   "recommendTabEvents": "🎭 カルチャー",
-
   "authTabSignUp": "新規登録",
   "authTabSignIn": "ログイン",
   "authProcessing": "処理中…",
@@ -422,7 +401,6 @@
   "authFindIdEmailHint": "登録したメールアドレスを入力してください",
   "authFindIdSubmit": "ID を探す",
   "authFindPasswordSubmit": "再設定リンクを受け取る",
-
   "hubSettingsTooltip": "設定",
   "hubAuthExploreSeoulTitle": "友だちと一緒にソウルを探検",
   "hubAuthCreateProfileSubtitle": "ニックネームとピンを作って始めましょう。",
@@ -457,7 +435,6 @@
   "hubAgoDay": "{day}日前",
   "hubRecentMeetupsTitle": "🎉 最近の出会い",
   "hubRecentMeetupsCount": "{count}回",
-
   "roomCodeRequired": "6 桁のコードを入力してください。",
   "roomLeaveTitle": "ルームから退出",
   "roomLeaveBody": "退出すると位置共有とチャットが終了します。",
@@ -501,7 +478,37 @@
   "roomDestDefault": "目的地",
   "roomDestViewMap": "マップで見る",
   "roomDestClear": "目的地を解除",
-
+  "roomOwnerBadge": "オーナー",
+  "roomDestOwnerOnly": "オーナーだけが設定できます",
+  "roomDestSearchHint": "どこで集まる？",
+  "roomDestSearchAction": "検索",
+  "roomDestSearchEmpty": "結果がありません",
+  "roomDestSearchSearching": "検索中…",
+  "roomDestProposeVote": "投票で決める",
+  "roomDestSetNow": "すぐ確定",
+  "roomDestProposalVoting": "投票中",
+  "roomDestProposalBy": "{name} さんが提案",
+  "@roomDestProposalBy": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "roomDestProposalCounts": "賛成 {yes} · 反対 {no}",
+  "@roomDestProposalCounts": {
+    "placeholders": {
+      "yes": {
+        "type": "int"
+      },
+      "no": {
+        "type": "int"
+      }
+    }
+  },
+  "roomDestVoteYes": "賛成",
+  "roomDestVoteNo": "反対",
+  "roomDestProposalCancel": "候補を取り消し",
   "mpSettingsTitle": "Seoul Live 設定",
   "mpSectionMyStatus": "私の状態",
   "mpPause": "Seoul Live を一時停止",
@@ -546,7 +553,6 @@
   "mpNotifCatMeetup": "出会い検知",
   "mpNotifCatDestination": "目的地の変更",
   "mpNotifCatWelcome": "ようこそ",
-
   "panelSubway": "地下鉄",
   "panelBus": "バス",
   "panelFlights": "航空機",
@@ -600,12 +606,10 @@
   "panelMapEngine": "マップエンジン",
   "panelDevice": "デバイス",
   "panelPerfTier": "パフォーマンスティア",
-
   "mapDisplay3D": "3D 建物表示",
   "mapDisplayPois": "POI アイコン表示",
   "mapDisplayWeather": "天気エフェクト (霧/雨)",
   "mapDisplayLiveSubway": "リアルタイム地下鉄",
-
   "friendsGroupTooltip": "友だちグループ",
   "friendsCodeTooltip": "友だちコード",
   "friendsAddByNickname": "ニックネームで友だち追加",
@@ -640,7 +644,6 @@
   "friendsSuggestionsTitle": "おすすめの友だち (友だちの友だち)",
   "friendsMutualCount": "共通の友だち {count} 人",
   "friendsAddShort": "追加",
-
   "searchRouteNotFound": "経路が見つかりませんでした。出発地/到着地をご確認ください。",
   "searchLocationUnavailable": "現在地を取得できませんでした。位置情報の権限と GPS をご確認ください。",
   "searchTabRoute": "ルート",
@@ -679,7 +682,6 @@
   "searchCatCity": "都市",
   "searchCatNeighborhood": "町",
   "searchCatRoad": "道路",
-
   "liveBadgePeerTrack": "{nickname} さんが {track} を聴いています",
   "liveBadgeSharing": "{count} 人と位置共有中",
   "liveBadgeStopped": "位置共有を停止しました",
@@ -705,7 +707,8 @@
   "commonSkip": "スキップ",
   "commonStart": "始める",
   "commonNext": "次へ",
-  "welcomePageLanguagesHint": "한국어 · English · 日本語 · 中文 — AI が同じ言語で答えます",
+  "welcomePageLanguagesHint": "한국어 · English · 日本語 · 中文 — 設定でいつでも切り替えできます",
+  "liveActivationHint": "Seoul Live を有効にすると使えます",
   "liveMeetTitle": "一緒に行く",
   "liveMeetBody": "ルームで共通の目的地を決めるとメンバーごとの距離がリアルタイムで表示。マップにはオレンジのピンが自動で。",
   "liveDmHint": "1:1 DM · 音声 · 写真 · 位置",
@@ -717,17 +720,34 @@
   "aiDayPlanHint": "保存した場所で一日プランを自動生成",
   "permPagePrivacyHint": "通知は種類別にオン/オフ、位置は特定のグループだけに共有しましょう。",
   "roomMembersNearbyHeader": "周辺 {count}人 (500m 以内)",
-  "@roomMembersNearbyHeader": { "placeholders": { "count": { "type": "int" } } },
+  "@roomMembersNearbyHeader": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "roomMembersPublicSectionHeader": "全体公開ユーザー",
   "roomMembersSeeAllPublic": "全体を見る ({count}人)",
-  "@roomMembersSeeAllPublic": { "placeholders": { "count": { "type": "int" } } },
+  "@roomMembersSeeAllPublic": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "roomMembersHidePublic": "全体を隠す",
   "liveBadgeSharingPublic": "{count}人に公開中",
-  "@liveBadgeSharingPublic": { "placeholders": { "count": { "type": "int" } } },
+  "@liveBadgeSharingPublic": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "roomMembersDisconnected": "未接続",
   "roomMembersRealtime": "リアルタイム",
   "roomMembersStale": "少し離れています",
-
   "dmListAgoJust": "たった今",
   "dmListAgoMin": "{min} 分",
   "dmListAgoHour": "{hour} 時間",
@@ -738,7 +758,6 @@
   "dmListKindSpotify": "🎵 曲",
   "dmListEmpty": "まだ DM がありません",
   "dmListEmptyHint": "友だち画面でメッセージボタンから開始",
-
   "friendGroupsNewTitle": "新しいグループ",
   "friendGroupsNewTooltip": "新しいグループ",
   "friendGroupsEmpty": "まだグループがありません",
@@ -759,11 +778,9 @@
   "friendGroupsMembersTitle": "{emoji} {name} のメンバー",
   "friendGroupsEditMembers": "メンバーを編集",
   "friendGroupsEmptyFriendsBox": "まだ友だちがいません",
-
   "loginRequiredTitle": "ログインが必要です",
   "loginRequiredBody": "マルチプレイは正式ログインユーザーのみ利用できます。\nゲスト (匿名) アカウントは 30 日未使用で自動削除されるため、\n友だち・ルーム情報が失われる可能性があります。",
   "loginRequiredCta": "ログイン",
-
   "reportReasonSpam": "スパム/広告",
   "reportReasonHate": "暴言/ヘイト表現",
   "reportReasonSexual": "性的/不快なコンテンツ",
@@ -780,13 +797,11 @@
   "reportSubmit": "報告する",
   "reportSubmitting": "送信中…",
   "reportFallbackUser": "ユーザー",
-
   "blockedUsersTitle": "ブロックリスト",
   "blockedUsersEmpty": "ブロック中のユーザーはいません",
   "blockedUsersUnblockTitle": "{name} のブロックを解除",
   "blockedUsersUnblockBody": "解除すると再び出会えるようになり、メッセージも表示されます。",
   "blockedUsersUnblockConfirm": "解除",
-
   "activityTitle": "アクティビティ",
   "activityCatMeetup": "🎉 出会い",
   "activityCatFriend": "🤝 友だち",
@@ -810,13 +825,11 @@
   "activityWeekdayFri": "金",
   "activityWeekdaySat": "土",
   "activityWeekdaySun": "日",
-
   "peerNowPlayingBtnFriend": "友だちです ✓",
   "peerNowPlayingBtnRequested": "申請済",
   "peerNowPlayingBtnAccept": "友だち申請を承認",
   "peerNowPlayingBtnSendRequest": "友だち申請を送る",
   "peerNowPlayingOpenInSpotify": "Spotify で聴く",
-
   "mapNoLocationPermission": "位置情報の権限がないため、友だちにピンが見えません。設定 → 位置情報 で許可してください。",
   "mapLeftRoom": "ルームから退出しました",
   "mapShowOnMap": "マップで \"{name}\" を見る",
@@ -837,7 +850,6 @@
   "mapNoCoords": "出発/到着の座標が見つかりません",
   "mapDirectionsFailed": "ルートを取得できませんでした",
   "mapInsufficientSavedPlaces": "場所がもっと必要です — お気に入り/訪問履歴が {min} 件以上になると自動生成されます",
-
   "subwayPanelExpand": "パネルを展開",
   "subwayPanelCollapse": "パネルを折りたたむ",
   "subwayPanelDelayedTrains": "遅延列車 {count} 本",
@@ -881,9 +893,7 @@
   "subwayPanelTrainTypeExpress": "急行",
   "subwayPanelTrainTypeSpecial": "特急",
   "subwayPanelTrainTypeRegular": "普通",
-
   "searchTileSubway": "地下鉄",
-
   "profileEditNicknameInvalid": "ニックネームは 1〜20 文字で入力してください。",
   "profileEditBirthInvalid": "生年 (YYYY) を正しく入力してください。",
   "profileEditAgeRestriction": "14 歳未満はマルチプレイを利用できません。",
@@ -919,7 +929,6 @@
   "profileEditVisibilityGroupDesc": "下で選択したグループの友だちのみ位置情報を見られます。",
   "profileEditVisibilityPublicDesc": "⚠️ Seoul Live ユーザー誰でもあなたの位置情報を見られます。ルームでも同じです。",
   "profileEditNoGroups": "グループがありません。友だち → グループ から作成してください。",
-
   "adminMonitorTitle": "運営モニター",
   "adminRefresh": "更新",
   "adminTabMetrics": "指標",
@@ -945,7 +954,6 @@
   "adminAgoMin": "{min} 分前",
   "adminAgoHour": "{hour} 時間前",
   "adminAgoDay": "{day} 日前",
-
   "liveDiagTitle": "リアルタイム診断",
   "liveDiagMyId": "マイ ID",
   "liveDiagVisibility": "公開範囲",
@@ -972,7 +980,6 @@
   "liveDiagRoomLabel": "{code} ({count} 人)",
   "liveDiagGpsHas": "あり",
   "liveDiagGpsNo": "なし",
-
   "mpConsentLocationDenied": "設定 > 位置情報 で位置情報の権限を許可してください。",
   "mpConsentTitle": "マルチプレイ開始前のご案内",
   "mpConsentHeading": "Seoul Live 同意",
@@ -993,7 +1000,6 @@
   "mpConsentLaterButton": "あとで",
   "mpConsentSubmitBusy": "処理中…",
   "mpConsentLbsTermsBody": "本規約は Seoul Vista が提供する Seoul Live (以下「本サービス」) の位置基盤サービス利用に関する事項を定めるものです。",
-
   "optTitle": "あなたの端末に合わせて",
   "optSubtitle": "リアルタイムビジュアライズは GPU 負荷が高めです。\n端末に合わせてお選びください。",
   "optPresetHighTitle": "高画質",
@@ -1013,7 +1019,6 @@
   "optLayerFlightsSub": "仁川空港周辺のリアルタイム航空機",
   "optDetectedTier": "{tier} 等級として検出されました",
   "optRecommended": "推奨",
-
   "vehicleCongestion": "混雑度",
   "vehicleCongestionNone": "情報なし",
   "vehicleCongestionFree": "余裕",
@@ -1043,33 +1048,27 @@
   "vehicleRiverPhaseStop": "停泊",
   "vehicleNext": "次",
   "vehicleProgress": "進行",
-
   "deepLinkRoomLoginRequired": "ログイン後にルームへ入れます",
   "deepLinkRoomEntered": "ルーム入場 — コード {code}",
   "deepLinkRoomFailure": "ルーム入場失敗: {error}",
-
   "snsAnalysisTitle": "分析結果",
   "snsAnalysisEmpty": "抽出された場所がありません",
   "snsAnalysisCreatePlans": "プラン作成 ({count}件)",
   "snsAnalysisPlanFailure": "プラン作成失敗: {error}",
   "snsAnalysisNearestStation": "📍 {station}駅 · {minutes}分",
-
   "avatarMyPin": "私のピン",
   "avatarNoRoomHint": "友だちルームに参加すると友だちが表示されます",
   "avatarNoRoomMembers": "まだ一緒にいる友だちがいません",
   "avatarRoomMembersCount": "一緒の友だち {count}人",
   "avatarNoTrack": "再生中の曲はありません",
-
   "qrScanTitle": "QR スキャン",
   "qrScanCameraError": "カメラを使用できません\n{error}",
   "qrScanHint": "友だちの QR をフレームに合わせてください",
-
   "buildingOccupantsFallbackName": "建物",
   "buildingOccupantsInside": "{count}人が中にいます",
   "buildingOccupantsEmpty": "建物から出ました",
   "buildingOccupantsListening": "🎵 {name} · {artist} を聴いています",
   "buildingOccupantsInBuilding": "🏢 建物の中にいます",
-
   "weatherWeeklyLabel": "週間",
   "weatherToday": "今日",
   "weatherDayMon": "月",
@@ -1079,7 +1078,6 @@
   "weatherDayFri": "金",
   "weatherDaySat": "土",
   "weatherDaySun": "日",
-
   "locPermTitle": "位置情報の許可が必要です",
   "locPermBody": "現在地を地図に表示し、周辺情報や経路を正確に案内するために\n位置情報の許可が必要です。",
   "locPermRequesting": "リクエスト中...",
@@ -1087,7 +1085,6 @@
   "locPermGranted": "✓ 位置情報を許可済み",
   "locPermDenied": "拒否されました — 設定から直接許可できます",
   "locPermRetry": "再試行",
-
   "groupEditorTitle": "友だちグループ",
   "groupEditorNew": "新規グループ",
   "groupEditorEmpty": "まだグループがありません",
@@ -1101,10 +1098,8 @@
   "groupEditorDeleteBody": "グループのみ削除され、友だちは保持されます。",
   "groupEditorDelete": "削除",
   "groupEditorAddFriendsHint": "先に友だちを追加してください。",
-
   "peerPinDestinationFallback": "目的地",
   "peerPinDestinationLabel": "🎯 {name}",
-
   "stationDetailCloseLabel": "駅の詳細を閉じる",
   "stationDetailDeparture": "出発",
   "stationDetailArrival": "到着",
@@ -1118,7 +1113,6 @@
   "stationDetailBoardingCount": "乗車 {count}人",
   "stationDetailAlightingCount": "降車 {count}人",
   "stationDetailClosureCount": "施設閉鎖 {count}件",
-
   "visitTimelineTitle": "わたしの足あと",
   "visitTimelineSummary": "{count}件 · 直近 {ago}",
   "visitTimelineEmpty": "訪問記録がありません。",
@@ -1134,7 +1128,6 @@
   "visitTimelineAgoHour": "{hour}時間前",
   "visitTimelineAgoDay": "{day}日前",
   "visitTimelineVisitCount": "{count}回",
-
   "permPageTitle": "権限設定",
   "permPageBody": "事前に権限を許可すれば\nアプリ使用中に止まることがありません。",
   "permPageFooter": "拒否してもアプリは動作します。該当機能のみ制限されます。",
@@ -1152,46 +1145,55 @@
   "permItemMicrophone": "マイク",
   "permItemMicrophoneDesc": "AI 音声会話 + 音声メッセージ",
   "permTapToSettings": "{desc} (タップで設定を開く)",
-
   "livingCityTitle": "ソウルが息づく",
   "livingCityBody": "アイコンを押すとカメラがそのシーンへ飛びます。",
   "livingCityVehSubway": "地下鉄",
   "livingCityVehBus": "バス",
   "livingCityVehRiverBus": "ハンガンバス",
   "livingCityVehFlight": "航空機",
-
   "infoBarsTierFlagship": "フラッグシップ",
   "infoBarsTierHigh": "ハイエンド",
   "infoBarsTierMid": "ミドル",
   "infoBarsTierLow": "ローエンド",
   "infoBarsProfileToast": "{model} · {tier}\n{fps}fps · ポーリング {pollMs}ms 最適化適用",
-
   "navBannerNext": "次へ",
   "navBannerWalkTo": "{station}まで徒歩",
   "navBannerBoardAt": "{station}で {line} に乗車",
   "navBannerWalkDetail": "{min}分 移動",
   "navBannerTransitDetail": "{station}方面 · {min}分",
-
   "readyPageTitle": "準備完了",
   "readyPageBody": "下のスタートボタンを押すと\nリアルタイムのソウルが広がります。",
-
   "welcomePageSubtitle": "ソウルを新しい視点で",
-
   "pathfindingPageTitle": "今日はどんな旅?",
   "pathfindingPageBody": "AI アシスタントが気分に合わせてコースを組みます。\nあとでいつでも変えられます。",
-
   "riverBusStopLabel": "{name} 船着場",
   "riverBusRouteEnded": "運航終了",
   "riverBusNextTime": "次 {time}",
   "riverBusMaintenance": "整備中",
   "riverBusDeparture": "出発",
   "riverBusArrival": "到着",
-
   "qualityPreviewDemoLabel": "DEMO · 地下鉄",
   "qualityPresetHigh": "高品質",
   "qualityPresetMedium": "なめらか",
   "qualityPresetLow": "省電力",
   "qualityPresetHighDetail": "60 fps · 効果 ON",
   "qualityPresetMediumDetail": "30 fps · 効果 一部",
-  "qualityPresetLowDetail": "10 fps · 効果 OFF"
+  "qualityPresetLowDetail": "10 fps · 効果 OFF",
+  "commonReset": "リセット",
+  "profileResetFavoritesTitle": "お気に入りをリセット",
+  "profileResetFavoritesBody": "保存されたお気に入りがすべて削除されます。この操作は取り消せません。",
+  "profileResetFavoritesToast": "お気に入りをリセットしました",
+  "profileResetVisitsTitle": "訪問履歴をリセット",
+  "profileResetVisitsBody": "最近の訪問と頻繁な訪問の履歴がすべて一緒に削除されます。この操作は取り消せません。",
+  "profileResetVisitsToast": "訪問履歴をリセットしました",
+  "settingsSectionWeather": "天気",
+  "settingsAutoWeather": "自動 (リアルタイム天気)",
+  "settingsWeatherOverride": "天気の状態",
+  "weatherClear": "晴れ",
+  "weatherCloudy": "曇り",
+  "weatherRain": "雨",
+  "weatherDrizzle": "霧雨",
+  "weatherSnow": "雪",
+  "weatherFog": "霧",
+  "weatherThunderstorm": "雷雨"
 }

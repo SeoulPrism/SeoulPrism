@@ -1,26 +1,20 @@
 {
   "@@locale": "zh",
-
   "appTitle": "Seoul Vista",
-
   "commonCancel": "取消",
   "commonConfirm": "确认",
   "commonOk": "好",
   "commonSave": "保存",
   "commonClose": "关闭",
   "commonLater": "稍后",
-
   "settingsAppLanguageTitle": "语言",
-
   "languageSystem": "跟随系统",
   "languageKo": "한국어",
   "languageEn": "English",
   "languageJa": "日本語",
   "languageZh": "简体中文",
-
   "languageChangedTitle": "已保存语言",
   "languageChangedBody": "要完全应用新语言,请在应用切换器中向上滑动关闭应用,然后重新打开。",
-
   "routeUnitHour": "小时",
   "routeUnitMin": "分钟",
   "routeTransfersCount": "换乘 {count} 次",
@@ -34,7 +28,6 @@
   "routeSegmentShort": "{from} · {min} 分钟",
   "routeShowStops": "查看站点 ▼",
   "routeCollapse": "收起 ▲",
-
   "snsTitle": "AI 行程",
   "snsSubtitle": "用社交内容生成首尔一日行程",
   "snsSectionPhotos": "照片",
@@ -46,14 +39,12 @@
   "snsAnalyzeError": "分析失败:{error}",
   "snsImageGallery": "相册",
   "snsImageCamera": "相机",
-
   "dayPlanTitle": "一日行程",
   "dayPlanNavigateAll": "全程导航",
   "dayPlanTransitSummary": "🚇 {min} 分钟",
   "dayPlanTransfersSummary": "🔄 {count} 次",
   "dayPlanStyleStats": "{count} 个地点 · {min} 分钟",
   "dayPlanNavigateStop": "导航",
-
   "whatsNewClose": "关闭",
   "whatsNewSkip": "跳过",
   "whatsNewStart": "开始体验",
@@ -82,7 +73,6 @@
   "whatsNewPage11Body": "中文、韩文、英文、日文。\nAI 助手也用同一种语言回应。\n自动跟随设备语言。",
   "whatsNewPage12Title": "用嘴问，用嘴答",
   "whatsNewPage12Body": "和 AI 助手自然语音对话。\n搜索、导航、推荐都能用语音。\nGemini Live 即听即答。",
-
   "profileCategoryFavorites": "收藏",
   "profileCategoryRecent": "最近到访",
   "profileCategoryFrequent": "常去",
@@ -111,7 +101,6 @@
   "profileMore": "更多",
   "profileEmptyMapPlaces": "访问积累后,会显示在这张地图上",
   "profileRecentPlaceCount": "最近 {count} 个地点",
-
   "chatSendFailed": "发送失败:{error}",
   "chatRoomDestSet": "🎯 已设为房间目的地",
   "chatActionFailed": "失败:{error}",
@@ -148,13 +137,11 @@
   "spotifyOpenInApp": "在 Spotify 中打开",
   "spotifyShareFailed": "分享失败:{error}",
   "spotifyNoTrack": "目前没有正在播放的曲目",
-
   "dmAccessDenied": "无法访问此对话",
   "dmSendFailed": "发送失败:{error}",
   "dmDefaultPeer": "好友",
   "dmEmptyHint": "发送第一条消息吧",
   "dmMessageHint": "消息",
-
   "friendCodeLengthError": "请输入 8 位代码。",
   "friendCodeNotFound": "找不到对应代码的用户。",
   "friendRequestSent": "已向 {nickname} 发送好友申请。",
@@ -171,7 +158,6 @@
   "friendAddByCodeHint": "输入收到的 8 位代码或扫描 QR",
   "friendCodePlaceholder": "例如:AB12CD34",
   "friendSendRequest": "发送好友申请",
-
   "peerFriendCode": "好友代码 {code}",
   "peerOwnPin": "这是你自己的图钉",
   "peerReport": "举报",
@@ -190,7 +176,6 @@
   "peerRequestSent": "已向 {nickname} 发送申请",
   "peerDistanceMeters": "{meters}m",
   "peerDistanceKm": "{km}km",
-
   "spotifyRoomRequired": "请进入好友房间后再试",
   "spotifyShareSuccess": "🎵 已分享到房间",
   "spotifyDisconnectTitle": "断开 Spotify",
@@ -209,23 +194,19 @@
   "spotifyDisconnect": "断开连接",
   "spotifyConnectedNoTrack": "Spotify 已连接 (无播放)",
   "spotifyNowPlaying": "正在播放",
-
   "departureTimePickerTitle": "出发时间",
   "departureTimePickerHint": "将以指定时间为基础计算到达时间。",
   "departureTimeNow": "现在",
   "departureTime30min": "30 分钟后",
   "departureTime1hour": "1 小时后",
   "departureTimeCustom": "自定义",
-
   "placeActionDepart": "出发",
   "placeActionArrive": "到达",
   "placeActionInfo": "信息",
   "placeDetailTapHint": "点击查看照片·评价·营业时间",
-
   "savedPanelTitle": "已保存",
   "savedEmptyFavorites": "暂无已保存的地点",
   "savedRemoveFavoriteTooltip": "取消收藏",
-
   "travelThemeTitle": "主题推荐",
   "travelThemeSubtitle": "一键自动生成路线",
   "travelTitle": "旅行",
@@ -249,11 +230,9 @@
   "travelMoodIntense": "强烈的节拍里",
   "travelMoodCalm": "宁静的氛围里",
   "travelTodayMoodLabel": "今天的心情",
-
   "notificationsTitle": "通知",
   "notificationsEmptyTitle": "暂无通知",
   "notificationsEmptySubtitle": "有新消息时会显示在这里",
-
   "settingsTitle": "设置",
   "settingsSectionRealtime": "实时可视化",
   "settingsLineSubway": "地铁线路",
@@ -305,6 +284,9 @@
   "settingsSectionDeveloper": "开发者",
   "settingsDebugLogs": "调试日志输出",
   "settingsResetTutorial": "重新查看引导",
+  "settingsDeveloperModeEnabled": "已启用开发者模式",
+  "settingsDeveloperModeDisabled": "已关闭开发者模式",
+  "settingsDeveloperModeDisable": "关闭开发者模式",
   "settingsReplayWhatsNew": "重新查看新功能",
   "settingsWhatsNewToast": "下次启动应用时会再次显示新功能介绍",
   "settingsAppVersion": "应用版本",
@@ -338,7 +320,6 @@
   "settingsResetTutorialConfirm": "重新查看",
   "settingsMapDisplayTitle": "地图显示与数据",
   "settingsSectionMapDisplay": "地图显示",
-
   "aiStatusSearchingCourse": "正在搜索路线……",
   "aiPlacesFound": "找到 {count} 个地点!请在下方查看。",
   "aiStatusFindingInfo": "正在查找信息……",
@@ -357,7 +338,6 @@
   "aiVoiceCommandHint": "可以说「加个咖啡馆」「去掉景福宫」「就用这个」等",
   "aiPlaceStationDistance": "{station}站 · {minutes} 分钟",
   "aiDefaultSearch": "首尔旅行推荐路线",
-
   "recommendTitle": "推荐",
   "recommendSubtitleNearbyArea": "{area} 附近现在最热门的地方",
   "recommendSubtitleNearbyDefault": "附近现在最热门的地方",
@@ -373,7 +353,6 @@
   "recommendTabShopping": "🛍 购物",
   "recommendTabOutdoor": "🌳 公园·夜景",
   "recommendTabEvents": "🎭 文化",
-
   "authTabSignUp": "注册",
   "authTabSignIn": "登录",
   "authProcessing": "处理中……",
@@ -422,7 +401,6 @@
   "authFindIdEmailHint": "请输入注册时的邮箱",
   "authFindIdSubmit": "找回 ID",
   "authFindPasswordSubmit": "获取重置链接",
-
   "hubSettingsTooltip": "设置",
   "hubAuthExploreSeoulTitle": "和朋友一起探索首尔",
   "hubAuthCreateProfileSubtitle": "创建昵称和图钉开始体验。",
@@ -457,7 +435,6 @@
   "hubAgoDay": "{day} 天前",
   "hubRecentMeetupsTitle": "🎉 最近的相遇",
   "hubRecentMeetupsCount": "{count} 次",
-
   "roomCodeRequired": "请输入 6 位代码。",
   "roomLeaveTitle": "退出房间",
   "roomLeaveBody": "退出后将结束位置共享与聊天。",
@@ -501,7 +478,37 @@
   "roomDestDefault": "目的地",
   "roomDestViewMap": "在地图中查看",
   "roomDestClear": "取消目的地",
-
+  "roomOwnerBadge": "房主",
+  "roomDestOwnerOnly": "只有房主可以设定",
+  "roomDestSearchHint": "在哪里集合？",
+  "roomDestSearchAction": "搜索",
+  "roomDestSearchEmpty": "没有结果",
+  "roomDestSearchSearching": "搜索中…",
+  "roomDestProposeVote": "投票决定",
+  "roomDestSetNow": "立即设定",
+  "roomDestProposalVoting": "投票进行中",
+  "roomDestProposalBy": "{name} 提议",
+  "@roomDestProposalBy": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "roomDestProposalCounts": "赞成 {yes} · 反对 {no}",
+  "@roomDestProposalCounts": {
+    "placeholders": {
+      "yes": {
+        "type": "int"
+      },
+      "no": {
+        "type": "int"
+      }
+    }
+  },
+  "roomDestVoteYes": "赞成",
+  "roomDestVoteNo": "反对",
+  "roomDestProposalCancel": "撤销提议",
   "mpSettingsTitle": "Seoul Live 设置",
   "mpSectionMyStatus": "我的状态",
   "mpPause": "暂停 Seoul Live",
@@ -546,7 +553,6 @@
   "mpNotifCatMeetup": "相遇检测",
   "mpNotifCatDestination": "目的地变更",
   "mpNotifCatWelcome": "欢迎",
-
   "panelSubway": "地铁",
   "panelBus": "公交",
   "panelFlights": "飞机",
@@ -600,12 +606,10 @@
   "panelMapEngine": "地图引擎",
   "panelDevice": "设备",
   "panelPerfTier": "性能等级",
-
   "mapDisplay3D": "3D 建筑显示",
   "mapDisplayPois": "POI 图标显示",
   "mapDisplayWeather": "天气效果 (雾/雨)",
   "mapDisplayLiveSubway": "实时地铁",
-
   "friendsGroupTooltip": "好友分组",
   "friendsCodeTooltip": "好友代码",
   "friendsAddByNickname": "用昵称加好友",
@@ -640,7 +644,6 @@
   "friendsSuggestionsTitle": "推荐好友 (朋友的朋友)",
   "friendsMutualCount": "共同好友 {count} 人",
   "friendsAddShort": "添加",
-
   "searchRouteNotFound": "未找到路线。请确认出发地/到达地。",
   "searchLocationUnavailable": "无法获取当前位置。请检查定位权限和 GPS。",
   "searchTabRoute": "导航",
@@ -679,7 +682,6 @@
   "searchCatCity": "城市",
   "searchCatNeighborhood": "街区",
   "searchCatRoad": "道路",
-
   "liveBadgePeerTrack": "{nickname} 正在听 {track}",
   "liveBadgeSharing": "正在与 {count} 人共享位置",
   "liveBadgeStopped": "已停止位置共享",
@@ -705,7 +707,8 @@
   "commonSkip": "跳过",
   "commonStart": "开始体验",
   "commonNext": "下一步",
-  "welcomePageLanguagesHint": "한국어 · English · 日本語 · 中文 — AI 助手用相同语言回答",
+  "welcomePageLanguagesHint": "한국어 · English · 日本語 · 中文 — 设置中随时切换",
+  "liveActivationHint": "启用 Seoul Live 后可用",
   "liveMeetTitle": "一起出发",
   "liveMeetBody": "在好友房间设定共同目的地,每个成员的距离实时显示,地图上自动落下橙色图钉。",
   "liveDmHint": "1:1 私信 · 语音 · 照片 · 位置",
@@ -717,17 +720,34 @@
   "aiDayPlanHint": "用收藏地点自动生成一日行程",
   "permPagePrivacyHint": "按类型开关通知,位置仅向选定群组公开。",
   "roomMembersNearbyHeader": "附近 {count} 人 (500m 内)",
-  "@roomMembersNearbyHeader": { "placeholders": { "count": { "type": "int" } } },
+  "@roomMembersNearbyHeader": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "roomMembersPublicSectionHeader": "公开用户",
   "roomMembersSeeAllPublic": "查看全部 ({count} 人)",
-  "@roomMembersSeeAllPublic": { "placeholders": { "count": { "type": "int" } } },
+  "@roomMembersSeeAllPublic": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "roomMembersHidePublic": "隐藏全部",
   "liveBadgeSharingPublic": "对 {count} 人公开中",
-  "@liveBadgeSharingPublic": { "placeholders": { "count": { "type": "int" } } },
+  "@liveBadgeSharingPublic": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "roomMembersDisconnected": "未连接",
   "roomMembersRealtime": "实时",
   "roomMembersStale": "暂时离开",
-
   "dmListAgoJust": "刚刚",
   "dmListAgoMin": "{min} 分",
   "dmListAgoHour": "{hour} 小时",
@@ -738,7 +758,6 @@
   "dmListKindSpotify": "🎵 歌曲",
   "dmListEmpty": "暂无私信",
   "dmListEmptyHint": "在好友页点击消息按钮开始",
-
   "friendGroupsNewTitle": "新建分组",
   "friendGroupsNewTooltip": "新建分组",
   "friendGroupsEmpty": "暂无分组",
@@ -759,11 +778,9 @@
   "friendGroupsMembersTitle": "{emoji} {name} 的成员",
   "friendGroupsEditMembers": "编辑成员",
   "friendGroupsEmptyFriendsBox": "暂无好友",
-
   "loginRequiredTitle": "需要登录",
   "loginRequiredBody": "多人功能仅限正式登录用户使用。\n访客 (匿名) 账号 30 天未使用会自动删除,\n好友·房间信息可能丢失。",
   "loginRequiredCta": "去登录",
-
   "reportReasonSpam": "垃圾/广告",
   "reportReasonHate": "辱骂/仇恨表达",
   "reportReasonSexual": "色情/不适当内容",
@@ -780,13 +797,11 @@
   "reportSubmit": "举报",
   "reportSubmitting": "发送中……",
   "reportFallbackUser": "用户",
-
   "blockedUsersTitle": "屏蔽列表",
   "blockedUsersEmpty": "暂无屏蔽用户",
   "blockedUsersUnblockTitle": "取消屏蔽 {name}",
   "blockedUsersUnblockBody": "取消屏蔽后可再次相遇,消息也会显示。",
   "blockedUsersUnblockConfirm": "取消屏蔽",
-
   "activityTitle": "活动分析",
   "activityCatMeetup": "🎉 相遇",
   "activityCatFriend": "🤝 好友",
@@ -810,13 +825,11 @@
   "activityWeekdayFri": "五",
   "activityWeekdaySat": "六",
   "activityWeekdaySun": "日",
-
   "peerNowPlayingBtnFriend": "已是好友 ✓",
   "peerNowPlayingBtnRequested": "已申请",
   "peerNowPlayingBtnAccept": "接受好友申请",
   "peerNowPlayingBtnSendRequest": "发送好友申请",
   "peerNowPlayingOpenInSpotify": "在 Spotify 中收听",
-
   "mapNoLocationPermission": "没有位置权限,好友看不到我的图钉。请在 设置 → 位置 中允许。",
   "mapLeftRoom": "已退出好友房间",
   "mapShowOnMap": "在地图查看 \"{name}\"",
@@ -837,7 +850,6 @@
   "mapNoCoords": "未能找到出发/到达坐标",
   "mapDirectionsFailed": "未能加载路线",
   "mapInsufficientSavedPlaces": "需要更多地点 — 收藏/访问记录达到 {min} 个以上将自动生成路线",
-
   "subwayPanelExpand": "展开面板",
   "subwayPanelCollapse": "收起面板",
   "subwayPanelDelayedTrains": "延误列车 {count} 列",
@@ -881,9 +893,7 @@
   "subwayPanelTrainTypeExpress": "急行",
   "subwayPanelTrainTypeSpecial": "特快",
   "subwayPanelTrainTypeRegular": "普通",
-
   "searchTileSubway": "地铁",
-
   "profileEditNicknameInvalid": "昵称请输入 1~20 个字符。",
   "profileEditBirthInvalid": "请准确输入出生年份 (YYYY)。",
   "profileEditAgeRestriction": "14 岁以下无法使用多人功能。",
@@ -919,7 +929,6 @@
   "profileEditVisibilityGroupDesc": "只有所选分组的好友能看到你的位置。",
   "profileEditVisibilityPublicDesc": "⚠️ 任何 Seoul Live 用户都能看到你的位置。房间里也会同样发送。",
   "profileEditNoGroups": "暂无分组。请在 好友 → 分组 中创建。",
-
   "adminMonitorTitle": "运营监控",
   "adminRefresh": "刷新",
   "adminTabMetrics": "指标",
@@ -945,7 +954,6 @@
   "adminAgoMin": "{min} 分钟前",
   "adminAgoHour": "{hour} 小时前",
   "adminAgoDay": "{day} 天前",
-
   "liveDiagTitle": "实时诊断",
   "liveDiagMyId": "我的 ID",
   "liveDiagVisibility": "公开范围",
@@ -972,7 +980,6 @@
   "liveDiagRoomLabel": "{code} ({count} 人)",
   "liveDiagGpsHas": "有",
   "liveDiagGpsNo": "无",
-
   "mpConsentLocationDenied": "请在 设置 > 位置 中允许位置权限。",
   "mpConsentTitle": "多人功能开始前的说明",
   "mpConsentHeading": "Seoul Live 同意",
@@ -993,7 +1000,6 @@
   "mpConsentLaterButton": "稍后",
   "mpConsentSubmitBusy": "处理中……",
   "mpConsentLbsTermsBody": "本条款规定 Seoul Vista 提供的 Seoul Live (以下简称\"服务\") 位置基础服务的使用事项。",
-
   "optTitle": "为你的设备调校",
   "optSubtitle": "实时可视化对 GPU 负担较大。\n请根据设备选择。",
   "optPresetHighTitle": "高画质",
@@ -1013,7 +1019,6 @@
   "optLayerFlightsSub": "仁川机场附近的实时飞机",
   "optDetectedTier": "检测为 {tier} 级",
   "optRecommended": "推荐",
-
   "vehicleCongestion": "拥挤度",
   "vehicleCongestionNone": "无信息",
   "vehicleCongestionFree": "宽松",
@@ -1043,33 +1048,27 @@
   "vehicleRiverPhaseStop": "停靠",
   "vehicleNext": "下一站",
   "vehicleProgress": "进度",
-
   "deepLinkRoomLoginRequired": "登录后才能进入房间",
   "deepLinkRoomEntered": "进入房间 — 代码 {code}",
   "deepLinkRoomFailure": "进入房间失败: {error}",
-
   "snsAnalysisTitle": "分析结果",
   "snsAnalysisEmpty": "未提取到地点",
   "snsAnalysisCreatePlans": "创建行程 ({count}处)",
   "snsAnalysisPlanFailure": "行程生成失败: {error}",
   "snsAnalysisNearestStation": "📍 {station}站 · {minutes}分钟",
-
   "avatarMyPin": "我的图钉",
   "avatarNoRoomHint": "加入朋友房间后,朋友们会显示在这里",
   "avatarNoRoomMembers": "暂时没有同伴",
   "avatarRoomMembersCount": "同伴 {count} 人",
   "avatarNoTrack": "未在播放音乐",
-
   "qrScanTitle": "扫描 QR",
   "qrScanCameraError": "无法使用相机\n{error}",
   "qrScanHint": "请将朋友的 QR 码对准方框",
-
   "buildingOccupantsFallbackName": "建筑",
   "buildingOccupantsInside": "{count} 人在里面",
   "buildingOccupantsEmpty": "已离开建筑",
   "buildingOccupantsListening": "🎵 正在听 {name} · {artist}",
   "buildingOccupantsInBuilding": "🏢 在建筑内",
-
   "weatherWeeklyLabel": "一周",
   "weatherToday": "今天",
   "weatherDayMon": "一",
@@ -1079,7 +1078,6 @@
   "weatherDayFri": "五",
   "weatherDaySat": "六",
   "weatherDaySun": "日",
-
   "locPermTitle": "需要位置权限",
   "locPermBody": "为了在地图上显示您的位置,并提供周边信息和导航,\n需要位置权限。",
   "locPermRequesting": "请求中...",
@@ -1087,7 +1085,6 @@
   "locPermGranted": "✓ 已允许位置权限",
   "locPermDenied": "已拒绝 — 可在设置中手动允许",
   "locPermRetry": "重试",
-
   "groupEditorTitle": "朋友分组",
   "groupEditorNew": "新建分组",
   "groupEditorEmpty": "还没有分组",
@@ -1101,10 +1098,8 @@
   "groupEditorDeleteBody": "仅删除分组,朋友会保留。",
   "groupEditorDelete": "删除",
   "groupEditorAddFriendsHint": "请先添加朋友。",
-
   "peerPinDestinationFallback": "目的地",
   "peerPinDestinationLabel": "🎯 {name}",
-
   "stationDetailCloseLabel": "关闭车站详情",
   "stationDetailDeparture": "出发",
   "stationDetailArrival": "到达",
@@ -1118,7 +1113,6 @@
   "stationDetailBoardingCount": "上车 {count} 人",
   "stationDetailAlightingCount": "下车 {count} 人",
   "stationDetailClosureCount": "设施关闭 {count} 项",
-
   "visitTimelineTitle": "我的足迹",
   "visitTimelineSummary": "{count} 处 · 最近 {ago}",
   "visitTimelineEmpty": "暂无访问记录。",
@@ -1134,7 +1128,6 @@
   "visitTimelineAgoHour": "{hour} 小时前",
   "visitTimelineAgoDay": "{day} 天前",
   "visitTimelineVisitCount": "{count} 次",
-
   "permPageTitle": "权限设置",
   "permPageBody": "提前一次性配置好以下权限,\n使用过程中就不会被打断。",
   "permPageFooter": "拒绝也能使用,只是相应功能受限。",
@@ -1152,46 +1145,55 @@
   "permItemMicrophone": "麦克风",
   "permItemMicrophoneDesc": "AI 语音对话 + 语音消息",
   "permTapToSettings": "{desc} (点击打开设置)",
-
   "livingCityTitle": "首尔正在跃动",
   "livingCityBody": "点击图标,相机就会飞到那个场景。",
   "livingCityVehSubway": "地铁",
   "livingCityVehBus": "公交",
   "livingCityVehRiverBus": "汉江巴士",
   "livingCityVehFlight": "航空器",
-
   "infoBarsTierFlagship": "旗舰",
   "infoBarsTierHigh": "高端",
   "infoBarsTierMid": "中端",
   "infoBarsTierLow": "入门",
   "infoBarsProfileToast": "{model} · {tier}\n{fps} fps · 轮询 {pollMs}ms 已应用优化",
-
   "navBannerNext": "下一步",
   "navBannerWalkTo": "步行至 {station}",
   "navBannerBoardAt": "在 {station} 乘坐 {line}",
   "navBannerWalkDetail": "步行 {min} 分钟",
   "navBannerTransitDetail": "{station} 方向 · {min} 分钟",
-
   "readyPageTitle": "准备就绪",
   "readyPageBody": "点击下方开始按钮,\n实时首尔即刻呈现。",
-
   "welcomePageSubtitle": "用新视角看首尔",
-
   "pathfindingPageTitle": "今天想要怎样的旅程?",
   "pathfindingPageBody": "AI 助手会根据你的心情为你定制路线。\n之后随时可以更改。",
-
   "riverBusStopLabel": "{name} 码头",
   "riverBusRouteEnded": "已停航",
   "riverBusNextTime": "下一班 {time}",
   "riverBusMaintenance": "维护中",
   "riverBusDeparture": "出发",
   "riverBusArrival": "到达",
-
   "qualityPreviewDemoLabel": "DEMO · 地铁",
   "qualityPresetHigh": "高品质",
   "qualityPresetMedium": "流畅",
   "qualityPresetLow": "省电",
   "qualityPresetHighDetail": "60 fps · 特效开启",
   "qualityPresetMediumDetail": "30 fps · 部分特效",
-  "qualityPresetLowDetail": "10 fps · 特效关闭"
+  "qualityPresetLowDetail": "10 fps · 特效关闭",
+  "commonReset": "重置",
+  "profileResetFavoritesTitle": "重置收藏",
+  "profileResetFavoritesBody": "所有已保存的收藏将被删除。此操作无法撤销。",
+  "profileResetFavoritesToast": "已重置收藏",
+  "profileResetVisitsTitle": "重置访问记录",
+  "profileResetVisitsBody": "最近访问和常去地点的记录将一起删除。此操作无法撤销。",
+  "profileResetVisitsToast": "已清除访问记录",
+  "settingsSectionWeather": "天气",
+  "settingsAutoWeather": "自动 (实时天气)",
+  "settingsWeatherOverride": "天气状况",
+  "weatherClear": "晴",
+  "weatherCloudy": "多云",
+  "weatherRain": "雨",
+  "weatherDrizzle": "毛毛雨",
+  "weatherSnow": "雪",
+  "weatherFog": "雾",
+  "weatherThunderstorm": "雷雨"
 }

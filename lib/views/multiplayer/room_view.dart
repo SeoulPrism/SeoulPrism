@@ -7,6 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../models/multiplayer_models.dart';
 import '../../services/multiplayer_service.dart';
+import '../../services/place_search_service.dart';
 import '../../widgets/adaptive/adaptive.dart';
 import 'chat_sheet.dart';
 import 'peer_profile_card.dart';
@@ -273,7 +274,18 @@ class _RoomViewState extends State<RoomView> {
         ),
         if (room.hasDestination) ...[
           const SizedBox(height: 16),
-          _DestinationBanner(room: room),
+          _DestinationBanner(room: room, isOwner: isOwner),
+        ] else if (svc.activeProposal != null) ...[
+          // 활성 투표 후보 — 멤버 전원에게 표시. 방장은 같이 취소 버튼.
+          const SizedBox(height: 16),
+          _ProposalBanner(
+            proposal: svc.activeProposal!,
+            isOwner: isOwner,
+          ),
+        ] else if (isOwner) ...[
+          // 방장이고 목적지·후보 모두 없으면 주소 검색 카드 노출.
+          const SizedBox(height: 16),
+          _OwnerDestinationSetupCard(room: room),
         ],
         const SizedBox(height: 20),
 
@@ -578,10 +590,11 @@ class _MemberDivider extends StatelessWidget {
   }
 }
 
-/// 방 공통 목적지 배너 — 누구든 해제 가능 (프로토타입; 추후 권한 체크 가능).
+/// 방 공통 목적지 배너 — 방장만 해제 가능. 비-방장에겐 close 버튼 숨김.
 class _DestinationBanner extends StatelessWidget {
   final Room room;
-  const _DestinationBanner({required this.room});
+  final bool isOwner;
+  const _DestinationBanner({required this.room, required this.isOwner});
 
   @override
   Widget build(BuildContext context) {
@@ -633,17 +646,393 @@ class _DestinationBanner extends StatelessWidget {
               Navigator.of(context).popUntil((r) => r.isFirst);
             },
           ),
-          IconButton(
-            icon: const Icon(Icons.close_rounded, size: 20),
-            tooltip: l.roomDestClear,
-            onPressed: () async {
-              try {
-                await svc.clearRoomDestination();
-              } catch (_) {}
-            },
+          if (isOwner)
+            IconButton(
+              icon: const Icon(Icons.close_rounded, size: 20),
+              tooltip: l.roomDestClear,
+              onPressed: () async {
+                try {
+                  await svc.clearRoomDestination();
+                } catch (e) {
+                  if (context.mounted) {
+                    showAppSnackBar(
+                        AppL10n.of(context).chatActionFailed(e.toString()));
+                  }
+                }
+              },
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 방장 전용 — 목적지 없을 때 보이는 주소 검색 카드. 결과 카드마다 두 버튼:
+/// [바로 확정] — set_room_destination 즉시 호출. [투표로 정하기] — proposal 생성.
+class _OwnerDestinationSetupCard extends StatefulWidget {
+  final Room room;
+  const _OwnerDestinationSetupCard({required this.room});
+
+  @override
+  State<_OwnerDestinationSetupCard> createState() =>
+      _OwnerDestinationSetupCardState();
+}
+
+class _OwnerDestinationSetupCardState
+    extends State<_OwnerDestinationSetupCard> {
+  final _ctrl = TextEditingController();
+  bool _searching = false;
+  List<PlaceSearchResult> _results = const [];
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _runSearch() async {
+    final q = _ctrl.text.trim();
+    if (q.length < 2) return;
+    setState(() => _searching = true);
+    try {
+      final res = await PlaceSearchService.instance.search(q);
+      if (!mounted) return;
+      setState(() => _results = res.take(5).toList());
+    } catch (e) {
+      if (mounted) {
+        showAppSnackBar(AppL10n.of(context).chatActionFailed(e.toString()));
+      }
+    } finally {
+      if (mounted) setState(() => _searching = false);
+    }
+  }
+
+  Future<void> _setNow(PlaceSearchResult r) async {
+    try {
+      await MultiplayerService.instance.setRoomDestination(
+        name: r.name, lat: r.lat, lng: r.lng,
+      );
+      if (mounted) {
+        showAppSnackBar(AppL10n.of(context).chatRoomDestSet);
+        setState(() {
+          _ctrl.clear();
+          _results = const [];
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        showAppSnackBar(AppL10n.of(context).chatActionFailed(e.toString()));
+      }
+    }
+  }
+
+  Future<void> _propose(PlaceSearchResult r) async {
+    try {
+      await MultiplayerService.instance.proposeRoomDestination(
+        name: r.name, lat: r.lat, lng: r.lng, address: r.address,
+      );
+      if (mounted) {
+        setState(() {
+          _ctrl.clear();
+          _results = const [];
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        showAppSnackBar(AppL10n.of(context).chatActionFailed(e.toString()));
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppL10n.of(context);
+    final cs = Theme.of(context).colorScheme;
+    return AdaptiveSurfaceCard(
+      borderRadius: 14,
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: AdaptiveTextField(
+                  controller: _ctrl,
+                  placeholder: l.roomDestSearchHint,
+                  onSubmitted: (_) => _runSearch(),
+                ),
+              ),
+              const SizedBox(width: 8),
+              AdaptiveGlassIconButton(
+                icon: Icons.search_rounded,
+                onPressed: _searching ? null : _runSearch,
+              ),
+            ],
+          ),
+          if (_searching) ...[
+            const SizedBox(height: 10),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Text(
+                l.roomDestSearchSearching,
+                style: TextStyle(
+                    fontSize: 12, color: cs.onSurfaceVariant),
+              ),
+            ),
+          ] else if (_results.isEmpty && _ctrl.text.trim().isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Text(
+                l.roomDestSearchEmpty,
+                style: TextStyle(
+                    fontSize: 12, color: cs.onSurfaceVariant),
+              ),
+            ),
+          ] else if (_results.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            for (final r in _results) _ResultRow(
+              result: r,
+              onSetNow: () => _setNow(r),
+              onPropose: () => _propose(r),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _ResultRow extends StatelessWidget {
+  final PlaceSearchResult result;
+  final VoidCallback onSetNow;
+  final VoidCallback onPropose;
+  const _ResultRow({
+    required this.result,
+    required this.onSetNow,
+    required this.onPropose,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final l = AppL10n.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            result.name,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+          ),
+          if (result.address.isNotEmpty)
+            Text(
+              result.address,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant),
+            ),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              Expanded(
+                child: FilledButton.tonalIcon(
+                  onPressed: onSetNow,
+                  icon: const Icon(Icons.check_rounded, size: 16),
+                  label: Text(
+                    l.roomDestSetNow,
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: onPropose,
+                  icon: const Icon(Icons.how_to_vote_rounded, size: 16),
+                  label: Text(
+                    l.roomDestProposeVote,
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
+    );
+  }
+}
+
+/// 활성 후보 + 투표 현황. 멤버는 yes/no, 방장은 추가로 취소 가능.
+class _ProposalBanner extends StatelessWidget {
+  final DestinationProposal proposal;
+  final bool isOwner;
+  const _ProposalBanner({required this.proposal, required this.isOwner});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final l = AppL10n.of(context);
+    final svc = MultiplayerService.instance;
+    final proposerName = svc.peerProfile(proposal.proposerId)?.nickname ??
+        l.roomUnknownUser;
+    final votes = svc.votesFor(proposal.id);
+    final myVote = svc.myId != null ? votes[svc.myId!] : null;
+    final yes = votes.values.where((v) => v).length;
+    final no = votes.values.where((v) => !v).length;
+
+    return AdaptiveSurfaceCard(
+      borderRadius: 14,
+      padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 40, height: 40,
+                decoration: BoxDecoration(
+                  color: cs.tertiary.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                alignment: Alignment.center,
+                child: Icon(Icons.how_to_vote_rounded,
+                    color: cs.tertiary, size: 22),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(proposal.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                            fontSize: 14, fontWeight: FontWeight.w700)),
+                    if ((proposal.address ?? '').isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 1),
+                        child: Text(proposal.address!,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                                fontSize: 11, color: cs.onSurfaceVariant)),
+                      ),
+                    const SizedBox(height: 2),
+                    Text(l.roomDestProposalBy(proposerName),
+                        style: TextStyle(
+                            fontSize: 11, color: cs.onSurfaceVariant)),
+                  ],
+                ),
+              ),
+              if (isOwner)
+                IconButton(
+                  icon: const Icon(Icons.close_rounded, size: 20),
+                  tooltip: l.roomDestProposalCancel,
+                  onPressed: () async {
+                    try {
+                      await svc.cancelRoomDestinationProposal(proposal.id);
+                    } catch (e) {
+                      if (context.mounted) {
+                        showAppSnackBar(AppL10n.of(context)
+                            .chatActionFailed(e.toString()));
+                      }
+                    }
+                  },
+                ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: _VoteButton(
+                  label: l.roomDestVoteYes,
+                  icon: Icons.thumb_up_rounded,
+                  active: myVote == true,
+                  onTap: () async {
+                    try {
+                      await svc.voteRoomDestination(proposal.id, true);
+                    } catch (e) {
+                      if (context.mounted) {
+                        showAppSnackBar(AppL10n.of(context)
+                            .chatActionFailed(e.toString()));
+                      }
+                    }
+                  },
+                ),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: _VoteButton(
+                  label: l.roomDestVoteNo,
+                  icon: Icons.thumb_down_rounded,
+                  active: myVote == false,
+                  onTap: () async {
+                    try {
+                      await svc.voteRoomDestination(proposal.id, false);
+                    } catch (e) {
+                      if (context.mounted) {
+                        showAppSnackBar(AppL10n.of(context)
+                            .chatActionFailed(e.toString()));
+                      }
+                    }
+                  },
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(l.roomDestProposalVoting,
+                  style: TextStyle(
+                      fontSize: 11,
+                      color: cs.onSurfaceVariant,
+                      fontWeight: FontWeight.w600)),
+              Text(l.roomDestProposalCounts(yes, no),
+                  style: TextStyle(
+                      fontSize: 11, color: cs.onSurfaceVariant)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// yes/no 투표 버튼 — active 일 땐 tonal, 아니면 outlined.
+class _VoteButton extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool active;
+  final VoidCallback onTap;
+  const _VoteButton({
+    required this.label,
+    required this.icon,
+    required this.active,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (active) {
+      return FilledButton.tonalIcon(
+        onPressed: onTap,
+        icon: Icon(icon, size: 16),
+        label: Text(label, style: const TextStyle(fontSize: 12)),
+      );
+    }
+    return OutlinedButton.icon(
+      onPressed: onTap,
+      icon: Icon(icon, size: 16),
+      label: Text(label, style: const TextStyle(fontSize: 12)),
     );
   }
 }

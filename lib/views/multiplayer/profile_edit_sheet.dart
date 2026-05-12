@@ -227,8 +227,11 @@ class _MultiplayerProfileEditSheetState
               onSelected: (v) async {
                 if (v == 'public' && _visibility != 'public') {
                   // 전체 공개 전환 — 강한 확인 다이얼로그.
-                  final ok = await _confirmPublic();
-                  if (!ok) return;
+                  // showAdaptiveConfirmDialog 의 onConfirm 은 PostFrameCallback
+                  // 으로 다음 frame 에 호출되므로 await 직후 result 를 읽으면
+                  // 항상 false 가 된다 → setState 를 직접 onConfirm 안에서.
+                  _showPublicConfirm(l);
+                  return;
                 }
                 setState(() => _visibility = v);
               },
@@ -283,20 +286,17 @@ class _MultiplayerProfileEditSheetState
       );
   }
 
-  Future<bool> _confirmPublic() async {
-    final l = AppL10n.of(context);
-    bool result = false;
-    await showAdaptiveConfirmDialog(
+  void _showPublicConfirm(AppL10n l) {
+    showAdaptiveConfirmDialog(
       context: context,
       title: l.profileEditPublicDialogTitle,
       content: l.profileEditPublicDialogBody,
       confirmText: l.profileEditPublicDialogConfirm,
       isDestructive: true,
       onConfirm: () {
-        result = true;
+        if (mounted) setState(() => _visibility = 'public');
       },
     );
-    return result;
   }
 
   String _visibilityHint(BuildContext ctx) {

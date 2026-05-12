@@ -165,6 +165,73 @@ class Room {
       );
 }
 
+/// 방 공통 목적지 후보 — 방장이 제안 → 멤버 투표 → 자동 finalize.
+class DestinationProposal {
+  final String id;
+  final String roomId;
+  final String proposerId;
+  final String name;
+  final double lat;
+  final double lng;
+  final String? address;
+  /// 'voting' | 'approved' | 'rejected' | 'cancelled'.
+  final String status;
+  final DateTime createdAt;
+  final DateTime? finalizedAt;
+
+  const DestinationProposal({
+    required this.id,
+    required this.roomId,
+    required this.proposerId,
+    required this.name,
+    required this.lat,
+    required this.lng,
+    required this.address,
+    required this.status,
+    required this.createdAt,
+    required this.finalizedAt,
+  });
+
+  bool get isVoting => status == 'voting';
+
+  factory DestinationProposal.fromJson(Map<String, dynamic> j) =>
+      DestinationProposal(
+        id: j['id'] as String,
+        roomId: j['room_id'] as String,
+        proposerId: j['proposer_id'] as String,
+        name: j['name'] as String,
+        lat: (j['lat'] as num).toDouble(),
+        lng: (j['lng'] as num).toDouble(),
+        address: j['address'] as String?,
+        status: j['status'] as String,
+        createdAt: DateTime.parse(j['created_at'] as String),
+        finalizedAt: j['finalized_at'] != null
+            ? DateTime.parse(j['finalized_at'] as String)
+            : null,
+      );
+}
+
+class ProposalVote {
+  final String proposalId;
+  final String userId;
+  final bool vote;
+  final DateTime votedAt;
+
+  const ProposalVote({
+    required this.proposalId,
+    required this.userId,
+    required this.vote,
+    required this.votedAt,
+  });
+
+  factory ProposalVote.fromJson(Map<String, dynamic> j) => ProposalVote(
+        proposalId: j['proposal_id'] as String,
+        userId: j['user_id'] as String,
+        vote: j['vote'] as bool,
+        votedAt: DateTime.parse(j['voted_at'] as String),
+      );
+}
+
 class RoomMessage {
   final String id;
   final String roomId;
