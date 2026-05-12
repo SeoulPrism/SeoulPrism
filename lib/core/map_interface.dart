@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/subway_models.dart';
+import '../models/building_hit.dart';
 
 enum MapType { mapbox }
 
@@ -235,12 +236,14 @@ abstract class IMapController {
   Future<void> updateBusPositions3D(List<BusRenderData> buses) async {}
 
   // ── 멀티플레이어 peer 핀 (지하철 마커와 충돌 회피용 별도 매니저) ──
-  /// peer 핀 추가/갱신 — 같은 id 호출 시 위치만 이동.
+  /// peer 핀 추가/갱신 — 같은 id 호출 시 위치/색/라벨만 이동.
+  /// [label] 이 주어지면 핀 위에 닉네임 텍스트 표시.
   Future<void> upsertPeerPin(
     String id,
     double lat,
     double lng, {
     required Color color,
+    String? label,
   }) async {}
 
   /// peer 핀 제거.
@@ -251,6 +254,19 @@ abstract class IMapController {
 
   /// peer 핀 탭 콜백. userId 받음.
   void setOnPeerPinTapped(void Function(String userId)? callback) {}
+
+  /// 내 위치 3D 아바타 탭 콜백 (Mapbox only). 친구방 멤버 시트 진입 등에 사용.
+  void setOnUserAvatarTapped(VoidCallback? callback) {}
+
+  /// 내 위치 마커 색을 동기화 (보통 myProfile.pinColor).
+  Future<void> setUserPinColor(Color color) async {}
+
+  /// 좌표가 건물 footprint 안에 있는지 hit-test. 안에 있으면 BuildingHit, 아니면 null.
+  /// 좌표가 화면 밖이면 보통 null (Mapbox 는 visible tile 만 query).
+  Future<BuildingHit?> queryBuildingAt(double lat, double lng) async => null;
+
+  /// 내 위치 마커의 표시 여부. 자기 자신이 건물 안에 있을 때 false 로 숨김.
+  void setUserPinVisible(bool visible) {}
 }
 
 /// 항공기 렌더링 데이터

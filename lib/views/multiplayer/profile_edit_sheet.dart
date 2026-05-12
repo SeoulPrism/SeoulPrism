@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/gen/app_localizations.dart';
 import '../../models/multiplayer_models.dart';
 import '../../services/multiplayer_service.dart';
 import '../../widgets/adaptive/adaptive.dart';
@@ -17,7 +18,17 @@ class MultiplayerProfileEditSheet extends StatefulWidget {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (_) => const MultiplayerProfileEditSheet(),
+      // 화면 70% 시작 / 위로 드래그하면 95% 까지 / 아래로 50% 까지.
+      builder: (_) => DraggableScrollableSheet(
+        initialChildSize: 0.7,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        expand: false,
+        builder: (_, scroll) => SingleChildScrollView(
+          controller: scroll,
+          child: const MultiplayerProfileEditSheet(),
+        ),
+      ),
     );
   }
 
@@ -68,22 +79,23 @@ class _MultiplayerProfileEditSheetState
   }
 
   Future<void> _save() async {
+    final l = AppL10n.of(context);
     final nickname = _nicknameCtrl.text.trim();
     final birthYearStr = _birthYearCtrl.text.trim();
 
     if (nickname.isEmpty || nickname.length > 20) {
-      setState(() => _error = '닉네임은 1~20자로 입력해주세요.');
+      setState(() => _error = l.profileEditNicknameInvalid);
       return;
     }
     final birthYear = int.tryParse(birthYearStr);
     if (birthYear == null ||
         birthYear < 1900 ||
         birthYear > DateTime.now().year) {
-      setState(() => _error = '출생연도(YYYY) 를 정확히 입력해주세요.');
+      setState(() => _error = l.profileEditBirthInvalid);
       return;
     }
     if (DateTime.now().year - birthYear < MultiplayerService.kMinAgeYears) {
-      setState(() => _error = '14세 미만은 멀티플레이를 이용할 수 없습니다.');
+      setState(() => _error = l.profileEditAgeRestriction);
       return;
     }
 
@@ -118,44 +130,44 @@ class _MultiplayerProfileEditSheetState
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final l = AppL10n.of(context);
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
     return Padding(
       padding: EdgeInsets.fromLTRB(20, 4, 20, bottomInset + 24),
-      child: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
           children: [
-            Text('프로필 설정',
+            Text(l.profileEditTitle,
                 style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.w800,
                     color: cs.onSurface)),
             const SizedBox(height: 4),
-            Text('친구방에서 다른 사람에게 보여질 모습을 정해주세요.',
+            Text(l.profileEditSubtitle,
                 style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
             const SizedBox(height: 24),
 
-            _Label(text: '닉네임 (중복 허용)'),
+            _Label(text: l.profileEditNicknameLabel),
             AdaptiveTextField(
               controller: _nicknameCtrl,
-              placeholder: '예: 서울탐험가',
+              placeholder: l.profileEditNicknamePlaceholder,
               padding:
                   const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             ),
             const SizedBox(height: 18),
 
-            _Label(text: '출생연도 (만 14세 이상만 가입)'),
+            _Label(text: l.profileEditBirthLabel),
             AdaptiveTextField(
               controller: _birthYearCtrl,
-              placeholder: '예: 2000',
+              placeholder: l.profileEditBirthPlaceholder,
               padding:
                   const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             ),
             const SizedBox(height: 18),
 
-            _Label(text: '핀 이모지'),
+            _Label(text: l.profileEditEmojiLabel),
             Wrap(
               spacing: 8,
               runSpacing: 8,
@@ -184,7 +196,7 @@ class _MultiplayerProfileEditSheetState
             ),
             const SizedBox(height: 18),
 
-            _Label(text: '핀 색상'),
+            _Label(text: l.profileEditColorLabel),
             Wrap(
               spacing: 10,
               runSpacing: 10,
@@ -209,29 +221,46 @@ class _MultiplayerProfileEditSheetState
             ),
             const SizedBox(height: 24),
 
-            _Label(text: '위치 공개 범위'),
+            _Label(text: l.profileEditVisibilityLabel),
             AdaptiveSegmented<String>(
               selected: _visibility,
               onSelected: (v) async {
                 if (v == 'public' && _visibility != 'public') {
                   // 전체 공개 전환 — 강한 확인 다이얼로그.
-                  final ok = await _confirmPublic();
-                  if (!ok) return;
+                  // showAdaptiveConfirmDialog 의 onConfirm 은 PostFrameCallback
+                  // 으로 다음 frame 에 호출되므로 await 직후 result 를 읽으면
+                  // 항상 false 가 된다 → setState 를 직접 onConfirm 안에서.
+                  _showPublicConfirm(l);
+                  return;
                 }
                 setState(() => _visibility = v);
               },
-              segments: const [
+              segments: [
                 AdaptiveSegment(
-                    value: 'ghost', label: '비공개', icon: Icons.visibility_off_rounded),
+                    value: 'ghost',
+                    label: l.profileEditVisibilityGhost,
+                    icon: Icons.visibility_off_rounded),
                 AdaptiveSegment(
-                    value: 'friends', label: '친구방', icon: Icons.people_alt_rounded),
+                    value: 'friends',
+                    label: l.profileEditVisibilityFriends,
+                    icon: Icons.people_alt_rounded),
                 AdaptiveSegment(
-                    value: 'public', label: '전체 공개', icon: Icons.public_rounded),
+                    value: 'selected_groups',
+                    label: l.profileEditVisibilityGroup,
+                    icon: Icons.group_outlined),
+                AdaptiveSegment(
+                    value: 'public',
+                    label: l.profileEditVisibilityPublic,
+                    icon: Icons.public_rounded),
               ],
             ),
             const SizedBox(height: 8),
-            Text(_visibilityHint(),
+            Text(_visibilityHint(context),
                 style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+            if (_visibility == 'selected_groups') ...[
+              const SizedBox(height: 12),
+              _VisibleGroupsPicker(),
+            ],
 
             if (_error != null) ...[
               const SizedBox(height: 16),
@@ -249,44 +278,125 @@ class _MultiplayerProfileEditSheetState
 
             const SizedBox(height: 28),
             AdaptiveGlassButton(
-              label: _saving ? '저장 중...' : '저장',
+              label: _saving ? l.profileEditSaving : l.profileEditSave,
               onPressed: _saving ? null : _save,
             ),
           ],
         ),
-      ),
-    );
+      );
   }
 
-  Future<bool> _confirmPublic() async {
-    bool result = false;
-    await showAdaptiveConfirmDialog(
+  void _showPublicConfirm(AppL10n l) {
+    showAdaptiveConfirmDialog(
       context: context,
-      title: '전체 공개로 전환',
-      content: '내 위치가 모르는 사람을 포함한 모든 Seoul Live 사용자에게 '
-          '실시간으로 보여집니다.\n\n'
-          '• 부적절한 만남 / 스토킹 위험에 유의하세요\n'
-          '• 언제든 비공개/친구방으로 되돌릴 수 있어요\n'
-          '• 차단/신고는 친구 프로필 또는 채팅 메뉴에서',
-      confirmText: '계속',
+      title: l.profileEditPublicDialogTitle,
+      content: l.profileEditPublicDialogBody,
+      confirmText: l.profileEditPublicDialogConfirm,
       isDestructive: true,
       onConfirm: () {
-        result = true;
+        if (mounted) setState(() => _visibility = 'public');
       },
     );
-    return result;
   }
 
-  String _visibilityHint() => switch (_visibility) {
-        'ghost' => '위치를 보내지 않습니다. 다른 사람의 위치도 볼 수 없어요.',
-        'friends' => '친구방에 입장한 동안만 같은 방 멤버에게 위치가 보여요.',
-        'public' => '⚠️ Seoul Live 사용자 누구나 내 위치를 볼 수 있어요. 친구방에서도 동일하게 송신돼요.',
-        _ => '',
-      };
+  String _visibilityHint(BuildContext ctx) {
+    final l = AppL10n.of(ctx);
+    return switch (_visibility) {
+      'ghost' => l.profileEditVisibilityGhostDesc,
+      'friends' => l.profileEditVisibilityFriendsDesc,
+      'selected_groups' => l.profileEditVisibilityGroupDesc,
+      'public' => l.profileEditVisibilityPublicDesc,
+      _ => '',
+    };
+  }
 
   Color _hexToColor(String hex) {
     final v = int.parse(hex.substring(1), radix: 16);
     return Color(0xFF000000 | v);
+  }
+}
+
+/// 사용자 그룹 picker — visibility=selected_groups 전용.
+/// 선택 즉시 서버 반영 (저장 버튼과 무관).
+class _VisibleGroupsPicker extends StatefulWidget {
+  @override
+  State<_VisibleGroupsPicker> createState() => _VisibleGroupsPickerState();
+}
+
+class _VisibleGroupsPickerState extends State<_VisibleGroupsPicker> {
+  late Set<String> _selected;
+
+  @override
+  void initState() {
+    super.initState();
+    _selected = Set<String>.from(MultiplayerService.instance.myVisibleGroupIds);
+  }
+
+  Future<void> _toggle(String groupId) async {
+    final newSet = Set<String>.from(_selected);
+    if (newSet.contains(groupId)) {
+      newSet.remove(groupId);
+    } else {
+      newSet.add(groupId);
+    }
+    setState(() => _selected = newSet);
+    try {
+      await MultiplayerService.instance.setMyVisibleGroups(newSet);
+    } catch (_) {/* UI 는 이미 반영 — 실패 시 다음 새로고침에 정정 */}
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final groups = MultiplayerService.instance.friendGroups;
+    if (groups.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: cs.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Text(AppL10n.of(context).profileEditNoGroups,
+            style:
+                TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+      );
+    }
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: groups.map((g) {
+        final on = _selected.contains(g.id);
+        return GestureDetector(
+          onTap: () => _toggle(g.id),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: on ? cs.primaryContainer : cs.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                  color: on ? cs.primary : Colors.transparent, width: 1.2),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(g.emoji, style: const TextStyle(fontSize: 14)),
+                const SizedBox(width: 4),
+                Text(g.name,
+                    style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: on ? cs.onPrimaryContainer : cs.onSurface)),
+                if (on) ...[
+                  const SizedBox(width: 4),
+                  Icon(Icons.check_rounded,
+                      size: 14, color: cs.onPrimaryContainer),
+                ],
+              ],
+            ),
+          ),
+        );
+      }).toList(),
+    );
   }
 }
 
@@ -306,3 +416,4 @@ class _Label extends StatelessWidget {
     );
   }
 }
+

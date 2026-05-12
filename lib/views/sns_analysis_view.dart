@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import '../l10n/gen/app_localizations.dart';
 import '../models/sns_content_models.dart';
 import '../services/day_plan_service.dart';
 import '../theme/app_colors.dart';
@@ -74,7 +75,10 @@ class _SnsAnalysisViewState extends State<SnsAnalysisView> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('플랜 생성 실패: $e'), behavior: SnackBarBehavior.floating),
+          SnackBar(
+            content: Text(AppL10n.of(context).snsAnalysisPlanFailure(e.toString())),
+            behavior: SnackBarBehavior.floating,
+          ),
         );
       }
     } finally {
@@ -123,7 +127,7 @@ class _SnsAnalysisViewState extends State<SnsAnalysisView> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          '분석 결과',
+          AppL10n.of(context).snsAnalysisTitle,
           style: TextStyle(
             fontSize: 17,
             fontWeight: FontWeight.w600,
@@ -188,7 +192,7 @@ class _SnsAnalysisViewState extends State<SnsAnalysisView> {
             child: _places.isEmpty
                 ? Center(
                     child: Text(
-                      '추출된 장소가 없습니다',
+                      AppL10n.of(context).snsAnalysisEmpty,
                       style: TextStyle(color: isM3 ? cs.onSurfaceVariant : Colors.white60),
                     ),
                   )
@@ -214,7 +218,7 @@ class _SnsAnalysisViewState extends State<SnsAnalysisView> {
                         : const CircularProgressIndicator(),
                   )
                 : AdaptiveGlassButton(
-                    label: '일정 만들기 (${_places.length}곳)',
+                    label: AppL10n.of(context).snsAnalysisCreatePlans(_places.length),
                     onPressed: _places.isNotEmpty ? _generatePlans : null,
                   ),
           ),
@@ -302,7 +306,8 @@ class _SnsAnalysisViewState extends State<SnsAnalysisView> {
                     if (place.nearestStation != null) ...[
                       const SizedBox(height: 2),
                       Text(
-                        '📍 ${place.nearestStation}역 · ${place.estimatedMinutes}분',
+                        AppL10n.of(context).snsAnalysisNearestStation(
+                            place.nearestStation!, place.estimatedMinutes),
                         style: TextStyle(
                           fontSize: 11,
                           color: isM3 ? cs.onSurfaceVariant.withValues(alpha: 0.7) : Colors.white38,

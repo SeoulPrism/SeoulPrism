@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
+import '../../l10n/gen/app_localizations.dart';
+import '../../models/multiplayer_models.dart';
 import '../../services/multiplayer_service.dart';
+import '../../services/spotify_service.dart';
 import '../../widgets/adaptive/adaptive.dart';
 import '../../widgets/app_snackbar.dart';
+import 'activity_dashboard_view.dart';
+import 'dm_list_view.dart';
 import 'friend_code_share.dart';
 import 'friends_view.dart';
 import 'group_editor_view.dart';
@@ -11,6 +15,7 @@ import 'login_required_gate.dart';
 import 'multiplayer_settings_view.dart';
 import 'profile_edit_sheet.dart';
 import 'room_view.dart';
+import 'spotify_view.dart';
 
 /// Seoul Live 진입점.
 /// 만남 햅틱+스낵바 / 시스템 메시지 송신을 여기서 처리.
@@ -26,27 +31,16 @@ class _MultiplayerHubViewState extends State<MultiplayerHubView> {
   void initState() {
     super.initState();
     MultiplayerService.instance.addListener(_onChanged);
-    MultiplayerService.instance.addMeetupListener(_onMeetup);
   }
 
   @override
   void dispose() {
     MultiplayerService.instance.removeListener(_onChanged);
-    MultiplayerService.instance.removeMeetupListener(_onMeetup);
     super.dispose();
   }
 
   void _onChanged() {
     if (mounted) setState(() {});
-  }
-
-  void _onMeetup(String userId, bool started) {
-    if (!started) return;
-    final p = MultiplayerService.instance.peerProfile(userId);
-    HapticFeedback.mediumImpact();
-    showAppSnackBar('🎉  ${p?.nickname ?? '친구'}와 만났어요!');
-    MultiplayerService.instance
-        .sendMessage('${p?.nickname ?? '친구'}와 만났어요', kind: 'meetup');
   }
 
   @override
@@ -64,8 +58,9 @@ class _MultiplayerHubViewState extends State<MultiplayerHubView> {
         title: 'Seoul Live',
         actions: [
           if (hasProfile)
-            IconButton(
-              icon: const Icon(Icons.settings_outlined),
+            AdaptiveAppBarAction(
+              icon: Icons.settings_outlined,
+              tooltip: AppL10n.of(context).hubSettingsTooltip,
               onPressed: () => Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -83,6 +78,7 @@ class _MultiplayerHubViewState extends State<MultiplayerHubView> {
 
   Widget _buildOnboardProfile() {
     final cs = Theme.of(context).colorScheme;
+    final l = AppL10n.of(context);
     return Padding(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -103,15 +99,15 @@ class _MultiplayerHubViewState extends State<MultiplayerHubView> {
                 const Icon(Icons.public_rounded, size: 44, color: Colors.white),
           ),
           const SizedBox(height: 20),
-          const Text('친구와 함께 서울을 탐험하기',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
+          Text(l.hubAuthExploreSeoulTitle,
+              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
           const SizedBox(height: 8),
-          Text('닉네임과 핀을 만들어 시작하세요.',
+          Text(l.hubAuthCreateProfileSubtitle,
               textAlign: TextAlign.center,
               style: TextStyle(color: cs.onSurfaceVariant)),
           const SizedBox(height: 28),
           AdaptiveGlassButton(
-            label: '프로필 만들기',
+            label: l.hubAuthCreateProfileButton,
             onPressed: () async {
               final p = await MultiplayerProfileEditSheet.show(context);
               if (p != null && mounted) setState(() {});
@@ -125,6 +121,7 @@ class _MultiplayerHubViewState extends State<MultiplayerHubView> {
   Widget _buildHub() {
     final svc = MultiplayerService.instance;
     final me = svc.myProfile!;
+    final l = AppL10n.of(context);
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
@@ -145,7 +142,7 @@ class _MultiplayerHubViewState extends State<MultiplayerHubView> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Seoul Live 일시정지 중 — 위치/알림 차단, 채팅은 가능',
+                    l.hubPausedNotice,
                     style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
@@ -154,7 +151,7 @@ class _MultiplayerHubViewState extends State<MultiplayerHubView> {
                 ),
                 TextButton(
                   onPressed: () => svc.setSeoulLivePaused(false),
-                  child: const Text('재개'),
+                  child: Text(l.hubResumeButton),
                 ),
               ],
             ),
@@ -175,16 +172,28 @@ class _MultiplayerHubViewState extends State<MultiplayerHubView> {
             ),
           ],
         ),
+        if (svc.myScore != null) ...[
+          const SizedBox(height: 16),
+          GestureDetector(
+            onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) => const ActivityDashboardView())),
+            child: _ScoreCard(score: svc.myScore!),
+          ),
+        ],
+        if (svc.meetupHistory.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          _MeetupHistorySection(history: svc.meetupHistory),
+        ],
         const SizedBox(height: 16),
 
         AdaptiveSectionCard(
           children: [
             _HubItem(
               icon: Icons.meeting_room_rounded,
-              title: '친구방',
+              title: l.hubRoomTitle,
               subtitle: svc.currentRoom == null
-                  ? '새 방을 만들거나 코드로 입장'
-                  : '입장 중 · 코드 ${svc.currentRoom!.inviteCode}',
+                  ? l.hubRoomEmpty
+                  : l.hubRoomCurrent(svc.currentRoom!.inviteCode),
               badge: svc.totalUnread > 0 ? svc.totalUnread.toString() : null,
               onTap: () => Navigator.push(context,
                   MaterialPageRoute(builder: (_) => const RoomView())),
@@ -192,9 +201,9 @@ class _MultiplayerHubViewState extends State<MultiplayerHubView> {
             const _HubDivider(),
             _HubItem(
               icon: Icons.people_alt_rounded,
-              title: '친구',
-              subtitle:
-                  '${svc.acceptedFriends.length}명 · 신청 ${svc.incomingRequests.length}건',
+              title: l.hubFriendsTitle,
+              subtitle: l.hubFriendsSubtitle(
+                  svc.acceptedFriends.length, svc.incomingRequests.length),
               badge: svc.incomingRequests.isNotEmpty
                   ? svc.incomingRequests.length.toString()
                   : null,
@@ -203,18 +212,39 @@ class _MultiplayerHubViewState extends State<MultiplayerHubView> {
             ),
             const _HubDivider(),
             _HubItem(
+              icon: Icons.chat_bubble_outline_rounded,
+              title: 'DM',
+              subtitle: l.hubDmSubtitle,
+              onTap: () => Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const DmListView())),
+            ),
+            const _HubDivider(),
+            _HubItem(
               icon: Icons.qr_code_rounded,
-              title: '친구 코드',
-              subtitle: '내 코드 ${svc.myProfile?.friendCode ?? '--------'} 공유 / 입력',
+              title: l.hubFriendCodeTitle,
+              subtitle: l.hubFriendCodeSubtitle(
+                  svc.myProfile?.friendCode ?? '--------'),
               onTap: () => FriendCodeShareSheet.show(context),
             ),
             const _HubDivider(),
             _HubItem(
               icon: Icons.groups_rounded,
-              title: '친구 그룹',
-              subtitle: '${svc.friendGroups.length}개 그룹',
+              title: l.hubFriendGroupsTitle,
+              subtitle: l.hubFriendGroupsSubtitle(svc.friendGroups.length),
               onTap: () => Navigator.push(context,
                   MaterialPageRoute(builder: (_) => const GroupEditorView())),
+            ),
+            const _HubDivider(),
+            _HubItem(
+              icon: Icons.music_note_rounded,
+              title: 'Spotify',
+              subtitle: SpotifyService.instance.isConnected
+                  ? (SpotifyService.instance.currentTrack?.name ??
+                      l.hubSpotifyConnectedNoPlayback)
+                  : l.hubSpotifyShareSubtitle,
+              badge: SpotifyService.instance.isConnected ? '✓' : null,
+              onTap: () => Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const SpotifyView())),
             ),
           ],
         ),
@@ -268,7 +298,7 @@ class _ProfileSummary extends StatelessWidget {
                           fontWeight: FontWeight.w700,
                           color: cs.onSurface)),
                   const SizedBox(height: 2),
-                  Text(_visibilityLabel(visibility),
+                  Text(_visibilityLabel(context, visibility),
                       style: TextStyle(
                           fontSize: 12, color: cs.onSurfaceVariant)),
                 ],
@@ -281,12 +311,15 @@ class _ProfileSummary extends StatelessWidget {
     );
   }
 
-  String _visibilityLabel(String v) => switch (v) {
-        'ghost' => '비공개 — 송신/수신 모두 X',
-        'friends' => '친구방 — 같은 방 멤버에게만',
-        'public' => '전체 공개 — 모든 Seoul Live 사용자',
-        _ => v,
-      };
+  String _visibilityLabel(BuildContext ctx, String v) {
+    final l = AppL10n.of(ctx);
+    return switch (v) {
+      'ghost' => l.hubVisibilityGhost,
+      'friends' => l.hubVisibilityFriends,
+      'public' => l.hubVisibilityPublic,
+      _ => v,
+    };
+  }
 }
 
 class _HubItem extends StatelessWidget {
@@ -368,6 +401,183 @@ class _HubDivider extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Divider(
           height: 0.5, thickness: 0.5, color: cs.outlineVariant.withValues(alpha: 0.5)),
+    );
+  }
+}
+
+class _ScoreCard extends StatelessWidget {
+  final UserScore score;
+  const _ScoreCard({required this.score});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final l = AppL10n.of(context);
+    return AdaptiveSectionCard(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+          child: Row(
+            children: [
+              Icon(Icons.emoji_events_rounded, size: 20, color: cs.primary),
+              const SizedBox(width: 6),
+              Text(l.hubActivityTitle,
+                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800)),
+              const Spacer(),
+              Text('${score.totalPoints}p',
+                  style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w900,
+                      color: cs.primary)),
+            ],
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _Stat(label: l.hubStatMeetups, value: score.meetupCount.toString()),
+              _Stat(label: l.hubStatFriends, value: score.friendCount.toString()),
+              _Stat(
+                  label: l.hubStatStreak,
+                  value: l.hubStatStreakValue(score.currentStreakDays),
+                  hint: score.longestStreakDays > score.currentStreakDays
+                      ? l.hubStatStreakBest(score.longestStreakDays)
+                      : null),
+            ],
+          ),
+        ),
+        if (score.badges.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 0, 12, 14),
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: score.badges
+                  .map((c) {
+                    final m = BadgeMeta.lookup(c);
+                    if (m == null) return const SizedBox.shrink();
+                    return Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: cs.primaryContainer,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(m.emoji,
+                              style: const TextStyle(fontSize: 14)),
+                          const SizedBox(width: 4),
+                          Text(m.label,
+                              style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  color: cs.onPrimaryContainer)),
+                        ],
+                      ),
+                    );
+                  })
+                  .toList(),
+            ),
+          ),
+        ] else ...[
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+            child: Text(l.hubBadgesEmptyHint,
+                style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _Stat extends StatelessWidget {
+  final String label;
+  final String value;
+  final String? hint;
+  const _Stat({required this.label, required this.value, this.hint});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Column(
+      children: [
+        Text(value,
+            style:
+                const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+        Text(label,
+            style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+        if (hint != null)
+          Text(hint!,
+              style: TextStyle(fontSize: 9, color: cs.onSurfaceVariant)),
+      ],
+    );
+  }
+}
+
+class _MeetupHistorySection extends StatelessWidget {
+  final List<({String userId, DateTime at})> history;
+  const _MeetupHistorySection({required this.history});
+
+  String _ago(BuildContext ctx, DateTime t) {
+    final l = AppL10n.of(ctx);
+    final d = DateTime.now().difference(t);
+    if (d.inMinutes < 1) return l.hubAgoJust;
+    if (d.inMinutes < 60) return l.hubAgoMin(d.inMinutes);
+    if (d.inHours < 24) return l.hubAgoHour(d.inHours);
+    return l.hubAgoDay(d.inDays);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final l = AppL10n.of(context);
+    final svc = MultiplayerService.instance;
+    final shown = history.take(5).toList();
+    return AdaptiveSectionCard(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(14, 12, 14, 4),
+          child: Row(
+            children: [
+              Text(l.hubRecentMeetupsTitle,
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+              const Spacer(),
+              Text(l.hubRecentMeetupsCount(history.length),
+                  style:
+                      TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+            ],
+          ),
+        ),
+        for (final m in shown)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+            child: Row(
+              children: [
+                Text(svc.peerProfile(m.userId)?.pinEmoji ?? '📍',
+                    style: const TextStyle(fontSize: 16)),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    svc.peerProfile(m.userId)?.nickname ??
+                        m.userId.substring(0, 6),
+                    style: const TextStyle(
+                        fontSize: 13, fontWeight: FontWeight.w600),
+                  ),
+                ),
+                Text(_ago(context, m.at),
+                    style: TextStyle(
+                        fontSize: 11, color: cs.onSurfaceVariant)),
+              ],
+            ),
+          ),
+        const SizedBox(height: 8),
+      ],
     );
   }
 }

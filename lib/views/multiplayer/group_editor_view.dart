@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/gen/app_localizations.dart';
 import '../../models/multiplayer_models.dart';
 import '../../services/multiplayer_service.dart';
 import '../../widgets/adaptive/adaptive.dart';
@@ -31,29 +32,32 @@ class _GroupEditorViewState extends State<GroupEditorView> {
   }
 
   Future<void> _newGroup() async {
-    final name = await _promptName(context, '새 그룹');
+    final l = AppL10n.of(context);
+    final name = await _promptName(context, l.groupEditorNew);
     if (name == null || name.isEmpty) return;
     try {
       await MultiplayerService.instance.createFriendGroup(name: name);
     } catch (e) {
       if (!mounted) return;
-      showAppSnackBar('실패: $e');
+      showAppSnackBar(AppL10n.of(context).groupEditorFailure(e.toString()));
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final l = AppL10n.of(context);
     final svc = MultiplayerService.instance;
     final groups = svc.friendGroups;
 
     return Scaffold(
       backgroundColor: cs.surface,
       appBar: AdaptiveAppBar(
-        title: '친구 그룹',
+        title: l.groupEditorTitle,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.add_rounded),
+          AdaptiveAppBarAction(
+            icon: Icons.add_rounded,
+            tooltip: l.groupEditorNew,
             onPressed: _newGroup,
           ),
           const SizedBox(width: 4),
@@ -70,11 +74,11 @@ class _GroupEditorViewState extends State<GroupEditorView> {
                       Icon(Icons.groups_outlined,
                           size: 56, color: cs.onSurfaceVariant),
                       const SizedBox(height: 12),
-                      Text('아직 그룹이 없어요',
+                      Text(l.groupEditorEmpty,
                           style: TextStyle(
                               color: cs.onSurfaceVariant, fontSize: 14)),
                       const SizedBox(height: 4),
-                      Text('우상단 + 버튼으로 그룹을 만들어 친구를 분류하세요.',
+                      Text(l.groupEditorEmptyHint,
                           textAlign: TextAlign.center,
                           style: TextStyle(
                               color: cs.onSurfaceVariant, fontSize: 12)),
@@ -97,8 +101,9 @@ class _GroupEditorViewState extends State<GroupEditorView> {
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
-      builder: (_) {
-        final inset = MediaQuery.of(context).viewInsets.bottom;
+      builder: (ctx) {
+        final l = AppL10n.of(ctx);
+        final inset = MediaQuery.of(ctx).viewInsets.bottom;
         return Padding(
           padding: EdgeInsets.fromLTRB(20, 4, 20, inset + 24),
           child: Column(
@@ -107,20 +112,25 @@ class _GroupEditorViewState extends State<GroupEditorView> {
             children: [
               Text(title,
                   style: const TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.w700)),
-              const SizedBox(height: 16),
+                      fontSize: 20, fontWeight: FontWeight.w800)),
+              const SizedBox(height: 4),
+              Text(l.groupEditorHelper,
+                  style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(ctx).colorScheme.onSurfaceVariant)),
+              const SizedBox(height: 20),
               AdaptiveTextField(
                 controller: ctrl,
-                placeholder: '예: 가족, 회사, 동호회',
+                placeholder: l.groupEditorNamePlaceholder,
                 padding: const EdgeInsets.symmetric(
                     horizontal: 14, vertical: 12),
               ),
               const SizedBox(height: 16),
               AdaptiveGlassButton(
-                label: '만들기',
+                label: l.groupEditorCreate,
                 onPressed: () {
                   result = ctrl.text.trim();
-                  Navigator.pop(context);
+                  Navigator.pop(ctx);
                 },
               ),
             ],
@@ -139,6 +149,7 @@ class _GroupCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final l = AppL10n.of(context);
     final svc = MultiplayerService.instance;
     final friends = svc.acceptedFriends;
     final me = svc.myId ?? '';
@@ -158,7 +169,7 @@ class _GroupCard extends StatelessWidget {
                     style: const TextStyle(
                         fontSize: 16, fontWeight: FontWeight.w700)),
               ),
-              Text('${group.memberIds.length}명',
+              Text(l.groupEditorMemberCount(group.memberIds.length),
                   style: TextStyle(
                       fontSize: 12, color: cs.onSurfaceVariant)),
               IconButton(
@@ -167,9 +178,10 @@ class _GroupCard extends StatelessWidget {
                 onPressed: () {
                   showAdaptiveConfirmDialog(
                     context: context,
-                    title: '${group.name} 그룹 삭제',
-                    content: '그룹만 삭제되고 친구는 유지돼요.',
-                    confirmText: '삭제',
+                    title: l.groupEditorDeleteTitle(group.name),
+                    content: l.groupEditorDeleteBody,
+                    cancelText: l.commonCancel,
+                    confirmText: l.groupEditorDelete,
                     isDestructive: true,
                     onConfirm: () =>
                         svc.deleteFriendGroup(group.id),
@@ -182,7 +194,7 @@ class _GroupCard extends StatelessWidget {
         if (friends.isEmpty)
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            child: Text('친구를 먼저 추가하세요.',
+            child: Text(l.groupEditorAddFriendsHint,
                 style: TextStyle(
                     fontSize: 12, color: cs.onSurfaceVariant)),
           )

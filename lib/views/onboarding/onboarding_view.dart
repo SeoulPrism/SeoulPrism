@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../services/onboarding_service.dart';
 import '../../theme/app_typography.dart';
 import '../../widgets/adaptive/adaptive.dart';
 import 'onboarding_page.dart';
+import 'pages/ai_companion_page.dart';
 import 'pages/living_city_page.dart';
-import 'pages/location_permission_page.dart';
+import 'pages/permissions_page.dart';
 import 'pages/optimization_page.dart';
 import 'pages/pathfinding_page.dart';
 import 'pages/ready_page.dart';
+import 'pages/seoul_live_page.dart';
 import 'pages/welcome_page.dart';
 import 'widgets/aurora_overlay.dart';
 import 'widgets/liquid_page_indicator.dart';
@@ -45,9 +48,11 @@ class OnboardingView extends StatefulWidget {
       const OnboardingPage(id: LivingCityPage.id, body: LivingCityPage()),
       const OnboardingPage(id: PathfindingPage.id, body: PathfindingPage()),
       const OnboardingPage(id: OptimizationPage.id, body: OptimizationPage()),
-      // 위치 권한 — ready 직전 1장.
+      const OnboardingPage(id: SeoulLivePage.id, body: SeoulLivePage()),
+      const OnboardingPage(id: AiCompanionPage.id, body: AiCompanionPage()),
+      // 5개 권한 (위치/알림/카메라/사진/마이크) 한 화면에 일괄 동의.
       const OnboardingPage(
-          id: LocationPermissionPage.id, body: LocationPermissionPage()),
+          id: PermissionsPage.id, body: PermissionsPage()),
       const OnboardingPage(id: ReadyPage.id, body: ReadyPage()),
     ];
     final remainingIds =
@@ -86,12 +91,15 @@ class _OnboardingViewState extends State<OnboardingView>
   late final AnimationController _scaffoldFadeCtrl;
   bool _finishing = false;
 
+  late final VoidCallback _pageListener;
+
   @override
   void initState() {
     super.initState();
-    _controller.addListener(() {
+    _pageListener = () {
       setState(() => _progress = _controller.page ?? 0);
-    });
+    };
+    _controller.addListener(_pageListener);
     _contentFadeCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 450),
@@ -125,6 +133,7 @@ class _OnboardingViewState extends State<OnboardingView>
 
   @override
   void dispose() {
+    _controller.removeListener(_pageListener);
     _controller.dispose();
     _contentFadeCtrl.dispose();
     _backdropFadeCtrl.dispose();
@@ -136,9 +145,12 @@ class _OnboardingViewState extends State<OnboardingView>
 
   bool get _isLast => _progress.round() == widget.pages.length - 1;
 
-  bool get _isMapVisiblePage =>
-      widget.pages[_progress.round().clamp(0, widget.pages.length - 1)].id ==
-      'living_city_v1';
+  bool get _isMapVisiblePage {
+    final id = widget.pages[_progress.round().clamp(0, widget.pages.length - 1)].id;
+    return id == LivingCityPage.id ||
+        id == SeoulLivePage.id ||
+        id == AiCompanionPage.id;
+  }
 
   Widget _buildBackdropOverlay() {
     if (_isMapVisiblePage) {
@@ -294,7 +306,7 @@ class _OnboardingViewState extends State<OnboardingView>
                 child: TextButton(
                   onPressed: _finish,
                   child: Text(
-                    '건너뛰기',
+                    AppL10n.of(context).commonSkip,
                     style: AppTypography.bodySm.copyWith(color: skipColor),
                   ),
                 ),
@@ -324,7 +336,9 @@ class _OnboardingViewState extends State<OnboardingView>
                       child: SizedBox(
                         width: double.infinity,
                         child: AdaptiveGlassButton(
-                          label: _isLast ? '시작하기' : '다음',
+                          label: _isLast
+                              ? AppL10n.of(context).commonStart
+                              : AppL10n.of(context).commonNext,
                           onPressed: _next,
                         ),
                       ),

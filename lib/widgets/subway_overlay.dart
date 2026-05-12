@@ -360,6 +360,10 @@ class SubwayOverlayController {
     };
     _envService.start();
 
+    // Settings 화면에서 라이팅/날씨 변경 시 즉시 지도 반영
+    SettingsService.instance
+        .addEnvironmentListener(_onSettingsEnvironmentChanged);
+
     // 알림정보 (지연 방어막) 시작
     _fetchAlerts();
     _alertTimer = Timer.periodic(
@@ -372,7 +376,6 @@ class SubwayOverlayController {
   void _applyEnvironment() {
     final env = _envService.current;
     if (env == null || _mapController == null) return;
-    if (!autoLighting) return; // 수동 오버라이드 중
 
     double fogOpacity = 0.0;
     if (env.weather == WeatherCondition.fog) {
@@ -387,13 +390,30 @@ class SubwayOverlayController {
       fogOpacity = (1.0 - env.visibility / 5.0) * 0.5;
     }
 
+    // Light: autoLighting=true 면 env (시간대 자동), 수동이면 사용자 선택값.
+    // 날씨(fog) 는 항상 env.weather 따라감 — env 안에 weatherOverride 가
+    // 이미 반영되어 있으므로 manual 라이팅 + manual 날씨 조합도 일관되게 동작.
+    String lightPreset = env.lightPreset;
+    if (!autoLighting) {
+      final manual = SettingsService.instance.lightPreset;
+      if (manual != 'auto') lightPreset = manual;
+    }
+
     _mapController!.applyWeatherEffect(
-      lightPreset: env.lightPreset,
+      lightPreset: lightPreset,
       fogOpacity: fogOpacity,
     );
 
-    debugPrint('[SubwayOverlay] 🌤️ 환경 적용: ${env.lightPreset} | '
+    debugPrint('[SubwayOverlay] 🌤️ 환경 적용: $lightPreset | '
         '${env.weatherDescription} ${env.temperature.toStringAsFixed(1)}°C');
+  }
+
+  /// SettingsService 환경(라이팅/날씨) 설정 변경 시 호출.
+  /// autoLighting 동기화 → env override 재적용 → 지도 push.
+  void _onSettingsEnvironmentChanged() {
+    autoLighting = SettingsService.instance.autoLighting;
+    // applyOverrideNow → onUpdated → _applyEnvironment 자동 트리거
+    _envService.applyOverrideNow();
   }
 
   /// 열차별 지연 감지 + 맵 렌더링 업데이트
@@ -428,10 +448,13 @@ class SubwayOverlayController {
     onStateChanged?.call();
   }
 
-  /// 노선 필터 설정
-  void setLineFilter(Set<String>? lines) {
+  /// 노선 필터 설정. [persist] false 면 SharedPreferences 안 건드림
+  /// (온보딩 데모 등 임시 필터링용).
+  void setLineFilter(Set<String>? lines, {bool persist = true}) {
     _selectedLines = lines;
-    SettingsService.instance.setSelectedLines(lines);
+    if (persist) {
+      SettingsService.instance.setSelectedLines(lines);
+    }
     if (_isActive) {
       _renderAnimatedTrains();
       if (_showRoutes) _drawSubwayRoutes();
@@ -1203,6 +1226,8 @@ class SubwayOverlayController {
     stop();
     _alertTimer?.cancel();
     _envService.dispose();
+    SettingsService.instance
+        .removeEnvironmentListener(_onSettingsEnvironmentChanged);
   }
 }
 

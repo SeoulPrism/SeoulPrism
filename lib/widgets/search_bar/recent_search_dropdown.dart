@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_typography.dart';
 
@@ -31,7 +32,7 @@ class RecentSearchDropdown extends StatelessWidget {
           child: Row(
             children: [
               Text(
-                '최근 검색',
+                AppL10n.of(context).searchRecentTitle,
                 style: AppTypography.bodySm.copyWith(
                   fontWeight: FontWeight.w600,
                 ),
@@ -40,7 +41,7 @@ class RecentSearchDropdown extends StatelessWidget {
               GestureDetector(
                 onTap: onClearAll,
                 child: Text(
-                  '전체 삭제',
+                  AppL10n.of(context).searchRecentClearAll,
                   style: AppTypography.caption.copyWith(
                     color: AppColors.textDisabled,
                   ),

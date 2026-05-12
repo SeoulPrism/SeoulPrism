@@ -5,6 +5,7 @@ import 'dart:ui';
 
 import 'package:crypto/crypto.dart';
 import '../core/platform_scroll.dart';
+import '../l10n/gen/app_localizations.dart';
 import '../widgets/adaptive/adaptive.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -148,10 +149,11 @@ class _AuthViewState extends State<AuthView> {
   }
 
   Widget _buildTabBar() {
+    final l = AppL10n.of(context);
     return AdaptiveTabBar(
-      items: const [
-        AdaptiveTabItem(label: '회원가입', icon: Icons.person_add_rounded),
-        AdaptiveTabItem(label: '로그인', icon: Icons.login_rounded),
+      items: [
+        AdaptiveTabItem(label: l.authTabSignUp, icon: Icons.person_add_rounded),
+        AdaptiveTabItem(label: l.authTabSignIn, icon: Icons.login_rounded),
       ],
       currentIndex: _isLogin ? 1 : 0,
       onTap: (index) {
@@ -189,8 +191,10 @@ class _AuthViewState extends State<AuthView> {
               const SizedBox(height: 20),
               AdaptiveGlassButton(
                 label: _loading
-                    ? '처리 중...'
-                    : (_isLogin ? '로그인' : '회원가입'),
+                    ? AppL10n.of(context).authProcessing
+                    : (_isLogin
+                        ? AppL10n.of(context).authSignIn
+                        : AppL10n.of(context).authSignUp),
                 onPressed: _loading ? null : _handleAuth,
               ),
               AnimatedSize(
@@ -221,19 +225,20 @@ class _AuthViewState extends State<AuthView> {
   }
 
   Widget _buildLoginFields() {
+    final l = AppL10n.of(context);
     return Column(
       key: const ValueKey('login'),
       children: [
         _GlassInputField(
-          label: '이메일',
-          hintText: '이메일을 입력해주세요',
+          label: l.authLabelEmail,
+          hintText: l.authHintEmail,
           controller: _emailController,
           keyboardType: TextInputType.emailAddress,
         ),
         const SizedBox(height: 16),
         _GlassInputField(
-          label: '비밀번호',
-          hintText: '비밀번호를 입력해주세요',
+          label: l.authLabelPassword,
+          hintText: l.authHintPassword,
           controller: _passwordController,
           obscureText: _hidePassword,
           suffixIcon: _visibilityToggle(_hidePassword, () {
@@ -254,7 +259,7 @@ class _AuthViewState extends State<AuthView> {
                 ),
                 visualDensity: VisualDensity.compact,
               ),
-              child: const Text('아이디 찾기'),
+              child: Text(l.authFindId),
             ),
             Text(
               '|',
@@ -273,7 +278,7 @@ class _AuthViewState extends State<AuthView> {
                 ),
                 visualDensity: VisualDensity.compact,
               ),
-              child: const Text('비밀번호 찾기'),
+              child: Text(l.authFindPassword),
             ),
           ],
         ),
@@ -282,25 +287,26 @@ class _AuthViewState extends State<AuthView> {
   }
 
   Widget _buildSignUpFields() {
+    final l = AppL10n.of(context);
     return Column(
       key: const ValueKey('signup'),
       children: [
         _GlassInputField(
-          label: '아이디',
-          hintText: '아이디를 입력해주세요',
+          label: l.authLabelUsername,
+          hintText: l.authHintUsername,
           controller: _idController,
         ),
         const SizedBox(height: 16),
         _GlassInputField(
-          label: '이메일',
-          hintText: '이메일을 입력해주세요',
+          label: l.authLabelEmail,
+          hintText: l.authHintEmail,
           controller: _emailController,
           keyboardType: TextInputType.emailAddress,
         ),
         const SizedBox(height: 16),
         _GlassInputField(
-          label: '비밀번호',
-          hintText: '비밀번호를 입력해주세요',
+          label: l.authLabelPassword,
+          hintText: l.authHintPassword,
           controller: _passwordController,
           obscureText: _hidePassword,
           suffixIcon: _visibilityToggle(_hidePassword, () {
@@ -309,8 +315,8 @@ class _AuthViewState extends State<AuthView> {
         ),
         const SizedBox(height: 16),
         _GlassInputField(
-          label: '비밀번호 확인',
-          hintText: '비밀번호를 다시 입력해주세요',
+          label: l.authLabelConfirmPassword,
+          hintText: l.authHintConfirmPassword,
           controller: _confirmPasswordController,
           obscureText: _hideConfirmPassword,
           suffixIcon: _visibilityToggle(_hideConfirmPassword, () {
@@ -347,7 +353,7 @@ class _AuthViewState extends State<AuthView> {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14),
           child: Text(
-            'SNS 계정으로 로그인',
+            AppL10n.of(context).authSnsLogin,
             style: TextStyle(
               color: Colors.white.withValues(alpha: 0.70),
               fontSize: 13,
@@ -424,7 +430,7 @@ class _AuthViewState extends State<AuthView> {
       final idToken = googleUser.authentication.idToken;
 
       if (idToken == null) {
-        if (mounted) _showError('Google 인증에 실패했습니다');
+        if (mounted) _showError(AppL10n.of(context).authGoogleAuthFailed);
         return;
       }
 
@@ -433,9 +439,9 @@ class _AuthViewState extends State<AuthView> {
         idToken: idToken,
       );
     } on AuthException catch (e) {
-      if (mounted) _showError(_translateAuthError(e.message));
+      if (mounted) _showError(_translateAuthError(context, e.message));
     } catch (e) {
-      if (mounted) _showError('Google 로그인에 실패했습니다');
+      if (mounted) _showError(AppL10n.of(context).authGoogleSignInFailed);
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -458,9 +464,9 @@ class _AuthViewState extends State<AuthView> {
         );
       }
     } on AuthException catch (e) {
-      if (mounted) _showError(_translateAuthError(e.message));
+      if (mounted) _showError(_translateAuthError(context, e.message));
     } catch (e) {
-      if (mounted) _showError('게스트 로그인에 실패했습니다');
+      if (mounted) _showError(AppL10n.of(context).authGuestSignInFailed);
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -482,7 +488,7 @@ class _AuthViewState extends State<AuthView> {
 
       final idToken = credential.identityToken;
       if (idToken == null) {
-        if (mounted) _showError('Apple 인증에 실패했습니다');
+        if (mounted) _showError(AppL10n.of(context).authAppleAuthFailed);
         return;
       }
 
@@ -493,11 +499,11 @@ class _AuthViewState extends State<AuthView> {
       );
     } on SignInWithAppleAuthorizationException catch (e) {
       if (e.code == AuthorizationErrorCode.canceled) return;
-      if (mounted) _showError('Apple 로그인이 취소되었습니다');
+      if (mounted) _showError(AppL10n.of(context).authAppleSignInCanceled);
     } on AuthException catch (e) {
-      if (mounted) _showError(_translateAuthError(e.message));
+      if (mounted) _showError(_translateAuthError(context, e.message));
     } catch (e) {
-      if (mounted) _showError('Apple 로그인에 실패했습니다');
+      if (mounted) _showError(AppL10n.of(context).authAppleSignInFailed);
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -515,11 +521,12 @@ class _AuthViewState extends State<AuthView> {
   }
 
   Future<void> _handleAuth() async {
+    final l = AppL10n.of(context);
     final email = _emailController.text.trim();
     final password = _passwordController.text;
 
     if (email.isEmpty || password.isEmpty) {
-      _showError('이메일과 비밀번호를 입력해주세요');
+      _showError(l.authEmailAndPasswordRequired);
       return;
     }
 
@@ -527,15 +534,15 @@ class _AuthViewState extends State<AuthView> {
       final username = _idController.text.trim();
       final confirm = _confirmPasswordController.text;
       if (username.isEmpty) {
-        _showError('아이디를 입력해주세요');
+        _showError(l.authUsernameRequired);
         return;
       }
       if (password != confirm) {
-        _showError('비밀번호가 일치하지 않습니다');
+        _showError(l.authPasswordMismatch);
         return;
       }
       if (password.length < 6) {
-        _showError('비밀번호는 6자 이상이어야 합니다');
+        _showError(l.authPasswordTooShort);
         return;
       }
     }
@@ -566,45 +573,47 @@ class _AuthViewState extends State<AuthView> {
         }
       }
     } on AuthException catch (e) {
-      if (mounted) _showError(_translateAuthError(e.message));
+      if (mounted) _showError(_translateAuthError(context, e.message));
     } catch (e) {
-      if (mounted) _showError('오류가 발생했습니다');
+      if (mounted) _showError(AppL10n.of(context).authGenericError);
     } finally {
       if (mounted) setState(() => _loading = false);
     }
   }
 
-  String _translateAuthError(String message) {
+  String _translateAuthError(BuildContext ctx, String message) {
+    final l = AppL10n.of(ctx);
     if (message.contains('Invalid login credentials')) {
-      return '이메일 또는 비밀번호가 올바르지 않습니다';
+      return l.authErrorInvalidCredentials;
     }
     if (message.contains('already registered')) {
-      return '이미 가입된 이메일입니다';
+      return l.authErrorEmailExists;
     }
     if (message.contains('invalid email')) {
-      return '올바른 이메일 형식을 입력해주세요';
+      return l.authErrorInvalidEmail;
     }
     if (message.contains('Email not confirmed') || message.contains('email_not_confirmed')) {
-      return '이메일 인증이 완료되지 않았습니다. 메일함을 확인해주세요.';
+      return l.authErrorEmailNotConfirmed;
     }
     return message;
   }
 
   void _showConfirmEmailDialog(String email) {
+    final l = AppL10n.of(context);
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFF1C1C1E),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('이메일 인증 필요', style: TextStyle(color: Colors.white)),
+        title: Text(l.authEmailConfirmRequiredTitle, style: const TextStyle(color: Colors.white)),
         content: Text(
-          '$email로 인증 메일을 보냈습니다.\n메일함을 확인하고 인증을 완료한 후 로그인해주세요.',
+          l.authEmailConfirmRequiredBody(email),
           style: const TextStyle(color: Colors.white70, height: 1.5),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('확인', style: TextStyle(color: Color(0xFF6E7BFF))),
+            child: Text(l.commonConfirm, style: const TextStyle(color: Color(0xFF6E7BFF))),
           ),
         ],
       ),
@@ -675,9 +684,10 @@ class _FindAccountPageState extends State<_FindAccountPage> {
   bool get _isIdMode => widget.mode == _FindSheetMode.id;
 
   Future<void> _handleFind() async {
+    final l = AppL10n.of(context);
     final email = _emailController.text.trim();
     if (email.isEmpty) {
-      _showSnack('이메일을 입력해주세요', isError: true);
+      _showSnack(l.authFindIdEmailRequired, isError: true);
       return;
     }
 
@@ -691,7 +701,7 @@ class _FindAccountPageState extends State<_FindAccountPage> {
         );
         if (!mounted) return;
         if (result == null || (result as String).isEmpty) {
-          _showSnack('해당 이메일로 가입된 계정을 찾을 수 없습니다', isError: true);
+          _showSnack(AppL10n.of(context).authFindIdNotFound, isError: true);
         } else {
           _showResultDialog(result);
         }
@@ -701,12 +711,13 @@ class _FindAccountPageState extends State<_FindAccountPage> {
           redirectTo: 'com.seoul.prism://login-callback',
         );
         if (!mounted) return;
-        _showSnack('비밀번호 재설정 링크를 이메일로 보냈습니다');
+        _showSnack(AppL10n.of(context).authPasswordResetSent);
       }
     } catch (e) {
       if (mounted) {
+        final l2 = AppL10n.of(context);
         _showSnack(
-          _isIdMode ? '아이디 찾기에 실패했습니다' : '이메일 전송에 실패했습니다',
+          _isIdMode ? l2.authFindIdFailed : l2.authEmailSendFailed,
           isError: true,
         );
       }
@@ -716,17 +727,18 @@ class _FindAccountPageState extends State<_FindAccountPage> {
   }
 
   void _showResultDialog(String username) {
+    final l = AppL10n.of(context);
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF1C1C1E),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('아이디 찾기 결과', style: TextStyle(color: Colors.white)),
+        title: Text(l.authFindIdResultTitle, style: const TextStyle(color: Colors.white)),
         content: RichText(
           text: TextSpan(
             style: const TextStyle(fontSize: 16, color: Colors.white70),
             children: [
-              const TextSpan(text: '회원님의 아이디는 '),
+              TextSpan(text: l.authFindIdResultBefore),
               TextSpan(
                 text: username,
                 style: const TextStyle(
@@ -734,7 +746,7 @@ class _FindAccountPageState extends State<_FindAccountPage> {
                   color: Colors.white,
                 ),
               ),
-              const TextSpan(text: ' 입니다.'),
+              TextSpan(text: l.authFindIdResultAfter),
             ],
           ),
         ),
@@ -744,7 +756,7 @@ class _FindAccountPageState extends State<_FindAccountPage> {
               Navigator.pop(ctx);
               Navigator.pop(context);
             },
-            child: const Text('확인'),
+            child: Text(l.commonConfirm),
           ),
         ],
       ),
@@ -839,7 +851,9 @@ class _FindAccountPageState extends State<_FindAccountPage> {
                                   crossAxisAlignment: CrossAxisAlignment.stretch,
                                   children: [
                                     Text(
-                                      _isIdMode ? '아이디 찾기' : '비밀번호 찾기',
+                                      _isIdMode
+                                          ? AppL10n.of(context).authFindIdTitle
+                                          : AppL10n.of(context).authFindPasswordTitle,
                                       style: const TextStyle(
                                         fontSize: 22,
                                         fontWeight: FontWeight.w800,
@@ -849,8 +863,8 @@ class _FindAccountPageState extends State<_FindAccountPage> {
                                     const SizedBox(height: 8),
                                     Text(
                                       _isIdMode
-                                          ? '가입 시 사용한 이메일을 입력하면\n아이디를 알려드립니다.'
-                                          : '이메일을 입력하면\n비밀번호 재설정 링크를 보내드립니다.',
+                                          ? AppL10n.of(context).authFindIdBody
+                                          : AppL10n.of(context).authFindPasswordBody,
                                       style: TextStyle(
                                         fontSize: 14,
                                         height: 1.5,
@@ -859,16 +873,18 @@ class _FindAccountPageState extends State<_FindAccountPage> {
                                     ),
                                     const SizedBox(height: 24),
                                     _GlassInputField(
-                                      label: '이메일',
-                                      hintText: '가입한 이메일을 입력해주세요',
+                                      label: AppL10n.of(context).authLabelEmail,
+                                      hintText: AppL10n.of(context).authFindIdEmailHint,
                                       controller: _emailController,
                                       keyboardType: TextInputType.emailAddress,
                                     ),
                                     const SizedBox(height: 24),
                                     AdaptiveGlassButton(
                                       label: _loading
-                                          ? '처리 중...'
-                                          : (_isIdMode ? '아이디 찾기' : '재설정 링크 받기'),
+                                          ? AppL10n.of(context).authProcessing
+                                          : (_isIdMode
+                                              ? AppL10n.of(context).authFindIdSubmit
+                                              : AppL10n.of(context).authFindPasswordSubmit),
                                       onPressed: _loading ? null : _handleFind,
                                     ),
                                   ],

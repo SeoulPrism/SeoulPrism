@@ -1,6 +1,7 @@
 import '../core/debug_log.dart';
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io' show Platform;
 import 'dart:math';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
@@ -10,6 +11,7 @@ import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart' hide Visibility;
 import '../core/api_keys.dart';
 import '../core/map_interface.dart';
 import '../models/subway_models.dart';
+import '../models/building_hit.dart';
 import '../data/seoul_subway_data.dart';
 
 class MapboxEngine extends StatefulWidget {
@@ -26,23 +28,15 @@ class MapboxEngine extends StatefulWidget {
   State<MapboxEngine> createState() => _MapboxEngineState();
 }
 
-/// peer 핀 탭 listener (Mapbox Pigeon).
-class _PeerPinClickListener extends OnCircleAnnotationClickListener {
-  final _MapboxEngineState engine;
-  _PeerPinClickListener(this.engine);
-  @override
-  void onCircleAnnotationClick(CircleAnnotation annotation) {
-    debugPrint('[PeerPinClick] annotation ${annotation.id}');
-    engine._firePeerPinTap(annotation);
-  }
-}
-
 class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
   MapboxMap? _mapboxMap;
   PointAnnotationManager? _pointAnnotationManager;
   CircleAnnotationManager? _circleAnnotationManager;
-  CircleAnnotationManager? _peerCircleManager;
-  final Map<String, CircleAnnotation> _peerAnnotations = {};
+  PointAnnotationManager? _peerLabelManager; // 닉네임 텍스트 라벨 전용.
+  /// peer pin 의 단일 GeoJsonSource 위에 4-layer 마커 렌더 — 내 마커와 동일 디자인.
+  /// id → (lat, lng, color hex '#RRGGBB').
+  final Map<String, ({double lat, double lng, String color})> _peerFeatures = {};
+  final Map<String, PointAnnotation> _peerLabels = {};
   PolylineAnnotationManager? _polylineAnnotationManager;
   bool _disposed = false;
   // 채널 에러 발생한 소스: 스타일 재생성 전까지 호출 스킵 (로그 폭주 방지)
@@ -121,6 +115,7 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
   void Function(String icao24)? _onFlightTapped;
   void Function(String name, double lat, double lng)? _onPoiTapped;
   void Function(double lat, double lng)? _onMapCoordTapped;
+  VoidCallback? _onUserAvatarTapped;
   bool _poiTappedThisFrame = false;
   bool _pendingPoiTriggered = false;
   String? _pendingPoiName;
@@ -134,12 +129,27 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
   double? _selectedStationLat;
   double? _selectedStationLng;
 
-  // ── 현재 위치 (3D 사람 아바타) ──
+  // ── 현재 위치 (모던 다층 원형 마커) ──
+  // 레이어 구성 (위→아래):
+  //   - head: 작은 흰 도트 (정확한 위치 점)
+  //   - body: 컬러 fill 원 (사용자 pinColor)
+  //   - outerRing: 흰 외곽 원 (구분성)
+  //   - pulse: 흐릿한 큰 컬러 펄스 링
   static const _locationSourceId = 'user-location-source';
   static const _locationBodyLayerId = 'user-location-body-layer';
+  static const _locationOuterRingLayerId = 'user-location-outer-ring-layer';
   static const _locationPulseSourceId = 'user-location-pulse-source';
   static const _locationPulseLayerId = 'user-location-pulse-layer';
   static const _locationHeadLayerId = 'user-location-head-layer';
+  // peer 핀: 내 위치와 동일한 4-layer 디자인. 단일 source 에 모든 peer point 들.
+  static const _peersSourceId = 'peer-pins-source';
+  static const _peersPulseLayerId = 'peer-pins-pulse-layer';
+  static const _peersOuterLayerId = 'peer-pins-outer-layer';
+  static const _peersBodyLayerId = 'peer-pins-body-layer';
+  static const _peersHeadLayerId = 'peer-pins-head-layer';
+  bool _peerLayersReady = false;
+  /// 외부에서 주입된 사용자 핀 색상 (myProfile.pinColor). null = 기본 파랑.
+  Color _userPinColor = const Color(0xFF4A90D9);
   bool _locationEnabled = false;
   bool _locationLayersReady = false; // _initLocationLayers 성공 여부.
   bool _locationFailed = false; // 플러그인 미등록 시 재시도 방지
@@ -243,6 +253,15 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
   @override
   void setStyle(String styleUri) {
     _failedSources.clear();
+    // 스타일 reload = 모든 custom source/layer 사라짐. ready flag 들 reset
+    // → 다음 upsert/update 호출이 자동으로 다시 init 하도록.
+    _peerLayersReady = false;
+    _locationLayersReady = false;
+    _layersInitialized3D = false;
+    _busLayersInitialized = false;
+    _flightLayersInitialized = false;
+    _riverBusLayersInitialized = false;
+    _poiLayerInitialized = false;
     _mapboxMap?.loadStyleURI(styleUri);
   }
 
@@ -377,17 +396,24 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
     setLightPreset(lightPreset);
 
     // 2) Fog (안개/시정 효과) — Standard style atmosphere config
-    if (fogOpacity > 0) {
-      try {
-        // Standard style의 fog 설정 — config property 사용
-        _mapboxMap!.style.setStyleImportConfigProperty(
-          "basemap",
-          "fog",
-          fogOpacity > 0.3 ? "high" : "low",
-        );
-      } catch (e) {
-        DebugLog.log('[MapboxEngine] fog 설정 실패 (무시): $e');
+    // 항상 호출 — fogOpacity==0 일 때 "none" 으로 명시적 클리어. (이전엔 if (>0)
+    // 가드 때문에 rain → clear 전환 시 fog 가 안 지워지는 버그 있었음)
+    try {
+      final String fogLevel;
+      if (fogOpacity <= 0) {
+        fogLevel = 'none';
+      } else if (fogOpacity > 0.3) {
+        fogLevel = 'high';
+      } else {
+        fogLevel = 'low';
       }
+      _mapboxMap!.style.setStyleImportConfigProperty(
+        "basemap",
+        "fog",
+        fogLevel,
+      );
+    } catch (e) {
+      DebugLog.log('[MapboxEngine] fog 설정 실패 (무시): $e');
     }
   }
 
@@ -604,6 +630,9 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
 
   // ── 폴리라인 (노선 경로) ──
 
+  /// id → 실제 PolylineAnnotation. removePolyline 이 실제로 삭제 가능하도록.
+  final Map<String, PolylineAnnotation> _polylineAnnByid = {};
+
   @override
   Future<void> addPolyline(
     String id,
@@ -624,7 +653,15 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
 
     if (points.length < 2) return;
 
-    await _polylineAnnotationManager?.create(
+    // 동일 id 가 이미 있으면 먼저 제거 (재생성).
+    final existing = _polylineAnnByid.remove(id);
+    if (existing != null) {
+      try {
+        await _polylineAnnotationManager?.delete(existing);
+      } catch (_) {}
+    }
+
+    final ann = await _polylineAnnotationManager?.create(
       PolylineAnnotationOptions(
         geometry: LineString(
           coordinates: points.map((p) => p.coordinates).toList(),
@@ -634,18 +671,25 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
         lineOpacity: opacity,
       ),
     );
+    if (ann != null) _polylineAnnByid[id] = ann;
     _polylineIds.add(id);
   }
 
   @override
   void removePolyline(String id) {
     _polylineIds.remove(id);
+    final ann = _polylineAnnByid.remove(id);
+    if (ann != null) {
+      // 비동기지만 await 안 해도 OK — 삭제만 보장하면 됨.
+      _polylineAnnotationManager?.delete(ann);
+    }
   }
 
   @override
   void clearPolylines() {
     _polylineAnnotationManager?.deleteAll();
     _polylineIds.clear();
+    _polylineAnnByid.clear();
   }
 
   // ── 원형 마커 (열차 위치) ──
@@ -660,19 +704,28 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
     Color strokeColor = Colors.white,
     double strokeWidth = 2.0,
   }) async {
-    if (_circleAnnotationManager == null) return;
+    if (_disposed || _circleAnnotationManager == null) return;
 
-    await _circleAnnotationManager?.create(
-      CircleAnnotationOptions(
-        geometry: Point(coordinates: Position(lng, lat)),
-        circleColor: color.toARGB32(),
-        circleRadius: radius,
-        circleStrokeColor: strokeColor.toARGB32(),
-        circleStrokeWidth: strokeWidth,
-        circleSortKey: 10, // 노선 위에 렌더링
-      ),
-    );
-    _circleMarkerIds.add(id);
+    try {
+      await _circleAnnotationManager?.create(
+        CircleAnnotationOptions(
+          geometry: Point(coordinates: Position(lng, lat)),
+          circleColor: color.toARGB32(),
+          circleRadius: radius,
+          circleStrokeColor: strokeColor.toARGB32(),
+          circleStrokeWidth: strokeWidth,
+          circleSortKey: 10, // 노선 위에 렌더링
+        ),
+      );
+      _circleMarkerIds.add(id);
+    } catch (e) {
+      // 디스포즈 직후 잔여 호출의 channel-error 는 무시 — 화면 사라진 뒤 잔존 작업.
+      final msg = e.toString();
+      if (!msg.contains('channel-error') &&
+          !msg.contains('Unable to establish connection')) {
+        DebugLog.log('[MapboxEngine] circle marker 추가 실패: $e');
+      }
+    }
   }
 
   @override
@@ -686,7 +739,107 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
     _circleMarkerIds.clear();
   }
 
-  // ── 멀티플레이어 peer 핀 ──
+  // ── 멀티플레이어 peer 핀 (내 마커와 동일 4-layer 디자인) ──
+
+  /// peer 4-layer (pulse / outer ring / body / head) 를 한번 만든다.
+  Future<void> _initPeerLayers() async {
+    if (_mapboxMap == null) return;
+    if (_peerLayersReady) return;
+    final style = _mapboxMap!.style;
+    Future<bool> srcExists(String id) async {
+      try { return await style.styleSourceExists(id); } catch (_) { return false; }
+    }
+    Future<bool> lyrExists(String id) async {
+      try { return await style.styleLayerExists(id); } catch (_) { return false; }
+    }
+    try {
+      const empty = '{"type":"FeatureCollection","features":[]}';
+      if (!await srcExists(_peersSourceId)) {
+        await style.addSource(GeoJsonSource(id: _peersSourceId, data: empty));
+      }
+      // 1) 펄스
+      if (!await lyrExists(_peersPulseLayerId)) {
+        await style.addLayer(CircleLayer(
+          id: _peersPulseLayerId,
+          sourceId: _peersSourceId,
+          circleColorExpression: ['to-color', ['get', 'color']],
+          circleRadiusExpression: [
+            'interpolate', ['linear'], ['zoom'],
+            10, 18.0, 14, 32.0, 17, 48.0,
+          ],
+          circleBlur: 0.9,
+          circleOpacity: 0.22,
+          circlePitchAlignment: CirclePitchAlignment.MAP,
+          circleEmissiveStrength: 1.0,
+        ));
+      }
+      // 2) 흰 외곽
+      if (!await lyrExists(_peersOuterLayerId)) {
+        await style.addLayer(CircleLayer(
+          id: _peersOuterLayerId,
+          sourceId: _peersSourceId,
+          circleColor: 0xFFFFFFFF,
+          circleRadiusExpression: [
+            'interpolate', ['linear'], ['zoom'],
+            10, 9.0, 14, 15.0, 17, 22.0,
+          ],
+          circleOpacity: 1.0,
+          circlePitchAlignment: CirclePitchAlignment.MAP,
+          circleSortKey: 98,
+          circleEmissiveStrength: 1.0,
+        ));
+      }
+      // 3) 컬러 fill (peer pinColor)
+      if (!await lyrExists(_peersBodyLayerId)) {
+        await style.addLayer(CircleLayer(
+          id: _peersBodyLayerId,
+          sourceId: _peersSourceId,
+          circleColorExpression: ['to-color', ['get', 'color']],
+          circleRadiusExpression: [
+            'interpolate', ['linear'], ['zoom'],
+            10, 7.0, 14, 12.0, 17, 18.0,
+          ],
+          circleOpacity: 1.0,
+          circleStrokeColor: 0x33000000,
+          circleStrokeWidth: 0.5,
+          circlePitchAlignment: CirclePitchAlignment.MAP,
+          circleSortKey: 99,
+          circleEmissiveStrength: 1.0,
+        ));
+      }
+      // 4) 흰 코어 도트
+      if (!await lyrExists(_peersHeadLayerId)) {
+        await style.addLayer(CircleLayer(
+          id: _peersHeadLayerId,
+          sourceId: _peersSourceId,
+          circleColor: 0xFFFFFFFF,
+          circleRadiusExpression: [
+            'interpolate', ['linear'], ['zoom'],
+            10, 2.5, 14, 4.0, 17, 6.0,
+          ],
+          circleOpacity: 1.0,
+          circlePitchAlignment: CirclePitchAlignment.MAP,
+          circleSortKey: 100,
+          circleEmissiveStrength: 1.0,
+        ));
+      }
+      _peerLayersReady = true;
+    } catch (e) {
+      debugPrint('[MapboxEngine] peer 레이어 init 실패: $e');
+    }
+  }
+
+  Future<void> _flushPeerSource() async {
+    if (_mapboxMap == null || !_peerLayersReady) return;
+    final features = _peerFeatures.entries.map((e) {
+      final v = e.value;
+      return '{"type":"Feature","geometry":{"type":"Point",'
+          '"coordinates":[${v.lng},${v.lat}]},'
+          '"properties":{"id":${jsonEncode(e.key)},"color":${jsonEncode(v.color)}}}';
+    }).join(',');
+    final fc = '{"type":"FeatureCollection","features":[$features]}';
+    await _updateSourceData(_peersSourceId, fc);
+  }
 
   @override
   Future<void> upsertPeerPin(
@@ -694,64 +847,99 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
     double lat,
     double lng, {
     required Color color,
+    String? label,
   }) async {
-    final manager = _peerCircleManager;
-    if (manager == null) return;
-    final existing = _peerAnnotations[id];
-    if (existing != null) {
-      existing.geometry = Point(coordinates: Position(lng, lat));
-      existing.circleColor = color.toARGB32();
-      try {
-        await manager.update(existing);
-      } catch (_) {
-        // 갱신 실패 시 재생성.
-        _peerAnnotations.remove(id);
-        await upsertPeerPin(id, lat, lng, color: color);
+    if (!_peerLayersReady) await _initPeerLayers();
+    // hex 문자열로 — Mapbox expression 'to-color' 가 '#RRGGBB' 인식.
+    final hex = '#${color.toARGB32().toRadixString(16).padLeft(8, '0').substring(2)}';
+    _peerFeatures[id] = (lat: lat, lng: lng, color: hex);
+    await _flushPeerSource();
+    await _upsertPeerLabel(id, lat, lng, label);
+  }
+
+  /// 라벨 create 가 진행 중인 id 들 — 동시 호출이 같은 id 로 두 번 create 하는
+  /// race 차단 (이전에 라벨이 복제되어 쌓이던 버그).
+  final Set<String> _peerLabelInflight = {};
+
+  Future<void> _upsertPeerLabel(
+      String id, double lat, double lng, String? label) async {
+    final lblMgr = _peerLabelManager;
+    if (lblMgr == null) return;
+    final text = label?.trim() ?? '';
+    final existing = _peerLabels[id];
+    if (text.isEmpty) {
+      if (existing != null) {
+        _peerLabels.remove(id);
+        try { await lblMgr.delete(existing); } catch (_) {}
       }
       return;
     }
-    final ann = await manager.create(
-      CircleAnnotationOptions(
-        geometry: Point(coordinates: Position(lng, lat)),
-        circleColor: color.toARGB32(),
-        circleRadius: 14.0, // 탭 영역 확보 + 가시성.
-        circleStrokeColor: Colors.white.toARGB32(),
-        circleStrokeWidth: 4.0,
-        circleSortKey: 100, // 다른 마커보다 위.
-      ),
-    );
-    _peerAnnotations[id] = ann;
+    if (existing != null) {
+      existing.geometry = Point(coordinates: Position(lng, lat));
+      existing.textField = text;
+      try {
+        await lblMgr.update(existing);
+        return;
+      } catch (_) {
+        _peerLabels.remove(id);
+        try { await lblMgr.delete(existing); } catch (_) {}
+      }
+    }
+    // create race 가드 — 같은 id 로 동시 create 진입 차단.
+    if (_peerLabelInflight.contains(id)) return;
+    _peerLabelInflight.add(id);
+    try {
+      final ann = await lblMgr.create(
+        PointAnnotationOptions(
+          geometry: Point(coordinates: Position(lng, lat)),
+          textField: text,
+          textSize: 11.0,
+          textColor: Colors.white.toARGB32(),
+          textHaloColor: const Color(0xCC000000).toARGB32(),
+          textHaloWidth: 1.5,
+          textOffset: [0.0, -2.2], // 핀 바로 위로.
+          textAnchor: TextAnchor.BOTTOM,
+          symbolSortKey: 110,
+        ),
+      );
+      // create 중에 다른 path 가 _peerLabels[id] 를 set 했으면 그건 우리 ann 외의
+      // 또 다른 ann — 둘 중 하나만 살리고 나머지는 즉시 삭제 (leak 방지).
+      final concurrent = _peerLabels[id];
+      if (concurrent != null && concurrent.id != ann.id) {
+        try { await lblMgr.delete(ann); } catch (_) {}
+      } else {
+        _peerLabels[id] = ann;
+      }
+    } finally {
+      _peerLabelInflight.remove(id);
+    }
   }
 
   @override
   void removePeerPin(String id) {
-    final ann = _peerAnnotations.remove(id);
-    if (ann != null) {
-      _peerCircleManager?.delete(ann);
-    }
+    if (_peerFeatures.remove(id) != null) _flushPeerSource();
+    final lbl = _peerLabels.remove(id);
+    if (lbl != null) _peerLabelManager?.delete(lbl);
   }
 
   @override
   void clearPeerPins() {
-    for (final ann in _peerAnnotations.values) {
-      _peerCircleManager?.delete(ann);
+    if (_peerFeatures.isNotEmpty) {
+      _peerFeatures.clear();
+      _flushPeerSource();
     }
-    _peerAnnotations.clear();
+    // 우리 map 외부에 누락된 leak ann 까지 한 번에 정리 — deleteAll 사용.
+    _peerLabels.clear();
+    _peerLabelInflight.clear();
+    try {
+      _peerLabelManager?.deleteAll();
+    } catch (_) {}
   }
 
   void Function(String userId)? _onPeerPinTapped;
   @override
   void setOnPeerPinTapped(void Function(String userId)? callback) {
     _onPeerPinTapped = callback;
-  }
-
-  void _firePeerPinTap(CircleAnnotation tapped) {
-    String? hitUserId;
-    _peerAnnotations.forEach((uid, ann) {
-      if (ann.id == tapped.id) hitUserId = uid;
-    });
-    debugPrint('[PeerPinClick] resolved userId=$hitUserId callback=${_onPeerPinTapped != null}');
-    if (hitUserId != null) _onPeerPinTapped?.call(hitUserId!);
   }
 
   // ── 역 마커 ──
@@ -765,18 +953,26 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
     Color color = Colors.white,
     double radius = 3.0,
   }) async {
-    if (_circleAnnotationManager == null) return;
+    if (_disposed || _circleAnnotationManager == null) return;
 
-    await _circleAnnotationManager?.create(
-      CircleAnnotationOptions(
-        geometry: Point(coordinates: Position(lng, lat)),
-        circleColor: color.toARGB32(),
-        circleRadius: radius,
-        circleStrokeColor: Colors.black.toARGB32(),
-        circleStrokeWidth: 1.0,
-        circleSortKey: 5,
-      ),
-    );
+    try {
+      await _circleAnnotationManager?.create(
+        CircleAnnotationOptions(
+          geometry: Point(coordinates: Position(lng, lat)),
+          circleColor: color.toARGB32(),
+          circleRadius: radius,
+          circleStrokeColor: Colors.black.toARGB32(),
+          circleStrokeWidth: 1.0,
+          circleSortKey: 5,
+        ),
+      );
+    } catch (e) {
+      final msg = e.toString();
+      if (!msg.contains('channel-error') &&
+          !msg.contains('Unable to establish connection')) {
+        DebugLog.log('[MapboxEngine] station marker 추가 실패: $e');
+      }
+    }
   }
 
   /// Color 밝게 만들기 (amount: 0.0~1.0)
@@ -1476,9 +1672,13 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
     try {
       await _mapboxMap!.style.setStyleSourceProperty(sourceId, 'data', geojson);
     } catch (e) {
-      // 채널 에러는 디스포즈 직후 잔여 호출. 한 번만 로그 후 추가 호출 차단.
+      // 1) 채널 에러: 디스포즈 직후 잔여 호출. 한 번만 로그 후 추가 호출 차단.
+      // 2) "is not in style": 스타일 reload 후 소스가 사라진 케이스 (또는 init
+      //    실패 후 잔여 호출). 마찬가지로 차단해야 매 프레임마다 throw 안 함.
       final msg = e.toString();
-      if (msg.contains('channel-error') || msg.contains('Unable to establish connection')) {
+      if (msg.contains('channel-error') ||
+          msg.contains('Unable to establish connection') ||
+          msg.contains('is not in style')) {
         _failedSources.add(sourceId);
         return;
       }
@@ -2164,6 +2364,11 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
   }
 
   @override
+  void setOnUserAvatarTapped(VoidCallback? callback) {
+    _onUserAvatarTapped = callback;
+  }
+
+  @override
   void setSelectedTrain(String? trainNo) {
     _selectedTrainNo = trainNo;
     if (trainNo == null) {
@@ -2437,72 +2642,105 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
     }
 
     try {
+      // pulse / body / outer / head 모두 같은 단일 Point source 사용.
+      if (!await srcExists(_locationSourceId)) {
+        await style.addSource(
+          GeoJsonSource(id: _locationSourceId, data: emptyGeoJson),
+        );
+      }
+      // 펄스 source 도 만들어둠 (기존 호환).
       if (!await srcExists(_locationPulseSourceId)) {
         await style.addSource(
           GeoJsonSource(id: _locationPulseSourceId, data: emptyGeoJson),
         );
       }
+
+      // 1) 펄스 — 흐릿한 큰 컬러 링.
       if (!await lyrExists(_locationPulseLayerId)) {
         await style.addLayer(
           CircleLayer(
             id: _locationPulseLayerId,
-            sourceId: _locationPulseSourceId,
-            circleColor: const Color(0xFF4A90D9).toARGB32(),
+            sourceId: _locationSourceId,
+            circleColor: _userPinColor.toARGB32(),
             circleRadiusExpression: [
               'interpolate',
               ['linear'],
               ['zoom'],
-              10, 20.0,
-              14, 40.0,
-              17, 60.0,
+              10, 18.0,
+              14, 32.0,
+              17, 48.0,
             ],
-            circleBlur: 0.7,
-            circleOpacity: 0.3,
+            circleBlur: 0.9,
+            circleOpacity: 0.22,
             circlePitchAlignment: CirclePitchAlignment.MAP,
             circleEmissiveStrength: 1.0,
           ),
         );
       }
 
-      if (!await srcExists(_locationSourceId)) {
-        await style.addSource(
-          GeoJsonSource(id: _locationSourceId, data: emptyGeoJson),
-        );
-      }
-      if (!await lyrExists(_locationBodyLayerId)) {
-        await style.addLayer(
-          FillExtrusionLayer(
-            id: _locationBodyLayerId,
-            sourceId: _locationSourceId,
-            fillExtrusionColorExpression: [
-              'to-color',
-              ['get', 'color'],
-            ],
-            fillExtrusionBaseExpression: ['get', 'base'],
-            fillExtrusionHeightExpression: ['get', 'top'],
-            fillExtrusionOpacity: 0.92,
-            fillExtrusionVerticalGradient: true,
-            fillExtrusionEmissiveStrength: 1.0,
-          ),
-        );
-      }
-
-      if (!await lyrExists(_locationHeadLayerId)) {
+      // 2) 흰 외곽 큰 원 — 컬러 도트의 구분 stroke.
+      if (!await lyrExists(_locationOuterRingLayerId)) {
         await style.addLayer(
           CircleLayer(
-            id: _locationHeadLayerId,
-            sourceId: _locationPulseSourceId,
-            circleColor: const Color(0xFFFFD7A8).toARGB32(),
+            id: _locationOuterRingLayerId,
+            sourceId: _locationSourceId,
+            circleColor: 0xFFFFFFFF,
             circleRadiusExpression: [
               'interpolate',
               ['linear'],
               ['zoom'],
-              10, 4.0,
-              14, 8.0,
-              17, 14.0,
+              10, 9.0,
+              14, 15.0,
+              17, 22.0,
             ],
-            circleStrokeColor: const Color(0xFF4A90D9).toARGB32(),
-            circleStrokeWidth: 2.0,
+            circleOpacity: 1.0,
+            circlePitchAlignment: CirclePitchAlignment.MAP,
+            circleSortKey: 98,
+            circleEmissiveStrength: 1.0,
+          ),
+        );
+      }
+
+      // 3) 컬러 fill — 사용자 pinColor.
+      if (!await lyrExists(_locationBodyLayerId)) {
+        await style.addLayer(
+          CircleLayer(
+            id: _locationBodyLayerId,
+            sourceId: _locationSourceId,
+            circleColor: _userPinColor.toARGB32(),
+            circleRadiusExpression: [
+              'interpolate',
+              ['linear'],
+              ['zoom'],
+              10, 7.0,
+              14, 12.0,
+              17, 18.0,
+            ],
+            circleOpacity: 1.0,
+            circleStrokeColor: 0x33000000,
+            circleStrokeWidth: 0.5,
+            circlePitchAlignment: CirclePitchAlignment.MAP,
+            circleSortKey: 99,
+            circleEmissiveStrength: 1.0,
+          ),
+        );
+      }
+
+      // 4) 흰 코어 도트 — 정확한 위치 점.
+      if (!await lyrExists(_locationHeadLayerId)) {
+        await style.addLayer(
+          CircleLayer(
+            id: _locationHeadLayerId,
+            sourceId: _locationSourceId,
+            circleColor: 0xFFFFFFFF,
+            circleRadiusExpression: [
+              'interpolate',
+              ['linear'],
+              ['zoom'],
+              10, 2.5,
+              14, 4.0,
+              17, 6.0,
+            ],
             circleOpacity: 1.0,
             circlePitchAlignment: CirclePitchAlignment.MAP,
             circleSortKey: 100,
@@ -2512,9 +2750,153 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
       }
 
       _locationLayersReady = true;
-      debugPrint('[MapboxEngine] ✅ 3D 위치 아바타 레이어 생성 완료');
+      debugPrint('[MapboxEngine] ✅ 위치 마커 레이어 생성 완료');
     } catch (e) {
       debugPrint('[MapboxEngine] ❌ 위치 레이어 초기화 실패: $e');
+    }
+  }
+
+  /// 내 위치 마커의 visibility 토글 (실내 칩으로 대체할 때 false).
+  @override
+  void setUserPinVisible(bool visible) {
+    if (_mapboxMap == null || !_locationLayersReady) return;
+    final v = visible ? 'visible' : 'none';
+    final style = _mapboxMap!.style;
+    for (final id in [
+      _locationPulseLayerId,
+      _locationOuterRingLayerId,
+      _locationBodyLayerId,
+      _locationHeadLayerId,
+    ]) {
+      try {
+        style.setStyleLayerProperty(id, 'visibility', v);
+      } catch (_) {}
+    }
+  }
+
+  /// 외부에서 사용자 핀 색을 주입 — 보통 myProfile.pinColor 변경 시 호출.
+  @override
+  Future<void> setUserPinColor(Color color) async {
+    if (color.toARGB32() == _userPinColor.toARGB32()) return;
+    _userPinColor = color;
+    if (_mapboxMap == null || !_locationLayersReady) return;
+    final style = _mapboxMap!.style;
+    try {
+      await style.setStyleLayerProperty(
+          _locationPulseLayerId, 'circle-color', color.toARGB32());
+      await style.setStyleLayerProperty(
+          _locationBodyLayerId, 'circle-color', color.toARGB32());
+    } catch (e) {
+      debugPrint('[MapboxEngine] setUserPinColor 실패: $e');
+    }
+  }
+
+  /// 좌표가 건물 footprint 안에 있는지 hit-test.
+  /// Mapbox Standard 는 layer id 가 import 안에 숨겨져 있어 layerIds 로 필터하기
+  /// 어려움 — layerIds 제한 없이 query 후 sourceLayer 또는 layer id 에 'building'
+  /// 이 포함된 feature 를 찾는다.
+  @override
+  Future<BuildingHit?> queryBuildingAt(double lat, double lng) async {
+    if (_mapboxMap == null) return null;
+    try {
+      final screen = await _mapboxMap!
+          .pixelForCoordinate(Point(coordinates: Position(lng, lat)));
+      final box = ScreenBox(
+        min: ScreenCoordinate(x: screen.x - 2, y: screen.y - 2),
+        max: ScreenCoordinate(x: screen.x + 2, y: screen.y + 2),
+      );
+      final feats = await _mapboxMap!.queryRenderedFeatures(
+        RenderedQueryGeometry.fromScreenBox(box),
+        RenderedQueryOptions(),
+      );
+      QueriedRenderedFeature? hit;
+      for (final f in feats) {
+        if (f == null) continue;
+        final qf = f.queriedFeature;
+        final sl = qf.sourceLayer;
+        if (sl == 'building' || sl == 'building_extrusion') {
+          hit = f;
+          break;
+        }
+        if (f.layers.any((l) => l != null && l.contains('building'))) {
+          hit = f;
+          break;
+        }
+      }
+      if (hit == null) {
+        // 디버그: 어떤 source-layer 들이 보였는지 일회성 로그.
+        final seen = <String>{};
+        for (final f in feats) {
+          final sl = f?.queriedFeature.sourceLayer;
+          if (sl != null) seen.add(sl);
+        }
+        DebugLog.log('[Building] miss ($lat,$lng) feats=${feats.length} '
+            'sourceLayers=$seen');
+        return null;
+      }
+      DebugLog.log('[Building] hit ($lat,$lng) '
+          'sl=${hit.queriedFeature.sourceLayer} layers=${hit.layers}');
+      return _featureToBuildingHit(hit.queriedFeature.feature);
+    } catch (e) {
+      debugPrint('[MapboxEngine] queryBuildingAt 실패: $e');
+      return null;
+    }
+  }
+
+  BuildingHit? _featureToBuildingHit(Map<Object?, Object?> feature) {
+    try {
+      final geom = feature['geometry'];
+      if (geom is! Map) return null;
+      final type = geom['type'] as String?;
+      final coords = geom['coordinates'];
+      List<List<double>>? outer;
+      if (type == 'Polygon' && coords is List && coords.isNotEmpty) {
+        final ring = coords.first as List;
+        outer = ring
+            .map<List<double>>((c) =>
+                [(c as List)[0] as num, c[1] as num]
+                    .map((n) => n.toDouble())
+                    .toList())
+            .toList();
+      } else if (type == 'MultiPolygon' && coords is List && coords.isNotEmpty) {
+        final firstPoly = coords.first as List;
+        if (firstPoly.isNotEmpty) {
+          final ring = firstPoly.first as List;
+          outer = ring
+              .map<List<double>>((c) =>
+                  [(c as List)[0] as num, c[1] as num]
+                      .map((n) => n.toDouble())
+                      .toList())
+              .toList();
+        }
+      }
+      if (outer == null || outer.isEmpty) return null;
+      double sumLng = 0, sumLat = 0;
+      for (final c in outer) {
+        sumLng += c[0];
+        sumLat += c[1];
+      }
+      final centroidLng = sumLng / outer.length;
+      final centroidLat = sumLat / outer.length;
+      // id: feature.id 가 있으면 우선, 없으면 centroid 라운딩으로 deterministic.
+      String id = feature['id']?.toString() ??
+          '${centroidLat.toStringAsFixed(5)},${centroidLng.toStringAsFixed(5)}';
+      String? name;
+      final props = feature['properties'];
+      if (props is Map) {
+        name = (props['name'] ?? props['name_ko'] ?? props['name_en'])
+            as String?;
+      }
+      return BuildingHit(
+        id: id,
+        ringLngLat: outer,
+        centroidLat: centroidLat,
+        centroidLng: centroidLng,
+        name: name,
+      );
+    } catch (e) {
+      debugPrint('[MapboxEngine] _featureToBuildingHit 실패: $e');
+      return null;
     }
   }
 
@@ -2538,27 +2920,13 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
     if (_mapboxMap == null) return;
     final lat = position.latitude;
     final lng = position.longitude;
-
-    // 사람 몸체: 8각형 원기둥 (반지름 ~2.5m, 지면에 붙임)
-    final bodyCoords = _generateOctagon(lat, lng, 2.5);
-    final bodyJson =
-        '{"type":"FeatureCollection","features":['
-        // 하체 (진한 파란색 — 바닥부터)
-        '{"type":"Feature","geometry":{"type":"Polygon","coordinates":[${_coordsToJson(bodyCoords)}]},'
-        '"properties":{"color":"rgba(55,120,200,1)","base":0,"top":8}},'
-        // 상체 (밝은 파란색)
-        '{"type":"Feature","geometry":{"type":"Polygon","coordinates":[${_coordsToJson(bodyCoords)}]},'
-        '"properties":{"color":"rgba(90,165,245,1)","base":8,"top":14}}'
-        ']}';
-
-    await _updateSourceData(_locationSourceId, bodyJson);
-
-    // 펄스/머리 좌표
-    final pulseJson =
-        '{"type":"FeatureCollection","features":['
+    // 모든 layer 가 _locationSourceId 위에 있으므로 Point 하나만 갱신.
+    final pointJson = '{"type":"FeatureCollection","features":['
         '{"type":"Feature","geometry":{"type":"Point","coordinates":[$lng,$lat]},"properties":{}}'
         ']}';
-    await _updateSourceData(_locationPulseSourceId, pulseJson);
+    await _updateSourceData(_locationSourceId, pointJson);
+    // 호환성 — 펄스 source 가 다른 코드에서 참조될 수 있으니 같이 갱신.
+    await _updateSourceData(_locationPulseSourceId, pointJson);
   }
 
   void _updateLocationPulse() {
@@ -2575,27 +2943,6 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
     } catch (_) {}
   }
 
-  /// 8각형 좌표 생성 (사람 몸체용 원기둥 단면)
-  List<List<double>> _generateOctagon(double lat, double lng, double radiusM) {
-    final coords = <List<double>>[];
-    for (int i = 0; i <= 8; i++) {
-      final angle = (i % 8) * (2 * pi / 8);
-      final dLat = radiusM * cos(angle) / _mPerDegLat;
-      final dLng = radiusM * sin(angle) / _mPerDegLng;
-      coords.add([lng + dLng, lat + dLat]);
-    }
-    return coords;
-  }
-
-  String _coordsToJson(List<List<double>> coords) {
-    final buf = StringBuffer('[');
-    for (int i = 0; i < coords.length; i++) {
-      if (i > 0) buf.write(',');
-      buf.write('[${coords[i][0]},${coords[i][1]}]');
-    }
-    buf.write(']');
-    return buf.toString();
-  }
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // 버스 3D 시각화 (지하철과 동일한 패턴)
@@ -3107,27 +3454,46 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
   void _onMapCreated(MapboxMap mapboxMap) {
     _mapboxMap = mapboxMap;
 
+    // iOS Mapbox 는 ornament margin 을 safe area 기준으로 잡지만 Android 는
+    // 화면 끝(=status bar/내비게이션 bar 아래에서도 그대로 0) 기준이라, 동일한
+    // marginTop/marginBottom 을 주면 Android 에서만 위/아래로 붙어 위성 토글
+    // 버튼·탭바와 겹친다. Android 에서는 inset 만큼 더해 iOS 와 동일한 시각
+    // 위치로 맞춘다.
+    final mq = MediaQuery.maybeOf(context);
+    final topInset = mq?.padding.top ?? 0.0;
+    final bottomInset = mq?.padding.bottom ?? 0.0;
+    final isAndroid = Platform.isAndroid;
+    final compassTop = isAndroid ? 120.0 + topInset : 120.0;
+    // 어트리뷰션(i)·로고를 우하단에 가로로 나란히 — "내 위치" 버튼 바로 아래.
+    // 어트리뷰션·로고 bottom margin —
+    //   Android: 기존대로 safe-area + 8 (탭바가 map 을 밀어올려 안 가림).
+    //   iOS: 탭바(약 65pt) 가 map 을 overlay 해서 SDK 기본 위치(=safe area+8)
+    //        가 그 안에 묻힘. tabBar(65) + gap(8) = 73 로 탭바 위로 올림 →
+    //        "내 위치" 버튼 바로 밑 (button bottom = bottomInset+60) 에 들어옴.
+    final ornamentBottom = isAndroid ? 8.0 + bottomInset : 73.0;
+
     // 나침반: 우상단, 검색바 아래로 여유있게
     mapboxMap.compass.updateSettings(
       CompassSettings(
         position: OrnamentPosition.TOP_RIGHT,
-        marginTop: 120,
+        marginTop: compassTop,
         marginRight: 16,
       ),
     );
-    // 로고: 좌하단, 어트리뷰션: 우하단 (탭바 위)
-    mapboxMap.logo.updateSettings(
-      LogoSettings(
-        position: OrnamentPosition.BOTTOM_LEFT,
-        marginBottom: 90,
-        marginLeft: 8,
-      ),
-    );
+    // 어트리뷰션(i 아이콘): 우하단 — "내 위치" 버튼 바로 밑.
     mapboxMap.attribution.updateSettings(
       AttributionSettings(
         position: OrnamentPosition.BOTTOM_RIGHT,
-        marginBottom: 90,
+        marginBottom: ornamentBottom,
         marginRight: 8,
+      ),
+    );
+    // 로고: 반대편(좌하단) — i 아이콘과 시각적으로 안 겹침.
+    mapboxMap.logo.updateSettings(
+      LogoSettings(
+        position: OrnamentPosition.BOTTOM_LEFT,
+        marginBottom: ornamentBottom,
+        marginLeft: 8,
       ),
     );
     // 스케일바 숨김
@@ -3143,6 +3509,13 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
       'basemap',
       'showPlaceLabels',
       true,
+    );
+    // 지하철역 라벨은 우리가 캡슐로 직접 그리므로 base map 의 transit 라벨은
+    // 끈다. 안 끄면 같은 역 이름이 두 번 표시되어 ('보라매공원' 등) 어수선해짐.
+    mapboxMap.style.setStyleImportConfigProperty(
+      'basemap',
+      'showTransitLabels',
+      false,
     );
 
     // Standard POI 탭 인터랙션 (Interactions API — 반드시 setOnMapTapListener보다 먼저)
@@ -3213,10 +3586,9 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
       _circleAnnotationManager = manager;
     });
 
-    // peer 핀 전용 — 지하철/열차 마커와 분리해 개별 update/delete 가능.
-    mapboxMap.annotations.createCircleAnnotationManager().then((manager) {
-      _peerCircleManager = manager;
-      manager.addOnCircleAnnotationClickListener(_PeerPinClickListener(this));
+    // peer 닉네임 텍스트 라벨 전용 — 핀 위에 떠 있는 작은 글씨.
+    mapboxMap.annotations.createPointAnnotationManager().then((manager) {
+      _peerLabelManager = manager;
     });
 
     mapboxMap.annotations.createPolylineAnnotationManager().then((manager) {
@@ -3381,6 +3753,61 @@ class _MapboxEngineState extends State<MapboxEngine> implements IMapController {
             _onStationTapped!(tappedName);
             return;
           }
+        }
+      }
+
+      // peer 핀 hit-test — body / outer / head 중 하나라도 맞으면.
+      if (_peerLayersReady &&
+          _onPeerPinTapped != null &&
+          _peerFeatures.isNotEmpty) {
+        final peerBox = ScreenBox(
+          min: ScreenCoordinate(x: screenPoint.x - 22, y: screenPoint.y - 22),
+          max: ScreenCoordinate(x: screenPoint.x + 22, y: screenPoint.y + 22),
+        );
+        final peerFeats = await _mapboxMap!.queryRenderedFeatures(
+          RenderedQueryGeometry.fromScreenBox(peerBox),
+          RenderedQueryOptions(layerIds: [
+            _peersBodyLayerId,
+            _peersOuterLayerId,
+            _peersHeadLayerId,
+          ]),
+        );
+        for (final f in peerFeats) {
+          if (f == null) continue;
+          final feat = f.queriedFeature.feature;
+          final props = feat['properties'];
+          if (props is Map) {
+            final userId = props['id'];
+            if (userId is String) {
+              _onPeerPinTapped!(userId);
+              return;
+            }
+          }
+        }
+      }
+
+      // 내 위치 3D 아바타 hit-test — body/head/pulse 레이어 중 하나라도 맞으면.
+      if (_locationLayersReady &&
+          _onUserAvatarTapped != null &&
+          _currentPosition != null) {
+        final avatarBox = ScreenBox(
+          min: ScreenCoordinate(x: screenPoint.x - 28, y: screenPoint.y - 28),
+          max: ScreenCoordinate(x: screenPoint.x + 28, y: screenPoint.y + 28),
+        );
+        final avatarFeatures = await _mapboxMap!.queryRenderedFeatures(
+          RenderedQueryGeometry.fromScreenBox(avatarBox),
+          RenderedQueryOptions(
+            layerIds: [
+              _locationBodyLayerId,
+              _locationOuterRingLayerId,
+              _locationHeadLayerId,
+              _locationPulseLayerId,
+            ],
+          ),
+        );
+        if (avatarFeatures.isNotEmpty) {
+          _onUserAvatarTapped!();
+          return;
         }
       }
 

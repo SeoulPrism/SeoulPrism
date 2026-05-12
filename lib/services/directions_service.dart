@@ -75,104 +75,127 @@ class DirectionsService {
 
   static const _baseUrl = 'https://apis.openapi.sk.com';
 
+  /// 가장 최근 호출에서 발생한 에러 메시지 (UI 에서 snackbar 로 노출용).
+  /// 성공하면 null.
+  String? lastError;
+
   Map<String, String> get _headers => {
     'appKey': ApiKeys.tmapAppKey,
     'Content-Type': 'application/json',
+    'Accept': 'application/json',
   };
 
-  /// 자동차 경로
+  /// 자동차 경로 — Mapbox Directions API v5.
   Future<DirectionsResult?> getDrivingRoute(
     double fromLat, double fromLng,
     double toLat, double toLng,
   ) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$_baseUrl/tmap/routes?version=1&startX=$fromLng&startY=$fromLat&endX=$toLng&endY=$toLat'),
-        headers: _headers,
-      ).timeout(const Duration(seconds: 10));
-
-      if (response.statusCode != 200) return null;
-      final data = jsonDecode(response.body);
-      final features = data['features'] as List? ?? [];
-      if (features.isEmpty) return null;
-
-      final props = features[0]['properties'] ?? {};
-      final coords = <List<double>>[];
-      for (final f in features) {
-        final geom = f['geometry'];
-        if (geom['type'] == 'LineString') {
-          for (final c in (geom['coordinates'] as List)) {
-            coords.add([(c[1] as num).toDouble(), (c[0] as num).toDouble()]);
-          }
-        }
-      }
-
-      return DirectionsResult(
-        mode: TravelMode.driving,
-        distanceKm: (props['totalDistance'] as num? ?? 0) / 1000,
-        durationSec: props['totalTime'] ?? 0,
-        fare: props['taxiFare'],
-        coordinates: coords,
-        legs: [],
-      );
-    } catch (e) {
-      DebugLog.log('[Directions] TMAP 자동차 실패: $e');
-      return null;
-    }
+    return _mapboxDirections(
+      profile: 'driving-traffic',
+      mode: TravelMode.driving,
+      fromLat: fromLat,
+      fromLng: fromLng,
+      toLat: toLat,
+      toLng: toLng,
+    );
   }
 
-  /// 도보 경로
+  /// 도보 경로 — Mapbox Directions API v5.
   Future<DirectionsResult?> getWalkingRoute(
     double fromLat, double fromLng,
     double toLat, double toLng,
   ) async {
+    return _mapboxDirections(
+      profile: 'walking',
+      mode: TravelMode.walking,
+      fromLat: fromLat,
+      fromLng: fromLng,
+      toLat: toLat,
+      toLng: toLng,
+    );
+  }
+
+  /// Mapbox Directions API v5 공통 호출.
+  Future<DirectionsResult?> _mapboxDirections({
+    required String profile, // 'driving-traffic' | 'walking'
+    required TravelMode mode,
+    required double fromLat,
+    required double fromLng,
+    required double toLat,
+    required double toLng,
+  }) async {
     try {
-      final response = await http.post(
-        Uri.parse('$_baseUrl/tmap/routes/pedestrian?version=1&startX=$fromLng&startY=$fromLat&endX=$toLng&endY=$toLat&startName=start&endName=end'),
-        headers: _headers,
-      ).timeout(const Duration(seconds: 10));
+      final coords = '$fromLng,$fromLat;$toLng,$toLat';
+      final url =
+          'https://api.mapbox.com/directions/v5/mapbox/$profile/$coords'
+          '?geometries=geojson'
+          '&overview=full'
+          '&steps=${mode == TravelMode.walking ? 'true' : 'false'}'
+          '&access_token=${ApiKeys.mapboxAccessToken}';
+      final response = await http
+          .get(Uri.parse(url))
+          .timeout(const Duration(seconds: 10));
 
-      if (response.statusCode != 200) return null;
-      final data = jsonDecode(response.body);
-      final features = data['features'] as List? ?? [];
-      if (features.isEmpty) return null;
+      if (response.statusCode != 200) {
+        final body = response.body;
+        final excerpt = body.substring(0, body.length.clamp(0, 200));
+        DebugLog.log(
+            '[Directions] Mapbox $profile ${response.statusCode}: $excerpt');
+        lastError = '경로 호출 실패 (${response.statusCode})';
+        return null;
+      }
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final routes = data['routes'] as List? ?? [];
+      if (routes.isEmpty) {
+        lastError = '경로를 찾지 못했어요';
+        return null;
+      }
+      final r = routes.first as Map<String, dynamic>;
+      final geom = r['geometry'] as Map<String, dynamic>?;
+      final geomCoords = (geom?['coordinates'] as List?) ?? const [];
+      final lineCoords = geomCoords
+          .map<List<double>>(
+              (c) => [(c[1] as num).toDouble(), (c[0] as num).toDouble()])
+          .toList();
+      final distance = (r['distance'] as num? ?? 0).toDouble();
+      final duration = (r['duration'] as num? ?? 0).toInt();
 
-      final props = features[0]['properties'] ?? {};
-      final coords = <List<double>>[];
-      final steps = <WalkStep>[];
-
-      for (final f in features) {
-        final geom = f['geometry'];
-        if (geom['type'] == 'LineString') {
-          for (final c in (geom['coordinates'] as List)) {
-            coords.add([(c[1] as num).toDouble(), (c[0] as num).toDouble()]);
-          }
-        } else if (geom['type'] == 'Point') {
-          final p = f['properties'] ?? {};
-          final desc = p['description']?.toString() ?? '';
-          final name = p['name']?.toString();
-          if (desc.isNotEmpty) {
-            final c = geom['coordinates'] as List;
-            steps.add(WalkStep(
-              description: desc,
-              name: (name != null && name.isNotEmpty) ? name : null,
-              lat: (c[1] as num).toDouble(),
-              lng: (c[0] as num).toDouble(),
-            ));
+      // 도보 — legs[0].steps 의 maneuver 텍스트로 간단한 turn-by-turn 생성.
+      final walkSteps = <WalkStep>[];
+      if (mode == TravelMode.walking) {
+        final legs = r['legs'] as List? ?? [];
+        for (final leg in legs) {
+          final steps = (leg as Map)['steps'] as List? ?? [];
+          for (final s in steps) {
+            final m = (s as Map)['maneuver'] as Map?;
+            final desc = (m?['instruction'] ??
+                    s['name'] ??
+                    '계속 진행')
+                .toString();
+            final loc = m?['location'] as List?;
+            if (loc != null && loc.length >= 2) {
+              walkSteps.add(WalkStep(
+                description: desc,
+                lat: (loc[1] as num).toDouble(),
+                lng: (loc[0] as num).toDouble(),
+              ));
+            }
           }
         }
       }
 
+      lastError = null;
       return DirectionsResult(
-        mode: TravelMode.walking,
-        distanceKm: (props['totalDistance'] as num? ?? 0) / 1000,
-        durationSec: props['totalTime'] ?? 0,
-        coordinates: coords,
-        legs: [],
-        walkSteps: steps,
+        mode: mode,
+        distanceKm: distance / 1000.0,
+        durationSec: duration,
+        coordinates: lineCoords,
+        legs: const [],
+        walkSteps: walkSteps,
       );
     } catch (e) {
-      DebugLog.log('[Directions] TMAP 도보 실패: $e');
+      DebugLog.log('[Directions] Mapbox $profile 실패: $e');
+      lastError = '경로 호출 실패: $e';
       return null;
     }
   }

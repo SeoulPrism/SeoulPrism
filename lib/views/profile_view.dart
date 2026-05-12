@@ -3,12 +3,20 @@ import 'dart:ui';
 
 import '../widgets/adaptive/adaptive.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../main.dart';
+import '../core/api_keys.dart';
+import '../l10n/gen/app_localizations.dart';
 import '../services/favorites_service.dart';
+import '../services/user_avatar_service.dart';
 import '../services/visit_history_service.dart';
+import '../widgets/app_snackbar.dart';
+import '../widgets/profile_avatar.dart';
+import 'auth_view.dart';
 import 'notifications_view.dart';
+import 'profile/avatar_picker.dart';
 import 'settings_view.dart';
 import 'multiplayer/multiplayer_consent_view.dart';
 import 'multiplayer/multiplayer_hub_view.dart';
@@ -24,11 +32,88 @@ class ProfileView extends StatefulWidget {
 class _ProfileViewState extends State<ProfileView> {
   int _selectedCategoryIndex = 0;
 
-  final List<String> _categories = [
-    '즐겨찾기',
-    '최근 방문',
-    '자주 방문',
-  ];
+  static const _kCategoryCount = 3;
+
+  /// 아바타 업로드 중 — 카메라 뱃지에 progress spinner 노출.
+  bool _uploadingAvatar = false;
+
+  Future<void> _openAvatarPicker() async {
+    if (_uploadingAvatar) return;
+    final user = supabase.auth.currentUser;
+    if (user == null || user.isAnonymous) return;
+
+    final action = await AvatarPicker.show(
+      context,
+      hasExisting: UserAvatarService.instance.currentAvatarUrl != null,
+    );
+    if (action == null || !mounted) return;
+
+    switch (action) {
+      case AvatarAction.gallery:
+        await _pickAndUpload(ImageSource.gallery);
+      case AvatarAction.camera:
+        await _pickAndUpload(ImageSource.camera);
+      case AvatarAction.remove:
+        await _confirmRemove();
+    }
+  }
+
+  Future<void> _pickAndUpload(ImageSource source) async {
+    final l = AppL10n.of(context);
+    try {
+      final picker = ImagePicker();
+      final picked = await picker.pickImage(
+        source: source,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 80,
+      );
+      if (picked == null || !mounted) return;
+      setState(() => _uploadingAvatar = true);
+      await UserAvatarService.instance.uploadAvatar(File(picked.path));
+      if (!mounted) return;
+      setState(() => _uploadingAvatar = false);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _uploadingAvatar = false);
+      showAppSnackBar(l.profileEditAvatarFailed);
+    }
+  }
+
+  Future<void> _confirmRemove() async {
+    final l = AppL10n.of(context);
+    await showAdaptiveConfirmDialog(
+      context: context,
+      title: l.profileEditAvatarRemoveConfirmTitle,
+      content: l.profileEditAvatarRemoveConfirmBody,
+      confirmText: l.profileEditAvatarRemove,
+      isDestructive: true,
+      onConfirm: () async {
+        try {
+          await UserAvatarService.instance.removeAvatar();
+          if (mounted) setState(() {});
+        } catch (_) {
+          if (mounted) showAppSnackBar(AppL10n.of(context).profileEditAvatarFailed);
+        }
+      },
+    );
+  }
+
+  String _categoryLabel(BuildContext ctx, int index) {
+    final l = AppL10n.of(ctx);
+    return switch (index) {
+      0 => l.profileCategoryFavorites,
+      1 => l.profileCategoryRecent,
+      _ => l.profileCategoryFrequent,
+    };
+  }
+
+  /// 타임라인에서 펼친 날짜 그룹 라벨 ('오늘', '어제', '3일 전', ...).
+  /// 기본은 모두 접힘 → 그룹당 5개 노출 + 더보기.
+  final Set<String> _expandedTimelineGroups = {};
+
+  /// 그룹당 기본 노출 개수 — 더보기 누르면 전부 노출.
+  static const _kTimelineGroupLimit = 5;
 
   @override
   Widget build(BuildContext context) {
@@ -118,38 +203,44 @@ class _ProfileViewState extends State<ProfileView> {
 
   Widget _buildUserInfo() {
     final cs = Theme.of(context).colorScheme;
-    const isM3 = true;
+    final user = supabase.auth.currentUser;
+    final isGuest = user?.isAnonymous ?? true;
+    final usernameMeta = user?.userMetadata?['username'] as String?;
+    final fallbackName =
+        (usernameMeta != null && usernameMeta.isNotEmpty) ? usernameMeta : (user?.email ?? '');
 
     return Center(
       child: Column(
         children: [
-          Container(
-            width: 80,
-            height: 80,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: isM3 ? cs.outlineVariant : Colors.white.withValues(alpha: 0.15),
-                width: 1.5,
+          // 게스트는 사진 못 올림 — 탭 비활성화.
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              UserProfileAvatar(
+                avatarUrl: UserAvatarService.instance.currentAvatarUrl,
+                fallbackName: fallbackName,
+                size: 80,
+                onTap: isGuest ? null : _openAvatarPicker,
               ),
-              color: isM3 ? cs.secondaryContainer : Colors.white.withValues(alpha: 0.08),
-            ),
-            child: Icon(
-              Icons.person_rounded,
-              size: 40,
-              color: isM3 ? cs.onSecondaryContainer : Colors.white.withValues(alpha: 0.50),
-            ),
+              if (!isGuest)
+                Positioned(
+                  right: -2,
+                  bottom: -2,
+                  child: _CameraBadge(uploading: _uploadingAvatar),
+                ),
+            ],
           ),
           const SizedBox(height: 14),
           Builder(
-            builder: (_) {
+            builder: (ctx) {
+              final l = AppL10n.of(ctx);
               final user = supabase.auth.currentUser;
               final isGuest = user?.isAnonymous ?? true;
               final displayName = isGuest
-                  ? '게스트'
-                  : (user?.userMetadata?['username'] ?? '사용자');
+                  ? l.profileGuestName
+                  : (user?.userMetadata?['username'] ?? l.profileDefaultName);
               final subtitle = isGuest
-                  ? '정식 로그인하면 다른 기기에서도 동기화돼요'
+                  ? l.profileSyncCta
                   : (user?.email ?? '');
               return Column(
                 children: [
@@ -182,6 +273,24 @@ class _ProfileViewState extends State<ProfileView> {
                       color: cs.onSurfaceVariant,
                     ),
                   ),
+                  if (isGuest) ...[
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: 200,
+                      child: AdaptiveGlassButton(
+                        label: l.authTabSignIn,
+                        minHeight: 44,
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const AuthView(),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
                 ],
               );
             },
@@ -199,24 +308,29 @@ class _ProfileViewState extends State<ProfileView> {
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 20),
-        itemCount: _categories.length,
+        itemCount: _kCategoryCount,
         separatorBuilder: (_, _) => const SizedBox(width: 10),
         itemBuilder: (context, index) {
           final isSelected = _selectedCategoryIndex == index;
-          final cs = Theme.of(context).colorScheme;
-          const isM3 = true;
+          final isM3 = Platform.isAndroid;
 
           if (isM3) {
             return FilterChip(
               selected: isSelected,
-              label: Text(_categories[index]),
-              onSelected: (_) => setState(() => _selectedCategoryIndex = index),
+              label: Text(_categoryLabel(context, index)),
+              onSelected: (_) => setState(() {
+                _selectedCategoryIndex = index;
+                _expandedAll = false;
+              }),
               showCheckmark: false,
             );
           }
 
           return GestureDetector(
-            onTap: () => setState(() => _selectedCategoryIndex = index),
+            onTap: () => setState(() {
+              _selectedCategoryIndex = index;
+              _expandedAll = false;
+            }),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(20),
               child: BackdropFilter(
@@ -238,7 +352,7 @@ class _ProfileViewState extends State<ProfileView> {
                   ),
                   alignment: Alignment.center,
                   child: Text(
-                    _categories[index],
+                    _categoryLabel(context, index),
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
@@ -258,26 +372,47 @@ class _ProfileViewState extends State<ProfileView> {
 
   // ─── Category Content ────────────────────
 
+  /// 카테고리별 미리보기 5개 + 더 많으면 "자세히 보기" 버튼.
+  static const int _previewCount = 5;
+  bool _expandedAll = false;
+
   Widget _buildCategoryContent() {
     final cs = Theme.of(context).colorScheme;
 
     List<Widget> items;
     if (_selectedCategoryIndex == 0) {
       final favs = FavoritesService.instance.favorites;
-      items = favs.map((f) => _buildPlaceCard(f.name, f.category, Icons.favorite, Colors.redAccent, cs, lat: f.lat, lng: f.lng)).toList();
+      items = favs
+          .map((f) => _buildPlaceCard(f.name, f.category, Icons.favorite,
+              Colors.redAccent, cs,
+              lat: f.lat, lng: f.lng))
+          .toList();
     } else if (_selectedCategoryIndex == 1) {
+      final l = AppL10n.of(context);
       final recent = VisitHistoryService.instance.recentVisits;
       items = recent.map((r) {
         final ago = DateTime.now().difference(r.visitedAt);
-        final agoStr = ago.inDays > 0 ? '${ago.inDays}일 전' : ago.inHours > 0 ? '${ago.inHours}시간 전' : '방금';
-        return _buildPlaceCard(r.name, agoStr, Icons.history, cs.primary, cs, lat: r.lat, lng: r.lng);
+        final agoStr = ago.inDays > 0
+            ? l.profileAgoDays(ago.inDays)
+            : ago.inHours > 0
+                ? l.profileAgoHours(ago.inHours)
+                : l.profileAgoNow;
+        return _buildPlaceCard(r.name, agoStr, Icons.history, cs.primary, cs,
+            lat: r.lat, lng: r.lng);
       }).toList();
     } else {
+      final l = AppL10n.of(context);
       final freq = VisitHistoryService.instance.frequentVisits;
-      items = freq.map((r) => _buildPlaceCard(r.name, '${r.visitCount}회 방문', Icons.repeat, cs.tertiary, cs, lat: r.lat, lng: r.lng)).toList();
+      items = freq
+          .map((r) => _buildPlaceCard(
+              r.name, l.profileVisitCount(r.visitCount), Icons.repeat,
+              cs.tertiary, cs,
+              lat: r.lat, lng: r.lng))
+          .toList();
     }
 
     if (items.isEmpty) {
+      final l = AppL10n.of(context);
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20),
         child: AdaptiveSurfaceCard(
@@ -287,18 +422,112 @@ class _ProfileViewState extends State<ProfileView> {
             height: 120,
             child: Center(
               child: Text(
-                _selectedCategoryIndex == 0 ? '즐겨찾기가 없습니다' : '방문 기록이 없습니다',
+                _selectedCategoryIndex == 0
+                    ? l.profileEmptyFavorites
+                    : l.profileEmptyVisits,
                 style: TextStyle(fontSize: 14, color: cs.onSurfaceVariant),
               ),
             ),
+          ),
         ),
-      ),
-    );
+      );
     }
+
+    final hasMore = items.length > _previewCount;
+    final visible = (_expandedAll || !hasMore)
+        ? items
+        : items.sublist(0, _previewCount);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Column(children: items),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Align(
+            alignment: Alignment.centerRight,
+            child: _buildResetButton(cs),
+          ),
+          const SizedBox(height: 4),
+          ...visible,
+          if (hasMore) ...[
+            const SizedBox(height: 8),
+            _buildExpandToggle(cs, items.length),
+          ],
+        ],
+      ),
+    );
+  }
+
+  // 현재 탭 (즐겨찾기 / 최근방문 / 자주방문) 의 데이터를 초기화하는 작은 버튼.
+  // 최근/자주 방문은 동일한 저장소를 공유하므로 한 쪽을 비우면 양쪽 모두 비워진다 —
+  // 확인 다이얼로그 본문에서 그 사실을 명시.
+  Widget _buildResetButton(ColorScheme cs) {
+    final l = AppL10n.of(context);
+    return TextButton.icon(
+      onPressed: _confirmResetCurrentCategory,
+      icon: Icon(Icons.delete_sweep_outlined, size: 18, color: cs.error),
+      label: Text(
+        l.commonReset,
+        style: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          color: cs.error,
+        ),
+      ),
+      style: TextButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        minimumSize: Size.zero,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      ),
+    );
+  }
+
+  void _confirmResetCurrentCategory() {
+    final l = AppL10n.of(context);
+    final isFavorites = _selectedCategoryIndex == 0;
+    showAdaptiveConfirmDialog(
+      context: context,
+      title: isFavorites
+          ? l.profileResetFavoritesTitle
+          : l.profileResetVisitsTitle,
+      content: isFavorites
+          ? l.profileResetFavoritesBody
+          : l.profileResetVisitsBody,
+      confirmText: l.commonReset,
+      isDestructive: true,
+      onConfirm: () async {
+        if (isFavorites) {
+          await FavoritesService.instance.clear();
+        } else {
+          await VisitHistoryService.instance.clear();
+        }
+        if (!mounted) return;
+        setState(() => _expandedAll = false);
+        showAppSnackBar(isFavorites
+            ? l.profileResetFavoritesToast
+            : l.profileResetVisitsToast);
+      },
+    );
+  }
+
+  Widget _buildExpandToggle(ColorScheme cs, int total) {
+    final isExpanded = _expandedAll;
+    final remaining = total - _previewCount;
+    final l = AppL10n.of(context);
+    return TextButton.icon(
+      onPressed: () => setState(() => _expandedAll = !_expandedAll),
+      icon: Icon(
+        isExpanded ? Icons.expand_less_rounded : Icons.expand_more_rounded,
+        size: 18,
+      ),
+      label: Text(
+        isExpanded ? l.profileCollapse : l.profileMoreCount(remaining),
+        style: const TextStyle(fontWeight: FontWeight.w600),
+      ),
+      style: TextButton.styleFrom(
+        foregroundColor: cs.primary,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      ),
     );
   }
 
@@ -361,7 +590,7 @@ class _ProfileViewState extends State<ProfileView> {
                               fontWeight: FontWeight.w800,
                               color: cs.onSurface)),
                       const SizedBox(height: 2),
-                      Text('친구와 위치/채팅 실시간 공유 (베타)',
+                      Text(AppL10n.of(context).profileLiveShareBeta,
                           style: TextStyle(
                               fontSize: 12, color: cs.onSurfaceVariant)),
                     ],
@@ -379,80 +608,272 @@ class _ProfileViewState extends State<ProfileView> {
   // ─── Timeline Section ────────────────────────────────────────
 
   Widget _buildTimelineSection() {
+    final cs = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final l = AppL10n.of(context);
+    final visits = VisitHistoryService.instance.recentVisits;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            '내 타임라인',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w800,
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
+          Row(
+            children: [
+              Text(
+                l.profileTimeline,
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                  color: cs.onSurface,
+                ),
+              ),
+              const Spacer(),
+              if (visits.isNotEmpty)
+                Text(
+                  l.profilePlaceCount(visits.length),
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: cs.onSurfaceVariant,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+            ],
           ),
           const SizedBox(height: 16),
-          // Map preview card
-          AdaptiveGlassContainer.rect(
-            cornerRadius: 24,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(24),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 25, sigmaY: 25),
-                child: Container(
-                  width: double.infinity,
-                  height: 180,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(24),
-                    color: Colors.white.withValues(alpha: 0.10),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.15),
-                      width: 0.5,
+          // Mapbox Static Image — 최근 방문지 핀 표시. 탭 → 메인 지도 +
+          // 방문 타임라인 패널 (네이버 지도 스타일).
+          GestureDetector(
+            onTap: visits.isEmpty
+                ? null
+                : () => Navigator.pop(context, {'showTimeline': true}),
+            child: _TimelineMapPreview(visits: visits, isDark: isDark),
+          ),
+          const SizedBox(height: 16),
+          // 시간순 visit feed.
+          if (visits.isEmpty)
+            AdaptiveSurfaceCard(
+              borderRadius: 16,
+              child: SizedBox(
+                width: double.infinity,
+                height: 90,
+                child: Center(
+                  child: Text(
+                    l.profileEmptyVisitsCta,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: cs.onSurfaceVariant,
                     ),
-                  ),
-                  child: Stack(
-                    children: [
-                      // Simulated map grid
-                      CustomPaint(
-                        size: const Size(double.infinity, 180),
-                        painter: _MapGridPainter(),
-                      ),
-                      Center(
-                        child: Icon(
-                          Icons.map_outlined,
-                          size: 48,
-                          color: Colors.white.withValues(alpha: 0.20),
-                        ),
-                      ),
-                    ],
                   ),
                 ),
               ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          // Recent location items
-          _buildLocationItem(
-            icon: Icons.location_on_rounded,
-            title: '최근 방문',
-            subtitle: _recentVisitSummary(),
-          ),
-          const SizedBox(height: 10),
-          _buildLocationItem(
-            icon: Icons.access_time_rounded,
-            title: '자주 방문',
-            subtitle: _frequentVisitSummary(),
-          ),
-          const SizedBox(height: 10),
-          _buildLocationItem(
-            icon: Icons.favorite_rounded,
-            title: '즐겨찾기',
-            subtitle: '${FavoritesService.instance.favorites.length}개 저장됨',
-          ),
+            )
+          else
+            ..._buildTimelineFeed(visits, cs),
         ],
       ),
     );
+  }
+
+  /// 방문 기록을 날짜별로 그룹핑 후 카드 리스트 생성.
+  /// 그룹마다 5개까지 노출, 나머지는 더보기 토글.
+  List<Widget> _buildTimelineFeed(List<VisitRecord> visits, ColorScheme cs) {
+    final l = AppL10n.of(context);
+    String dateLabel(DateTime d) {
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      final dDay = DateTime(d.year, d.month, d.day);
+      final diff = today.difference(dDay).inDays;
+      if (diff == 0) return l.profileToday;
+      if (diff == 1) return l.profileYesterday;
+      if (diff < 7) return l.profileAgoDays(diff);
+      return l.profileMonthDay(d.month, d.day);
+    }
+
+    // 1) 라벨별로 묶음 (입력은 시간 내림차순 가정 → 순서 유지).
+    final groups = <String, List<VisitRecord>>{};
+    final order = <String>[];
+    for (final v in visits) {
+      final label = dateLabel(v.visitedAt);
+      if (!groups.containsKey(label)) {
+        order.add(label);
+        groups[label] = [];
+      }
+      groups[label]!.add(v);
+    }
+
+    // 2) 그룹별로 헤더 + 카드 5개(또는 전체) + 더보기 버튼 렌더.
+    final widgets = <Widget>[];
+    for (int gi = 0; gi < order.length; gi++) {
+      final label = order[gi];
+      final groupVisits = groups[label]!;
+      final expanded = _expandedTimelineGroups.contains(label);
+      final showAll = expanded || groupVisits.length <= _kTimelineGroupLimit;
+      final shown = showAll ? groupVisits : groupVisits.take(_kTimelineGroupLimit).toList();
+      final hidden = groupVisits.length - shown.length;
+
+      if (gi > 0) widgets.add(const SizedBox(height: 14));
+      widgets.add(Padding(
+        padding: const EdgeInsets.only(bottom: 8, left: 4),
+        child: Row(
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: cs.primary,
+                letterSpacing: 0.3,
+              ),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              '${groupVisits.length}',
+              style: TextStyle(
+                fontSize: 11,
+                color: cs.onSurfaceVariant,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ));
+      for (final v in shown) {
+        widgets.add(Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: _buildVisitCard(v, cs),
+        ));
+      }
+      // 5개 초과 그룹 → 더보기 / 접기 토글.
+      if (groupVisits.length > _kTimelineGroupLimit) {
+        widgets.add(
+          _TimelineExpandToggle(
+            expanded: expanded,
+            hiddenCount: hidden,
+            onTap: () {
+              setState(() {
+                if (expanded) {
+                  _expandedTimelineGroups.remove(label);
+                } else {
+                  _expandedTimelineGroups.add(label);
+                }
+              });
+            },
+          ),
+        );
+      }
+    }
+    return widgets;
+  }
+
+  Widget _buildVisitCard(VisitRecord v, ColorScheme cs) {
+    final timeStr =
+        '${v.visitedAt.hour.toString().padLeft(2, '0')}:${v.visitedAt.minute.toString().padLeft(2, '0')}';
+    final color = _categoryAccent(v.category);
+    return GestureDetector(
+      onTap: (v.lat != 0 && v.lng != 0)
+          ? () => Navigator.pop(
+              context, {'lat': v.lat, 'lng': v.lng, 'name': v.name})
+          : null,
+      child: AdaptiveSurfaceCard(
+        borderRadius: 14,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                color: color.withValues(alpha: 0.12),
+              ),
+              child: Icon(
+                _categoryIcon(v.category),
+                size: 18,
+                color: color,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    v.name,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: cs.onSurface,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Row(
+                    children: [
+                      Text(timeStr,
+                          style: TextStyle(
+                              fontSize: 11, color: cs.onSurfaceVariant)),
+                      if (v.category.isNotEmpty) ...[
+                        const SizedBox(width: 6),
+                        Text('·',
+                            style: TextStyle(color: cs.onSurfaceVariant)),
+                        const SizedBox(width: 6),
+                        Text(v.category,
+                            style: TextStyle(
+                                fontSize: 11, color: cs.onSurfaceVariant)),
+                      ],
+                      if (v.visitCount > 1) ...[
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 1),
+                          decoration: BoxDecoration(
+                            color: color.withValues(alpha: 0.14),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            AppL10n.of(context).profileVisitTimes(v.visitCount),
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: color,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right_rounded,
+                size: 18, color: cs.onSurfaceVariant),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Color _categoryAccent(String cat) {
+    if (cat.contains('맛') || cat.contains('식')) return Colors.orange;
+    if (cat.contains('카페')) return const Color(0xFF795548);
+    if (cat.contains('쇼')) return Colors.pink;
+    if (cat.contains('관광') || cat.contains('명소')) return Colors.blue;
+    if (cat.contains('문화') || cat.contains('전시')) return Colors.purple;
+    if (cat.contains('자연') || cat.contains('공원')) return Colors.green;
+    return Colors.blueAccent;
+  }
+
+  IconData _categoryIcon(String cat) {
+    if (cat.contains('맛') || cat.contains('식')) return Icons.restaurant_rounded;
+    if (cat.contains('카페')) return Icons.local_cafe_rounded;
+    if (cat.contains('쇼')) return Icons.shopping_bag_rounded;
+    if (cat.contains('관광') || cat.contains('명소')) {
+      return Icons.travel_explore_rounded;
+    }
+    if (cat.contains('문화') || cat.contains('전시')) return Icons.museum_rounded;
+    if (cat.contains('자연') || cat.contains('공원')) return Icons.park_rounded;
+    return Icons.place_rounded;
   }
 
   Widget _buildPlaceCard(String name, String subtitle, IconData icon, Color iconColor, ColorScheme cs, {double? lat, double? lng}) {
@@ -488,67 +909,6 @@ class _ProfileViewState extends State<ProfileView> {
     );
   }
 
-  Widget _buildLocationItem({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-  }) {
-    final cs = Theme.of(context).colorScheme;
-    const isM3 = true;
-
-    return AdaptiveSurfaceCard(
-      borderRadius: 20,
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              color: isM3 ? cs.secondaryContainer : Colors.white.withValues(alpha: 0.10),
-            ),
-            child: Icon(
-              icon,
-              size: 20,
-              color: isM3 ? cs.onSecondaryContainer : Colors.white.withValues(alpha: 0.50),
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: isM3 ? cs.onSurface : Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w400,
-                    color: isM3 ? cs.onSurfaceVariant : Colors.white.withValues(alpha: 0.40),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Icon(
-            Icons.chevron_right_rounded,
-            size: 20,
-            color: isM3 ? cs.onSurfaceVariant : Colors.white.withValues(alpha: 0.30),
-          ),
-        ],
-      ),
-    );
-  }
-
   void _editUsername() {
     final controller = TextEditingController(
       text: supabase.auth.currentUser?.userMetadata?['username'] ?? '',
@@ -556,19 +916,19 @@ class _ProfileViewState extends State<ProfileView> {
     showDialog(
       context: context,
       builder: (ctx) {
-        final cs = Theme.of(ctx).colorScheme;
+        final l = AppL10n.of(ctx);
         return AlertDialog(
-          title: const Text('이름 변경'),
+          title: Text(l.profileEditName),
           content: TextField(
             controller: controller,
             autofocus: true,
             decoration: InputDecoration(
-              hintText: '새 이름 입력',
+              hintText: l.profileNewNameHint,
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('취소')),
+            TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l.commonCancel)),
             FilledButton(
               onPressed: () async {
                 final newName = controller.text.trim();
@@ -581,24 +941,12 @@ class _ProfileViewState extends State<ProfileView> {
                   setState(() {});
                 }
               },
-              child: const Text('저장'),
+              child: Text(l.commonSave),
             ),
           ],
         );
       },
     );
-  }
-
-  String _recentVisitSummary() {
-    final recent = VisitHistoryService.instance.recentVisits;
-    if (recent.isEmpty) return '방문 기록이 없습니다';
-    return recent.take(2).map((r) => r.name).join(', ');
-  }
-
-  String _frequentVisitSummary() {
-    final freq = VisitHistoryService.instance.frequentVisits;
-    if (freq.isEmpty) return '방문 기록이 없습니다';
-    return freq.take(2).map((r) => '${r.name}(${r.visitCount}회)').join(', ');
   }
 
   // ─── Footer ───���─────────────────────────────��────────────────
@@ -614,7 +962,7 @@ class _ProfileViewState extends State<ProfileView> {
           ),
           const SizedBox(height: 20),
           Text(
-            'Seoul Prism',
+            'Seoul Vista',
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
@@ -623,7 +971,7 @@ class _ProfileViewState extends State<ProfileView> {
           ),
           const SizedBox(height: 4),
           Text(
-            '서울의 모든 순간을 담다',
+            AppL10n.of(context).profileTagline,
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w400,
@@ -636,24 +984,272 @@ class _ProfileViewState extends State<ProfileView> {
   }
 }
 
-// ─── Map Grid Painter ──────────────────────────────────────────
+// ─── Camera Badge (avatar 우하단) ──────────────────────────────
+// iOS = 글라스 배경 + 화이트 카메라 글리프
+// Android = M3 primary container + onPrimary 글리프
 
-class _MapGridPainter extends CustomPainter {
+class _CameraBadge extends StatelessWidget {
+  final bool uploading;
+  const _CameraBadge({required this.uploading});
+
   @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.06)
-      ..strokeWidth = 0.5;
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final isM3 = Platform.isAndroid;
 
-    const spacing = 24.0;
-    for (double x = 0; x < size.width; x += spacing) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
+    final glyph = uploading
+        ? SizedBox(
+            width: 14,
+            height: 14,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: isM3 ? cs.onPrimaryContainer : Colors.white,
+            ),
+          )
+        : Icon(
+            Icons.camera_alt_rounded,
+            size: 16,
+            color: isM3 ? cs.onPrimaryContainer : Colors.white,
+          );
+
+    if (isM3) {
+      return Container(
+        width: 30,
+        height: 30,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: cs.primaryContainer,
+          border: Border.all(color: cs.surface, width: 2),
+        ),
+        alignment: Alignment.center,
+        child: glyph,
+      );
     }
-    for (double y = 0; y < size.height; y += spacing) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
-    }
+
+    // iOS — 글라스 컨테이너로 카메라 뱃지.
+    return ClipOval(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+        child: Container(
+          width: 30,
+          height: 30,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.black.withValues(alpha: 0.55),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.35),
+              width: 1,
+            ),
+          ),
+          alignment: Alignment.center,
+          child: glyph,
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Timeline Expand Toggle ────────────────────────────────────
+// 한 날짜 그룹 5개 초과 시 카드 하단에 붙는 더보기 / 접기 버튼.
+
+class _TimelineExpandToggle extends StatelessWidget {
+  final bool expanded;
+  final int hiddenCount;
+  final VoidCallback onTap;
+  const _TimelineExpandToggle({
+    required this.expanded,
+    required this.hiddenCount,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: cs.surfaceContainerHighest.withValues(alpha: 0.5),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: cs.outlineVariant.withValues(alpha: 0.4),
+                width: 1,
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  expanded
+                      ? AppL10n.of(context).profileCollapse
+                      : AppL10n.of(context).profileMore,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: cs.primary,
+                  ),
+                ),
+                if (!expanded) ...[
+                  const SizedBox(width: 6),
+                  Text(
+                    '+$hiddenCount',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: cs.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+                const SizedBox(width: 4),
+                Icon(
+                  expanded
+                      ? Icons.keyboard_arrow_up_rounded
+                      : Icons.keyboard_arrow_down_rounded,
+                  size: 18,
+                  color: cs.primary,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Timeline Map Preview ──────────────────────────────────────
+// Mapbox Static Image API — 가벼운 평면 미리보기. 핀 자동 fit (auto).
+
+class _TimelineMapPreview extends StatelessWidget {
+  final List<VisitRecord> visits;
+  final bool isDark;
+  const _TimelineMapPreview({required this.visits, required this.isDark});
+
+  String? _staticUrl(double width, double height, double dpr) {
+    final pinned =
+        visits.where((v) => v.lat != 0 && v.lng != 0).take(8).toList();
+    if (pinned.isEmpty) return null;
+    final markers = pinned
+        .asMap()
+        .entries
+        .map((e) {
+          final i = e.key;
+          final v = e.value;
+          final lng = v.lng.toStringAsFixed(5);
+          final lat = v.lat.toStringAsFixed(5);
+          // 최근(첫 핀) 은 주황, 나머지 파랑.
+          final color = i == 0 ? 'fb6340' : '4a90d9';
+          return 'pin-s+$color($lng,$lat)';
+        })
+        .join(',');
+    // satellite-v9 — 라벨 0 개라 한/영 문제 없음. zoom 9 = 경기도 + 인천
+    // 전체가 한 화면에 들어옴. 핀만 깔끔하게 강조.
+    final center = pinned.first;
+    final centerLng = center.lng.toStringAsFixed(5);
+    final centerLat = center.lat.toStringAsFixed(5);
+    const zoom = '9';
+    const style = 'mapbox/satellite-v9';
+    final w = width.round();
+    final h = height.round();
+    final retina = dpr >= 2 ? '@2x' : '';
+    return 'https://api.mapbox.com/styles/v1/$style/static/$markers/'
+        '$centerLng,$centerLat,$zoom/${w}x$h$retina'
+        '?access_token=${ApiKeys.mapboxAccessToken}'
+        '&attribution=false&logo=false';
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final dpr = MediaQuery.of(context).devicePixelRatio;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        width: double.infinity,
+        height: 180,
+        color: cs.surfaceContainerHighest,
+        child: LayoutBuilder(
+          builder: (ctx, constraints) {
+            final url =
+                _staticUrl(constraints.maxWidth, constraints.maxHeight, dpr);
+            if (url == null) {
+              return Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.explore_off_rounded,
+                        size: 32, color: cs.onSurfaceVariant),
+                    const SizedBox(height: 6),
+                    Text(
+                      AppL10n.of(context).profileEmptyMapPlaces,
+                      style: TextStyle(
+                          fontSize: 12, color: cs.onSurfaceVariant),
+                    ),
+                  ],
+                ),
+              );
+            }
+            return Stack(
+              children: [
+                Positioned.fill(
+                  child: Image.network(
+                    url,
+                    fit: BoxFit.cover,
+                    loadingBuilder: (_, child, prog) {
+                      if (prog == null) return child;
+                      return Center(
+                        child: SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: cs.onSurfaceVariant,
+                          ),
+                        ),
+                      );
+                    },
+                    errorBuilder: (_, __, ___) => Center(
+                      child: Icon(Icons.map_outlined,
+                          size: 36,
+                          color: cs.onSurfaceVariant.withValues(alpha: 0.5)),
+                    ),
+                  ),
+                ),
+                // 우상단 핀 개수 배지.
+                Positioned(
+                  top: 10,
+                  right: 10,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.55),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      AppL10n.of(context).profileRecentPlaceCount(
+                          visits.where((v) => v.lat != 0 && v.lng != 0).take(8).length),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
 }

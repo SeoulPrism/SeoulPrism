@@ -143,6 +143,18 @@ class FavoritesService {
     }
   }
 
+  Future<void> clear() async {
+    _favorites.clear();
+    await _saveLocal();
+    if (_userId != null) {
+      try {
+        await _sb.from('favorites').delete().eq('user_id', _userId!);
+      } catch (e) {
+        debugPrint('[Favorites] Supabase 전체 삭제 실패: $e');
+      }
+    }
+  }
+
   /// 다른 디바이스에서 변경 시 자동 동기화. 로그인 후 호출.
   /// RLS SELECT 정책에 의해 본인 row 의 INSERT/UPDATE/DELETE 이벤트만 수신.
   void startRealtimeSync() {

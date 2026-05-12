@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../l10n/gen/app_localizations.dart';
 import '../../../services/favorites_service.dart';
 import '../../../services/place_search_service.dart';
 import 'place_action_button.dart';
@@ -14,6 +15,9 @@ class PlaceDetailPanel extends StatefulWidget {
   final VoidCallback onShowWebView;
   final void Function(String name, {double? lat, double? lng}) onDeparture;
   final void Function(String name, {double? lat, double? lng}) onArrival;
+  /// 압축 모드 — 메인 패널 위에 떠 있을 때 true. 푸터 텍스트/간격을 줄여
+  /// 좁은 공간에서도 액션 버튼까지 보이게.
+  final bool compact;
 
   const PlaceDetailPanel({
     super.key,
@@ -22,6 +26,7 @@ class PlaceDetailPanel extends StatefulWidget {
     required this.onShowWebView,
     required this.onDeparture,
     required this.onArrival,
+    this.compact = false,
   });
 
   @override
@@ -161,17 +166,24 @@ class _PlaceDetailPanelState extends State<PlaceDetailPanel> {
                   ),
                 if (hasPhone) ...[
                   const SizedBox(height: 4),
-                  GestureDetector(
+                  InkWell(
                     onTap: () => launchUrl(Uri.parse('tel:${place.phone}')),
-                    child: Row(
-                      children: [
-                        Icon(Icons.phone_outlined, size: 14, color: cs.primary),
-                        const SizedBox(width: 4),
-                        Text(
-                          place.phone!,
-                          style: TextStyle(fontSize: 12, color: cs.primary),
-                        ),
-                      ],
+                    borderRadius: BorderRadius.circular(6),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 4, vertical: 2),
+                      child: Row(
+                        children: [
+                          Icon(Icons.phone_outlined,
+                              size: 14, color: cs.primary),
+                          const SizedBox(width: 4),
+                          Text(
+                            place.phone!,
+                            style:
+                                TextStyle(fontSize: 12, color: cs.primary),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ],
@@ -181,7 +193,7 @@ class _PlaceDetailPanelState extends State<PlaceDetailPanel> {
                 children: [
                   PlaceActionButton(
                     icon: Icons.trip_origin,
-                    label: '출발',
+                    label: AppL10n.of(context).placeActionDepart,
                     color: cs.primary,
                     onTap: () {
                       widget.onClose();
@@ -195,7 +207,7 @@ class _PlaceDetailPanelState extends State<PlaceDetailPanel> {
                   const SizedBox(width: 8),
                   PlaceActionButton(
                     icon: Icons.place,
-                    label: '도착',
+                    label: AppL10n.of(context).placeActionArrive,
                     color: Colors.redAccent,
                     onTap: () {
                       widget.onClose();
@@ -209,7 +221,7 @@ class _PlaceDetailPanelState extends State<PlaceDetailPanel> {
                   const SizedBox(width: 8),
                   PlaceActionButton(
                     icon: Icons.info_outline,
-                    label: '정보',
+                    label: AppL10n.of(context).placeActionInfo,
                     color: cs.tertiary,
                     onTap: () {
                       if (hasUrl) widget.onShowWebView();
@@ -217,12 +229,12 @@ class _PlaceDetailPanelState extends State<PlaceDetailPanel> {
                   ),
                 ],
               ),
-              if (hasUrl)
+              if (hasUrl && !widget.compact)
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
                   child: Center(
                     child: Text(
-                      '탭하여 사진·리뷰·영업시간 보기',
+                      AppL10n.of(context).placeDetailTapHint,
                       style: TextStyle(
                         fontSize: 11,
                         color: cs.onSurfaceVariant.withValues(alpha: 0.6),

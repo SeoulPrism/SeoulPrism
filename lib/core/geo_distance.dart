@@ -47,7 +47,8 @@ double distanceToSegmentMeters(
   final dx = bx - ax;
   final dy = by - ay;
   final len2 = dx * dx + dy * dy;
-  if (len2 == 0) return sqrt(pow(px - ax, 2) + pow(py - ay, 2));
+  // float epsilon — 두 점이 거의 같으면 점-점 거리로 fallback.
+  if (len2 < 1e-9) return sqrt(pow(px - ax, 2) + pow(py - ay, 2));
   final t = (((px - ax) * dx + (py - ay) * dy) / len2).clamp(0.0, 1.0);
   final cx = ax + dx * t;
   final cy = ay + dy * t;

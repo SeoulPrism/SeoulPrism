@@ -1,29 +1,129 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
 /// 전역 ScaffoldMessenger 키 — main.dart 의 MaterialApp 에 주입.
+/// (Overlay 기반 토스트 도입 후 직접 사용은 거의 없음. 외부 호환 유지용)
 final rootScaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
 
-/// 어디서나 안전하게 토스트 표시. 디자인:
-/// - iOS: 리퀴드 글라스 (다크/라이트 자동)
-/// - Android: Material 3 inverseSurface
+OverlayEntry? _activeToast;
+Timer? _activeToastTimer;
+
+/// 상단 슬라이드-다운 토스트. 어떤 화면에서도 균일한 모양.
+/// - iOS: 리퀴드 글라스
+/// - Android: M3 inverseSurface
+/// 기존 토스트가 있으면 즉시 교체.
 void showAppSnackBar(String text, {Duration? duration}) {
-  final state = rootScaffoldMessengerKey.currentState;
-  if (state == null) return;
-  // 큐 쌓이는 것 방지 — 기존 거 클리어 후 새로 표시.
-  state.clearSnackBars();
-  state.showSnackBar(SnackBar(
-    backgroundColor: Colors.transparent,
-    elevation: 0,
-    padding: EdgeInsets.zero,
-    behavior: SnackBarBehavior.floating,
-    margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-    dismissDirection: DismissDirection.down,
-    duration: duration ?? const Duration(seconds: 3),
-    content: _AppSnackContent(text: text),
-  ));
+  final ctx = rootScaffoldMessengerKey.currentContext;
+  if (ctx == null) return;
+  final overlay = Overlay.maybeOf(ctx, rootOverlay: true);
+  if (overlay == null) return;
+
+  // 기존 토스트 정리.
+  _activeToastTimer?.cancel();
+  _activeToast?.remove();
+  _activeToast = null;
+
+  final dur = duration ?? const Duration(seconds: 3);
+  late OverlayEntry entry;
+  entry = OverlayEntry(
+    builder: (_) => _ToastHost(
+      text: text,
+      onDone: () {
+        if (_activeToast == entry) {
+          _activeToast?.remove();
+          _activeToast = null;
+        }
+      },
+      visibleDuration: dur,
+    ),
+  );
+  _activeToast = entry;
+  overlay.insert(entry);
+}
+
+class _ToastHost extends StatefulWidget {
+  final String text;
+  final Duration visibleDuration;
+  final VoidCallback onDone;
+  const _ToastHost({
+    required this.text,
+    required this.visibleDuration,
+    required this.onDone,
+  });
+
+  @override
+  State<_ToastHost> createState() => _ToastHostState();
+}
+
+class _ToastHostState extends State<_ToastHost>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+  late final Animation<double> _slide;
+  late final Animation<double> _fade;
+  Timer? _hideTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 360),
+      reverseDuration: const Duration(milliseconds: 260),
+    );
+    _slide = CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic);
+    _fade = CurvedAnimation(parent: _ctrl, curve: Curves.easeOut);
+    _ctrl.forward();
+    _hideTimer = Timer(widget.visibleDuration, _dismiss);
+  }
+
+  Future<void> _dismiss() async {
+    _hideTimer?.cancel();
+    if (!mounted) return;
+    await _ctrl.reverse();
+    if (mounted) widget.onDone();
+  }
+
+  @override
+  void dispose() {
+    _hideTimer?.cancel();
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final topPad = MediaQuery.of(context).padding.top;
+    return Positioned(
+      top: 0, left: 0, right: 0,
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+          child: AnimatedBuilder(
+            animation: _ctrl,
+            builder: (_, child) {
+              return Opacity(
+                opacity: _fade.value,
+                child: Transform.translate(
+                  offset: Offset(
+                      0, -((1 - _slide.value) * (40 + topPad))),
+                  child: child,
+                ),
+              );
+            },
+            child: GestureDetector(
+              onTap: _dismiss,
+              behavior: HitTestBehavior.opaque,
+              child: _AppSnackContent(text: widget.text),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _AppSnackContent extends StatelessWidget {

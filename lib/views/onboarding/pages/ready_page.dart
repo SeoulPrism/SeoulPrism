@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import '../../../l10n/gen/app_localizations.dart';
 import '../../../theme/app_typography.dart';
 
 class ReadyPage extends StatelessWidget {
@@ -9,6 +10,7 @@ class ReadyPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final l = AppL10n.of(context);
     final isIos = Platform.isIOS;
     final titleColor = isIos ? Colors.white : cs.onSurface;
     final bodyColor = isIos ? Colors.white.withValues(alpha: 0.75) : cs.onSurfaceVariant;
@@ -36,7 +38,7 @@ class ReadyPage extends StatelessWidget {
           ),
           const SizedBox(height: 28),
           Text(
-            '준비됐어요',
+            l.readyPageTitle,
             style: AppTypography.displayLg.copyWith(
               color: titleColor,
               fontSize: 32,
@@ -47,7 +49,7 @@ class ReadyPage extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 48),
             child: Text(
-              '아래 시작 버튼을 누르면\n실시간 서울이 펼쳐져요.',
+              l.readyPageBody,
               textAlign: TextAlign.center,
               style: AppTypography.bodyMd.copyWith(
                 color: bodyColor,

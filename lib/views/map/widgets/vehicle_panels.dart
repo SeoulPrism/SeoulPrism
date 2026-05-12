@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../data/river_bus_data.dart';
+import '../../../l10n/gen/app_localizations.dart';
 import '../../../models/bus_models.dart';
 import '../../../services/flight_service.dart';
 import '../../../widgets/bus_overlay.dart';
@@ -54,15 +55,16 @@ class BusDetailPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppL10n.of(context);
     final color = route.color;
     final congestionText = switch (bus.congestion) {
-      0 => '정보없음',
-      1 || 2 => '여유',
-      3 => '보통',
-      4 => '혼잡',
-      5 => '매우혼잡',
-      6 => '만차',
-      _ => '정보없음',
+      0 => l.vehicleCongestionNone,
+      1 || 2 => l.vehicleCongestionFree,
+      3 => l.vehicleCongestionNormal,
+      4 => l.vehicleCongestionBusy,
+      5 => l.vehicleCongestionPacked,
+      6 => l.vehicleCongestionFull,
+      _ => l.vehicleCongestionNone,
     };
     final congestionColor = switch (bus.congestion) {
       1 || 2 => AppColors.success,
@@ -119,7 +121,7 @@ class BusDetailPanel extends StatelessWidget {
                           style: AppTypography.titleMd.copyWith(color: color),
                         ),
                         Text(
-                          '${bus.plainNo} · ${bus.busType == 1 ? "저상버스" : "일반버스"}',
+                          '${bus.plainNo} · ${bus.busType == 1 ? l.vehicleBusLowFloor : l.vehicleBusRegular}',
                           style: AppTypography.bodySm.copyWith(
                             color: AppColors.textSecondary,
                           ),
@@ -144,23 +146,23 @@ class BusDetailPanel extends StatelessWidget {
                 children: [
                   Expanded(
                     child: InfoItem(
-                      label: '혼잡도',
+                      label: l.vehicleCongestion,
                       value: congestionText,
                       valueColor: congestionColor,
                     ),
                   ),
                   Expanded(
                     child: InfoItem(
-                      label: '상태',
-                      value: bus.stopFlag == 1 ? '정차 중' : '운행 중',
+                      label: l.vehicleStatus,
+                      value: bus.stopFlag == 1 ? l.vehicleStopped : l.vehicleRunning,
                       valueColor: color,
                     ),
                   ),
                   if (bus.sectOrd != null)
                     Expanded(
                       child: InfoItem(
-                        label: '구간',
-                        value: '${bus.sectOrd}번째',
+                        label: l.vehicleSection,
+                        value: l.vehicleSectionOrd(bus.sectOrd!),
                         valueColor: AppColors.textSecondary,
                       ),
                     ),
@@ -186,6 +188,8 @@ class FlightDetailPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppL10n.of(context);
+    // flight.phase 는 service 가 한국어 키로 반환하는 데이터값 — 색상 매핑용.
     final phaseColor = switch (flight.phase) {
       '상승' => const Color(0xFF00E676),
       '순항' => Colors.white,
@@ -194,8 +198,16 @@ class FlightDetailPanel extends StatelessWidget {
       '지상' => Colors.grey,
       _ => Colors.white,
     };
+    final phaseLabel = switch (flight.phase) {
+      '상승' => l.vehiclePhaseAscent,
+      '순항' => l.vehiclePhaseCruise,
+      '하강' => l.vehiclePhaseDescent,
+      '이착륙' => l.vehiclePhaseTakeoff,
+      '지상' => l.vehiclePhaseGround,
+      _ => flight.phase,
+    };
     final altText = flight.onGround
-        ? '지상'
+        ? l.vehicleAltitudeOnGround
         : '${(flight.altitude / 1000).toStringAsFixed(1)}km';
     final speedText = '${(flight.velocity * 3.6).round()}km/h';
 
@@ -273,28 +285,28 @@ class FlightDetailPanel extends StatelessWidget {
                 children: [
                   Expanded(
                     child: InfoItem(
-                      label: '상태',
-                      value: flight.phase,
+                      label: l.vehicleStatus,
+                      value: phaseLabel,
                       valueColor: phaseColor,
                     ),
                   ),
                   Expanded(
                     child: InfoItem(
-                      label: '고도',
+                      label: l.vehicleAltitude,
                       value: altText,
                       valueColor: AppColors.textSecondary,
                     ),
                   ),
                   Expanded(
                     child: InfoItem(
-                      label: '속도',
+                      label: l.vehicleSpeed,
                       value: speedText,
                       valueColor: AppColors.textSecondary,
                     ),
                   ),
                   Expanded(
                     child: InfoItem(
-                      label: '방향',
+                      label: l.vehicleHeading,
                       value: '${flight.heading.round()}°',
                       valueColor: AppColors.textSecondary,
                     ),
@@ -321,8 +333,11 @@ class VesselDetailPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppL10n.of(context);
     const color = Color(0xFF00ACC1);
-    final dirText = vessel.direction == 0 ? '정방향' : '역방향';
+    final dirText = vessel.direction == 0 ? l.vehicleRiverDirNormal : l.vehicleRiverDirReverse;
+    // vessel.phase 는 service 가 '정차' 등 한국어 키로 반환하는 데이터값 — 비교용.
+    final phaseLabel = vessel.phase == '정차' ? l.vehicleRiverPhaseStop : vessel.phase;
 
     return Container(
       width: double.infinity,
@@ -367,11 +382,11 @@ class VesselDetailPanel extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '한강버스 ${vessel.routeName}',
+                          l.vehicleRiverBusRoute(vessel.routeName),
                           style: AppTypography.titleMd.copyWith(color: color),
                         ),
                         Text(
-                          '$dirText · ${vessel.phase}',
+                          '$dirText · $phaseLabel',
                           style: AppTypography.bodySm.copyWith(
                             color: AppColors.textSecondary,
                           ),
@@ -396,22 +411,22 @@ class VesselDetailPanel extends StatelessWidget {
                 children: [
                   Expanded(
                     child: InfoItem(
-                      label: vessel.phase == '정차' ? '정차 중' : '다음',
+                      label: vessel.phase == '정차' ? l.vehicleStopped : l.vehicleNext,
                       value: vessel.currentStopName ?? vessel.nextStopName,
                       valueColor: color,
                     ),
                   ),
                   Expanded(
                     child: InfoItem(
-                      label: '진행',
+                      label: l.vehicleProgress,
                       value: '${(vessel.progress * 100).round()}%',
                       valueColor: AppColors.textSecondary,
                     ),
                   ),
                   Expanded(
                     child: InfoItem(
-                      label: '상태',
-                      value: vessel.phase,
+                      label: l.vehicleStatus,
+                      value: phaseLabel,
                       valueColor: vessel.phase == '정차'
                           ? AppColors.warning
                           : color,

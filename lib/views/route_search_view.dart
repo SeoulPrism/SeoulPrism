@@ -1,7 +1,9 @@
+import 'dart:io';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import '../core/platform_scroll.dart';
+import '../l10n/gen/app_localizations.dart';
 import '../services/path_finding_service.dart';
 import '../models/subway_models.dart';
 import '../widgets/bus_overlay.dart';
@@ -98,51 +100,87 @@ class _RouteSearchOverlayState extends State<RouteSearchOverlay>
                   snap: true,
                   snapSizes: const [0.50],
                   builder: (context, scrollController) {
+                    final isAndroid = Platform.isAndroid;
+                    final cs = Theme.of(context).colorScheme;
+                    final isLight = Theme.of(context).brightness == Brightness.light;
+                    final handle = Center(
+                      child: Container(
+                        margin: const EdgeInsets.only(top: 8, bottom: 4),
+                        width: 36,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: (isAndroid
+                                  ? cs.onSurfaceVariant
+                                  : (isLight ? Colors.black : Colors.white))
+                              .withValues(alpha: 0.25),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    );
+                    final list = Material(
+                      color: Colors.transparent,
+                      child: ListView(
+                        controller: scrollController,
+                        physics: platformScrollPhysics(),
+                        padding: EdgeInsets.zero,
+                        children: [
+                          handle,
+                          _buildHeader(),
+                          _buildTimeSummary(),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 12),
+                            child: _buildTimelineBar(),
+                          ),
+                          _buildRouteSteps(),
+                          const SizedBox(height: 32),
+                        ],
+                      ),
+                    );
+                    // Android: M3 elevated surface (BackdropFilter 미사용 — 무거움).
+                    if (isAndroid) {
+                      return Material(
+                        elevation: 6,
+                        borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(20)),
+                        color: cs.surfaceContainerHigh,
+                        surfaceTintColor: cs.surfaceTint,
+                        clipBehavior: Clip.antiAlias,
+                        child: list,
+                      );
+                    }
+                    // iOS: 글라스 + 그라데이션.
                     return ClipRRect(
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                      borderRadius:
+                          const BorderRadius.vertical(top: Radius.circular(20)),
                       child: BackdropFilter(
                         filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
                         child: Container(
                           decoration: BoxDecoration(
-                            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-                            color: const Color(0xFF1A1A1A).withValues(alpha: 0.85),
+                            borderRadius: const BorderRadius.vertical(
+                                top: Radius.circular(20)),
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: isLight
+                                  ? [
+                                      Colors.white.withValues(alpha: 0.78),
+                                      Colors.white.withValues(alpha: 0.92),
+                                    ]
+                                  : [
+                                      Colors.black.withValues(alpha: 0.50),
+                                      Colors.black.withValues(alpha: 0.72),
+                                    ],
+                            ),
                             border: Border(
                               top: BorderSide(
-                                color: Colors.white.withValues(alpha: 0.15),
+                                color: (isLight ? Colors.black : Colors.white)
+                                    .withValues(alpha: 0.10),
                                 width: 0.5,
                               ),
                             ),
                           ),
-                          child: Material(
-                            color: Colors.transparent,
-                            child: ListView(
-                              controller: scrollController,
-                              physics: platformScrollPhysics(),
-                              padding: EdgeInsets.zero,
-                              children: [
-                                // 핸들
-                                Center(
-                                  child: Container(
-                                    margin: const EdgeInsets.only(top: 8, bottom: 4),
-                                    width: 36,
-                                    height: 4,
-                                    decoration: BoxDecoration(
-                                      color: Colors.white.withValues(alpha: 0.25),
-                                      borderRadius: BorderRadius.circular(2),
-                                    ),
-                                  ),
-                                ),
-                                _buildHeader(),
-                                _buildTimeSummary(),
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                                  child: _buildTimelineBar(),
-                                ),
-                                _buildRouteSteps(),
-                                const SizedBox(height: 32),
-                              ],
-                            ),
-                          ),
+                          child: list,
                         ),
                       ),
                     );
@@ -239,7 +277,7 @@ class _RouteSearchOverlayState extends State<RouteSearchOverlay>
             const SizedBox(width: 2),
             Padding(
               padding: const EdgeInsets.only(bottom: 6),
-              child: Text('시간', style: TextStyle(
+              child: Text(AppL10n.of(context).routeUnitHour, style: TextStyle(
                 color: Colors.white.withValues(alpha: 0.70), fontSize: 16, fontWeight: FontWeight.w600,
               )),
             ),
@@ -254,7 +292,7 @@ class _RouteSearchOverlayState extends State<RouteSearchOverlay>
           const SizedBox(width: 2),
           Padding(
             padding: const EdgeInsets.only(bottom: 6),
-            child: Text('분', style: TextStyle(
+            child: Text(AppL10n.of(context).routeUnitMin, style: TextStyle(
               color: Colors.white.withValues(alpha: 0.70), fontSize: 16, fontWeight: FontWeight.w600,
             )),
           ),
@@ -264,7 +302,7 @@ class _RouteSearchOverlayState extends State<RouteSearchOverlay>
             children: [
               if (_r.transferCount > 0)
                 Text(
-                  '환승 ${_r.transferCount}회',
+                  AppL10n.of(context).routeTransfersCount(_r.transferCount),
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.50), fontSize: 13,
                   ),
@@ -310,6 +348,7 @@ class _RouteSearchOverlayState extends State<RouteSearchOverlay>
   }
 
   Widget _buildRouteSteps() {
+    final l = AppL10n.of(context);
     final steps = <Widget>[];
 
     // 출발역
@@ -319,7 +358,7 @@ class _RouteSearchOverlayState extends State<RouteSearchOverlay>
           ? (_segmentColor(_r.segments.first))
           : Colors.grey,
       title: _r.departure,
-      subtitle: '출발',
+      subtitle: l.routeDeparture,
       icon: Icons.my_location_rounded,
     ));
 
@@ -332,11 +371,15 @@ class _RouteSearchOverlayState extends State<RouteSearchOverlay>
         final nextColor = i + 1 < _r.segments.length
             ? (_segmentColor(_r.segments[i + 1]))
             : Colors.grey;
+        // 환승 시간 — 실제 데이터 우선, 없으면 fallback 3분.
+        final transferMin = seg.travelTimeSec > 0
+            ? (seg.travelTimeSec / 60).ceil()
+            : 3;
         steps.add(_RouteStep(
           dotColor: Colors.white,
           lineColor: nextColor,
-          title: '환승',
-          subtitle: '${seg.lineName} · ~3분',
+          title: l.routeTransfer,
+          subtitle: l.routeTransferDetail(seg.lineName, transferMin),
           icon: Icons.swap_horiz_rounded,
         ));
       } else {
@@ -350,13 +393,22 @@ class _RouteSearchOverlayState extends State<RouteSearchOverlay>
             : null;
 
         final isBus = seg.mode == TransportMode.bus;
+        final String subtitleText;
+        if (stationCount > 1) {
+          subtitleText = isBus
+              ? l.routeSegmentBus(
+                  seg.stations.first, seg.stations.last, stationCount, timeMins)
+              : l.routeSegmentTrain(
+                  seg.stations.first, seg.stations.last, stationCount, timeMins);
+        } else {
+          subtitleText = l.routeSegmentShort(
+              seg.stations.firstOrNull ?? '', timeMins);
+        }
         steps.add(_RouteStep(
           dotColor: lineColor,
           lineColor: isLast ? null : (nextLineColor ?? lineColor),
-          title: '${seg.lineName} 승차',
-          subtitle: stationCount > 1
-              ? '${seg.stations.first} → ${seg.stations.last} · ${stationCount}개 ${isBus ? "정류장" : "역"} · $timeMins분'
-              : '${seg.stations.firstOrNull ?? ""} · $timeMins분',
+          title: l.routeBoardLine(seg.lineName),
+          subtitle: subtitleText,
           icon: isBus ? Icons.directions_bus_rounded : Icons.train_rounded,
           badge: seg.lineName,
           badgeColor: lineColor,
@@ -380,7 +432,7 @@ class _RouteSearchOverlayState extends State<RouteSearchOverlay>
       dotColor: const Color(0xFFFF453A),
       lineColor: null,
       title: _r.arrival,
-      subtitle: '도착',
+      subtitle: l.routeArrival,
       icon: Icons.location_on_rounded,
       isLast: true,
     ));
@@ -501,7 +553,9 @@ class _RouteStep extends StatelessWidget {
                     GestureDetector(
                       onTap: onToggle,
                       child: Text(
-                        showExpanded ? '접기 ▲' : '정류장 보기 ▼',
+                        showExpanded
+                            ? AppL10n.of(context).routeCollapse
+                            : AppL10n.of(context).routeShowStops,
                         style: TextStyle(
                           color: Colors.white.withValues(alpha: 0.35), fontSize: 12,
                         ),

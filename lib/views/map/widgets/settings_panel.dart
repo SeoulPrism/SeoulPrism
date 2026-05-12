@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../../../core/map_interface.dart';
 import '../../../data/seoul_subway_data.dart';
+import '../../../l10n/gen/app_localizations.dart';
 import '../../../models/bus_models.dart';
 import '../../../models/subway_models.dart';
 import '../../../services/device_profile_service.dart';
@@ -83,7 +84,7 @@ class _SettingsPanelState extends State<SettingsPanel> {
           child: Align(
             alignment: Alignment.centerLeft,
             child: Text(
-              '설정',
+              AppL10n.of(context).settingsTitle,
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.w800,
@@ -103,31 +104,31 @@ class _SettingsPanelState extends State<SettingsPanel> {
               MediaQuery.of(context).padding.bottom + 80,
             ),
             children: [
-              _sectionHeader('지하철'),
+              _sectionHeader(AppL10n.of(context).panelSubway),
               _buildSubwaySection(),
               const SizedBox(height: 24),
-              _sectionHeader('버스'),
+              _sectionHeader(AppL10n.of(context).panelBus),
               _buildBusSection(),
               const SizedBox(height: 24),
-              _sectionHeader('항공기'),
+              _sectionHeader(AppL10n.of(context).panelFlights),
               _buildFlightSection(),
               const SizedBox(height: 24),
-              _sectionHeader('표시'),
+              _sectionHeader(AppL10n.of(context).panelDisplay),
               _buildToggleSection(),
               const SizedBox(height: 24),
-              _sectionHeader('노선 필터'),
+              _sectionHeader(AppL10n.of(context).panelLineFilter),
               _buildLineFilterSection(),
               const SizedBox(height: 24),
-              _sectionHeader('성능'),
+              _sectionHeader(AppL10n.of(context).panelPerformance),
               _buildQualitySection(),
               const SizedBox(height: 24),
-              _sectionHeader('라이팅'),
+              _sectionHeader(AppL10n.of(context).panelLighting),
               _buildLightingSection(),
               const SizedBox(height: 24),
-              _sectionHeader('정보'),
+              _sectionHeader(AppL10n.of(context).panelInfo),
               _buildInfoSection(),
               const SizedBox(height: 24),
-              _sectionHeader('개발자'),
+              _sectionHeader(AppL10n.of(context).panelDeveloper),
               _buildDebugSection(),
             ],
           ),
@@ -272,7 +273,11 @@ class _SettingsPanelState extends State<SettingsPanel> {
                 ),
                 const SizedBox(width: AppSpacing.sm),
                 Text(
-                  isActive ? (isDemo ? 'DEMO 실행 중' : 'LIVE 실행 중') : '꺼짐',
+                  isActive
+                      ? (isDemo
+                          ? AppL10n.of(context).panelDemoRunning
+                          : AppL10n.of(context).panelLiveRunning)
+                      : AppL10n.of(context).panelOff,
                   style: AppTypography.bodySm.copyWith(
                     fontWeight: FontWeight.bold,
                     color: isActive ? _panelTextPrimary : Colors.grey,
@@ -281,7 +286,9 @@ class _SettingsPanelState extends State<SettingsPanel> {
                 const Spacer(),
                 // 모드 전환
                 Semantics(
-                  label: isDemo ? 'LIVE 모드로 전환' : 'DEMO 모드로 전환',
+                  label: isDemo
+                      ? AppL10n.of(context).panelSwitchToLive
+                      : AppL10n.of(context).panelSwitchToDemo,
                   button: true,
                   child: GestureDetector(
                     onTap: () {
@@ -326,7 +333,9 @@ class _SettingsPanelState extends State<SettingsPanel> {
                     }
                     setState(() {});
                   },
-                  semanticLabel: isActive ? '지하철 끄기' : '지하철 켜기',
+                  semanticLabel: isActive
+                      ? AppL10n.of(context).panelSubwayOff
+                      : AppL10n.of(context).panelSubwayOn,
                   size: AppSpacing.buttonSm,
                   iconSize: 14,
                   color: isActive
@@ -343,14 +352,15 @@ class _SettingsPanelState extends State<SettingsPanel> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    '열차 ${ctrl.currentTrains.length}대',
+                    AppL10n.of(context).panelTrainCount(ctrl.currentTrains.length),
                     style: AppTypography.caption.copyWith(
                       color: _panelTextSecondary,
                     ),
                   ),
                   if (ctrl.lastUpdate != null)
                     Text(
-                      '갱신 ${ctrl.lastUpdate!.hour.toString().padLeft(2, '0')}:${ctrl.lastUpdate!.minute.toString().padLeft(2, '0')}:${ctrl.lastUpdate!.second.toString().padLeft(2, '0')}',
+                      AppL10n.of(context).panelLastUpdate(
+                          '${ctrl.lastUpdate!.hour.toString().padLeft(2, '0')}:${ctrl.lastUpdate!.minute.toString().padLeft(2, '0')}:${ctrl.lastUpdate!.second.toString().padLeft(2, '0')}'),
                       style: AppTypography.caption.copyWith(
                         color: _panelTextMuted,
                       ),
@@ -384,7 +394,9 @@ class _SettingsPanelState extends State<SettingsPanel> {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  isActive ? '버스 ${ctrl.totalBusCount}대 표시 중' : '노선을 선택하세요',
+                  isActive
+                      ? AppL10n.of(context).panelBusActive(ctrl.totalBusCount)
+                      : AppL10n.of(context).panelSelectRoutes,
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
@@ -399,7 +411,7 @@ class _SettingsPanelState extends State<SettingsPanel> {
                       setState(() {});
                     },
                     child: Text(
-                      '전체 끄기',
+                      AppL10n.of(context).panelTurnAllOff,
                       style: TextStyle(color: _panelTextMuted, fontSize: 12),
                     ),
                   ),
@@ -447,21 +459,21 @@ class _SettingsPanelState extends State<SettingsPanel> {
                 }).toList(),
               ),
               const SizedBox(height: 8),
-              _toggleRow('버스 위치', ctrl.showBuses, (v) {
+              _toggleRow(AppL10n.of(context).panelBusPosition, ctrl.showBuses, (v) {
                 ctrl.toggleBuses(v);
                 setState(() {});
               }),
               const Divider(height: 16, color: AppColors.divider),
             ],
             // 한강 한강버스
-            _toggleRow('🚢 한강 한강버스', ctrl.showRiverBus, (v) {
+            _toggleRow(AppL10n.of(context).panelHanRiverBus, ctrl.showRiverBus, (v) {
               ctrl.toggleRiverBus(v);
               setState(() {});
             }),
             const SizedBox(height: 12),
             // 인기 노선 프리셋 (탭해서 추가)
             Text(
-              '노선 추가',
+              AppL10n.of(context).panelAddRoute,
               style: TextStyle(fontSize: 12, color: _panelTextSecondary),
             ),
             const SizedBox(height: 8),
@@ -540,8 +552,9 @@ class _SettingsPanelState extends State<SettingsPanel> {
                 const SizedBox(width: 8),
                 Text(
                   ctrl.isActive
-                      ? '${isDemo ? "DEMO" : "LIVE"} ${ctrl.flightCount}대'
-                      : '항공기',
+                      ? AppL10n.of(context).panelFlightCount(
+                          isDemo ? 'DEMO' : 'LIVE', ctrl.flightCount)
+                      : AppL10n.of(context).panelFlightFallback,
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
@@ -553,7 +566,9 @@ class _SettingsPanelState extends State<SettingsPanel> {
                 const Spacer(),
                 // DEMO/LIVE 전환
                 Semantics(
-                  label: isDemo ? 'LIVE 모드로 전환' : 'DEMO 모드로 전환',
+                  label: isDemo
+                      ? AppL10n.of(context).panelSwitchToLive
+                      : AppL10n.of(context).panelSwitchToDemo,
                   button: true,
                   child: GestureDetector(
                     onTap: () {
@@ -603,10 +618,14 @@ class _SettingsPanelState extends State<SettingsPanel> {
               const SizedBox(height: 8),
               Row(
                 children: [
-                  _flightLegend(const Color(0xFF00E676), '상승'),
-                  _flightLegend(Colors.white, '순항'),
-                  _flightLegend(const Color(0xFFFF9100), '하강'),
-                  _flightLegend(const Color(0xFFFF5252), '이착륙'),
+                  _flightLegend(const Color(0xFF00E676),
+                      AppL10n.of(context).panelFlightLegendClimb),
+                  _flightLegend(Colors.white,
+                      AppL10n.of(context).panelFlightLegendCruise),
+                  _flightLegend(const Color(0xFFFF9100),
+                      AppL10n.of(context).panelFlightLegendDescend),
+                  _flightLegend(const Color(0xFFFF5252),
+                      AppL10n.of(context).panelFlightLegendTakeoffLanding),
                 ],
               ),
             ],
@@ -639,28 +658,32 @@ class _SettingsPanelState extends State<SettingsPanel> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         child: Column(
           children: [
-            _toggleRow('노선 경로', widget.subwayController.showRoutes, (v) {
+            _toggleRow(AppL10n.of(context).panelRouteLines,
+                widget.subwayController.showRoutes, (v) {
               widget.subwayController.toggleRoutes(v);
               setState(() {});
             }),
-            _toggleRow('열차 위치', widget.subwayController.showTrains, (v) {
+            _toggleRow(AppL10n.of(context).panelTrainPosition,
+                widget.subwayController.showTrains, (v) {
               widget.subwayController.toggleTrains(v);
               setState(() {});
             }),
-            _toggleRow('역 표시', widget.subwayController.showStations, (v) {
+            _toggleRow(AppL10n.of(context).panelStationDisplay,
+                widget.subwayController.showStations, (v) {
               widget.subwayController.toggleStations(v);
               setState(() {});
             }),
             const Divider(height: AppSpacing.md, color: AppColors.divider),
             _toggleRow(
-              '서울시 공공 API (60s)',
+              AppL10n.of(context).settingsSeoulApi,
               widget.subwayController.useSeoulApi,
               (v) {
                 widget.subwayController.setUseSeoulApi(v);
                 setState(() {});
               },
             ),
-            _toggleRow('네이버 API (5s)', widget.subwayController.useNaverApi, (
+            _toggleRow(AppL10n.of(context).settingsNaverApi,
+                widget.subwayController.useNaverApi, (
               v,
             ) {
               widget.subwayController.setUseNaverApi(v);
@@ -683,7 +706,7 @@ class _SettingsPanelState extends State<SettingsPanel> {
             Row(
               children: [
                 Text(
-                  '표시할 노선 선택',
+                  AppL10n.of(context).panelSelectRoutesToShow,
                   style: AppTypography.caption.copyWith(
                     color: _panelTextSecondary,
                   ),
@@ -695,7 +718,7 @@ class _SettingsPanelState extends State<SettingsPanel> {
                     setState(() {});
                   },
                   child: Text(
-                    '전체',
+                    AppL10n.of(context).panelAll,
                     style: AppTypography.caption.copyWith(
                       color: AppColors.accent,
                     ),
@@ -774,7 +797,11 @@ class _SettingsPanelState extends State<SettingsPanel> {
     final isAndroid = Platform.isAndroid;
 
     final presetKeys = ['high', 'medium', 'low'];
-    final presetLabels = ['높음', '보통', '낮음'];
+    final presetLabels = [
+      AppL10n.of(context).panelPresetHigh,
+      AppL10n.of(context).panelPresetMedium,
+      AppL10n.of(context).panelPresetLow,
+    ];
     final selectedIndex = presetKeys.indexOf(current).clamp(0, 2);
 
     return Column(
@@ -840,7 +867,7 @@ class _SettingsPanelState extends State<SettingsPanel> {
             child: Column(
               children: [
                 _sliderRow(
-                  label: '프레임',
+                  label: AppL10n.of(context).panelFps,
                   value: '${ctrl.animFps} fps',
                   slider: Slider(
                     value: ctrl.animFps.toDouble().clamp(
@@ -857,7 +884,7 @@ class _SettingsPanelState extends State<SettingsPanel> {
                   ),
                 ),
                 _sliderRow(
-                  label: '네이버 폴링',
+                  label: AppL10n.of(context).panelNaverPolling,
                   value: '${ctrl.naverPollMs}ms',
                   slider: Slider(
                     value: ctrl.naverPollMs.toDouble(),
@@ -883,7 +910,8 @@ class _SettingsPanelState extends State<SettingsPanel> {
               Icon(Icons.memory, size: 14, color: _panelTextMuted),
               const SizedBox(width: 8),
               Text(
-                '렌더링: ${isAndroid ? "OpenGL ES" : "Metal"} · GeoJSON 캐싱',
+                AppL10n.of(context).panelRenderInfo(
+                    isAndroid ? 'OpenGL ES' : 'Metal'),
                 style: TextStyle(fontSize: 12, color: _panelTextMuted),
               ),
             ],
@@ -930,7 +958,13 @@ class _SettingsPanelState extends State<SettingsPanel> {
 
   Widget _buildLightingSection() {
     final presets = ['auto', 'day', 'night', 'dawn', 'dusk'];
-    final labels = ['자동', '주간', '야간', '새벽', '석양'];
+    final labels = [
+      AppL10n.of(context).panelLightAuto,
+      AppL10n.of(context).panelLightDay,
+      AppL10n.of(context).panelLightNight,
+      AppL10n.of(context).panelLightDawn,
+      AppL10n.of(context).panelLightDusk,
+    ];
     final selectedIndex = presets
         .indexOf(_lightPreset)
         .clamp(0, presets.length - 1);
@@ -1000,12 +1034,13 @@ class _SettingsPanelState extends State<SettingsPanel> {
   }
 
   Widget _buildInfoSection() {
+    final l = AppL10n.of(context);
     final dp = DeviceProfileService.instance;
     final tierLabel = switch (dp.profile.tier) {
-      DeviceTier.flagship => '플래그십',
-      DeviceTier.high => '상위',
-      DeviceTier.mid => '중급',
-      DeviceTier.low => '저사양',
+      DeviceTier.flagship => l.panelTierFlagship,
+      DeviceTier.high => l.panelTierHigh,
+      DeviceTier.mid => l.panelTierMid,
+      DeviceTier.low => l.panelTierLow,
     };
 
     return _glassCard(
@@ -1015,7 +1050,7 @@ class _SettingsPanelState extends State<SettingsPanel> {
           children: [
             _settingTile(
               icon: Icons.info_outline,
-              title: '맵 엔진',
+              title: l.panelMapEngine,
               subtitle: 'Mapbox Maps SDK v11',
             ),
             Padding(
@@ -1027,7 +1062,7 @@ class _SettingsPanelState extends State<SettingsPanel> {
             ),
             _settingTile(
               icon: Icons.phone_android,
-              title: '기기',
+              title: l.panelDevice,
               subtitle: dp.rawModel,
             ),
             Padding(
@@ -1039,7 +1074,7 @@ class _SettingsPanelState extends State<SettingsPanel> {
             ),
             _settingTile(
               icon: Icons.speed,
-              title: '성능 등급',
+              title: l.panelPerfTier,
               subtitle:
                   '$tierLabel (${dp.profile.animFps}fps · ${dp.profile.naverPollMs}ms)',
             ),
@@ -1056,7 +1091,7 @@ class _SettingsPanelState extends State<SettingsPanel> {
         child: Column(
           children: [
             _toggleRow(
-              '디버그 로그 출력',
+              AppL10n.of(context).settingsDebugLogs,
               SettingsService.instance.debugLogs,
               (v) {
                 SettingsService.instance.setDebugLogs(v);
@@ -1069,7 +1104,7 @@ class _SettingsPanelState extends State<SettingsPanel> {
             ),
             _AdaptiveActionRow(
               icon: Icons.replay,
-              label: '튜토리얼 다시 보기',
+              label: AppL10n.of(context).settingsResetTutorial,
               onTap: _resetTutorial,
               labelColor: _panelTextPrimary,
               iconColor: _panelTextSecondary,
@@ -1088,26 +1123,27 @@ class _SettingsPanelState extends State<SettingsPanel> {
   }
 
   Future<bool?> _showResetConfirmDialog() {
-    const title = '튜토리얼 다시 보기';
-    const message = '저장된 진행 상태를 지우고 다음 앱 실행 시 튜토리얼을 처음부터 보여드려요.';
+    final l = AppL10n.of(context);
+    final title = l.settingsResetTutorialTitle;
+    final message = l.settingsResetTutorialBody;
     if (Platform.isIOS) {
       return showCupertinoDialog<bool>(
         context: context,
         builder: (ctx) => CupertinoAlertDialog(
-          title: const Text(title),
-          content: const Padding(
-            padding: EdgeInsets.only(top: 8),
+          title: Text(title),
+          content: Padding(
+            padding: const EdgeInsets.only(top: 8),
             child: Text(message),
           ),
           actions: [
             CupertinoDialogAction(
               onPressed: () => Navigator.of(ctx).pop(false),
-              child: const Text('취소'),
+              child: Text(l.commonCancel),
             ),
             CupertinoDialogAction(
               isDefaultAction: true,
               onPressed: () => Navigator.of(ctx).pop(true),
-              child: const Text('다시 보기'),
+              child: Text(l.settingsResetTutorialConfirm),
             ),
           ],
         ),
@@ -1116,16 +1152,16 @@ class _SettingsPanelState extends State<SettingsPanel> {
     return showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text(title),
-        content: const Text(message),
+        title: Text(title),
+        content: Text(message),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('취소'),
+            child: Text(l.commonCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('다시 보기'),
+            child: Text(l.settingsResetTutorialConfirm),
           ),
         ],
       ),

@@ -29,12 +29,13 @@ class OnboardingMapController {
   void flyToBus() => _setSceneCallback?.call(_Scene.bus);
   void flyToRiverBus() => _setSceneCallback?.call(_Scene.riverBus);
   void flyToFlight() => _setSceneCallback?.call(_Scene.flight);
+  void flyToLiveMeet() => _setSceneCallback?.call(_Scene.liveMeet);
 
   /// finish 시퀀스 — 카메라를 도시 광역 줌아웃 + 핵심 차량 follow 해제.
   void zoomOutToCity() => _zoomOutCallback?.call();
 }
 
-enum _Scene { initial, subway, bus, riverBus, flight }
+enum _Scene { initial, subway, bus, riverBus, flight, liveMeet }
 
 class _SceneCamera {
   final double lat, lng, zoom, pitch, bearing;
@@ -58,6 +59,10 @@ const _sceneCameras = <_Scene, _SceneCamera>{
   _Scene.riverBus: _SceneCamera(lat: 37.5310, lng: 126.9367, zoom: 14.6, pitch: 65, bearing: 90),
   // 인천공항 — 비행기는 빠르게 움직이므로 더 줌인 + pitch 살짝 낮춰 비행 동선 잘 보이게.
   _Scene.flight: _SceneCamera(lat: 37.4486, lng: 126.4505, zoom: 15.6, pitch: 60, bearing: 25),
+  // Seoul Live — 광화문 광장. 친구 dot 데모(화면 좌표) 가 빌딩에 묻히지 않게
+  // 광장 빈 공간 + 경복궁 위주의 시야로. pitch 55 로 살짝 낮춰 dot 가 빌딩
+  // 입면에 가려지는 일을 줄임 (3D extrusion 은 zoom 16 + pitch 55 에서도 충분히 보임).
+  _Scene.liveMeet: _SceneCamera(lat: 37.5731, lng: 126.9763, zoom: 16.0, pitch: 55, bearing: 0),
 };
 
 /// 온보딩 백그라운드 — 실제 MapboxEngine + 실 컨트롤러 (실시간 데이터 + 3D 렌더).
@@ -130,7 +135,8 @@ class _OnboardingMapBackgroundState extends State<OnboardingMapBackground> {
     // 지하철 — 데모 모드 강제 (튜토리얼은 보여주기). TrainSimulator 가 1호선 일반/급행/초급행 자동 생성.
     _origSubwayMode = SettingsService.instance.mode;
     _subway.attachMap(controller);
-    _subway.setLineFilter({'1001'});
+    // 데모 — 사용자 설정에 영향 X.
+    _subway.setLineFilter({'1001'}, persist: false);
     _subway.setMode(SubwayMode.demo);
     await _subway.start();
 
@@ -251,6 +257,7 @@ class _OnboardingMapBackgroundState extends State<OnboardingMapBackground> {
   (double, double, String)? _findNearestForScene(_Scene s, _SceneCamera cam) {
     switch (s) {
       case _Scene.initial:
+      case _Scene.liveMeet:
         return null;
       case _Scene.subway:
         final t = _nearest(_subway.currentTrains, cam.lat, cam.lng,
@@ -275,6 +282,7 @@ class _OnboardingMapBackgroundState extends State<OnboardingMapBackground> {
     DebugLog.log('[Onboarding] $s follow 시작: $key');
     switch (s) {
       case _Scene.initial:
+      case _Scene.liveMeet:
         return;
       case _Scene.subway:
         // 지하철: 컨트롤러의 selectTrain 으로 highlight + 자동 follow.

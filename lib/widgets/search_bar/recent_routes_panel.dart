@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../services/recent_route_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_typography.dart';
@@ -44,7 +45,7 @@ class RecentRoutesPanel extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
                 child: Text(
-                  '최근 길찾기',
+                  AppL10n.of(context).searchRecentRoutesTitle,
                   style: AppTypography.caption.copyWith(
                     color: AppColors.textTertiary,
                     fontWeight: FontWeight.w600,

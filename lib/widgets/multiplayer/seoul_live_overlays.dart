@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../l10n/gen/app_localizations.dart';
 import '../../services/multiplayer_service.dart';
 import '../../services/notification_service.dart';
 
@@ -130,7 +131,7 @@ class _CelebrationOverlayState extends State<_CelebrationOverlay>
                   child: Column(
                     children: [
                       Text(
-                        'Seoul Live 시작',
+                        AppL10n.of(context).seoulLiveStartTitle,
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: Colors.white,
@@ -148,7 +149,7 @@ class _CelebrationOverlayState extends State<_CelebrationOverlay>
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        '지도가 세계로 확장됐어요',
+                        AppL10n.of(context).seoulLiveStartBody,
                         style: TextStyle(
                           color: Colors.white.withValues(alpha: 0.85),
                           fontSize: 14,
@@ -215,44 +216,50 @@ class _TutorialCoachmarks extends StatefulWidget {
 class _TutorialCoachmarksState extends State<_TutorialCoachmarks> {
   int _step = 0;
 
-  static const _steps = <_CoachStep>[
-    _CoachStep(
-      icon: Icons.location_on_rounded,
-      title: '친구의 핀이 지도에 떠요',
-      body: '같은 친구방의 멤버가 핀(닉네임 + 이모지) 으로 실시간 표시돼요. '
-          '친구가 움직이면 핀도 같이 움직여요.',
-    ),
-    _CoachStep(
-      icon: Icons.meeting_room_rounded,
-      title: '친구방 코드로 모이기',
-      body: '프로필 → Seoul Live → 친구방에서 새 방을 만들거나 '
-          '6자리 초대 코드로 입장하세요. 정원은 8명이에요.',
-    ),
-    _CoachStep(
-      icon: Icons.celebration_rounded,
-      title: '50m 이내면 만남 알림',
-      body: '친구와 가까워지면 햅틱과 알림이 울려요. 채팅에도 자동으로 기록돼요.',
-    ),
-    _CoachStep(
-      icon: Icons.shield_rounded,
-      title: '언제든 비공개 모드',
-      body: '상단의 "위치 공유 중" 배지를 탭하면 즉시 ghost 모드로 전환돼요. '
-          '친구방을 나가면 자동으로 송신이 멈춰요.',
-    ),
-    _CoachStep(
-      icon: Icons.notifications_active_rounded,
-      title: '알림 받기',
-      body: '친구 신청 / 새 메시지 / 만남이 발생하면 푸시 알림으로 알려드려요. '
-          '아래 "허용" 버튼을 눌러 알림을 받아주세요.',
-      isPermission: true,
-    ),
+  // 한국어 라벨은 const 이 아니라 ARB lookup 이 필요해 build-time 에 생성.
+  // 아이콘 / isPermission 만 const 유지.
+  static const _stepCount = 5;
+  static const _stepIcons = <IconData>[
+    Icons.location_on_rounded,
+    Icons.meeting_room_rounded,
+    Icons.celebration_rounded,
+    Icons.shield_rounded,
+    Icons.notifications_active_rounded,
   ];
+  static const _stepPermission = <bool>[false, false, false, false, true];
+
+  List<_CoachStep> _stepsFor(BuildContext ctx) {
+    final l = AppL10n.of(ctx);
+    final titles = [
+      l.seoulLiveStep2Title,
+      l.seoulLiveStep3Title,
+      l.seoulLiveStep4Title,
+      l.seoulLiveStep5Title,
+      l.seoulLivePermTitle,
+    ];
+    final bodies = [
+      l.seoulLiveStep2Body,
+      l.seoulLiveStep3Body,
+      l.seoulLiveStep4Body,
+      l.seoulLiveStep5Body,
+      l.seoulLivePermBody,
+    ];
+    return [
+      for (var i = 0; i < _stepCount; i++)
+        _CoachStep(
+          icon: _stepIcons[i],
+          title: titles[i],
+          body: bodies[i],
+          isPermission: _stepPermission[i],
+        ),
+    ];
+  }
 
   bool _requestingPermission = false;
   bool? _permissionResult;
 
   Future<void> _next() async {
-    final s = _steps[_step];
+    final s = _stepsFor(context)[_step];
     if (s.isPermission && _permissionResult == null) {
       // 알림 권한 요청.
       setState(() => _requestingPermission = true);
@@ -266,7 +273,7 @@ class _TutorialCoachmarksState extends State<_TutorialCoachmarks> {
       // 권한 요청 후에도 사용자가 다시 "다음" 누르도록 유지.
       return;
     }
-    if (_step >= _steps.length - 1) {
+    if (_step >= _stepCount - 1) {
       if (mounted) Navigator.of(context).pop();
     } else {
       setState(() => _step++);
@@ -276,7 +283,8 @@ class _TutorialCoachmarksState extends State<_TutorialCoachmarks> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final s = _steps[_step];
+    final steps = _stepsFor(context);
+    final s = steps[_step];
 
     return Material(
       color: Colors.transparent,
@@ -289,7 +297,7 @@ class _TutorialCoachmarksState extends State<_TutorialCoachmarks> {
               Row(
                 children: [
                   Row(
-                    children: List.generate(_steps.length, (i) {
+                    children: List.generate(_stepCount, (i) {
                       final on = i <= _step;
                       return AnimatedContainer(
                         duration: const Duration(milliseconds: 250),
@@ -309,7 +317,7 @@ class _TutorialCoachmarksState extends State<_TutorialCoachmarks> {
                   TextButton(
                     onPressed: () => Navigator.of(context).pop(),
                     style: TextButton.styleFrom(foregroundColor: Colors.white),
-                    child: const Text('건너뛰기'),
+                    child: Text(AppL10n.of(context).commonSkip),
                   ),
                 ],
               ),
@@ -380,8 +388,8 @@ class _TutorialCoachmarksState extends State<_TutorialCoachmarks> {
                   padding: const EdgeInsets.only(bottom: 8),
                   child: Text(
                     _permissionResult!
-                        ? '✓ 알림 권한 허용됨'
-                        : '거부됨 — 설정에서 직접 허용할 수 있어요',
+                        ? AppL10n.of(context).seoulLivePermAllowed
+                        : AppL10n.of(context).seoulLivePermDenied,
                     style: TextStyle(
                       color: _permissionResult!
                           ? const Color(0xFF34C759)
@@ -402,7 +410,7 @@ class _TutorialCoachmarksState extends State<_TutorialCoachmarks> {
                     ),
                   ),
                   child: Text(
-                    _resolveButtonLabel(s),
+                    _resolveButtonLabel(context, s),
                     style: const TextStyle(
                         fontSize: 15, fontWeight: FontWeight.w700),
                   ),
@@ -415,13 +423,14 @@ class _TutorialCoachmarksState extends State<_TutorialCoachmarks> {
     );
   }
 
-  String _resolveButtonLabel(_CoachStep s) {
+  String _resolveButtonLabel(BuildContext ctx, _CoachStep s) {
+    final l = AppL10n.of(ctx);
     if (s.isPermission) {
-      if (_requestingPermission) return '요청 중...';
-      if (_permissionResult == null) return '알림 허용';
-      return '시작하기';
+      if (_requestingPermission) return l.seoulLivePermRequesting;
+      if (_permissionResult == null) return l.seoulLivePermAllow;
+      return l.commonStart;
     }
-    return _step >= _steps.length - 1 ? '시작하기' : '다음';
+    return _step >= _stepCount - 1 ? l.commonStart : l.commonNext;
   }
 }
 

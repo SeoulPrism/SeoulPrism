@@ -1,8 +1,8 @@
 import 'dart:async';
-import 'dart:io';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import '../l10n/gen/app_localizations.dart';
 import '../services/gemini_live_service.dart';
 import '../services/gemini_service.dart';
 import '../services/audio_service.dart';
@@ -32,6 +32,7 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
   late AnimationController _spreadController;
   late AnimationController _deformController;
   late List<AnimationController> _layerControllers;
+  late List<VoidCallback> _layerListeners;
   late List<List<double>> _layerCurrentStops;
   late List<List<double>> _layerFromStops;
   List<double> _targetStops = [0.0, 0.17, 0.33, 0.5, 0.67, 0.83, 1.0];
@@ -42,16 +43,10 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
 
   // ── Gemini Live ──
   final GeminiLiveService _liveService = GeminiLiveService.instance;
-  final AudioService _audioService = AudioService();
+  final AudioService _audioService = AudioService.instance;
   LiveSessionState _sessionState = LiveSessionState.idle;
   String _accumulatedTranscript = '';
   double _audioLevel = 0.0;
-
-  // ── UI 상태 ──
-  bool _showTextInput = false;
-  bool _textModeActive = false;
-  final TextEditingController _textController = TextEditingController();
-  final FocusNode _textFocusNode = FocusNode();
 
   // ── 장소 분석 결과 패널 ──
   bool _showPlacesPanel = false;
@@ -64,8 +59,8 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
   StreamSubscription? _transcriptSub;
   StreamSubscription? _audioOutSub;
   StreamSubscription? _actionSub;
-  StreamSubscription? _audioInSub;
   StreamSubscription? _levelSub;
+  StreamSubscription? _interruptedSub;
 
   // ── Glow 상태 반응 파라미터 ──
   double _glowSpeedMultiplier = 1.0;
@@ -76,7 +71,17 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     _initGlowAnimations();
-    _initLiveSession();
+    // 진입 애니메이션 (~500ms) 이 끝난 뒤 무거운 초기화 (SoLoud / mic / WebSocket)
+    // 를 시작해서 entrance 가 부드럽게 들어가도록 한다.
+    _spreadController.addStatusListener(_onSpreadStatus);
+  }
+
+  bool _liveInitStarted = false;
+  void _onSpreadStatus(AnimationStatus status) {
+    if (status == AnimationStatus.completed && !_liveInitStarted) {
+      _liveInitStarted = true;
+      _initLiveSession();
+    }
   }
 
   void _initGlowAnimations() {
@@ -94,12 +99,15 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
     _layerCurrentStops = List.generate(4, (_) => List.from(initialStops));
     _layerFromStops = List.generate(4, (_) => List.from(initialStops));
 
+    _layerListeners = <VoidCallback>[];
     _layerControllers = List.generate(4, (i) {
       final ctrl = AnimationController(
         vsync: this,
         duration: Duration(milliseconds: _layerDurations[i]),
       );
-      ctrl.addListener(() => _interpolateLayer(i));
+      void l() => _interpolateLayer(i);
+      _layerListeners.add(l);
+      ctrl.addListener(l);
       return ctrl;
     });
 
@@ -115,14 +123,17 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
     // 상태 스트림 구독
     _stateSub = _liveService.stateStream.listen((state) {
       if (!mounted) return;
+      final prevState = _sessionState;
+      // glow 파라미터는 painter 가 다음 frame 에 읽어가니 setState 묶지 않음.
+      _updateGlowForState(state);
       setState(() {
         _sessionState = state;
-        _updateGlowForState(state);
       });
       if (state == LiveSessionState.speaking) {
         _accumulatedTranscript = '';
-      } else {
-        // speaking → 다른 상태: 플래그만 리셋 (버퍼 오디오는 계속 재생)
+      } else if (prevState == LiveSessionState.speaking) {
+        // speaking → 다른 상태로 전환된 순간에만 리셋 (버퍼 오디오는 계속 재생).
+        // 모든 non-speaking 전환에서 reset 하면 인사 첫 청크가 lost 됨.
         _audioService.markPlayStreamEnded();
       }
       if (state == LiveSessionState.listening) {
@@ -144,6 +155,11 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
     // AI 오디오 → SoLoud로 즉시 재생 (마이크에 영향 없음!)
     _audioOutSub = _liveService.audioOutStream.listen((audioBytes) {
       _audioService.feedAudioChunk(audioBytes);
+    });
+
+    // 사용자 끼어들기 — 큐된 audio 즉시 정지.
+    _interruptedSub = _liveService.interruptedStream.listen((_) {
+      _audioService.flushPlayback();
     });
 
     // Function Call 처리
@@ -171,33 +187,39 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
       );
     });
 
-    // 오디오 레벨 (Glow 반응)
+    // 오디오 레벨 (speaking 시 stroke boost 갱신용 — setState 안 함, painter 가
+    // 컨트롤러 tick 마다 다시 그릴 때 최신 값 읽음).
     _levelSub = _audioService.levelStream.listen((level) {
-      if (!mounted) return;
-      setState(() => _audioLevel = level);
+      _audioLevel = level;
+      if (_sessionState == LiveSessionState.speaking) {
+        _glowStrokeBoost = level * 4.5;
+        _glowBrightnessMultiplier = 1.0 + level * 0.3;
+      }
     });
 
     // SoLoud 초기화
     await _audioService.init();
 
-    // 세션 시작
-    if (_liveService.state == LiveSessionState.idle) {
+    // 세션 시작 (pre-warm 됐으면 스킵)
+    final wasWarm = _liveService.state != LiveSessionState.idle;
+    if (!wasWarm) {
       await _liveService.startSession();
     }
 
-    // 마이크 시작 → Gemini에 오디오 스트림 직접 전달 (공식 패턴)
+    // 인사를 mic 시작 *전* 에 먼저 보낸다.
+    // mic stream 이 흐르는 동안 Live API 의 자동 VAD 가 user-turn 을 잡으면
+    // 우리 greeting text turn 이 user audio 와 충돌해서 model 응답이 안 올 수 있음.
+    // 마이크 켜지 전에 모델이 먼저 발화하도록 트리거.
+    if (!wasWarm && mounted && _liveService.state != LiveSessionState.idle) {
+      await _liveService.sendGreeting();
+    }
+
+    // 마이크 시작 → Gemini에 오디오 스트림 직접 전달
     final audioStream = await _audioService.startRecording();
     if (audioStream != null) {
       unawaited(_liveService.sendAudioStream(audioStream));
       debugPrint('[AiView] Mic audio stream → Gemini connected');
     }
-
-    // AI 인사 트리거
-    Future.delayed(const Duration(milliseconds: 500), () {
-      if (mounted) {
-        _liveService.sendText('User just opened the AI assistant. Greet them briefly in Korean.');
-      }
-    });
   }
 
   String _actionToFunctionName(AiAction action) {
@@ -234,6 +256,24 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
         return 'open_saved';
       case AiAction.moveToLocation:
         return 'move_to_location';
+      case AiAction.applyTheme:
+        return 'apply_theme';
+      case AiAction.planFromSaved:
+        return 'plan_from_saved';
+      case AiAction.openTravel:
+        return 'open_travel';
+      case AiAction.openMultiplayer:
+        return 'open_multiplayer';
+      case AiAction.openSpotify:
+        return 'open_spotify';
+      case AiAction.setLiveVisibility:
+        return 'set_live_visibility';
+      case AiAction.toggleLayer:
+        return 'toggle_layer';
+      case AiAction.closePanel:
+        return 'close_panel';
+      case AiAction.setWeatherExpanded:
+        return 'set_weather_expanded';
     }
   }
 
@@ -315,6 +355,48 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
         return {'status': 'success', 'message': '저장 탭을 열었습니다.'};
       case AiAction.moveToLocation:
         return {'status': 'success', 'message': '해당 위치로 이동했습니다.'};
+      case AiAction.applyTheme:
+        final themeId = action.params['theme_id'] as String? ?? '';
+        return {
+          'status': 'success',
+          'message': '"$themeId" 테마 코스를 지도에 표시했어. 사용자에게 코스 내용을 한 줄로 안내해줘.',
+        };
+      case AiAction.planFromSaved:
+        return {
+          'status': 'processing',
+          'message': '즐겨찾기/방문기록으로 코스를 만들고 있어. 잘 안 되면 "장소가 부족해요" 안내가 뜰 거야.',
+        };
+      case AiAction.openTravel:
+        return {'status': 'success', 'message': '여행 패널을 열었어.'};
+      case AiAction.openMultiplayer:
+        return {'status': 'success', 'message': 'Seoul Live 허브로 이동했어.'};
+      case AiAction.openSpotify:
+        return {'status': 'success', 'message': 'Spotify 친구 곡 뷰를 열었어.'};
+      case AiAction.setLiveVisibility:
+        final v = action.params['visibility'] as String? ?? '';
+        return {
+          'status': 'success',
+          'message': v == 'ghost'
+              ? 'Seoul Live 위치 공유를 숨겼어 (ghost 모드).'
+              : 'Seoul Live 위치 공유를 켰어. 친구가 위치를 볼 수 있어.',
+        };
+      case AiAction.toggleLayer:
+        final layer = action.params['layer'] as String? ?? '';
+        return {
+          'status': 'success',
+          'message': '$layer 레이어를 토글했어.',
+        };
+      case AiAction.closePanel:
+        return {
+          'status': 'success',
+          'message': '열려있던 패널을 닫고 지도로 돌아갔어.',
+        };
+      case AiAction.setWeatherExpanded:
+        final exp = action.params['expanded'] as bool? ?? true;
+        return {
+          'status': 'success',
+          'message': exp ? '날씨 위젯을 펼쳤어 (주간 예보).' : '날씨 위젯을 접었어.',
+        };
     }
   }
 
@@ -375,12 +457,14 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
     if (!mounted) return;
     final t = Curves.easeInOut.transform(_layerControllers[layerIndex].value);
     final from = _layerFromStops[layerIndex];
-    final newStops = List.generate(7, (i) {
-      return from[i] + (_targetStops[i] - from[i]) * t;
-    });
-    setState(() {
-      _layerCurrentStops[layerIndex] = newStops;
-    });
+    // setState 안 함: AnimatedBuilder 가 controller listener 로 이미 리빌드된다.
+    // setState 까지 부르면 AiView 전체 (Stack 의 모든 children: state indicator,
+    // places panel, text input...) 가 60fps × 4 layer = 240회/초 리빌드되어
+    // 진입 시 렉이 발생한다.
+    final stops = _layerCurrentStops[layerIndex];
+    for (int i = 0; i < 7; i++) {
+      stops[i] = from[i] + (_targetStops[i] - from[i]) * t;
+    }
   }
 
   @override
@@ -395,8 +479,12 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
     if (_dismissed) return;
     _dismissed = true;
     _updateTimer?.cancel();
-    _liveService.endSession();
-    _audioService.stopRecording();
+    // 마이크 → WS 순으로 정리. mic 먼저 끄면 sendMediaStream 의 await-for 가
+    // 자연스럽게 done 되어 'Cannot add event after closing' 을 피한다.
+    unawaited(() async {
+      await _audioService.stopRecording();
+      await _liveService.endSession();
+    }());
     _spreadController.reverse().then((_) {
       widget.onClose?.call();
     });
@@ -405,21 +493,21 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
   @override
   void dispose() {
     _updateTimer?.cancel();
+    _spreadController.removeStatusListener(_onSpreadStatus);
     _spreadController.dispose();
     _deformController.dispose();
-    for (final c in _layerControllers) {
-      c.dispose();
+    for (var i = 0; i < _layerControllers.length; i++) {
+      _layerControllers[i].removeListener(_layerListeners[i]);
+      _layerControllers[i].dispose();
     }
     _stateSub?.cancel();
     _transcriptSub?.cancel();
     _audioOutSub?.cancel();
     _actionSub?.cancel();
-    _audioInSub?.cancel();
     _levelSub?.cancel();
-    _liveService.endSession();
-    _audioService.dispose();
-    _textController.dispose();
-    _textFocusNode.dispose();
+    _interruptedSub?.cancel();
+    // GeminiLiveService / AudioService 는 singleton — 여기서 끊지 않는다.
+    // 세션 lifecycle 은 _dismiss() 가 담당.
     super.dispose();
   }
 
@@ -436,9 +524,10 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
 
     // 장소가 없으면 AI가 보낸 places 문자열이나 style로 검색
     final placesStr = action.params['places'] as String?;
-    final query = placesStr ?? '서울 여행 추천 코스';
+    final l = AppL10n.of(context);
+    final query = placesStr ?? l.aiDefaultSearch;
 
-    widget.onStatusChanged?.call('코스 검�� 중...');
+    widget.onStatusChanged?.call(l.aiStatusSearchingCourse);
 
     try {
       final content = SnsContent(imagePaths: [], text: query, url: '');
@@ -452,7 +541,8 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
           _extractedPlaces = geoPlaces;
           _showPlacesPanel = true;
         });
-        widget.onStatusChanged?.call('${geoPlaces.length}개 장소를 찾았어요! 아래에서 확인하세요.');
+        widget.onStatusChanged?.call(
+            AppL10n.of(context).aiPlacesFound(geoPlaces.length));
       }
     } catch (e) {
       debugPrint('[AiView] Create plan error: $e');
@@ -465,7 +555,7 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
     if (query.isEmpty) return;
 
     setState(() => _searchingPlaces = true);
-    widget.onStatusChanged?.call('정보 찾는 중...');
+    widget.onStatusChanged?.call(AppL10n.of(context).aiStatusFindingInfo);
 
     try {
       final existing = _extractedPlaces.map((p) => p.name).join(', ');
@@ -514,7 +604,7 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
     if (query.isEmpty) return;
 
     setState(() => _searchingPlaces = true);
-    widget.onStatusChanged?.call('정보 찾는 중...');
+    widget.onStatusChanged?.call(AppL10n.of(context).aiStatusFindingInfo);
 
     try {
       final content = SnsContent(imagePaths: [], text: query, url: '');
@@ -562,7 +652,7 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
     if (picked == null) return;
 
     setState(() => _analyzingImage = true);
-    widget.onStatusChanged?.call('이미지 분석 중...');
+    widget.onStatusChanged?.call(AppL10n.of(context).aiStatusAnalyzingImage);
 
     try {
       final content = SnsContent(imagePaths: [picked.path], text: '', url: '');
@@ -586,44 +676,16 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
         );
       } else {
         setState(() => _analyzingImage = false);
-        widget.onStatusChanged?.call('장소를 찾지 못했어요.');
+        widget.onStatusChanged?.call(AppL10n.of(context).aiNoPlacesFound);
       }
     } catch (e) {
       if (!mounted) return;
       setState(() => _analyzingImage = false);
-      widget.onStatusChanged?.call('분석 오류: $e');
+      widget.onStatusChanged?.call(
+          AppL10n.of(context).aiAnalysisError(e.toString()));
       debugPrint('[AiView] Image analysis error: $e');
     }
   }
-
-  // ── 텍스트 입력 ──
-  void _showTextInputField() {
-    setState(() {
-      _showTextInput = true;
-      _textModeActive = true;
-    });
-    Future.delayed(const Duration(milliseconds: 100), () {
-      _textFocusNode.requestFocus();
-    });
-  }
-
-  void _hideTextInputField() {
-    _textFocusNode.unfocus();
-    setState(() => _showTextInput = false);
-    Future.delayed(const Duration(milliseconds: 300), () {
-      if (mounted) setState(() => _textModeActive = false);
-    });
-  }
-
-  void _submitText() {
-    final text = _textController.text.trim();
-    if (text.isEmpty) return;
-
-    _liveService.sendText(text);
-    _textController.clear();
-    _hideTextInputField();
-  }
-
 
   void _removePlace(int index) {
     setState(() {
@@ -654,32 +716,30 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        // 1. Glow 애니메이션 (배경)
-        AnimatedBuilder(
-          animation: Listenable.merge([
-            _spreadController,
-            _deformController,
-            ..._layerControllers,
-          ]),
-          builder: (context, _) {
-            return GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () {
-                // Glow 영역 탭 시 텍스트 입력 닫기
-                if (_showTextInput) _hideTextInputField();
+        // 1. Glow 애니메이션 (배경) — IgnorePointer 로 hit-test 통과
+        //    덕분에 AI 가 떠있어도 빈 영역 터치는 지도/위젯으로 전달됨.
+        IgnorePointer(
+          child: RepaintBoundary(
+            child: AnimatedBuilder(
+              animation: Listenable.merge([
+                _spreadController,
+                _deformController,
+                ..._layerControllers,
+              ]),
+              builder: (context, _) {
+                return CustomPaint(
+                  painter: _AiGlowPainter(
+                    layerStops: _layerCurrentStops,
+                    spreadProgress: _spreadController.value,
+                    deformPhase: _deformController.value * 2 * pi,
+                    strokeBoost: _glowStrokeBoost,
+                    brightnessMultiplier: _glowBrightnessMultiplier,
+                  ),
+                  size: Size.infinite,
+                );
               },
-              child: CustomPaint(
-                painter: _AiGlowPainter(
-                  layerStops: _layerCurrentStops,
-                  spreadProgress: _spreadController.value,
-                  deformPhase: _deformController.value * 2 * pi,
-                  strokeBoost: _glowStrokeBoost,
-                  brightnessMultiplier: _glowBrightnessMultiplier,
-                ),
-                size: Size.infinite,
-              ),
-            );
-          },
+            ),
+          ),
         ),
 
         // 2. 상태 인디케이터 (상단 중앙)
@@ -726,11 +786,6 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
             ),
           ),
 
-        // 4. 무음 시 텍스트 입력 전환 (5초 후 자동)
-        // 항상 표시 (테스트용) — 나중에 idlePrompt 조건 복원
-        if (!_showPlacesPanel && !_showPhotoOptions)
-          _buildIdlePrompt(),
-
         // 5. 분석/검색 중 로딩 인디케이터
         if (_analyzingImage || _searchingPlaces)
           Positioned(
@@ -744,7 +799,9 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
                   const CircularProgressIndicator(color: Colors.white70),
                   const SizedBox(height: 12),
                   Text(
-                    _analyzingImage ? '이미지 분석 중...' : '정보 찾는 중...',
+                    _analyzingImage
+                        ? AppL10n.of(context).aiStatusAnalyzingImage
+                        : AppL10n.of(context).aiStatusFindingInfo,
                     style: const TextStyle(
                       color: Colors.white70,
                       fontSize: 14,
@@ -794,7 +851,7 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      '사진을 선택해주세요',
+                      AppL10n.of(context).aiSelectPhotoHint,
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.8),
                         fontSize: 15,
@@ -805,50 +862,84 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
                     Row(
                       children: [
                         Expanded(
-                          child: GestureDetector(
-                            onTap: () => _pickImage(ImageSource.camera),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(vertical: 14),
+                          child: Material(
+                            color: Colors.transparent,
+                            borderRadius: BorderRadius.circular(12),
+                            child: Ink(
                               decoration: BoxDecoration(
                                 gradient: const LinearGradient(
                                   colors: [Color(0xFFBC82F3), Color(0xFF8D9FFF)],
                                 ),
                                 borderRadius: BorderRadius.circular(12),
                               ),
-                              child: const Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.camera_alt_rounded, color: Colors.white, size: 20),
-                                  SizedBox(width: 8),
-                                  Text('촬영', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-                                ],
+                              child: InkWell(
+                                onTap: () => _pickImage(ImageSource.camera),
+                                borderRadius: BorderRadius.circular(12),
+                                splashColor: Colors.white.withValues(alpha: 0.18),
+                                highlightColor: Colors.white.withValues(alpha: 0.08),
+                                child: Padding(
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 14),
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.center,
+                                    children: [
+                                      const Icon(Icons.camera_alt_rounded,
+                                          color: Colors.white, size: 20),
+                                      const SizedBox(width: 8),
+                                      Text(AppL10n.of(context).aiPhotoShoot,
+                                          style: const TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.w600)),
+                                    ],
+                                  ),
+                                ),
                               ),
                             ),
                           ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
-                          child: GestureDetector(
-                            onTap: () => _pickImage(ImageSource.gallery),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(vertical: 14),
+                          child: Material(
+                            color: Colors.transparent,
+                            borderRadius: BorderRadius.circular(12),
+                            child: Ink(
                               decoration: BoxDecoration(
                                 gradient: LinearGradient(
                                   colors: [
-                                    const Color(0xFFF5B9EA).withValues(alpha: 0.25),
-                                    const Color(0xFFFF6778).withValues(alpha: 0.2),
+                                    const Color(0xFFF5B9EA)
+                                        .withValues(alpha: 0.25),
+                                    const Color(0xFFFF6778)
+                                        .withValues(alpha: 0.2),
                                   ],
                                 ),
                                 borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: const Color(0xFFF5B9EA).withValues(alpha: 0.4)),
+                                border: Border.all(
+                                    color: const Color(0xFFF5B9EA)
+                                        .withValues(alpha: 0.4)),
                               ),
-                              child: const Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.photo_library_rounded, color: Colors.white, size: 20),
-                                  SizedBox(width: 8),
-                                  Text('갤러리', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-                                ],
+                              child: InkWell(
+                                onTap: () => _pickImage(ImageSource.gallery),
+                                borderRadius: BorderRadius.circular(12),
+                                splashColor: Colors.white.withValues(alpha: 0.18),
+                                highlightColor: Colors.white.withValues(alpha: 0.08),
+                                child: Padding(
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 14),
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.center,
+                                    children: [
+                                      const Icon(Icons.photo_library_rounded,
+                                          color: Colors.white, size: 20),
+                                      const SizedBox(width: 8),
+                                      Text(AppL10n.of(context).snsImageGallery,
+                                          style: const TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.w600)),
+                                    ],
+                                  ),
+                                ),
                               ),
                             ),
                           ),
@@ -863,47 +954,45 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
 
         // 7. 장소 분석 결과 패널 (슬라이드 업)
         _buildPlacesPanel(),
-
-        // 8. 텍스트 입력 필드 (슬라이드 업)
-        _buildTextInputOverlay(),
       ],
     );
   }
 
   /// 상태 표시 인디케이터
   Widget _buildStateIndicator() {
+    final l = AppL10n.of(context);
     String label;
     IconData icon;
     Color color;
 
     switch (_sessionState) {
       case LiveSessionState.connecting:
-        label = '연결 중...';
+        label = l.aiStatusConnecting;
         icon = Icons.wifi;
         color = Colors.orangeAccent;
         break;
       case LiveSessionState.listening:
-        label = '듣고 있어요';
+        label = l.aiStatusListening;
         icon = Icons.mic;
         color = Colors.greenAccent;
         break;
       case LiveSessionState.processing:
-        label = '생각 중...';
+        label = l.aiStatusThinking;
         icon = Icons.auto_awesome;
         color = Colors.purpleAccent;
         break;
       case LiveSessionState.speaking:
-        label = '말하는 중';
+        label = l.aiStatusSpeaking;
         icon = Icons.volume_up;
         color = Colors.blueAccent;
         break;
       case LiveSessionState.idlePrompt:
-        label = '대기 중';
+        label = l.aiStatusIdle;
         icon = Icons.pause_circle_outline;
         color = Colors.white54;
         break;
       default:
-        label = '준비 중';
+        label = l.aiStatusReady;
         icon = Icons.hourglass_empty;
         color = Colors.white38;
     }
@@ -947,222 +1036,6 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
   }
 
 
-  /// 무음 시 텍스트 전환 프롬프트
-  Widget _buildIdlePrompt() {
-    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
-    final bottomOffset = keyboardHeight > 0
-        ? keyboardHeight + 12
-        : MediaQuery.of(context).padding.bottom + 75;
-
-    return Positioned(
-      bottom: bottomOffset,
-      left: 20,
-      right: 20,
-      child: TweenAnimationBuilder<double>(
-        tween: Tween(begin: 0.0, end: 1.0),
-        duration: const Duration(milliseconds: 400),
-        curve: Curves.easeOutCubic,
-        builder: (context, value, child) {
-          return Transform.translate(
-            offset: Offset(0, 30 * (1 - value)),
-            child: Opacity(opacity: value, child: child),
-          );
-        },
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (keyboardHeight == 0)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: Text(
-                  '말을 할 수 없나요?',
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.5),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-              ),
-            Container(
-              padding: const EdgeInsets.fromLTRB(20, 4, 8, 4),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    const Color(0xFFBC82F3).withValues(alpha: 0.45),
-                    const Color(0xFF8D9FFF).withValues(alpha: 0.40),
-                    const Color(0xFFF5B9EA).withValues(alpha: 0.35),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(28),
-                border: Border.all(
-                  color: const Color(0xFFBC82F3).withValues(alpha: 0.4),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFFBC82F3).withValues(alpha: 0.15),
-                    blurRadius: 20,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _textController,
-                      focusNode: _textFocusNode,
-                      style: const TextStyle(color: Colors.white, fontSize: 15),
-                      decoration: InputDecoration(
-                        hintText: '메시지 입력...',
-                        hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
-                        border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
-                      onSubmitted: (_) => _submitText(),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  GestureDetector(
-                    onTap: _submitText,
-                    child: Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: const BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [Color(0xFFBC82F3), Color(0xFF8D9FFF)],
-                        ),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(Icons.arrow_upward_rounded, color: Colors.white, size: 20),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// 텍스트 입력 오버레이 (슬라이드 업/다운)
-  Widget _buildTextInputOverlay() {
-    return AnimatedPositioned(
-      duration: const Duration(milliseconds: 350),
-      curve: _showTextInput ? Curves.easeOutCubic : Curves.easeInCubic,
-      bottom: _showTextInput
-          ? MediaQuery.of(context).viewInsets.bottom + MediaQuery.of(context).padding.bottom + 16
-          : -100,
-      left: 16,
-      right: 16,
-      child: AnimatedOpacity(
-        duration: const Duration(milliseconds: 250),
-        opacity: _showTextInput ? 1.0 : 0.0,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.7),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.3),
-                blurRadius: 20,
-                offset: const Offset(0, -4),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _textController,
-                  focusNode: _textFocusNode,
-                  style: const TextStyle(color: Colors.white, fontSize: 15),
-                  decoration: InputDecoration(
-                    hintText: '메시지를 입력하세요...',
-                    hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.4)),
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 12),
-                  ),
-                  onSubmitted: (_) => _submitText(),
-                ),
-              ),
-              GestureDetector(
-                onTap: _submitText,
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFBC82F3).withValues(alpha: 0.3),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.send_rounded, color: Colors.white, size: 20),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// 하단 액션 버튼 (카메라, 갤러리, 텍스트)
-  Widget _buildActionButtons() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        _actionButton(
-          icon: Icons.camera_alt_rounded,
-          label: '카메라',
-          onTap: () => _pickImage(ImageSource.camera),
-        ),
-        const SizedBox(width: 24),
-        _actionButton(
-          icon: Icons.photo_library_rounded,
-          label: '갤러리',
-          onTap: () => _pickImage(ImageSource.gallery),
-        ),
-        const SizedBox(width: 24),
-        _actionButton(
-          icon: Icons.keyboard_rounded,
-          label: '텍스트',
-          onTap: _showTextInputField,
-        ),
-      ],
-    );
-  }
-
-  Widget _actionButton({
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.4),
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
-            ),
-            child: Icon(icon, color: Colors.white.withValues(alpha: 0.9), size: 22),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            label,
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.7),
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   // ── 장소 분석 결과 패널 (슬라이드 업) ──
   Widget _buildPlacesPanel() {
@@ -1212,7 +1085,8 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
                   child: Row(
                     children: [
                       Text(
-                        '발견된 장소 (${_extractedPlaces.length})',
+                        AppL10n.of(context)
+                            .aiFoundPlacesHeader(_extractedPlaces.length),
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 17,
@@ -1239,7 +1113,7 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
                 Padding(
                   padding: EdgeInsets.fromLTRB(16, 4, 16, bottomPad + 12),
                   child: Text(
-                    '"카페 추가해줘", "경복궁 빼줘", "이걸로 확정해" 등 말해보세요',
+                    AppL10n.of(context).aiVoiceCommandHint,
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.4),
@@ -1328,7 +1202,8 @@ class _AiViewState extends State<AiView> with TickerProviderStateMixin {
                   ),
                   if (place.nearestStation != null)
                     Text(
-                      '${place.nearestStation}역 · ${place.estimatedMinutes}분',
+                      AppL10n.of(context).aiPlaceStationDistance(
+                          place.nearestStation!, place.estimatedMinutes ?? 0),
                       style: TextStyle(fontSize: 10, color: Colors.white.withValues(alpha: 0.4)),
                     ),
                 ],

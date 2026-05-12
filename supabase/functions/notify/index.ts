@@ -1,15 +1,18 @@
 // Seoul Live - notify edge function
 //
 // 흐름:
-// 1. notification_queue 의 status='pending' row 가져옴
-// 2. 각 row 의 user_id 의 user_devices.fcm_token 조회
-// 3. FCM HTTP v1 API 로 발송 (Service Account JSON 으로 OAuth)
-// 4. status sent/failed 갱신
+// 1. Authorization 헤더 검증 (service role key 또는 cron secret)
+// 2. notification_queue 의 status='pending' row 가져옴
+// 3. 각 row 의 user_id 의 user_devices.fcm_token 조회
+// 4. FCM HTTP v1 API 로 발송 (Service Account JSON 으로 OAuth)
+// 5. invalid token 감지 시 user_devices 에서 정리
+// 6. status sent/failed 갱신
 //
 // 환경 변수 (Supabase Dashboard > Edge Functions > Secrets):
 //   - FCM_SERVICE_ACCOUNT_JSON  (Firebase Console > 프로젝트 설정 > 서비스 계정 > 새 비공개 키 → 전체 JSON)
 //   - SUPABASE_URL  (자동 주입)
 //   - SUPABASE_SERVICE_ROLE_KEY (자동 주입)
+//   - NOTIFY_CRON_SECRET (선택 — cron 외 호출 차단용 별도 secret)
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
 import { SignJWT, importPKCS8 } from 'https://esm.sh/jose@5.6.3'
@@ -52,6 +55,12 @@ async function getAccessToken(sa: ServiceAccount): Promise<string> {
   return data.access_token
 }
 
+interface SendResult {
+  ok: boolean
+  invalidToken: boolean
+  error?: string
+}
+
 async function sendFcm(
   accessToken: string,
   projectId: string,
@@ -59,15 +68,22 @@ async function sendFcm(
   title: string,
   body: string,
   data: Record<string, unknown>,
-): Promise<boolean> {
+): Promise<SendResult> {
   const url = `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`
+  // FCM 메시지 payload 4KB 제한 — data 가 너무 크면 truncate.
+  let stringified = Object.fromEntries(
+    Object.entries(data).map(([k, v]) => [k, String(v)]),
+  )
+  if (JSON.stringify(stringified).length > 2500) {
+    console.warn(`[notify] data payload 큼 — truncate`)
+    // 필수 필드만 남김 — kind 우선 유지.
+    stringified = stringified.kind ? { kind: stringified.kind } : {}
+  }
   const payload = {
     message: {
       token: fcmToken,
       notification: { title, body },
-      data: Object.fromEntries(
-        Object.entries(data).map(([k, v]) => [k, String(v)]),
-      ),
+      data: stringified,
       apns: {
         payload: {
           aps: {
@@ -93,12 +109,40 @@ async function sendFcm(
   if (!res.ok) {
     const errBody = await res.text()
     console.error(`FCM 실패 ${res.status}: ${errBody}`)
-    return false
+    // FCM error code 별 invalid token 판정 — token 자체가 무효이면 정리 필요.
+    // ref: https://firebase.google.com/docs/cloud-messaging/send-message#admin
+    const invalidToken =
+      res.status === 404 ||
+      res.status === 410 ||
+      errBody.includes('UNREGISTERED') ||
+      errBody.includes('INVALID_ARGUMENT') ||
+      errBody.includes('NOT_FOUND') ||
+      errBody.includes('SENDER_ID_MISMATCH')
+    return { ok: false, invalidToken, error: errBody.slice(0, 300) }
   }
-  return true
+  return { ok: true, invalidToken: false }
 }
 
-Deno.serve(async (_req) => {
+Deno.serve(async (req) => {
+  // ── 1. Auth 검증 — Supabase verify_jwt: true 가 platform 레벨에서 JWT 검증.
+  //    여기 도달했으면 valid anon/service JWT 이거나 cron secret. 외부 random
+  //    attacker 는 platform 단계에서 401. 추가로 service / anon / cron-secret
+  //    중 하나는 매치하는지 (방어 깊이).
+  const auth = req.headers.get('Authorization') ?? ''
+  const cronSecret = req.headers.get('x-cron-secret') ?? ''
+  const sbRole = `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''}`
+  const anon = `Bearer ${Deno.env.get('SUPABASE_ANON_KEY') ?? ''}`
+  const expectedCron = Deno.env.get('NOTIFY_CRON_SECRET') ?? ''
+  const authorized =
+    (auth.length > 7 && (auth === sbRole || auth === anon)) ||
+    (expectedCron.length > 0 && cronSecret === expectedCron)
+  if (!authorized) {
+    return new Response(JSON.stringify({ error: 'unauthorized' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL')!,
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
@@ -130,6 +174,7 @@ Deno.serve(async (_req) => {
   let success = 0
   let failed = 0
   let noDevice = 0
+  let cleanedTokens = 0
 
   for (const n of pending) {
     const { data: devices } = await supabase
@@ -151,7 +196,7 @@ Deno.serve(async (_req) => {
     const errors: string[] = []
     for (const d of devices) {
       try {
-        const ok = await sendFcm(
+        const r = await sendFcm(
           accessToken,
           sa.project_id,
           d.fcm_token,
@@ -159,7 +204,23 @@ Deno.serve(async (_req) => {
           n.body,
           { ...n.data, kind: n.kind },
         )
-        if (ok) anyOk = true
+        if (r.ok) {
+          anyOk = true
+        } else {
+          if (r.error) errors.push(r.error)
+          // FCM 이 알려준 invalid token — 즉시 정리. 안 그러면 다음 push 도 모두 실패.
+          if (r.invalidToken) {
+            try {
+              await supabase
+                .from('user_devices')
+                .delete()
+                .eq('fcm_token', d.fcm_token)
+              cleanedTokens++
+            } catch (e) {
+              console.error('[notify] invalid token cleanup 실패:', e)
+            }
+          }
+        }
       } catch (e) {
         errors.push(String(e))
       }
@@ -176,7 +237,13 @@ Deno.serve(async (_req) => {
   }
 
   return new Response(
-    JSON.stringify({ processed: pending.length, success, failed, noDevice }),
+    JSON.stringify({
+      processed: pending.length,
+      success,
+      failed,
+      noDevice,
+      cleanedTokens,
+    }),
     { headers: { 'Content-Type': 'application/json' } },
   )
 })

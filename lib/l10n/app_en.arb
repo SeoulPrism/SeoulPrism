@@ -1,0 +1,2457 @@
+{
+  "@@locale": "en",
+  "appTitle": "Seoul Vista",
+  "@appTitle": {
+    "description": "Application name shown in OS task switcher and onGenerateTitle."
+  },
+  "commonCancel": "Cancel",
+  "commonConfirm": "Confirm",
+  "commonOk": "OK",
+  "commonSave": "Save",
+  "commonClose": "Close",
+  "commonLater": "Later",
+  "settingsAppLanguageTitle": "Language",
+  "@settingsAppLanguageTitle": {
+    "description": "Label for the app-wide UI language picker in settings."
+  },
+  "languageSystem": "System default",
+  "languageKo": "한국어",
+  "languageEn": "English",
+  "languageJa": "日本語",
+  "languageZh": "简体中文",
+  "languageChangedTitle": "Language saved",
+  "languageChangedBody": "To fully apply the new language, please close the app (swipe up from the app switcher) and reopen it.",
+  "routeUnitHour": "h",
+  "routeUnitMin": "min",
+  "routeTransfersCount": "{count} transfers",
+  "@routeTransfersCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "routeDeparture": "Depart",
+  "routeArrival": "Arrive",
+  "routeTransfer": "Transfer",
+  "routeTransferDetail": "{line} · {min} min",
+  "@routeTransferDetail": {
+    "placeholders": {
+      "line": {
+        "type": "String"
+      },
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "routeBoardLine": "Board {line}",
+  "@routeBoardLine": {
+    "placeholders": {
+      "line": {
+        "type": "String"
+      }
+    }
+  },
+  "routeSegmentBus": "{from} → {to} · {count} stops · {min} min",
+  "@routeSegmentBus": {
+    "placeholders": {
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      },
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "routeSegmentTrain": "{from} → {to} · {count} stations · {min} min",
+  "@routeSegmentTrain": {
+    "placeholders": {
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      },
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "routeSegmentShort": "{from} · {min} min",
+  "@routeSegmentShort": {
+    "placeholders": {
+      "from": {
+        "type": "String"
+      },
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "routeShowStops": "Show stops ▼",
+  "routeCollapse": "Collapse ▲",
+  "snsTitle": "AI Plan",
+  "snsSubtitle": "Build a Seoul day plan from social posts",
+  "snsSectionPhotos": "Photos",
+  "snsSectionDescription": "Description",
+  "snsSectionLink": "Social link",
+  "snsTextHint": "Tell us where you'd like to go and what you'd like to do",
+  "snsUrlHint": "Instagram, TikTok URL",
+  "snsAnalyzeButton": "Analyze",
+  "snsAnalyzeError": "Analysis failed: {error}",
+  "@snsAnalyzeError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "snsImageGallery": "Gallery",
+  "snsImageCamera": "Camera",
+  "dayPlanTitle": "Day plan",
+  "dayPlanNavigateAll": "Navigate all",
+  "dayPlanTransitSummary": "🚇 {min} min",
+  "@dayPlanTransitSummary": {
+    "placeholders": {
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "dayPlanTransfersSummary": "🔄 {count}",
+  "@dayPlanTransfersSummary": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dayPlanStyleStats": "{count} stops · {min} min",
+  "@dayPlanStyleStats": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "dayPlanNavigateStop": "Navigate",
+  "whatsNewClose": "Close",
+  "whatsNewSkip": "Skip",
+  "whatsNewStart": "Get started",
+  "whatsNewNext": "Next",
+  "whatsNewPage1Title": "v{version} — Welcome back",
+  "@whatsNewPage1Title": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "whatsNewPage1Body": "Your trips just got more personal.\nFrom travel moods to friends and memories —\nmeet 14 new features.",
+  "whatsNewPage2Title": "Your travel mood",
+  "whatsNewPage2Body": "Pick from Relax · Play · History · Mix and\nthe AI tone, recommendations, and Trip tab\nshift to match.",
+  "whatsNewPage3Title": "Go together",
+  "whatsNewPage3Body": "Set a shared destination in a friend room.\nDistances for each member update live.\nAn orange pin lands on the map.",
+  "whatsNewPage4Title": "1:1 DMs + voice/photo",
+  "whatsNewPage4Body": "Chat with a friend without a room.\n🎙 Long-press the mic for voice, 📷 pick a photo,\n📍 share a location — all in one chat.",
+  "whatsNewPage5Title": "Spotify sharing",
+  "whatsNewPage5Body": "Send what you're listening to.\nTap 🎵 in chat and your currently-playing\nSpotify track shares as a card.",
+  "whatsNewPage6Title": "More friends",
+  "whatsNewPage6Body": "Friend-of-friend suggestions,\nQR codes for instant adds,\nroom invite links for one-tap join.",
+  "whatsNewPage7Title": "Activity becomes points",
+  "whatsNewPage7Body": "Earn points and badges from adds, meetups, and streaks.\nCompare with friends in the ranking,\nand review your week on a chart.",
+  "whatsNewPage8Title": "Your way",
+  "whatsNewPage8Body": "Toggle notifications by type,\nshare your location with only certain groups.\nSafety and privacy stay with you.",
+  "whatsNewPage9Title": "Routes, end to end",
+  "whatsNewPage9Body": "Subway, bus, and walking — all in one.\nTransfers, live arrivals, and station exits\nshow up where you need them.",
+  "whatsNewPage10Title": "Day plans, made for you",
+  "whatsNewPage10Body": "Turn your saved places into a day.\nEfficient, leisurely, or food-focused —\npick a style and go.",
+  "whatsNewPage11Title": "Speaks your language",
+  "whatsNewPage11Body": "Korean, English, Japanese, Chinese.\nThe AI assistant replies in the same.\nIt follows your device language.",
+  "whatsNewPage12Title": "Just ask out loud",
+  "whatsNewPage12Body": "Talk to the AI naturally.\nSearch, navigate, get picks — by voice.\nGemini Live listens and answers live.",
+  "profileCategoryFavorites": "Favorites",
+  "profileCategoryRecent": "Recent",
+  "profileCategoryFrequent": "Frequent",
+  "profileGuestName": "Guest",
+  "profileDefaultName": "User",
+  "profileSyncCta": "Sign in to sync across devices",
+  "profileAgoDays": "{days}d ago",
+  "@profileAgoDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "profileAgoHours": "{hours}h ago",
+  "@profileAgoHours": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "profileAgoNow": "Just now",
+  "profileVisitCount": "{count} visits",
+  "@profileVisitCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "profileEmptyFavorites": "No favorites yet",
+  "profileEmptyVisits": "No visits yet",
+  "profileCollapse": "Collapse",
+  "profileMoreCount": "{count} more",
+  "@profileMoreCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "profileLiveShareBeta": "Real-time location & chat (Beta)",
+  "profileTimeline": "My timeline",
+  "profilePlaceCount": "{count} places",
+  "@profilePlaceCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "profileEmptyVisitsCta": "No visits yet. Explore places and try directions.",
+  "profileToday": "Today",
+  "profileYesterday": "Yesterday",
+  "profileMonthDay": "{month}/{day}",
+  "@profileMonthDay": {
+    "placeholders": {
+      "month": {
+        "type": "int"
+      },
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "profileVisitTimes": "{count}×",
+  "@profileVisitTimes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "profileEditName": "Edit name",
+  "profileNewNameHint": "Enter new name",
+  "profileTagline": "Every moment in Seoul",
+  "profileMore": "More",
+  "profileEmptyMapPlaces": "Your visits will appear on this map",
+  "profileRecentPlaceCount": "Last {count} places",
+  "@profileRecentPlaceCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "chatSendFailed": "Send failed: {error}",
+  "@chatSendFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "chatRoomDestSet": "🎯 Set as room destination",
+  "chatActionFailed": "Failed: {error}",
+  "@chatActionFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "chatMapAppUnavailable": "Couldn't open the maps app",
+  "chatMicPermissionRequired": "Microphone permission required",
+  "chatRecordStartFailed": "Couldn't start recording: {error}",
+  "@chatRecordStartFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "chatRecordTooShort": "Too short — press and hold to record",
+  "chatRecordStopFailed": "Couldn't stop recording: {error}",
+  "@chatRecordStopFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "chatPhotoSendFailed": "Couldn't send photo: {error}",
+  "@chatPhotoSendFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "chatSpotifyClientIdMissing": "Spotify not set up — developer must add SPOTIFY_CLIENT_ID",
+  "chatSpotifyAuthRetryHint": "Tap again after Spotify auth",
+  "chatSpotifyAuthFailed": "Spotify connection failed: {error}",
+  "@chatSpotifyAuthFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "chatMyLocation": "My location",
+  "chatLocationUnavailable": "Couldn't fetch your location",
+  "chatDefaultRoomName": "Friend room",
+  "chatMembersInRoom": "{count} in the room",
+  "@chatMembersInRoom": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "chatRecordingHint": "Recording… release to send, drag up to cancel",
+  "chatRecordingPlaceholder": "🎙 Recording",
+  "chatMessageHint": "Type a message",
+  "chatActionMap": "Map",
+  "chatActionDirections": "Directions",
+  "chatActionRoomDest": "🎯 Room destination",
+  "chatVoiceLabel": "{seconds}s voice",
+  "@chatVoiceLabel": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "chatPlaybackFailed": "Playback failed: {error}",
+  "@chatPlaybackFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "chatEmptyTitleNamed": "{roomName} has started",
+  "@chatEmptyTitleNamed": {
+    "placeholders": {
+      "roomName": {
+        "type": "String"
+      }
+    }
+  },
+  "chatEmptyTitleDefault": "The friend room is on",
+  "chatEmptyBody": "Say hi to your friends here, share your location,\nand plan where to go together.",
+  "chatStart": "Start the chat",
+  "chatReport": "Report this message",
+  "chatBlockDialogTitle": "Block {nickname}",
+  "@chatBlockDialogTitle": {
+    "placeholders": {
+      "nickname": {
+        "type": "String"
+      }
+    }
+  },
+  "chatBlockDialogBody": "Blocking removes them from the room and hides their messages.",
+  "chatBlockConfirm": "Block",
+  "chatUnknownUser": "User",
+  "spotifyOpenInApp": "Open in Spotify",
+  "spotifyShareFailed": "Share failed: {error}",
+  "@spotifyShareFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "spotifyNoTrack": "Nothing playing right now",
+  "dmAccessDenied": "Can't access this conversation",
+  "dmSendFailed": "Send failed: {error}",
+  "@dmSendFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "dmDefaultPeer": "Friend",
+  "dmEmptyHint": "Send the first message",
+  "dmMessageHint": "Message",
+  "friendCodeLengthError": "Please enter an 8-character code.",
+  "friendCodeNotFound": "No user matches that code.",
+  "friendRequestSent": "Friend request sent to {nickname}.",
+  "@friendRequestSent": {
+    "placeholders": {
+      "nickname": {
+        "type": "String"
+      }
+    }
+  },
+  "friendShareSubject": "Add me on Seoul Live",
+  "friendShareBody": "{nickname} sent you a Seoul Live friend code!\n\nCode: {code}\nAdd instantly: com.seoul.prism://friend/{code}",
+  "@friendShareBody": {
+    "placeholders": {
+      "nickname": {
+        "type": "String"
+      },
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "friendShareCopied": "Share text copied",
+  "friendCodeTitle": "Friend code",
+  "friendCodeSubtitle": "Share your code, or add a friend's.",
+  "friendMyCode": "My friend code",
+  "friendCodeCopied": "Code copied",
+  "friendQrHint": "Friends can scan with their camera to add you",
+  "friendShareButton": "Share",
+  "friendAddByCodeTitle": "Add a friend by code",
+  "friendAddByCodeHint": "Enter an 8-character code or scan a QR",
+  "friendCodePlaceholder": "e.g. AB12CD34",
+  "friendSendRequest": "Send friend request",
+  "peerFriendCode": "Friend code {code}",
+  "@peerFriendCode": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "peerOwnPin": "That's your own pin",
+  "peerReport": "Report",
+  "peerBlockDialogTitle": "Block {nickname}",
+  "@peerBlockDialogTitle": {
+    "placeholders": {
+      "nickname": {
+        "type": "String"
+      }
+    }
+  },
+  "peerBlockDialogBody": "Blocking removes them from this room and hides their messages and pins.",
+  "peerBlockConfirm": "Block",
+  "peerBlock": "Block",
+  "peerIsFriend": "Friends ✓",
+  "peerCancelRequest": "Cancel request",
+  "peerRequestCanceled": "Canceled the request to {nickname}",
+  "@peerRequestCanceled": {
+    "placeholders": {
+      "nickname": {
+        "type": "String"
+      }
+    }
+  },
+  "peerAcceptRequest": "Accept friend request",
+  "peerNowFriend": "You're now friends with {nickname}",
+  "@peerNowFriend": {
+    "placeholders": {
+      "nickname": {
+        "type": "String"
+      }
+    }
+  },
+  "peerCanRequestInDays": "Can request again in {days}d",
+  "@peerCanRequestInDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "peerCanRequestInHours": "Can request again in {hours}h",
+  "@peerCanRequestInHours": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "peerSendRequest": "Send friend request",
+  "peerRequestSent": "Friend request sent to {nickname}",
+  "@peerRequestSent": {
+    "placeholders": {
+      "nickname": {
+        "type": "String"
+      }
+    }
+  },
+  "peerDistanceMeters": "{meters} m away",
+  "@peerDistanceMeters": {
+    "placeholders": {
+      "meters": {
+        "type": "int"
+      }
+    }
+  },
+  "peerDistanceKm": "{km} km away",
+  "@peerDistanceKm": {
+    "placeholders": {
+      "km": {
+        "type": "String"
+      }
+    }
+  },
+  "spotifyRoomRequired": "Join a friend room and try again",
+  "spotifyShareSuccess": "🎵 Shared with the room",
+  "spotifyDisconnectTitle": "Disconnect Spotify",
+  "spotifyDisconnectBody": "This deletes the saved token and stops sharing tracks with friends.",
+  "spotifyDisconnectConfirm": "Disconnect",
+  "spotifyDisconnected": "Spotify disconnected",
+  "spotifyAuthRetryHint": "We'll return automatically after Spotify auth",
+  "spotifyConnectFailed": "Connection failed: {error}",
+  "@spotifyConnectFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "spotifyClientIdMissing": "Developer hasn't set SPOTIFY_CLIENT_ID",
+  "spotifyTokenExpired": "Connection expired. Please log in again.",
+  "spotifyReconnect": "Reconnect Spotify",
+  "spotifyConnect": "Connect Spotify",
+  "spotifyConnectDescription": "Connect to share what you're listening to in friend rooms,\nand see what your friends are playing.",
+  "spotifyLoginButton": "Log in with Spotify",
+  "spotifyShareToRoom": "Share with room",
+  "spotifyDisconnect": "Disconnect",
+  "spotifyConnectedNoTrack": "Spotify connected (no playback)",
+  "spotifyNowPlaying": "Now playing",
+  "departureTimePickerTitle": "Departure time",
+  "departureTimePickerHint": "Arrival time is calculated from this departure time.",
+  "departureTimeNow": "Now",
+  "departureTime30min": "In 30 min",
+  "departureTime1hour": "In 1 hour",
+  "departureTimeCustom": "Custom",
+  "placeActionDepart": "Depart",
+  "placeActionArrive": "Arrive",
+  "placeActionInfo": "Info",
+  "placeDetailTapHint": "Tap for photos · reviews · hours",
+  "savedPanelTitle": "Saved",
+  "savedEmptyFavorites": "No saved places yet",
+  "savedRemoveFavoriteTooltip": "Remove from favorites",
+  "travelThemeTitle": "Theme suggestions",
+  "travelThemeSubtitle": "One tap to generate a course",
+  "travelTitle": "Trip",
+  "travelSubtitle": "From Gyeongbokgung to the Han River — we'll plan your day",
+  "travelEventsTitle": "This week's events",
+  "travelEventsSubtitle": "Cultural events happening in Seoul",
+  "travelEventsCount": "{count}",
+  "@travelEventsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "travelEventsLoadError": "Couldn't load events. Pull down to retry.",
+  "travelAiTitle": "AI plans your day",
+  "travelAiSubtitle": "Considers time · weather · routes",
+  "travelFromSavedTitle": "Build from saved places",
+  "travelFromSavedSubtitle": "Course based on favorites + visit history",
+  "travelYourTheme": "Your theme",
+  "travelStartWithMood": "Start with this mood",
+  "travelEventBadgeOngoing": "Live",
+  "travelEventBadgeFree": "Free",
+  "travelThemeStops": "{count} stops",
+  "@travelThemeStops": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "travelMoodAnalyzing": "Analyzing track mood…",
+  "travelMoodExcited": "For upbeat vibes,",
+  "travelMoodToday": "On a day like today,",
+  "travelMoodIntense": "For intense beats,",
+  "travelMoodCalm": "For a calm mood,",
+  "travelTodayMoodLabel": "Today's mood",
+  "notificationsTitle": "Notifications",
+  "notificationsEmptyTitle": "No notifications",
+  "notificationsEmptySubtitle": "New updates will appear here",
+  "settingsTitle": "Settings",
+  "settingsSectionRealtime": "Real-time visualization",
+  "settingsLineSubway": "Subway lines",
+  "settingsTrainPos": "Subway trains",
+  "settingsStations": "Subway stations",
+  "settingsBuses": "City buses",
+  "settingsRiverBus": "Han River bus",
+  "settingsFlights": "Aircraft",
+  "settingsSectionDataSource": "Data source",
+  "settingsSubwayMode": "Subway mode",
+  "settingsSubwayModeLive": "Live",
+  "settingsSubwayModeDemo": "Demo",
+  "settingsSeoulApi": "Seoul Open API (60s)",
+  "settingsNaverApi": "Naver API (5s interp.)",
+  "settingsSectionLighting": "Lighting",
+  "settingsAutoLighting": "Auto (time + weather)",
+  "settingsLightPreset": "Light preset",
+  "settingsLightAuto": "Auto",
+  "settingsLightDawn": "Dawn",
+  "settingsLightDay": "Day",
+  "settingsLightDusk": "Dusk",
+  "settingsLightNight": "Night",
+  "settingsCountValue": "{count}",
+  "@settingsCountValue": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsLabelFavorites": "Favorites",
+  "settingsLabelVisits": "Visits",
+  "settingsLabelRecentSearches": "Recent searches",
+  "settingsAiAssistantLanguage": "AI assistant language",
+  "settingsThemeMode": "Theme",
+  "settingsThemeLight": "Light",
+  "settingsThemeDark": "Dark",
+  "settingsThemeChangedTitle": "Theme saved",
+  "settingsThemeChangedBody": "To fully apply {theme} mode, please close the app (swipe up from the app switcher) and reopen it.",
+  "@settingsThemeChangedBody": {
+    "placeholders": {
+      "theme": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsRestartConfirm": "OK",
+  "settingsMapHome": "Map home start",
+  "settingsMapHomeDefault": "Default",
+  "settingsMapHomeMyLocation": "My location",
+  "settingsMapHomeRecent": "Recent search",
+  "settingsKeepScreenOn": "Keep screen on",
+  "settingsAutoRotate": "Auto-rotate screen",
+  "settingsAlwaysMyLocation": "Always start directions from my location",
+  "settingsClearHistory": "Clear all usage history",
+  "settingsClearSearchHistory": "Clear recent searches",
+  "settingsConvertAccount": "Convert to full account",
+  "settingsEditNameItem": "Edit name",
+  "settingsChangePassword": "Change password",
+  "settingsLogout": "Sign out",
+  "settingsDeleteAccount": "Delete account",
+  "settingsMapDataLabel": "Map display & data",
+  "settingsSectionDeveloper": "Developer",
+  "settingsDebugLogs": "Debug log output",
+  "settingsResetTutorial": "Replay tutorial",
+  "settingsDeveloperModeEnabled": "Developer mode enabled",
+  "settingsDeveloperModeDisabled": "Developer mode disabled",
+  "settingsDeveloperModeDisable": "Turn off developer mode",
+  "settingsReplayWhatsNew": "Replay What's New",
+  "settingsWhatsNewToast": "What's New will be shown on next app launch",
+  "settingsAppVersion": "App version",
+  "settingsPrivacy": "Privacy policy",
+  "settingsCommunityGuidelines": "Community guidelines",
+  "settingsLicenses": "Open source licenses",
+  "settingsClearHistoryTitle": "Clear usage history",
+  "settingsClearHistoryBody": "All usage history will be deleted.\nThis cannot be undone.",
+  "commonDelete": "Delete",
+  "settingsClearedHistoryToast": "All usage history has been deleted",
+  "settingsClearSearchTitle": "Clear search history",
+  "settingsClearSearchBody": "All recent searches will be deleted.",
+  "settingsClearedSearchToast": "Search history has been cleared",
+  "settingsEditNameDialogTitle": "Edit name",
+  "settingsEditNameDialogBody": "Enter a new name.",
+  "settingsEditNameConfirm": "Change",
+  "settingsNewNameDialogTitle": "New name",
+  "settingsChangePasswordTitle": "Change password",
+  "settingsChangePasswordBody": "We'll send the password reset link to {email}.",
+  "@settingsChangePasswordBody": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsSendButton": "Send",
+  "settingsPasswordResetSent": "Reset email has been sent",
+  "settingsLogoutTitle": "Sign out",
+  "settingsLogoutBody": "Sign out now?",
+  "settingsLogoutConfirm": "Sign out",
+  "settingsDeleteAccountTitle": "Delete account",
+  "settingsDeleteAccountBody": "Your account and all data will be permanently deleted.\nThis cannot be undone.",
+  "settingsDeleteAccountConfirm": "Delete",
+  "settingsDeleteError": "An error occurred during account deletion",
+  "settingsResetTutorialTitle": "Replay tutorial",
+  "settingsResetTutorialBody": "Saved progress will be cleared and the tutorial will start over on next launch.",
+  "settingsResetTutorialConfirm": "Replay",
+  "settingsMapDisplayTitle": "Map display & data",
+  "settingsSectionMapDisplay": "Map display",
+  "aiStatusSearchingCourse": "Searching course…",
+  "aiPlacesFound": "Found {count} places! Check below.",
+  "@aiPlacesFound": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "aiStatusFindingInfo": "Looking it up…",
+  "aiStatusAnalyzingImage": "Analyzing image…",
+  "aiNoPlacesFound": "No places found.",
+  "aiAnalysisError": "Analysis error: {error}",
+  "@aiAnalysisError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "aiSelectPhotoHint": "Please select a photo",
+  "aiPhotoShoot": "Take photo",
+  "aiStatusConnecting": "Connecting…",
+  "aiStatusListening": "Listening",
+  "aiStatusThinking": "Thinking…",
+  "aiStatusSpeaking": "Speaking",
+  "aiStatusIdle": "Idle",
+  "aiStatusReady": "Ready",
+  "aiFoundPlacesHeader": "Found places ({count})",
+  "@aiFoundPlacesHeader": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "aiVoiceCommandHint": "\"Add a cafe\", \"Remove Gyeongbokgung\", \"Confirm this\" — try it",
+  "aiPlaceStationDistance": "{station} stn · {minutes} min",
+  "@aiPlaceStationDistance": {
+    "placeholders": {
+      "station": {
+        "type": "String"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "aiDefaultSearch": "Seoul travel recommendations",
+  "recommendTitle": "Recommendations",
+  "recommendSubtitleNearbyArea": "Popular near {area} right now",
+  "@recommendSubtitleNearbyArea": {
+    "placeholders": {
+      "area": {
+        "type": "String"
+      }
+    }
+  },
+  "recommendSubtitleNearbyDefault": "Popular nearby right now",
+  "recommendRefresh": "Refresh",
+  "recommendNoResults": "No results nearby.\nTry again later.",
+  "recommendRank": "#{rank}",
+  "@recommendRank": {
+    "placeholders": {
+      "rank": {
+        "type": "int"
+      }
+    }
+  },
+  "recommendEventsLoadError": "Couldn't load cultural events.\nTry again later.",
+  "recommendStatusUpcoming": "Upcoming",
+  "recommendBadgePaid": "Paid",
+  "recommendUniqueMood": "✨ Your own",
+  "recommendTabFood": "🍜 Food",
+  "recommendTabCafe": "☕️ Café",
+  "recommendTabShopping": "🛍 Shopping",
+  "recommendTabOutdoor": "🌳 Parks · Night",
+  "recommendTabEvents": "🎭 Culture",
+  "authTabSignUp": "Sign up",
+  "authTabSignIn": "Sign in",
+  "authProcessing": "Processing…",
+  "authSignIn": "Sign in",
+  "authSignUp": "Sign up",
+  "authLabelEmail": "Email",
+  "authHintEmail": "Enter your email",
+  "authLabelPassword": "Password",
+  "authHintPassword": "Enter your password",
+  "authFindId": "Find ID",
+  "authFindPassword": "Find password",
+  "authLabelUsername": "Username",
+  "authHintUsername": "Enter your username",
+  "authLabelConfirmPassword": "Confirm password",
+  "authHintConfirmPassword": "Re-enter password",
+  "authSnsLogin": "Sign in with social",
+  "authGoogleAuthFailed": "Google authentication failed",
+  "authGoogleSignInFailed": "Google sign-in failed",
+  "authGuestSignInFailed": "Guest sign-in failed",
+  "authAppleAuthFailed": "Apple authentication failed",
+  "authAppleSignInCanceled": "Apple sign-in was canceled",
+  "authAppleSignInFailed": "Apple sign-in failed",
+  "authEmailAndPasswordRequired": "Please enter email and password",
+  "authUsernameRequired": "Please enter a username",
+  "authPasswordMismatch": "Passwords don't match",
+  "authPasswordTooShort": "Password must be at least 6 characters",
+  "authGenericError": "An error occurred",
+  "authErrorInvalidCredentials": "Email or password is incorrect",
+  "authErrorEmailExists": "This email is already registered",
+  "authErrorInvalidEmail": "Please enter a valid email format",
+  "authErrorEmailNotConfirmed": "Email verification not complete. Check your inbox.",
+  "authEmailConfirmRequiredTitle": "Email verification required",
+  "authEmailConfirmRequiredBody": "A verification email has been sent to {email}.\nCheck your inbox, verify, and then sign in.",
+  "@authEmailConfirmRequiredBody": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "authFindIdResultTitle": "Find ID result",
+  "authFindIdResultBefore": "Your username is ",
+  "authFindIdResultAfter": ".",
+  "authFindIdEmailRequired": "Please enter an email",
+  "authFindIdNotFound": "No account found for that email",
+  "authPasswordResetSent": "Password reset link has been sent to your email",
+  "authFindIdFailed": "Couldn't find your ID",
+  "authEmailSendFailed": "Couldn't send email",
+  "authFindIdTitle": "Find ID",
+  "authFindPasswordTitle": "Find password",
+  "authFindIdBody": "Enter the email you used to sign up.\nWe'll send your ID.",
+  "authFindPasswordBody": "Enter your email and we'll send a password reset link.",
+  "authFindIdEmailHint": "Enter your sign-up email",
+  "authFindIdSubmit": "Find ID",
+  "authFindPasswordSubmit": "Send reset link",
+  "hubSettingsTooltip": "Settings",
+  "hubAuthExploreSeoulTitle": "Explore Seoul with friends",
+  "hubAuthCreateProfileSubtitle": "Create a nickname and pin to start.",
+  "hubAuthCreateProfileButton": "Create profile",
+  "hubPausedNotice": "Seoul Live paused — location/notifications blocked, chat OK",
+  "hubResumeButton": "Resume",
+  "hubRoomTitle": "Room",
+  "hubRoomEmpty": "Create or join a room by code",
+  "hubRoomCurrent": "In room · code {code}",
+  "@hubRoomCurrent": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "hubFriendsTitle": "Friends",
+  "hubFriendsSubtitle": "{count} friends · {requests} requests",
+  "@hubFriendsSubtitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "requests": {
+        "type": "int"
+      }
+    }
+  },
+  "hubDmSubtitle": "1:1 chats with friends",
+  "hubFriendCodeTitle": "Friend code",
+  "hubFriendCodeSubtitle": "Share my code {code} / enter one",
+  "@hubFriendCodeSubtitle": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "hubFriendGroupsTitle": "Friend groups",
+  "hubFriendGroupsSubtitle": "{count} groups",
+  "@hubFriendGroupsSubtitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "hubSpotifyConnectedNoPlayback": "Connected — no playback",
+  "hubSpotifyShareSubtitle": "Share your tracks with friends",
+  "hubVisibilityGhost": "Private — no send/receive",
+  "hubVisibilityFriends": "Friend room — same-room members only",
+  "hubVisibilityPublic": "Public — all Seoul Live users",
+  "hubActivityTitle": "My activity",
+  "hubStatMeetups": "Meetups",
+  "hubStatFriends": "Friends",
+  "hubStatStreak": "Streak",
+  "hubStatStreakValue": "{days}d",
+  "@hubStatStreakValue": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "hubStatStreakBest": "Best {days}",
+  "@hubStatStreakBest": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "hubBadgesEmptyHint": "Earn badges with your first friend or first meetup",
+  "hubAgoJust": "Just now",
+  "hubAgoMin": "{min} min ago",
+  "@hubAgoMin": {
+    "placeholders": {
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "hubAgoHour": "{hour}h ago",
+  "@hubAgoHour": {
+    "placeholders": {
+      "hour": {
+        "type": "int"
+      }
+    }
+  },
+  "hubAgoDay": "{day}d ago",
+  "@hubAgoDay": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "hubRecentMeetupsTitle": "🎉 Recent meetups",
+  "hubRecentMeetupsCount": "{count}",
+  "@hubRecentMeetupsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "roomCodeRequired": "Please enter a 6-character code.",
+  "roomLeaveTitle": "Leave room",
+  "roomLeaveBody": "Leaving ends location sharing and chat.",
+  "roomLeaveConfirm": "Leave",
+  "roomTitle": "Room",
+  "roomDescription": "Share location and chat in real time with friends.",
+  "roomCapacityNote": "Rooms auto-expire after 24 hours. Capacity 8.",
+  "roomCreateButton": "Create room",
+  "roomCodeEntryTitle": "Enter invite code (6 digits)",
+  "roomJoinButton": "Join",
+  "roomExpiresInMin": "Expires in {min} min",
+  "@roomExpiresInMin": {
+    "placeholders": {
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "roomDefaultName": "Unnamed room",
+  "roomInviteCode": "Invite code",
+  "roomCodeCopied": "Code copied",
+  "roomExpiresInHours": "Expires in {hour}h",
+  "@roomExpiresInHours": {
+    "placeholders": {
+      "hour": {
+        "type": "int"
+      }
+    }
+  },
+  "roomMembers": "Members ({current}/{max})",
+  "@roomMembers": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "roomChatOpenWithUnread": "Open chat ({count})",
+  "@roomChatOpenWithUnread": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "roomChatOpen": "Open chat",
+  "roomLeaveButton": "Leave room",
+  "roomEditNameTitle": "Rename room",
+  "roomEditNameBody": "Shown to room members",
+  "roomEditNamePlaceholder": "e.g. Gwanghwamun meetup",
+  "roomGenericError": "Failed: {error}",
+  "@roomGenericError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "roomShareSubject": "Seoul Live room invite",
+  "roomShareBody": "{nickname} invited you to a Seoul Live room!\n\nCode: {code}\nJoin: com.seoul.prism://room/{code}",
+  "@roomShareBody": {
+    "placeholders": {
+      "nickname": {
+        "type": "String"
+      },
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "roomInviteTextCopied": "Invite text copied",
+  "roomRefreshCodeTitle": "Refresh invite code",
+  "roomRefreshCodeBody": "The previous code stops working immediately. Continue?",
+  "roomRefreshCodeConfirm": "Refresh",
+  "roomCodeRefreshed": "Code refreshed",
+  "roomKickTitle": "Kick {nickname}",
+  "@roomKickTitle": {
+    "placeholders": {
+      "nickname": {
+        "type": "String"
+      }
+    }
+  },
+  "roomKickBody": "They'll be removed from the room immediately.",
+  "roomKickConfirm": "Kick",
+  "roomKickFallbackName": "Member",
+  "roomNameMe": "{name} (me)",
+  "@roomNameMe": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "roomMeetupBadge": "Meetup",
+  "roomKickTooltip": "Kick",
+  "roomUnknownUser": "Someone",
+  "roomDestTitle": "🎯 Together — {name}",
+  "@roomDestTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "roomDestSetBy": "Set by {name}",
+  "@roomDestSetBy": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "roomDestDefault": "Destination",
+  "roomDestViewMap": "View on map",
+  "roomDestClear": "Clear destination",
+  "roomOwnerBadge": "Owner",
+  "roomDestOwnerOnly": "Only the owner can set this",
+  "roomDestSearchHint": "Where should we meet?",
+  "roomDestSearchAction": "Search",
+  "roomDestSearchEmpty": "No results",
+  "roomDestSearchSearching": "Searching…",
+  "roomDestProposeVote": "Put to a vote",
+  "roomDestSetNow": "Set now",
+  "roomDestProposalVoting": "Voting in progress",
+  "roomDestProposalBy": "Proposed by {name}",
+  "@roomDestProposalBy": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "roomDestProposalCounts": "Yes {yes} · No {no}",
+  "@roomDestProposalCounts": {
+    "placeholders": {
+      "yes": {
+        "type": "int"
+      },
+      "no": {
+        "type": "int"
+      }
+    }
+  },
+  "roomDestVoteYes": "Yes",
+  "roomDestVoteNo": "No",
+  "roomDestProposalCancel": "Cancel proposal",
+  "mpSettingsTitle": "Seoul Live settings",
+  "mpSectionMyStatus": "My status",
+  "mpPause": "Pause Seoul Live",
+  "mpPauseHint": "✓ Chat / room join / friend request — allowed\n✗ Location send / meetup alerts / pins — blocked\nData stays intact",
+  "mpSectionBattery": "Battery mode",
+  "mpBatteryHint": "Location update interval — more accurate = more battery",
+  "mpSectionNotifications": "Notifications",
+  "mpNotificationsFail": "Failed: {error}",
+  "@mpNotificationsFail": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "mpNotificationsHint": "Separate from system notification permission — turn off here to silence pushes.",
+  "mpSectionTutorial": "Tutorial",
+  "mpReplayTutorial": "Replay Seoul Live tutorial",
+  "mpTutorialToast": "Tutorial will show next time you enter",
+  "mpReplayWhatsNew": "Replay What's New",
+  "mpReplayWhatsNewHint": "v{version} updates",
+  "@mpReplayWhatsNewHint": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "mpSectionSafety": "Safety",
+  "mpBlockList": "Block list",
+  "mpBlockListHint": "View blocked users / unblock",
+  "mpSectionConsent": "Consent & data",
+  "mpRevokeConsent": "Revoke location consent",
+  "mpRevokeConsentHint": "Revoking disables multiplayer and deletes all data",
+  "mpDownloadMyData": "Download my data",
+  "mpDownloadMyDataHint": "PIPA data portability — email request",
+  "mpDownloadMyDataToast": "Please email rush94434@gmail.com (within 10 days)",
+  "mpSectionOps": "Operations",
+  "mpOpsMonitor": "Ops monitor",
+  "mpOpsMonitorHint": "Daily metrics · abuse signals · report handling",
+  "mpSectionDanger": "Danger zone",
+  "mpLeaveSeoulLive": "Leave Seoul Live",
+  "mpLeaveSeoulLiveHint": "Bulk-delete multiplayer data (profile, friends, rooms, chat)",
+  "mpFootnote": "※ Your Seoul Vista account remains. Only multiplayer data is deleted.",
+  "mpRevokeDialogTitle": "Revoke consent",
+  "mpRevokeDialogBody": "Revoking location processing consent disables multiplayer\nand deletes profile, friends, rooms, chat data. Continue?",
+  "mpRevokeDialogConfirm": "Revoke",
+  "mpRevokedToast": "Consent revoked and data deleted",
+  "mpLeaveDialogTitle": "Leave Seoul Live",
+  "mpLeaveDialogBody": "All multiplayer data will be permanently deleted.\nYou can rejoin, but friends, rooms, and chat history won't be restored.",
+  "mpLeaveConfirm": "Leave",
+  "mpLeftToast": "You've left Seoul Live",
+  "mpNotifCatFriendRequest": "Friend request",
+  "mpNotifCatFriendAccept": "Friend accepted",
+  "mpNotifCatRoomMessage": "Chat message",
+  "mpNotifCatMeetup": "Meetup detected",
+  "mpNotifCatDestination": "Destination change",
+  "mpNotifCatWelcome": "Welcome",
+  "panelSubway": "Subway",
+  "panelBus": "Bus",
+  "panelFlights": "Aircraft",
+  "panelDisplay": "Display",
+  "panelLineFilter": "Line filter",
+  "panelPerformance": "Performance",
+  "panelLighting": "Lighting",
+  "panelInfo": "Info",
+  "panelDeveloper": "Developer",
+  "panelDemoRunning": "DEMO running",
+  "panelLiveRunning": "LIVE running",
+  "panelOff": "Off",
+  "panelSwitchToLive": "Switch to LIVE",
+  "panelSwitchToDemo": "Switch to DEMO",
+  "panelSubwayOn": "Turn subway on",
+  "panelSubwayOff": "Turn subway off",
+  "panelTrainCount": "{count} trains",
+  "@panelTrainCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "panelLastUpdate": "Updated {time}",
+  "@panelLastUpdate": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "panelBusActive": "{count} buses showing",
+  "@panelBusActive": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "panelSelectRoutes": "Pick a route",
+  "panelTurnAllOff": "Turn all off",
+  "panelBusPosition": "Bus positions",
+  "panelHanRiverBus": "🚢 Han River bus",
+  "panelAddRoute": "Add route",
+  "panelFlightCount": "{mode} {count} aircraft",
+  "@panelFlightCount": {
+    "placeholders": {
+      "mode": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "panelFlightFallback": "Aircraft",
+  "panelFlightLegendClimb": "Climb",
+  "panelFlightLegendCruise": "Cruise",
+  "panelFlightLegendDescend": "Descend",
+  "panelFlightLegendTakeoffLanding": "Takeoff/Landing",
+  "panelRouteLines": "Route lines",
+  "panelTrainPosition": "Train positions",
+  "panelStationDisplay": "Station display",
+  "panelSelectRoutesToShow": "Pick routes to show",
+  "panelAll": "All",
+  "panelPresetHigh": "High",
+  "panelPresetMedium": "Medium",
+  "panelPresetLow": "Low",
+  "panelFps": "FPS",
+  "panelNaverPolling": "Naver polling",
+  "panelRenderInfo": "Rendering: {engine} · GeoJSON cache",
+  "@panelRenderInfo": {
+    "placeholders": {
+      "engine": {
+        "type": "String"
+      }
+    }
+  },
+  "panelLightAuto": "Auto",
+  "panelLightDay": "Day",
+  "panelLightNight": "Night",
+  "panelLightDawn": "Dawn",
+  "panelLightDusk": "Dusk",
+  "panelTierFlagship": "Flagship",
+  "panelTierHigh": "High",
+  "panelTierMid": "Mid",
+  "panelTierLow": "Low",
+  "panelMapEngine": "Map engine",
+  "panelDevice": "Device",
+  "panelPerfTier": "Performance tier",
+  "mapDisplay3D": "3D buildings",
+  "mapDisplayPois": "POI icons",
+  "mapDisplayWeather": "Weather effects (fog/rain)",
+  "mapDisplayLiveSubway": "Live subway",
+  "friendsGroupTooltip": "Friend groups",
+  "friendsCodeTooltip": "Friend code",
+  "friendsAddByNickname": "Add a friend by nickname",
+  "friendsSearchPlaceholder": "Enter a nickname to search",
+  "friendsSearching": "Searching…",
+  "friendsSearch": "Search",
+  "friendsNotFound": "No user matches \"{query}\"",
+  "@friendsNotFound": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "friendsSearchHint": "Nicknames must match exactly. You can also try the 8-char friend code.",
+  "friendsReceivedRequests": "Received requests ({count})",
+  "@friendsReceivedRequests": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "friendsAccept": "Accept",
+  "friendsReject": "Reject",
+  "friendsMyFriends": "My friends ({count})",
+  "@friendsMyFriends": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "friendsEmpty": "No friends yet. Add by nickname.",
+  "friendsCooldownTooltip": "Rejected requests can be re-sent after 7 days",
+  "friendsCooldownDays": "Retry in {days}d",
+  "@friendsCooldownDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "friendsCooldownHours": "Retry in {hours}h",
+  "@friendsCooldownHours": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "friendsBadgeFriend": "Friend",
+  "friendsBadgeRequested": "Requested",
+  "friendsApply": "Apply",
+  "friendsSendingRequestHint": "Send friend request to {nickname} — they get a push if accepted",
+  "@friendsSendingRequestHint": {
+    "placeholders": {
+      "nickname": {
+        "type": "String"
+      }
+    }
+  },
+  "friendsDmStartFailed": "Couldn't start DM: {error}",
+  "@friendsDmStartFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "friendsUnfriend": "Unfriend",
+  "friendsReport": "Report",
+  "friendsBlock": "Block",
+  "friendsBlockDialogTitleFallback": "Block this user",
+  "friendsBlockDialogTitle": "Block {nickname}",
+  "@friendsBlockDialogTitle": {
+    "placeholders": {
+      "nickname": {
+        "type": "String"
+      }
+    }
+  },
+  "friendsBlockDialogBody": "Blocking prevents joining the same room and hides their messages.",
+  "friendsBlockConfirm": "Block",
+  "friendsUnknown": "Unknown",
+  "friendsRequestSent": "Friend request sent to {nickname}",
+  "@friendsRequestSent": {
+    "placeholders": {
+      "nickname": {
+        "type": "String"
+      }
+    }
+  },
+  "friendsFailure": "Failed: {error}",
+  "@friendsFailure": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "friendsSuggestionsTitle": "Friend suggestions (friends of friends)",
+  "friendsMutualCount": "{count} mutual",
+  "@friendsMutualCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "friendsAddShort": "Add",
+  "searchRouteNotFound": "Couldn't find a route. Check the start and end points.",
+  "searchLocationUnavailable": "Couldn't get your current location. Check location permission and GPS.",
+  "searchTabRoute": "Directions",
+  "searchTabProfile": "Profile",
+  "searchPathTypeOptimal": "Optimal",
+  "searchPathTypeShortest": "Shortest",
+  "searchPathTypeMinTransfer": "Min transfers",
+  "searchOutsideServiceTitle": "Outside service area",
+  "searchOutsideServiceBody": "Directions currently support Seoul · Incheon · Gyeonggi only. Please pick a start or end inside the metro region.",
+  "searchDepartureFieldHint": "From",
+  "searchArrivalFieldHint": "To",
+  "searchSwapDepArr": "Swap from/to",
+  "searchCloseTooltip": "Close directions",
+  "searchPlaceholder": "Search places · bus · subway",
+  "searchClearLabel": "Clear search",
+  "searchRecentTitle": "Recent searches",
+  "searchRecentClearAll": "Clear all",
+  "searchRecentRoutesTitle": "Recent directions",
+  "searchBusTypeTrunk": "Trunk",
+  "searchBusTypeBranch": "Branch",
+  "searchBusTypeCircular": "Circular",
+  "searchBusTypeMetro": "Metro",
+  "searchBusTypeIncheon": "Incheon",
+  "searchBusTypeGyeonggi": "Gyeonggi",
+  "searchBusTypeDefault": "Bus",
+  "searchCatFood": "Food",
+  "searchCatCafe": "Café",
+  "searchCatPark": "Park",
+  "searchCatShopping": "Shopping",
+  "searchCatMedical": "Medical",
+  "searchCatEducation": "Education",
+  "searchCatLodging": "Lodging",
+  "searchCatFinance": "Finance",
+  "searchCatTransit": "Transit",
+  "searchCatAddress": "Address",
+  "searchCatCity": "City",
+  "searchCatNeighborhood": "Neighborhood",
+  "searchCatRoad": "Road",
+  "liveBadgePeerTrack": "{nickname} is listening to {track}",
+  "@liveBadgePeerTrack": {
+    "placeholders": {
+      "nickname": {
+        "type": "String"
+      },
+      "track": {
+        "type": "String"
+      }
+    }
+  },
+  "liveBadgeSharing": "Sharing with {count} {count, plural, one{person} other{people}}",
+  "@liveBadgeSharing": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "liveBadgeStopped": "Stopped location sharing",
+  "seoulLiveStartTitle": "Seoul Live started",
+  "seoulLiveStartBody": "Your map just expanded to the world.",
+  "seoulLiveStep2Title": "Your friends' pins appear on the map",
+  "seoulLiveStep2Body": "Members of the same friend room show up as pins (nickname + emoji) in real time. Their pin moves as they move.",
+  "seoulLiveStep3Title": "Meet up by friend room code",
+  "seoulLiveStep3Body": "Open Profile → Seoul Live → Friend Room to create a new room or join with a 6-digit invite code. Capacity is 8.",
+  "seoulLiveStep4Title": "Meetup alerts within 50m",
+  "seoulLiveStep4Body": "Haptics and a notification fire when you get close. Auto-logged to chat.",
+  "seoulLiveStep5Title": "Go private anytime",
+  "seoulLiveStep5Body": "Tap the \"Sharing\" badge at the top to switch to ghost mode instantly. Leaving a friend room also stops sending.",
+  "seoulLivePermTitle": "Get notifications",
+  "seoulLivePermBody": "We'll send a push when friend requests, new messages, or meetups happen. Tap \"Allow\" below.",
+  "seoulLivePermAllowed": "✓ Notifications allowed",
+  "seoulLivePermDenied": "Denied — you can allow it from Settings",
+  "seoulLivePermRequesting": "Requesting…",
+  "seoulLivePermAllow": "Allow notifications",
+  "roomMembersEmpty": "No one nearby yet",
+  "roomMembersWithCount": "{count} {count, plural, one{friend} other{friends}} here",
+  "@roomMembersWithCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "roomMembersGhost": "Private",
+  "commonSkip": "Skip",
+  "commonStart": "Get started",
+  "commonNext": "Next",
+  "welcomePageLanguagesHint": "한국어 · English · 日本語 · 中文 — Switch anytime in settings",
+  "liveActivationHint": "Available after enabling Seoul Live",
+  "liveMeetTitle": "Go together",
+  "liveMeetBody": "Set a shared destination in a friend room. Distances for each member update live. An orange pin lands on the map.",
+  "liveDmHint": "1:1 DMs · voice · photo · location",
+  "liveMusicHint": "Share what you are playing on Spotify",
+  "liveAddFriendHint": "Add friends via QR or invite links",
+  "livePointsHint": "Activity turns into points and badges",
+  "aiVoiceTitle": "Just ask out loud",
+  "aiVoiceBody": "Talk to the AI naturally. Search, navigate, get picks — by voice. Gemini Live listens and answers live.",
+  "aiDayPlanHint": "Turn saved places into a day plan automatically",
+  "permPagePrivacyHint": "Toggle notifications by type and share location only with chosen groups.",
+  "roomMembersNearbyHeader": "{count} nearby (within 500m)",
+  "@roomMembersNearbyHeader": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "roomMembersPublicSectionHeader": "Public users",
+  "roomMembersSeeAllPublic": "See all ({count})",
+  "@roomMembersSeeAllPublic": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "roomMembersHidePublic": "Hide all",
+  "liveBadgeSharingPublic": "Visible to {count} {count, plural, one{person} other{people}}",
+  "@liveBadgeSharingPublic": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "roomMembersDisconnected": "Disconnected",
+  "roomMembersRealtime": "Live",
+  "roomMembersStale": "Briefly out",
+  "dmListAgoJust": "Now",
+  "dmListAgoMin": "{min}m",
+  "@dmListAgoMin": {
+    "placeholders": {
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "dmListAgoHour": "{hour}h",
+  "@dmListAgoHour": {
+    "placeholders": {
+      "hour": {
+        "type": "int"
+      }
+    }
+  },
+  "dmListAgoDay": "{day}d",
+  "@dmListAgoDay": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "dmListKindVoice": "🎙 Voice",
+  "dmListKindImage": "🖼 Photo",
+  "dmListKindPlace": "📍 Place",
+  "dmListKindSpotify": "🎵 Track",
+  "dmListEmpty": "No DMs yet",
+  "dmListEmptyHint": "Open a friend and tap the message button to start",
+  "friendGroupsNewTitle": "New group",
+  "friendGroupsNewTooltip": "New group",
+  "friendGroupsEmpty": "No groups yet",
+  "friendGroupsEmptyHint": "Tap + above to group your friends",
+  "friendGroupsEmptyHintAlt": "Create a group with + in the top-right to organize friends.",
+  "friendGroupsNamePlaceholder": "e.g. Family, Work, Club",
+  "friendGroupsCreate": "Create",
+  "friendGroupsCreated": "Group created",
+  "friendGroupsFailure": "Failed: {error}",
+  "@friendGroupsFailure": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "friendGroupsDeleteTitle": "Delete {emoji} {name}",
+  "@friendGroupsDeleteTitle": {
+    "placeholders": {
+      "emoji": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "friendGroupsDeleteBody": "The group is deleted but friends are kept.",
+  "friendGroupsDelete": "Delete",
+  "friendGroupsName": "Name",
+  "friendGroupsIcon": "Icon",
+  "friendGroupsMemberCount": "{count} {count, plural, one{member} other{members}}",
+  "@friendGroupsMemberCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "friendGroupsNoFriendsPrompt": "Add friends first.",
+  "friendGroupsVisibilityHint": "Used for group-based visibility / chat",
+  "friendGroupsMembersTitle": "{emoji} {name} members",
+  "@friendGroupsMembersTitle": {
+    "placeholders": {
+      "emoji": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "friendGroupsEditMembers": "Edit members",
+  "friendGroupsEmptyFriendsBox": "No friends yet",
+  "loginRequiredTitle": "Sign-in required",
+  "loginRequiredBody": "Multiplayer is for signed-in users only.\nGuest (anonymous) accounts auto-delete after 30 days of inactivity,\nso friend/room data may be lost.",
+  "loginRequiredCta": "Sign in",
+  "reportReasonSpam": "Spam / Ads",
+  "reportReasonHate": "Abuse / hate speech",
+  "reportReasonSexual": "Sexual / disturbing content",
+  "reportReasonHarass": "Harassment / stalking",
+  "reportReasonFakeLocation": "Fake location / impersonation",
+  "reportReasonMinorAbuse": "Minor safety violation",
+  "reportReasonOther": "Other",
+  "reportSelectReason": "Please pick a reason.",
+  "reportSubmitted": "Report received. Reviewed within 24h.",
+  "reportTitleUser": "Report {label}",
+  "@reportTitleUser": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "reportTitleMessage": "Report message",
+  "reportNote": "Our ops team reviews and takes action within 24 hours.",
+  "reportExtraPlaceholder": "Add details (optional)",
+  "reportSubmit": "Submit report",
+  "reportSubmitting": "Sending…",
+  "reportFallbackUser": "user",
+  "blockedUsersTitle": "Blocked",
+  "blockedUsersEmpty": "No blocked users",
+  "blockedUsersUnblockTitle": "Unblock {name}",
+  "@blockedUsersUnblockTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "blockedUsersUnblockBody": "Unblocking lets you meet them again and see their messages.",
+  "blockedUsersUnblockConfirm": "Unblock",
+  "activityTitle": "Activity",
+  "activityCatMeetup": "🎉 Meetup",
+  "activityCatFriend": "🤝 Friend",
+  "activityCatRoomJoined": "🚪 Room joined",
+  "activityCatPlaceShared": "📍 Place shared",
+  "activityCatDestination": "🎯 Destination",
+  "activityAgoJust": "Now",
+  "activityAgoMin": "{min} min ago",
+  "@activityAgoMin": {
+    "placeholders": {
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "activityAgoHour": "{hour}h ago",
+  "@activityAgoHour": {
+    "placeholders": {
+      "hour": {
+        "type": "int"
+      }
+    }
+  },
+  "activityAgoDay": "{day}d ago",
+  "@activityAgoDay": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "activityRanking": "Friend ranking",
+  "activityRecent": "Recent activity",
+  "activityEmpty": "No activity recorded yet",
+  "activityCode": "Code {code}",
+  "@activityCode": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "activityThisWeek": "This week's activity",
+  "activityTotalCount": "{count} total",
+  "@activityTotalCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "activityWeekdayMon": "Mon",
+  "activityWeekdayTue": "Tue",
+  "activityWeekdayWed": "Wed",
+  "activityWeekdayThu": "Thu",
+  "activityWeekdayFri": "Fri",
+  "activityWeekdaySat": "Sat",
+  "activityWeekdaySun": "Sun",
+  "peerNowPlayingBtnFriend": "Friends ✓",
+  "peerNowPlayingBtnRequested": "Requested",
+  "peerNowPlayingBtnAccept": "Accept request",
+  "peerNowPlayingBtnSendRequest": "Send friend request",
+  "peerNowPlayingOpenInSpotify": "Open in Spotify",
+  "mapNoLocationPermission": "Without location permission, friends can't see your pin. Open Settings → Location to allow.",
+  "mapLeftRoom": "You left the friend room",
+  "mapShowOnMap": "Show \"{name}\" on the map",
+  "@mapShowOnMap": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "mapBuildingInside": "🏢 You're inside {name}",
+  "@mapBuildingInside": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "mapLocationChecking": "Locating…",
+  "mapLocationPermissionDenied": "Location permission denied → iOS Settings → Seoul Vista → Location",
+  "mapLocationServiceOff": "iOS Settings → Privacy → Location services is off",
+  "mapMyLocationMoved": "Moved to your location",
+  "mapLocationFetchFailed": "Couldn't get location: {error}",
+  "@mapLocationFetchFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "mapMapAppUnavailable": "Couldn't open the maps app",
+  "mapTabRecommend": "Explore",
+  "mapTabSave": "Saved",
+  "mapTabMap": "Map",
+  "mapTabWorld": "World",
+  "mapTabTrip": "Trip",
+  "mapDirectionsRoadFetching": "Loading driving route…",
+  "mapDirectionsWalkFetching": "Loading walking route…",
+  "mapNoCoords": "Couldn't find start/end coordinates",
+  "mapDirectionsFailed": "Couldn't load the route",
+  "mapInsufficientSavedPlaces": "Need more places — once favorites/visits reach {min}+, a course is generated automatically",
+  "@mapInsufficientSavedPlaces": {
+    "placeholders": {
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "subwayPanelExpand": "Expand panel",
+  "subwayPanelCollapse": "Collapse panel",
+  "subwayPanelDelayedTrains": "Delayed trains {count}",
+  "@subwayPanelDelayedTrains": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "subwayPanelMinutes": "{min} min",
+  "@subwayPanelMinutes": {
+    "placeholders": {
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "subwayPanelOthersCount": "and {count} more…",
+  "@subwayPanelOthersCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "subwayPanelOffTapToStart": "OFF — tap to start",
+  "subwayPanelMode": "Mode",
+  "subwayPanelDemoLabel": "Demo (no API)",
+  "subwayPanelLiveLabel": "Live",
+  "subwayPanelTrainsLabel": "Trains",
+  "subwayPanelTrainsValue": "{count}",
+  "@subwayPanelTrainsValue": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "subwayPanelUpdate": "Updated",
+  "subwayPanelToggleRoutes": "Routes",
+  "subwayPanelToggleTrains": "Train positions",
+  "subwayPanelToggleStations": "Stations",
+  "subwayPanelToggleCongestion": "Congestion",
+  "subwayPanelRouteFilter": "Route filter",
+  "subwayPanelAll": "All",
+  "subwayPanelToggleOn": "Turn on subway visualization",
+  "subwayPanelToggleOff": "Turn off subway visualization",
+  "subwayPanelNoArrivalInfo": "No arrival info",
+  "subwayPanelTrainDirection": "{destination} · {type}",
+  "@subwayPanelTrainDirection": {
+    "placeholders": {
+      "destination": {
+        "type": "String"
+      },
+      "type": {
+        "type": "String"
+      }
+    }
+  },
+  "subwayPanelCloseDetail": "Close train detail",
+  "subwayPanelTrainNo": "Train #{no}",
+  "@subwayPanelTrainNo": {
+    "placeholders": {
+      "no": {
+        "type": "String"
+      }
+    }
+  },
+  "subwayPanelDelayedBadge": "{min} min delay",
+  "@subwayPanelDelayedBadge": {
+    "placeholders": {
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "subwayPanelLastTrainBadge": "Last train",
+  "subwayPanelTerminalDestination": "To {terminal}",
+  "@subwayPanelTerminalDestination": {
+    "placeholders": {
+      "terminal": {
+        "type": "String"
+      }
+    }
+  },
+  "subwayPanelPrevStation": "Previous",
+  "subwayPanelDepartureStation": "Departure",
+  "subwayPanelCurrentStation": "Current",
+  "subwayPanelNextStation": "Next",
+  "subwayPanelStateArriving": "Arriving",
+  "subwayPanelStateStopped": "Stopped",
+  "subwayPanelStateDeparted": "Departed",
+  "subwayPanelStateMoving": "Moving",
+  "subwayPanelStateOperating": "In service",
+  "subwayPanelDirInnerLoop": "Inner loop",
+  "subwayPanelDirOuterLoop": "Outer loop",
+  "subwayPanelDirUp": "Up",
+  "subwayPanelDirDown": "Down",
+  "subwayPanelTrainTypeExpress": "Express",
+  "subwayPanelTrainTypeSpecial": "Special",
+  "subwayPanelTrainTypeRegular": "Regular",
+  "searchTileSubway": "Subway",
+  "profileEditNicknameInvalid": "Please enter a nickname (1–20 chars).",
+  "profileEditBirthInvalid": "Please enter a valid 4-digit birth year (YYYY).",
+  "profileEditAgeRestriction": "Multiplayer is not available for users under 14.",
+  "profileEditTitle": "Edit profile",
+  "profileEditSubtitle": "This is how others see you in rooms.",
+  "profileEditNicknameLabel": "Nickname (duplicates allowed)",
+  "profileEditNicknamePlaceholder": "e.g. SeoulExplorer",
+  "profileEditBirthLabel": "Birth year (14+ only)",
+  "profileEditBirthPlaceholder": "e.g. 2000",
+  "profileEditAvatarLabel": "Profile photo",
+  "profileEditAvatarTapHint": "Tap to change",
+  "profileEditAvatarChoose": "Choose from gallery",
+  "profileEditAvatarCamera": "Take a photo",
+  "profileEditAvatarRemove": "Remove current photo",
+  "profileEditAvatarUploading": "Uploading...",
+  "profileEditAvatarRemoveConfirmTitle": "Remove photo?",
+  "profileEditAvatarRemoveConfirmBody": "Your profile photo will be replaced by your emoji again.",
+  "profileEditAvatarFailed": "Couldn't upload the photo. Please try again later.",
+  "profileEditEmojiLabel": "Pin emoji",
+  "profileEditColorLabel": "Pin color",
+  "profileEditVisibilityLabel": "Location visibility",
+  "profileEditVisibilityGhost": "Private",
+  "profileEditVisibilityFriends": "Room",
+  "profileEditVisibilityGroup": "Groups only",
+  "profileEditVisibilityPublic": "Public",
+  "profileEditSaving": "Saving…",
+  "profileEditSave": "Save",
+  "profileEditPublicDialogTitle": "Switch to public",
+  "profileEditPublicDialogBody": "Your location becomes visible to all Seoul Live users in real time, including strangers.\n\n• Beware of inappropriate meetups / stalking risks\n• You can revert to Private/Room at any time\n• Block/report from the friend profile or chat menu",
+  "profileEditPublicDialogConfirm": "Continue",
+  "profileEditVisibilityGhostDesc": "Your location isn't sent. You can't see others' locations either.",
+  "profileEditVisibilityFriendsDesc": "Location is visible only to same-room members while you're in a room.",
+  "profileEditVisibilityGroupDesc": "Only friends in the groups you pick can see your location.",
+  "profileEditVisibilityPublicDesc": "⚠️ Any Seoul Live user can see your location. Also sent in rooms.",
+  "profileEditNoGroups": "No groups yet. Create one in Friends → Groups.",
+  "adminMonitorTitle": "Ops monitor",
+  "adminRefresh": "Refresh",
+  "adminTabMetrics": "Metrics",
+  "adminTabAbuse": "Abuse",
+  "adminTabReports": "Reports",
+  "adminMetricAllProfiles": "All profiles",
+  "adminMetricActiveRooms": "Active rooms",
+  "adminMetricTodayMeetups": "Meetups today",
+  "adminMetricTodayBlocks": "Blocks today",
+  "adminMetricTodayReports": "Reports today",
+  "adminNoSuspiciousSignals": "No suspicious signals (no user blocked by 3+ in 24h)",
+  "adminRecentBlockCount": "Blocked by {count} in 24h",
+  "@adminRecentBlockCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "adminReportStatusPending": "Pending",
+  "adminReportStatusReviewed": "Reviewed",
+  "adminReportStatusActioned": "Actioned",
+  "adminReportStatusDismissed": "Dismissed",
+  "adminNoReports": "No reports to show",
+  "adminReportTypeMessage": "Message report",
+  "adminReportTypeUser": "User report",
+  "adminReportActionReview": "Review",
+  "adminReportActionAction": "Action",
+  "adminReportActionDismiss": "Dismiss",
+  "adminAgoMin": "{min} min ago",
+  "@adminAgoMin": {
+    "placeholders": {
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "adminAgoHour": "{hour}h ago",
+  "@adminAgoHour": {
+    "placeholders": {
+      "hour": {
+        "type": "int"
+      }
+    }
+  },
+  "adminAgoDay": "{day}d ago",
+  "@adminAgoDay": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "liveDiagTitle": "Live diagnostics",
+  "liveDiagMyId": "My ID",
+  "liveDiagVisibility": "Visibility",
+  "liveDiagRoom": "Room",
+  "liveDiagPeers": "Peers receiving",
+  "liveDiagPeersValue": "{count}",
+  "@liveDiagPeersValue": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "liveDiagPresenceStatus": "Presence status",
+  "liveDiagWorldStatus": "World status",
+  "liveDiagLastSent": "Last sent",
+  "liveDiagSendError": "Send error",
+  "liveDiagGps": "GPS",
+  "liveDiagPaused": "Paused",
+  "liveDiagActivityFailCount": "Activity fail count",
+  "liveDiagActivityFailValue": "{count}",
+  "@liveDiagActivityFailValue": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "liveDiagLastActivityError": "Last activity error",
+  "liveDiagFooter": "Capture this screen if there's an issue",
+  "liveDiagClose": "Close",
+  "liveDiagNoProfile": "(no profile)",
+  "liveDiagNone": "(none)",
+  "liveDiagNotConnected": "(not connected)",
+  "liveDiagNotUsed": "(not used)",
+  "liveDiagNotSent": "Not sent yet",
+  "liveDiagSecondsAgo": "{sec}s ago",
+  "@liveDiagSecondsAgo": {
+    "placeholders": {
+      "sec": {
+        "type": "int"
+      }
+    }
+  },
+  "liveDiagRoomLabel": "{code} ({count} members)",
+  "@liveDiagRoomLabel": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "liveDiagGpsHas": "yes",
+  "liveDiagGpsNo": "no",
+  "mpConsentLocationDenied": "Allow location permission in Settings > Location.",
+  "mpConsentTitle": "Before starting multiplayer",
+  "mpConsentHeading": "Seoul Live consent",
+  "mpConsentBody": "To share your location with friends, you need to agree to the items below. Each item can be agreed/declined separately and revoked any time in Settings.",
+  "mpConsentItem1Title": "[Required] Profile data",
+  "mpConsentItem1Detail": "Nickname, pin color/emoji, birth year. For service identification and 14+ age check. Retained until account deletion; deleted immediately on withdrawal.",
+  "mpConsentItem2Title": "[Required] Location data (LBS Act §18)",
+  "mpConsentItem2Detail": "GPS coordinates and direction. Shared in real time with room members or, when set to public, all Seoul Live users. Not stored persistently — ephemeral over Realtime channels. Visibility (private/room/public) can be changed any time in your profile.",
+  "mpConsentItem3Title": "[Required] LBS terms of service",
+  "mpConsentItem3Detail": "Provided by a KCC-registered operator. Not available to users under 14.",
+  "mpConsentItem3Link": "Read the full terms",
+  "mpConsentItem4Title": "[Required] Community guidelines",
+  "mpConsentItem4Detail": "Zero-tolerance for hate, harassment, sexual content, and minor abuse. Reported content is reviewed within 24 hours; violators may have content removed, accounts suspended, or be permanently banned.",
+  "mpConsentItem4Link": "Read the full guidelines",
+  "mpConsentDeclineNote": "Declining only disables multiplayer; the rest of the app works normally.",
+  "mpConsentBackgroundNote": "Location sharing auto-pauses when the app goes to the background (battery saver).",
+  "mpConsentSubmit": "Agree and start",
+  "mpConsentLaterButton": "Later",
+  "mpConsentSubmitBusy": "Processing…",
+  "mpConsentLbsTermsBody": "These terms govern the use of the location-based service (\"Service\") provided by Seoul Vista's Seoul Live.",
+  "optTitle": "Tuned to your device",
+  "optSubtitle": "Real-time visualization is GPU-intensive.\nPick what fits your device.",
+  "optPresetHighTitle": "High quality",
+  "optPresetHighDetail": "60 fps · 5s refresh · AA on",
+  "optPresetSmoothTitle": "Smooth",
+  "optPresetSmoothDetail": "30 fps · 10s refresh",
+  "optPresetBatteryTitle": "Battery saver",
+  "optPresetBatteryDetail": "20 fps · 30s refresh · effects off",
+  "optAdvancedTitle": "Advanced — pick layers",
+  "optLayerSubway": "Subway (live train positions)",
+  "optLayerSubwaySub": "Seoul subway + metro rail. Highest GPU load",
+  "optLayerBus": "City bus",
+  "optLayerBusSub": "Seoul + Gyeonggi city bus live positions",
+  "optLayerRiverBus": "Han River bus",
+  "optLayerRiverBusSub": "Han River ferries",
+  "optLayerFlights": "Aircraft",
+  "optLayerFlightsSub": "Live aircraft around Incheon airport",
+  "optDetectedTier": "Detected as {tier} tier",
+  "@optDetectedTier": {
+    "placeholders": {
+      "tier": {
+        "type": "String"
+      }
+    }
+  },
+  "optRecommended": "Recommended",
+  "vehicleCongestion": "Crowdedness",
+  "vehicleCongestionNone": "No data",
+  "vehicleCongestionFree": "Light",
+  "vehicleCongestionNormal": "Normal",
+  "vehicleCongestionBusy": "Busy",
+  "vehicleCongestionPacked": "Very crowded",
+  "vehicleCongestionFull": "Full",
+  "vehicleStatus": "Status",
+  "vehicleStopped": "Stopped",
+  "vehicleRunning": "Running",
+  "vehicleSection": "Section",
+  "vehicleSectionOrd": "Stop {ord}",
+  "@vehicleSectionOrd": {
+    "placeholders": {
+      "ord": {
+        "type": "int"
+      }
+    }
+  },
+  "vehicleBusLowFloor": "Low-floor",
+  "vehicleBusRegular": "Standard",
+  "vehiclePhaseAscent": "Climbing",
+  "vehiclePhaseCruise": "Cruise",
+  "vehiclePhaseDescent": "Descent",
+  "vehiclePhaseTakeoff": "Takeoff/landing",
+  "vehiclePhaseGround": "On ground",
+  "vehicleAltitude": "Altitude",
+  "vehicleAltitudeOnGround": "Ground",
+  "vehicleSpeed": "Speed",
+  "vehicleHeading": "Heading",
+  "vehicleRiverBusRoute": "Han River bus {name}",
+  "@vehicleRiverBusRoute": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "vehicleRiverDirNormal": "Forward",
+  "vehicleRiverDirReverse": "Reverse",
+  "vehicleRiverPhaseStop": "Docked",
+  "vehicleNext": "Next",
+  "vehicleProgress": "Progress",
+  "deepLinkRoomLoginRequired": "Sign in to join a friend room",
+  "deepLinkRoomEntered": "Joined room — code {code}",
+  "@deepLinkRoomEntered": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "deepLinkRoomFailure": "Couldn't join the room: {error}",
+  "@deepLinkRoomFailure": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "snsAnalysisTitle": "Analysis",
+  "snsAnalysisEmpty": "No places extracted",
+  "snsAnalysisCreatePlans": "Create plan ({count})",
+  "@snsAnalysisCreatePlans": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "snsAnalysisPlanFailure": "Couldn't build a plan: {error}",
+  "@snsAnalysisPlanFailure": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "snsAnalysisNearestStation": "📍 {station} station · {minutes} min",
+  "@snsAnalysisNearestStation": {
+    "placeholders": {
+      "station": {
+        "type": "String"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "avatarMyPin": "My pin",
+  "avatarNoRoomHint": "Join a friend room to see friends here",
+  "avatarNoRoomMembers": "No one's with you yet",
+  "avatarRoomMembersCount": "With you · {count}",
+  "@avatarRoomMembersCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "avatarNoTrack": "Not listening to anything",
+  "qrScanTitle": "Scan QR",
+  "qrScanCameraError": "Camera unavailable\n{error}",
+  "@qrScanCameraError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "qrScanHint": "Frame your friend's QR code",
+  "buildingOccupantsFallbackName": "Building",
+  "buildingOccupantsInside": "{count} inside",
+  "@buildingOccupantsInside": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "buildingOccupantsEmpty": "Everyone left the building",
+  "buildingOccupantsListening": "🎵 Listening to {name} · {artist}",
+  "@buildingOccupantsListening": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "artist": {
+        "type": "String"
+      }
+    }
+  },
+  "buildingOccupantsInBuilding": "🏢 Inside the building",
+  "weatherWeeklyLabel": "Weekly",
+  "weatherToday": "Today",
+  "weatherDayMon": "Mon",
+  "weatherDayTue": "Tue",
+  "weatherDayWed": "Wed",
+  "weatherDayThu": "Thu",
+  "weatherDayFri": "Fri",
+  "weatherDaySat": "Sat",
+  "weatherDaySun": "Sun",
+  "locPermTitle": "Location permission needed",
+  "locPermBody": "We need location access to show your position on the map\nand to provide accurate nearby info / directions.",
+  "locPermRequesting": "Requesting…",
+  "locPermRequest": "Allow location",
+  "locPermGranted": "✓ Location allowed",
+  "locPermDenied": "Denied — enable it from Settings",
+  "locPermRetry": "Retry",
+  "groupEditorTitle": "Friend groups",
+  "groupEditorNew": "New group",
+  "groupEditorEmpty": "No groups yet",
+  "groupEditorEmptyHint": "Tap + at top-right to create a group and organize friends.",
+  "groupEditorHelper": "Used for group-based visibility / chat",
+  "groupEditorNamePlaceholder": "e.g. Family, Work, Club",
+  "groupEditorCreate": "Create",
+  "groupEditorFailure": "Failed: {error}",
+  "@groupEditorFailure": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "groupEditorMemberCount": "{count}",
+  "@groupEditorMemberCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "groupEditorDeleteTitle": "Delete group {name}",
+  "@groupEditorDeleteTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "groupEditorDeleteBody": "Only the group is deleted; friends are kept.",
+  "groupEditorDelete": "Delete",
+  "groupEditorAddFriendsHint": "Add friends first.",
+  "peerPinDestinationFallback": "Destination",
+  "peerPinDestinationLabel": "🎯 {name}",
+  "@peerPinDestinationLabel": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "stationDetailCloseLabel": "Close station detail",
+  "stationDetailDeparture": "Start",
+  "stationDetailArrival": "End",
+  "stationDetailLiveArrivals": "Live arrivals",
+  "stationDetailLoading": "Loading…",
+  "stationDetailNoArrivals": "No arrival info",
+  "stationDetailCrowdVery": "Very crowded",
+  "stationDetailCrowdBusy": "Crowded",
+  "stationDetailCrowdNormal": "Normal",
+  "stationDetailCrowdFree": "Light",
+  "stationDetailBoardingCount": "Boarding {count}",
+  "@stationDetailBoardingCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "stationDetailAlightingCount": "Alighting {count}",
+  "@stationDetailAlightingCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "stationDetailClosureCount": "{count} closures",
+  "@stationDetailClosureCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "visitTimelineTitle": "My footprints",
+  "visitTimelineSummary": "{count} places · last visit {ago}",
+  "@visitTimelineSummary": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "ago": {
+        "type": "String"
+      }
+    }
+  },
+  "visitTimelineEmpty": "No visit history yet.",
+  "visitTimelineClose": "Close",
+  "visitTimelineExpand": "Show {count} more",
+  "@visitTimelineExpand": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "visitTimelineCollapse": "Collapse",
+  "visitTimelineDateToday": "Today",
+  "visitTimelineDateYesterday": "Yesterday",
+  "visitTimelineDateDaysAgo": "{days}d ago",
+  "@visitTimelineDateDaysAgo": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "visitTimelineDateMonthDay": "{month}/{day}",
+  "@visitTimelineDateMonthDay": {
+    "placeholders": {
+      "month": {
+        "type": "int"
+      },
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "visitTimelineAgoNone": "—",
+  "visitTimelineAgoMin": "{min} min ago",
+  "@visitTimelineAgoMin": {
+    "placeholders": {
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "visitTimelineAgoHour": "{hour}h ago",
+  "@visitTimelineAgoHour": {
+    "placeholders": {
+      "hour": {
+        "type": "int"
+      }
+    }
+  },
+  "visitTimelineAgoDay": "{day}d ago",
+  "@visitTimelineAgoDay": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "visitTimelineVisitCount": "{count}×",
+  "@visitTimelineVisitCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "permPageTitle": "Permissions",
+  "permPageBody": "Grant these up front\nso the app doesn't stop mid-flow.",
+  "permPageFooter": "Denying is fine — only that feature is limited.",
+  "permPageRequesting": "Requesting…",
+  "permPageAllGranted": "✓ All allowed",
+  "permPageRequestAll": "Allow all",
+  "permItemLocation": "Location",
+  "permItemLocationDesc": "Show your pin on the map + live share in rooms",
+  "permItemNotification": "Notifications",
+  "permItemNotificationDesc": "Friend requests / chat / meetup alerts",
+  "permItemCamera": "Camera",
+  "permItemCameraDesc": "Place photo analysis + chat photos",
+  "permItemPhotos": "Photos",
+  "permItemPhotosDesc": "Share gallery photos in chat",
+  "permItemMicrophone": "Microphone",
+  "permItemMicrophoneDesc": "AI voice chat + voice messages",
+  "permTapToSettings": "{desc} (tap to open Settings)",
+  "@permTapToSettings": {
+    "placeholders": {
+      "desc": {
+        "type": "String"
+      }
+    }
+  },
+  "livingCityTitle": "Seoul is alive",
+  "livingCityBody": "Tap an icon and the camera flies to that scene.",
+  "livingCityVehSubway": "Subway",
+  "livingCityVehBus": "Bus",
+  "livingCityVehRiverBus": "Han River bus",
+  "livingCityVehFlight": "Aircraft",
+  "infoBarsTierFlagship": "Flagship",
+  "infoBarsTierHigh": "High",
+  "infoBarsTierMid": "Mid",
+  "infoBarsTierLow": "Low",
+  "infoBarsProfileToast": "{model} · {tier}\n{fps} fps · {pollMs}ms polling — optimized",
+  "@infoBarsProfileToast": {
+    "placeholders": {
+      "model": {
+        "type": "String"
+      },
+      "tier": {
+        "type": "String"
+      },
+      "fps": {
+        "type": "int"
+      },
+      "pollMs": {
+        "type": "int"
+      }
+    }
+  },
+  "navBannerNext": "Next",
+  "navBannerWalkTo": "Walk to {station}",
+  "@navBannerWalkTo": {
+    "placeholders": {
+      "station": {
+        "type": "String"
+      }
+    }
+  },
+  "navBannerBoardAt": "Board {line} at {station}",
+  "@navBannerBoardAt": {
+    "placeholders": {
+      "station": {
+        "type": "String"
+      },
+      "line": {
+        "type": "String"
+      }
+    }
+  },
+  "navBannerWalkDetail": "{min} min walk",
+  "@navBannerWalkDetail": {
+    "placeholders": {
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "navBannerTransitDetail": "Toward {station} · {min} min",
+  "@navBannerTransitDetail": {
+    "placeholders": {
+      "station": {
+        "type": "String"
+      },
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "readyPageTitle": "Ready",
+  "readyPageBody": "Tap Start below\nand the live Seoul opens up.",
+  "welcomePageSubtitle": "Seoul, in a new light",
+  "pathfindingPageTitle": "What's the vibe today?",
+  "pathfindingPageBody": "Your AI assistant will build a course around your mood.\nYou can change this anytime later.",
+  "riverBusStopLabel": "{name} ferry pier",
+  "@riverBusStopLabel": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "riverBusRouteEnded": "Service ended",
+  "riverBusNextTime": "Next {time}",
+  "@riverBusNextTime": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "riverBusMaintenance": "Maintenance",
+  "riverBusDeparture": "Start",
+  "riverBusArrival": "End",
+  "qualityPreviewDemoLabel": "DEMO · Subway",
+  "qualityPresetHigh": "High",
+  "qualityPresetMedium": "Smooth",
+  "qualityPresetLow": "Battery saver",
+  "qualityPresetHighDetail": "60 fps · effects on",
+  "qualityPresetMediumDetail": "30 fps · partial effects",
+  "qualityPresetLowDetail": "10 fps · effects off",
+  "commonReset": "Reset",
+  "profileResetFavoritesTitle": "Reset favorites",
+  "profileResetFavoritesBody": "All saved favorites will be removed. This cannot be undone.",
+  "profileResetFavoritesToast": "Favorites cleared",
+  "profileResetVisitsTitle": "Reset visit history",
+  "profileResetVisitsBody": "Both recent and frequent visit records will be cleared together. This cannot be undone.",
+  "profileResetVisitsToast": "Visit history cleared",
+  "settingsSectionWeather": "Weather",
+  "settingsAutoWeather": "Auto (live weather)",
+  "settingsWeatherOverride": "Weather condition",
+  "weatherClear": "Clear",
+  "weatherCloudy": "Cloudy",
+  "weatherRain": "Rain",
+  "weatherDrizzle": "Drizzle",
+  "weatherSnow": "Snow",
+  "weatherFog": "Fog",
+  "weatherThunderstorm": "Thunderstorm"
+}

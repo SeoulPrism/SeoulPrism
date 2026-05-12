@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/gen/app_localizations.dart';
 import '../models/subway_models.dart';
 import '../data/seoul_subway_data.dart';
 import '../core/api_keys.dart';
@@ -91,7 +92,9 @@ class _SubwayControlPanelState extends State<SubwayControlPanel> {
         ),
         const Spacer(),
         Semantics(
-          label: _isCollapsed ? '패널 펼치기' : '패널 접기',
+          label: _isCollapsed
+              ? AppL10n.of(context).subwayPanelExpand
+              : AppL10n.of(context).subwayPanelCollapse,
           button: true,
           child: GestureDetector(
             onTap: () => setState(() => _isCollapsed = !_isCollapsed),
@@ -139,7 +142,7 @@ class _SubwayControlPanelState extends State<SubwayControlPanel> {
             ),
             const SizedBox(width: AppSpacing.sm),
             Text(
-              '지연 열차 ${delays.length}대',
+              AppL10n.of(context).subwayPanelDelayedTrains(delays.length),
               style: AppTypography.caption.copyWith(
                 fontWeight: FontWeight.bold,
                 color: AppColors.danger,
@@ -183,7 +186,7 @@ class _SubwayControlPanelState extends State<SubwayControlPanel> {
                     borderRadius: BorderRadius.circular(3),
                     border: Border.all(color: AppColors.danger, width: 0.5),
                   ),
-                  child: Text('${entry.value}분',
+                  child: Text(AppL10n.of(context).subwayPanelMinutes(entry.value),
                     style: AppTypography.caption.copyWith(
                       fontWeight: FontWeight.bold,
                       color: AppColors.danger)),
@@ -203,7 +206,7 @@ class _SubwayControlPanelState extends State<SubwayControlPanel> {
         }),
         if (sorted.length > 4)
           Text(
-            '외 ${sorted.length - 4}대...',
+            AppL10n.of(context).subwayPanelOthersCount(sorted.length - 4),
             style: AppTypography.caption.copyWith(color: AppColors.textDisabled),
           ),
       ],
@@ -211,9 +214,10 @@ class _SubwayControlPanelState extends State<SubwayControlPanel> {
   }
 
   Widget _buildStatusInfo() {
+    final l = AppL10n.of(context);
     if (!widget.controller.isActive) {
       return Text(
-        'OFF - 탭하여 시작',
+        l.subwayPanelOffTapToStart,
         style: AppTypography.caption.copyWith(color: Colors.grey),
       );
     }
@@ -221,14 +225,15 @@ class _SubwayControlPanelState extends State<SubwayControlPanel> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _infoRow('모드', widget.controller.mode == SubwayMode.demo
-            ? '데모 (API 미사용)'
+        _infoRow(l.subwayPanelMode, widget.controller.mode == SubwayMode.demo
+            ? l.subwayPanelDemoLabel
             : 'Live (API ${widget.controller.fetchIntervalSec}s)'),
-        _infoRow('열차 수', '${widget.controller.currentTrains.length}대'),
+        _infoRow(l.subwayPanelTrainsLabel,
+            l.subwayPanelTrainsValue(widget.controller.currentTrains.length)),
         if (widget.controller.mode == SubwayMode.live)
           _infoRow('API', '${widget.controller.apiCallCount}/${SeoulSubwayService.dailyLimit}'),
         if (widget.controller.lastUpdate != null)
-          _infoRow('갱신', _formatTime(widget.controller.lastUpdate!)),
+          _infoRow(l.subwayPanelUpdate, _formatTime(widget.controller.lastUpdate!)),
         if (widget.controller.lastError != null)
           Padding(
             padding: const EdgeInsets.only(top: AppSpacing.xs),
@@ -244,21 +249,22 @@ class _SubwayControlPanelState extends State<SubwayControlPanel> {
   }
 
   Widget _buildToggles() {
+    final l = AppL10n.of(context);
     return Column(
       children: [
-        _toggleRow('노선 경로', widget.controller.showRoutes, (v) {
+        _toggleRow(l.subwayPanelToggleRoutes, widget.controller.showRoutes, (v) {
           widget.controller.toggleRoutes(v);
           widget.onRefresh();
         }),
-        _toggleRow('열차 위치', widget.controller.showTrains, (v) {
+        _toggleRow(l.subwayPanelToggleTrains, widget.controller.showTrains, (v) {
           widget.controller.toggleTrains(v);
           widget.onRefresh();
         }),
-        _toggleRow('역 표시', widget.controller.showStations, (v) {
+        _toggleRow(l.subwayPanelToggleStations, widget.controller.showStations, (v) {
           widget.controller.toggleStations(v);
           widget.onRefresh();
         }),
-        _toggleRow('혼잡도', widget.controller.showCongestion, (v) {
+        _toggleRow(l.subwayPanelToggleCongestion, widget.controller.showCongestion, (v) {
           widget.controller.setCongestionVisible(v);
           widget.onRefresh();
         }),
@@ -267,19 +273,20 @@ class _SubwayControlPanelState extends State<SubwayControlPanel> {
   }
 
   Widget _buildLineFilter() {
+    final l = AppL10n.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            Text('노선 필터', style: AppTypography.caption.copyWith(color: Colors.grey)),
+            Text(l.subwayPanelRouteFilter, style: AppTypography.caption.copyWith(color: Colors.grey)),
             const Spacer(),
             GestureDetector(
               onTap: () {
                 widget.controller.setLineFilter(null);
                 widget.onRefresh();
               },
-              child: Text('전체', style: AppTypography.caption.copyWith(color: AppColors.accent)),
+              child: Text(l.subwayPanelAll, style: AppTypography.caption.copyWith(color: AppColors.accent)),
             ),
           ],
         ),
@@ -365,7 +372,9 @@ class _PowerButton extends StatelessWidget {
     return AppCircleButton(
       icon: Icons.power_settings_new,
       onTap: onPressed,
-      semanticLabel: isActive ? '지하철 시각화 끄기' : '지하철 시각화 켜기',
+      semanticLabel: isActive
+          ? AppL10n.of(context).subwayPanelToggleOff
+          : AppL10n.of(context).subwayPanelToggleOn,
       size: AppSpacing.buttonSm,
       iconSize: 14,
       color: isActive ? AppColors.success.withValues(alpha: 0.2) : AppColors.surfaceOverlay,
@@ -424,7 +433,8 @@ class StationArrivalPanel extends StatelessWidget {
             if (arrivals.isEmpty)
               Padding(
                 padding: const EdgeInsets.all(AppSpacing.lg),
-                child: Text('도착 정보 없음', style: AppTypography.bodySm.copyWith(color: Colors.grey)),
+                child: Text(AppL10n.of(context).subwayPanelNoArrivalInfo,
+                    style: AppTypography.bodySm.copyWith(color: Colors.grey)),
               )
             else
               Flexible(
@@ -434,7 +444,7 @@ class StationArrivalPanel extends StatelessWidget {
                   itemBuilder: (context, index) {
                     final info = arrivals[index];
                     final lineColor = SubwayColors.getColor(info.subwayId);
-                    return _buildArrivalRow(info, lineColor);
+                    return _buildArrivalRow(context, info, lineColor);
                   },
                 ),
               ),
@@ -444,7 +454,7 @@ class StationArrivalPanel extends StatelessWidget {
     );
   }
 
-  Widget _buildArrivalRow(ArrivalInfo info, Color lineColor) {
+  Widget _buildArrivalRow(BuildContext context, ArrivalInfo info, Color lineColor) {
     return Container(
       margin: const EdgeInsets.only(bottom: AppSpacing.sm),
       padding: const EdgeInsets.all(AppSpacing.sm),
@@ -467,7 +477,8 @@ class StationArrivalPanel extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '${info.destinationName}행 ${info.trainType}',
+                  AppL10n.of(context).subwayPanelTrainDirection(
+                      info.destinationName, info.trainType),
                   style: AppTypography.caption.copyWith(color: Colors.grey),
                 ),
               ],
@@ -528,10 +539,11 @@ class TrainDetailPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppL10n.of(context);
     final lineColor = SubwayColors.getColor(train.subwayId);
     final lineName = SubwayColors.lineNames[train.subwayId] ?? train.subwayName;
-    final directionText = _directionText(train.subwayId, train.direction);
-    final trainTypeText = _trainTypeText(train.expressType);
+    final directionText = _directionText(context, train.subwayId, train.direction);
+    final trainTypeText = _trainTypeText(context, train.expressType);
     final prevStation = _getPrevStation();
     final nextStation = _getNextStation();
     final currentStation = train.stationName;
@@ -616,7 +628,7 @@ class TrainDetailPanel extends StatelessWidget {
                 AppCircleButton(
                   icon: Icons.close,
                   onTap: onClose ?? () {},
-                  semanticLabel: '열차 상세 닫기',
+                  semanticLabel: l.subwayPanelCloseDetail,
                 ),
               ],
             ),
@@ -630,18 +642,18 @@ class TrainDetailPanel extends StatelessWidget {
                 Icon(Icons.train, size: 14, color: lineColor),
                 const SizedBox(width: AppSpacing.sm),
                 Text(
-                  '열차 #${train.trainNo}',
+                  l.subwayPanelTrainNo(train.trainNo),
                   style: AppTypography.bodySm.copyWith(fontWeight: FontWeight.w600),
                 ),
                 const SizedBox(width: AppSpacing.sm),
-                _statusChip(train.trainStatus, lineColor),
+                _statusChip(context, train.trainStatus, lineColor),
                 if (delayMinutes >= 2) ...[
                   const SizedBox(width: AppSpacing.sm),
-                  AppBadge(text: '$delayMinutes분 지연', color: AppColors.danger),
+                  AppBadge(text: l.subwayPanelDelayedBadge(delayMinutes), color: AppColors.danger),
                 ],
                 if (train.isLastTrain) ...[
                   const SizedBox(width: AppSpacing.sm),
-                  AppBadge(text: '막차', color: AppColors.danger),
+                  AppBadge(text: l.subwayPanelLastTrainBadge, color: AppColors.danger),
                 ],
               ],
             ),
@@ -653,6 +665,7 @@ class TrainDetailPanel extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
             child: _buildStationProgress(
+              context: context,
               prevStation: prevStation,
               currentStation: currentStation,
               nextStation: nextStation,
@@ -671,7 +684,7 @@ class TrainDetailPanel extends StatelessWidget {
                 Icon(Icons.flag, size: AppSpacing.md, color: AppColors.textDisabled),
                 const SizedBox(width: AppSpacing.sm),
                 Text(
-                  '${train.terminalName}행',
+                  l.subwayPanelTerminalDestination(train.terminalName),
                   style: AppTypography.bodySm.copyWith(color: AppColors.textTertiary),
                 ),
               ],
@@ -685,12 +698,14 @@ class TrainDetailPanel extends StatelessWidget {
 
   /// 역 진행 위젯 (이전역 → 현재역 → 다음역)
   Widget _buildStationProgress({
+    required BuildContext context,
     required String? prevStation,
     required String currentStation,
     required String? nextStation,
     required Color lineColor,
     required bool isMoving,
   }) {
+    final l = AppL10n.of(context);
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
@@ -702,7 +717,7 @@ class TrainDetailPanel extends StatelessWidget {
           // 이전역
           Expanded(
             child: _stationCell(
-              label: '이전역',
+              label: l.subwayPanelPrevStation,
               name: prevStation ?? '-',
               alignment: CrossAxisAlignment.start,
               isActive: false,
@@ -715,7 +730,7 @@ class TrainDetailPanel extends StatelessWidget {
           Expanded(
             flex: 2,
             child: _stationCell(
-              label: isMoving ? '출발역' : '현재역',
+              label: isMoving ? l.subwayPanelDepartureStation : l.subwayPanelCurrentStation,
               name: currentStation,
               alignment: CrossAxisAlignment.center,
               isActive: true,
@@ -727,7 +742,7 @@ class TrainDetailPanel extends StatelessWidget {
           // 다음역
           Expanded(
             child: _stationCell(
-              label: '다음역',
+              label: l.subwayPanelNextStation,
               name: nextStation ?? '-',
               alignment: CrossAxisAlignment.end,
               isActive: false,
@@ -788,28 +803,29 @@ class TrainDetailPanel extends StatelessWidget {
     );
   }
 
-  Widget _statusChip(int status, Color lineColor) {
+  Widget _statusChip(BuildContext context, int status, Color lineColor) {
+    final l = AppL10n.of(context);
     String text;
     Color chipColor;
     switch (status) {
       case 0:
-        text = '곧 도착';
+        text = l.subwayPanelStateArriving;
         chipColor = Colors.amber;
         break;
       case 1:
-        text = '정차중';
+        text = l.subwayPanelStateStopped;
         chipColor = AppColors.success;
         break;
       case 2:
-        text = '출발';
+        text = l.subwayPanelStateDeparted;
         chipColor = lineColor;
         break;
       case 3:
-        text = '이동중';
+        text = l.subwayPanelStateMoving;
         chipColor = lineColor;
         break;
       default:
-        text = '운행';
+        text = l.subwayPanelStateOperating;
         chipColor = lineColor;
     }
     return Container(
@@ -824,19 +840,21 @@ class TrainDetailPanel extends StatelessWidget {
   }
 
   /// 2호선 등 순환선 방향 텍스트
-  String _directionText(String subwayId, int direction) {
+  String _directionText(BuildContext ctx, String subwayId, int direction) {
+    final l = AppL10n.of(ctx);
     if (subwayId == '1002') {
-      return direction == 0 ? '내선 순환' : '외선 순환';
+      return direction == 0 ? l.subwayPanelDirInnerLoop : l.subwayPanelDirOuterLoop;
     }
-    return direction == 0 ? '상행' : '하행';
+    return direction == 0 ? l.subwayPanelDirUp : l.subwayPanelDirDown;
   }
 
   /// 열차 종류 텍스트
-  String _trainTypeText(int expressType) {
+  String _trainTypeText(BuildContext ctx, int expressType) {
+    final l = AppL10n.of(ctx);
     switch (expressType) {
-      case 1: return '급행';
-      case 7: return '특급';
-      default: return '보통';
+      case 1: return l.subwayPanelTrainTypeExpress;
+      case 7: return l.subwayPanelTrainTypeSpecial;
+      default: return l.subwayPanelTrainTypeRegular;
     }
   }
 
@@ -1014,7 +1032,7 @@ class StationDetailPanel extends StatelessWidget {
                     AppCircleButton(
                       icon: Icons.close,
                       onTap: onClose ?? () {},
-                      semanticLabel: '역 상세 닫기',
+                      semanticLabel: AppL10n.of(context).stationDetailCloseLabel,
                     ),
                   ],
                 ),
@@ -1028,23 +1046,23 @@ class StationDetailPanel extends StatelessWidget {
                     children: [
                       if (onSetDeparture != null)
                         Expanded(
-                          child: _navButton('출발', Icons.trip_origin, lineColors.first, () => onSetDeparture!(stationName)),
+                          child: _navButton(AppL10n.of(context).stationDetailDeparture, Icons.trip_origin, lineColors.first, () => onSetDeparture!(stationName)),
                         ),
                       if (onSetDeparture != null && onSetArrival != null)
                         const SizedBox(width: 8),
                       if (onSetArrival != null)
                         Expanded(
-                          child: _navButton('도착', Icons.place, Colors.redAccent, () => onSetArrival!(stationName)),
+                          child: _navButton(AppL10n.of(context).stationDetailArrival, Icons.place, Colors.redAccent, () => onSetArrival!(stationName)),
                         ),
                     ],
                   ),
                 ),
 
               // ── 혼잡도 정보 ──
-              _buildCongestionRow(lineColors.first),
+              _buildCongestionRow(context, lineColors.first),
 
               // ── 시설 폐쇄 안내 ──
-              _buildClosureSection(),
+              _buildClosureSection(context),
 
               // ── 출발 정보 라벨 ──
               Padding(
@@ -1053,7 +1071,7 @@ class StationDetailPanel extends StatelessWidget {
                   children: [
                     Icon(Icons.departure_board, size: 14, color: lineColors.first),
                     const SizedBox(width: AppSpacing.sm),
-                    Text('실시간 출발 정보', style: AppTypography.bodySm.copyWith(fontWeight: FontWeight.w600)),
+                    Text(AppL10n.of(context).stationDetailLiveArrivals, style: AppTypography.bodySm.copyWith(fontWeight: FontWeight.w600)),
                     const Spacer(),
                     if (isLoading)
                       SizedBox(width: AppSpacing.md, height: AppSpacing.md, child: CircularProgressIndicator(strokeWidth: 1.5, color: AppColors.textDisabled)),
@@ -1065,12 +1083,12 @@ class StationDetailPanel extends StatelessWidget {
               if (isLoading && arrivals.isEmpty)
                 Padding(
                   padding: const EdgeInsets.all(AppSpacing.xl),
-                  child: Center(child: Text('조회 중...', style: AppTypography.bodySm.copyWith(color: Colors.grey))),
+                  child: Center(child: Text(AppL10n.of(context).stationDetailLoading, style: AppTypography.bodySm.copyWith(color: Colors.grey))),
                 )
               else if (arrivals.isEmpty)
                 Padding(
                   padding: const EdgeInsets.all(AppSpacing.xl),
-                  child: Center(child: Text('도착 정보 없음', style: AppTypography.bodySm.copyWith(color: Colors.grey))),
+                  child: Center(child: Text(AppL10n.of(context).stationDetailNoArrivals, style: AppTypography.bodySm.copyWith(color: Colors.grey))),
                 )
               else
                 Builder(builder: (context) {
@@ -1083,7 +1101,7 @@ class StationDetailPanel extends StatelessWidget {
                       itemBuilder: (context, index) {
                         final info = filtered[index];
                         final lineColor = SubwayColors.getColor(info.subwayId);
-                        return _buildArrivalRow(info, lineColor);
+                        return _buildArrivalRow(context, info, lineColor);
                       },
                     ),
                   );
@@ -1098,7 +1116,7 @@ class StationDetailPanel extends StatelessWidget {
     );
   }
 
-  Widget _buildArrivalRow(ArrivalInfo info, Color lineColor) {
+  Widget _buildArrivalRow(BuildContext context, ArrivalInfo info, Color lineColor) {
     final isUrgent = info.arrivalSeconds <= 60;
     return Container(
       margin: const EdgeInsets.only(bottom: AppSpacing.sm),
@@ -1122,7 +1140,8 @@ class StationDetailPanel extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '${info.destinationName}행 ${info.trainType}',
+                  AppL10n.of(context).subwayPanelTrainDirection(
+                      info.destinationName, info.trainType),
                   style: AppTypography.caption.copyWith(color: Colors.grey),
                 ),
               ],
@@ -1238,7 +1257,8 @@ class StationDetailPanel extends StatelessWidget {
     );
   }
 
-  Widget _buildCongestionRow(Color primaryColor) {
+  Widget _buildCongestionRow(BuildContext context, Color primaryColor) {
+    final l = AppL10n.of(context);
     final service = CongestionService.instance;
     if (!service.isLoaded) return const SizedBox.shrink();
 
@@ -1250,16 +1270,16 @@ class StationDetailPanel extends StatelessWidget {
     final String crowdLabel;
     if (crowding > 0.7) {
       crowdColor = Colors.red;
-      crowdLabel = '매우 혼잡';
+      crowdLabel = l.stationDetailCrowdVery;
     } else if (crowding > 0.4) {
       crowdColor = Colors.orange;
-      crowdLabel = '혼잡';
+      crowdLabel = l.stationDetailCrowdBusy;
     } else if (crowding > 0.2) {
       crowdColor = Colors.amber;
-      crowdLabel = '보통';
+      crowdLabel = l.stationDetailCrowdNormal;
     } else {
       crowdColor = Colors.green;
-      crowdLabel = '여유';
+      crowdLabel = l.stationDetailCrowdFree;
     }
 
     final formatter = RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))');
@@ -1281,12 +1301,12 @@ class StationDetailPanel extends StatelessWidget {
           ),
           const SizedBox(width: AppSpacing.sm),
           Text(
-            '승차 ${fmt(congestion.boarding)}명',
+            l.stationDetailBoardingCount(fmt(congestion.boarding)),
             style: AppTypography.caption.copyWith(color: Colors.blue.shade300),
           ),
           const SizedBox(width: AppSpacing.sm),
           Text(
-            '하차 ${fmt(congestion.alighting)}명',
+            l.stationDetailAlightingCount(fmt(congestion.alighting)),
             style: AppTypography.caption.copyWith(color: Colors.orange.shade300),
           ),
         ],
@@ -1295,7 +1315,8 @@ class StationDetailPanel extends StatelessWidget {
   }
 
   /// 시설 임시폐쇄 정보 섹션
-  Widget _buildClosureSection() {
+  Widget _buildClosureSection(BuildContext context) {
+    final l = AppL10n.of(context);
     final closures = ClosureService.instance.getClosures(stationName);
     if (closures.isEmpty) return const SizedBox.shrink();
 
@@ -1317,7 +1338,7 @@ class StationDetailPanel extends StatelessWidget {
                 const Icon(Icons.construction, size: 14, color: Colors.orange),
                 const SizedBox(width: AppSpacing.xs),
                 Text(
-                  '시설 폐쇄 ${closures.length}건',
+                  l.stationDetailClosureCount(closures.length),
                   style: AppTypography.bodySm.copyWith(
                     fontWeight: FontWeight.w700,
                     color: Colors.orange,

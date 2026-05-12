@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.4+2
+version: 1.0.5+10
 
 environment:
   sdk: ^3.11.4
@@ -30,6 +30,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  intl: any
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -58,6 +61,13 @@ dependencies:
   flutter_soloud: ^3.2.1
   webview_flutter: ^4.13.1
   flutter_animate: ^4.5.2
+  qr_flutter: ^4.1.0
+  mobile_scanner: ^7.1.2
+  firebase_crashlytics: ^4.3.4
+  app_links: ^6.4.1
+  flutter_secure_storage: ^8.1.0
+  path_provider: ^2.1.5
+  share_plus: ^13.1.0
 
 dev_dependencies:
   flutter_test:
@@ -69,12 +79,29 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
+
+# 앱 아이콘 생성 — iOS / Android 별도 디자인 사용.
+# 실행: dart run flutter_launcher_icons
+flutter_launcher_icons:
+  android: "ic_launcher"
+  ios: true
+  remove_alpha_ios: true
+  image_path_ios: "images/app-icon-ios.png"
+  image_path_android: "images/play-store-icon.png"
+  # Android 12+ adaptive icon (전경 + 단색 배경).
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "images/play-store-icon.png"
+  min_sdk_android: 21
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
 # The following section is specific to Flutter packages.
 flutter:
+
+  # Generate l10n code from lib/l10n/*.arb (see l10n.yaml).
+  generate: true
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in

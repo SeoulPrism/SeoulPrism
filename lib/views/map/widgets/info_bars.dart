@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../../l10n/gen/app_localizations.dart';
 import '../../../services/device_profile_service.dart';
 
 /// 디바이스 프로필 자동 적용 후 잠깐 표시되는 토스트 ("플래그십 · 60fps · 폴링 1000ms 최적화 적용").
@@ -9,12 +10,13 @@ class ProfileToast extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppL10n.of(context);
     final dp = DeviceProfileService.instance;
     final tierLabel = switch (dp.profile.tier) {
-      DeviceTier.flagship => '플래그십',
-      DeviceTier.high => '상위',
-      DeviceTier.mid => '중급',
-      DeviceTier.low => '저사양',
+      DeviceTier.flagship => l.infoBarsTierFlagship,
+      DeviceTier.high => l.infoBarsTierHigh,
+      DeviceTier.mid => l.infoBarsTierMid,
+      DeviceTier.low => l.infoBarsTierLow,
     };
 
     return Positioned(
@@ -50,8 +52,12 @@ class ProfileToast extends StatelessWidget {
                           ],
                   ),
                   child: Text(
-                    '${dp.rawModel} · $tierLabel\n'
-                    '${dp.profile.animFps}fps · 폴링 ${dp.profile.naverPollMs}ms 최적화 적용',
+                    l.infoBarsProfileToast(
+                      dp.rawModel,
+                      tierLabel,
+                      dp.profile.animFps,
+                      dp.profile.naverPollMs,
+                    ),
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: isDark ? Colors.white : Colors.black87,

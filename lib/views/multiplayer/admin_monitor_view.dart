@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/gen/app_localizations.dart';
 import '../../services/multiplayer_service.dart';
 import '../../widgets/adaptive/adaptive.dart';
 import '../../widgets/app_snackbar.dart';
@@ -70,20 +71,22 @@ class _AdminMonitorViewState extends State<AdminMonitorView>
       await _refresh();
     } catch (e) {
       if (!mounted) return;
-      showAppSnackBar('실패: $e');
+      showAppSnackBar(AppL10n.of(context).friendsFailure(e.toString()));
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final l = AppL10n.of(context);
     return Scaffold(
       backgroundColor: cs.surface,
       appBar: AdaptiveAppBar(
-        title: '운영 모니터',
+        title: l.adminMonitorTitle,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh_rounded),
+          AdaptiveAppBarAction(
+            icon: Icons.refresh_rounded,
+            tooltip: l.adminRefresh,
             onPressed: _loading ? null : _refresh,
           ),
           const SizedBox(width: 4),
@@ -93,10 +96,10 @@ class _AdminMonitorViewState extends State<AdminMonitorView>
         children: [
           TabBar(
             controller: _tab,
-            tabs: const [
-              Tab(text: '지표'),
-              Tab(text: '어뷰즈'),
-              Tab(text: '신고'),
+            tabs: [
+              Tab(text: l.adminTabMetrics),
+              Tab(text: l.adminTabAbuse),
+              Tab(text: l.adminTabReports),
             ],
           ),
           if (_error != null)
@@ -125,41 +128,42 @@ class _AdminMonitorViewState extends State<AdminMonitorView>
   }
 
   Widget _metricsTab(ColorScheme cs) {
+    final l = AppL10n.of(context);
     final m = _metrics ?? const {};
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
         _MetricCard(
           icon: Icons.people_alt_rounded,
-          label: '전체 프로필',
+          label: l.adminMetricAllProfiles,
           value: m['total_profiles']?.toString() ?? '-',
           tone: cs.primaryContainer,
         ),
         const SizedBox(height: 10),
         _MetricCard(
           icon: Icons.meeting_room_rounded,
-          label: '활성 친구방',
+          label: l.adminMetricActiveRooms,
           value: m['active_rooms']?.toString() ?? '-',
           tone: cs.secondaryContainer,
         ),
         const SizedBox(height: 10),
         _MetricCard(
           icon: Icons.celebration_rounded,
-          label: '오늘 만남',
+          label: l.adminMetricTodayMeetups,
           value: m['meetups_today']?.toString() ?? '-',
           tone: cs.tertiaryContainer,
         ),
         const SizedBox(height: 10),
         _MetricCard(
           icon: Icons.block_rounded,
-          label: '오늘 차단',
+          label: l.adminMetricTodayBlocks,
           value: m['blocks_today']?.toString() ?? '-',
           tone: cs.errorContainer,
         ),
         const SizedBox(height: 10),
         _MetricCard(
           icon: Icons.flag_rounded,
-          label: '오늘 신고',
+          label: l.adminMetricTodayReports,
           value: m['reports_today']?.toString() ?? '-',
           tone: cs.errorContainer,
         ),
@@ -168,11 +172,12 @@ class _AdminMonitorViewState extends State<AdminMonitorView>
   }
 
   Widget _abuseTab(ColorScheme cs) {
+    final l = AppL10n.of(context);
     if (_abuse.isEmpty) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(32),
-          child: Text('의심 신호 없음 (24시간 내 3건 이상 차단당한 사용자 X)',
+          child: Text(l.adminNoSuspiciousSignals,
               textAlign: TextAlign.center,
               style: TextStyle(color: cs.onSurfaceVariant)),
         ),
@@ -202,7 +207,7 @@ class _AdminMonitorViewState extends State<AdminMonitorView>
                           fontSize: 14, fontWeight: FontWeight.w700),
                     ),
                     Text(
-                      '24h 내 ${r['recent_block_count']}명에게 차단됨',
+                      l.adminRecentBlockCount(r['recent_block_count'] as int),
                       style: TextStyle(
                           fontSize: 12, color: cs.onSurfaceVariant),
                     ),
@@ -217,6 +222,7 @@ class _AdminMonitorViewState extends State<AdminMonitorView>
   }
 
   Widget _reportsTab(ColorScheme cs) {
+    final l = AppL10n.of(context);
     return Column(
       children: [
         Padding(
@@ -227,18 +233,18 @@ class _AdminMonitorViewState extends State<AdminMonitorView>
               setState(() => _reportFilter = v);
               _refresh();
             },
-            segments: const [
-              AdaptiveSegment(value: 'pending', label: '대기'),
-              AdaptiveSegment(value: 'reviewed', label: '검토'),
-              AdaptiveSegment(value: 'actioned', label: '조치'),
-              AdaptiveSegment(value: 'dismissed', label: '기각'),
+            segments: [
+              AdaptiveSegment(value: 'pending', label: l.adminReportStatusPending),
+              AdaptiveSegment(value: 'reviewed', label: l.adminReportStatusReviewed),
+              AdaptiveSegment(value: 'actioned', label: l.adminReportStatusActioned),
+              AdaptiveSegment(value: 'dismissed', label: l.adminReportStatusDismissed),
             ],
           ),
         ),
         Expanded(
           child: _reports.isEmpty
               ? Center(
-                  child: Text('표시할 신고가 없어요',
+                  child: Text(l.adminNoReports,
                       style: TextStyle(color: cs.onSurfaceVariant)),
                 )
               : ListView.separated(
@@ -309,6 +315,7 @@ class _ReportCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppL10n.of(context);
     final id = data['id'] as String;
     final type = data['target_type'] as String;
     final reporter = (data['reporter_nickname'] as String?) ?? '?';
@@ -336,14 +343,16 @@ class _ReportCard extends StatelessWidget {
               ),
               const SizedBox(width: 6),
               Text(
-                type == 'message' ? '메시지 신고' : '사용자 신고',
+                type == 'message'
+                    ? l.adminReportTypeMessage
+                    : l.adminReportTypeUser,
                 style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
                     color: cs.error),
               ),
               const Spacer(),
-              Text(_relTime(createdAt),
+              Text(_relTime(context, createdAt),
                   style: TextStyle(
                       fontSize: 11, color: cs.onSurfaceVariant)),
             ],
@@ -384,18 +393,18 @@ class _ReportCard extends StatelessWidget {
               if (status != 'reviewed')
                 TextButton(
                   onPressed: () => onChangeStatus(id, 'reviewed'),
-                  child: const Text('검토'),
+                  child: Text(l.adminReportActionReview),
                 ),
               if (status != 'actioned')
                 TextButton(
                   style: TextButton.styleFrom(foregroundColor: cs.error),
                   onPressed: () => onChangeStatus(id, 'actioned'),
-                  child: const Text('조치'),
+                  child: Text(l.adminReportActionAction),
                 ),
               if (status != 'dismissed')
                 TextButton(
                   onPressed: () => onChangeStatus(id, 'dismissed'),
-                  child: const Text('기각'),
+                  child: Text(l.adminReportActionDismiss),
                 ),
             ],
           ),
@@ -404,11 +413,12 @@ class _ReportCard extends StatelessWidget {
     );
   }
 
-  String _relTime(DateTime t) {
+  String _relTime(BuildContext ctx, DateTime t) {
+    final l = AppL10n.of(ctx);
     final d = DateTime.now().difference(t);
-    if (d.inMinutes < 60) return '${d.inMinutes}분 전';
-    if (d.inHours < 24) return '${d.inHours}시간 전';
-    return '${d.inDays}일 전';
+    if (d.inMinutes < 60) return l.adminAgoMin(d.inMinutes);
+    if (d.inHours < 24) return l.adminAgoHour(d.inHours);
+    return l.adminAgoDay(d.inDays);
   }
 }
 
@@ -418,11 +428,12 @@ class _StatusBadge extends StatelessWidget {
   const _StatusBadge({required this.status, required this.cs});
   @override
   Widget build(BuildContext context) {
+    final l = AppL10n.of(context);
     final (label, bg, fg) = switch (status) {
-      'pending' => ('대기', cs.errorContainer, cs.onErrorContainer),
-      'reviewed' => ('검토됨', cs.secondaryContainer, cs.onSecondaryContainer),
-      'actioned' => ('조치됨', cs.tertiaryContainer, cs.onTertiaryContainer),
-      'dismissed' => ('기각', cs.surfaceContainerHighest, cs.onSurfaceVariant),
+      'pending' => (l.adminReportStatusPending, cs.errorContainer, cs.onErrorContainer),
+      'reviewed' => (l.adminReportStatusReviewed, cs.secondaryContainer, cs.onSecondaryContainer),
+      'actioned' => (l.adminReportStatusActioned, cs.tertiaryContainer, cs.onTertiaryContainer),
+      'dismissed' => (l.adminReportStatusDismissed, cs.surfaceContainerHighest, cs.onSurfaceVariant),
       _ => (status, cs.surfaceContainerHighest, cs.onSurfaceVariant),
     };
     return Container(

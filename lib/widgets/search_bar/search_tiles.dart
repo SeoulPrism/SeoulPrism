@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../models/bus_models.dart';
+
+// 헬퍼들. helper-style 로 두어 BusTile/PlaceTile 외에도 재사용 가능.
 import '../../models/subway_models.dart';
 import '../../services/place_search_service.dart';
 import '../../widgets/bus_overlay.dart';
@@ -82,9 +85,9 @@ class StationTile extends StatelessWidget {
               ShaderMask(
                 shaderCallback: (bounds) =>
                     LinearGradient(colors: allColors).createShader(bounds),
-                child: const Text(
-                  '지하철',
-                  style: TextStyle(
+                child: Text(
+                  AppL10n.of(context).searchTileSubway,
+                  style: const TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w800,
                     color: Colors.white,
@@ -135,7 +138,7 @@ class CurrentLocationTile extends StatelessWidget {
             const SizedBox(width: AppSpacing.md),
             Expanded(
               child: Text(
-                '내 위치',
+                AppL10n.of(context).chatMyLocation,
                 style: AppTypography.bodyMd.copyWith(
                   fontWeight: FontWeight.w600,
                   color: Theme.of(context).colorScheme.onSurface,
@@ -158,7 +161,7 @@ class BusTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = BusColors.fromRouteType(route.routeType);
-    final typeName = busTypeName(route.routeType);
+    final typeName = busTypeName(context, route.routeType);
 
     return GestureDetector(
       onTap: onTap,
@@ -222,6 +225,7 @@ class PlaceTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final icon = placeIcon(place.category);
     final color = placeColor(place.category);
+    final categoryLabel = placeCategoryLabel(context, place.category);
 
     return GestureDetector(
       onTap: onTap,
@@ -266,7 +270,7 @@ class PlaceTile extends StatelessWidget {
               ),
             ),
             Text(
-              place.category,
+              categoryLabel,
               style: AppTypography.caption.copyWith(color: color),
             ),
           ],
@@ -278,15 +282,38 @@ class PlaceTile extends StatelessWidget {
 
 // ── 공유 helper ──────────────────────────
 
-String busTypeName(int type) {
+String busTypeName(BuildContext ctx, int type) {
+  final l = AppL10n.of(ctx);
   switch (type) {
-    case 3: return '간선';
-    case 4: return '지선';
-    case 5: return '순환';
-    case 6: return '광역';
-    case 7: return '인천';
-    case 8: return '경기';
-    default: return '버스';
+    case 3: return l.searchBusTypeTrunk;
+    case 4: return l.searchBusTypeBranch;
+    case 5: return l.searchBusTypeCircular;
+    case 6: return l.searchBusTypeMetro;
+    case 7: return l.searchBusTypeIncheon;
+    case 8: return l.searchBusTypeGyeonggi;
+    default: return l.searchBusTypeDefault;
+  }
+}
+
+/// 한국어 카테고리 (kakao 응답값) → 현지화 라벨 매핑.
+/// case 키워드는 한국어 (데이터 매칭) → 표시 라벨만 ARB.
+String placeCategoryLabel(BuildContext ctx, String category) {
+  final l = AppL10n.of(ctx);
+  switch (category) {
+    case '음식점': return l.searchCatFood;
+    case '카페': return l.searchCatCafe;
+    case '공원': return l.searchCatPark;
+    case '쇼핑': return l.searchCatShopping;
+    case '의료': return l.searchCatMedical;
+    case '교육': return l.searchCatEducation;
+    case '숙박': return l.searchCatLodging;
+    case '금융': return l.searchCatFinance;
+    case '교통': return l.searchCatTransit;
+    case '주소': return l.searchCatAddress;
+    case '도시': return l.searchCatCity;
+    case '동네': return l.searchCatNeighborhood;
+    case '도로': return l.searchCatRoad;
+    default: return category;
   }
 }
 

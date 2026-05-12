@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'adaptive/adaptive.dart';
+import '../l10n/gen/app_localizations.dart';
 import '../services/environment_service.dart';
 import '../theme/app_colors.dart';
 
@@ -7,8 +8,20 @@ import '../theme/app_colors.dart';
 /// 탭하면 옆으로 길쭉하게 펼쳐지며 주간 예보
 class WeatherTimeWidget extends StatefulWidget {
   final EnvironmentData? environment;
+  /// 펼침 상태가 바뀔 때 외부에 알림 — map_view 가 다른 위젯 페이드 처리에 사용.
+  final ValueChanged<bool>? onExpandedChanged;
+  /// 외부에서 강제 collapse 하고 싶을 때 — true → false 로 토글되면 collapse.
+  final bool forceCollapse;
+  /// 외부에서 강제 expand — false → true 로 변경되면 펼침 (AI 명령용).
+  final bool forceExpand;
 
-  const WeatherTimeWidget({super.key, this.environment});
+  const WeatherTimeWidget({
+    super.key,
+    this.environment,
+    this.onExpandedChanged,
+    this.forceCollapse = false,
+    this.forceExpand = false,
+  });
 
   @override
   State<WeatherTimeWidget> createState() => _WeatherTimeWidgetState();
@@ -19,12 +32,27 @@ class _WeatherTimeWidgetState extends State<WeatherTimeWidget> {
   List<DailyForecast>? _forecast;
   bool _loading = false;
 
+  @override
+  void didUpdateWidget(WeatherTimeWidget old) {
+    super.didUpdateWidget(old);
+    if (widget.forceCollapse && _expanded) {
+      setState(() => _expanded = false);
+      widget.onExpandedChanged?.call(false);
+    }
+    // false → true 토글 시 펼침 (AI 명령 진입점).
+    if (widget.forceExpand && !old.forceExpand && !_expanded) {
+      _toggle();
+    }
+  }
+
   void _toggle() async {
     if (_expanded) {
       setState(() => _expanded = false);
+      widget.onExpandedChanged?.call(false);
       return;
     }
     setState(() => _expanded = true);
+    widget.onExpandedChanged?.call(true);
     if (_forecast == null) {
       setState(() => _loading = true);
       final forecast = await EnvironmentService.instance.fetchWeeklyForecast();
@@ -122,7 +150,7 @@ class _WeatherTimeWidgetState extends State<WeatherTimeWidget> {
               ),
               const SizedBox(width: 8),
               if (_forecast != null && _forecast!.isNotEmpty) ...[
-                Text('주간 ', style: TextStyle(fontSize: 10, color: fgSub)),
+                Text('${AppL10n.of(context).weatherWeeklyLabel} ', style: TextStyle(fontSize: 10, color: fgSub)),
                 Text('${_weeklyAvgMin()}°', style: TextStyle(fontSize: 10, color: Colors.lightBlueAccent.withValues(alpha: 0.8))),
                 Text(' / ', style: TextStyle(fontSize: 10, color: fgSub)),
                 Text('${_weeklyAvgMax()}°', style: TextStyle(fontSize: 10, color: Colors.orangeAccent.withValues(alpha: 0.9))),
@@ -153,10 +181,19 @@ class _WeatherTimeWidgetState extends State<WeatherTimeWidget> {
   }
 
   Widget _buildDayColumn(DailyForecast f, Color fg, Color fgSub) {
+    final l = AppL10n.of(context);
     final now = DateTime.now();
     final isToday = f.date.day == now.day && f.date.month == now.month;
-    final dayNames = ['월', '화', '수', '목', '금', '토', '일'];
-    final dayName = isToday ? '오늘' : dayNames[f.date.weekday - 1];
+    final dayNames = [
+      l.weatherDayMon,
+      l.weatherDayTue,
+      l.weatherDayWed,
+      l.weatherDayThu,
+      l.weatherDayFri,
+      l.weatherDaySat,
+      l.weatherDaySun,
+    ];
+    final dayName = isToday ? l.weatherToday : dayNames[f.date.weekday - 1];
     final weatherColor = _descriptionColor(f.description);
 
     return Column(

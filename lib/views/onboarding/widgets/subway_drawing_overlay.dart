@@ -88,16 +88,24 @@ class _SubwayDrawingPainter extends CustomPainter {
       final metrics = path.computeMetrics().first;
       final drawPath = metrics.extractPath(0, metrics.length * localT);
 
-      // 글로우 (블러)
+      // 글로우 — blur 대신 두 단계 stroke (iOS Impeller jank 회피).
       canvas.drawPath(
         drawPath,
         Paint()
-          ..color = line.color.withValues(alpha: 0.4 * globalAlpha)
-          ..strokeWidth = 12
+          ..color = line.color.withValues(alpha: 0.22 * globalAlpha)
+          ..strokeWidth = 14
           ..strokeCap = StrokeCap.round
           ..strokeJoin = StrokeJoin.round
-          ..style = PaintingStyle.stroke
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6),
+          ..style = PaintingStyle.stroke,
+      );
+      canvas.drawPath(
+        drawPath,
+        Paint()
+          ..color = line.color.withValues(alpha: 0.40 * globalAlpha)
+          ..strokeWidth = 8
+          ..strokeCap = StrokeCap.round
+          ..strokeJoin = StrokeJoin.round
+          ..style = PaintingStyle.stroke,
       );
       // 코어
       canvas.drawPath(

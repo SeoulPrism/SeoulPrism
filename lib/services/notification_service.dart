@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -6,6 +7,13 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../main.dart' show rootNavigatorKey;
+import '../views/multiplayer/chat_sheet.dart';
+import '../views/multiplayer/friends_view.dart';
+import '../views/multiplayer/multiplayer_hub_view.dart';
+import '../views/multiplayer/room_view.dart';
+import 'multiplayer_service.dart';
 
 /// Seoul Live 푸시 / 인앱 알림 통합 서비스.
 ///
@@ -49,7 +57,17 @@ class NotificationService {
           requestSoundPermission: false,
         ),
       );
-      await _local.initialize(initSettings);
+      await _local.initialize(
+        initSettings,
+        onDidReceiveNotificationResponse: (resp) {
+          final payload = resp.payload;
+          if (payload == null || payload.isEmpty) return;
+          try {
+            final decoded = jsonDecode(payload);
+            if (decoded is Map) _routeFromData(Map<String, dynamic>.from(decoded));
+          } catch (_) {/* 옛 payload (kind 단일 string) 호환 — 무시 */}
+        },
+      );
       debugPrint('[Notif] local notif 초기화 OK');
     } catch (e) {
       debugPrint('[Notif] local notif 초기화 실패: $e');
@@ -153,9 +171,37 @@ class NotificationService {
 
   Future<bool> hasPermission() async {
     final s = await _fcm.getNotificationSettings();
-    return s.authorizationStatus == AuthorizationStatus.authorized ||
-        s.authorizationStatus == AuthorizationStatus.provisional;
+    final granted =
+        s.authorizationStatus == AuthorizationStatus.authorized ||
+            s.authorizationStatus == AuthorizationStatus.provisional;
+    _lastKnownPermission = granted;
+    return granted;
   }
+
+  /// 최근 hasPermission() 호출의 캐시. 외부 listener 가 빠르게 확인.
+  /// recheckPermissionFromForeground() 가 호출될 때마다 갱신.
+  bool _lastKnownPermission = false;
+  bool get lastKnownPermission => _lastKnownPermission;
+
+  /// foreground 복귀 시 호출 — iOS 설정에서 사용자가 알림 끈 경우 즉시 반영.
+  /// permission 이 denied 로 바뀐 게 감지되면 listener 들에게 알림 (UI 가
+  /// "푸시 권한 없음" 안내 가능).
+  Future<void> recheckPermissionFromForeground() async {
+    final before = _lastKnownPermission;
+    final after = await hasPermission();
+    if (before && !after) {
+      debugPrint('[Notif] 권한이 외부에서 해제됨');
+      for (final l in List.of(_permissionRevokedListeners)) {
+        try { l(); } catch (_) {}
+      }
+    }
+  }
+
+  final List<VoidCallback> _permissionRevokedListeners = [];
+  void addPermissionRevokedListener(VoidCallback l) =>
+      _permissionRevokedListeners.add(l);
+  void removePermissionRevokedListener(VoidCallback l) =>
+      _permissionRevokedListeners.remove(l);
 
   Future<void> _registerTokenWithServer() async {
     final user = Supabase.instance.client.auth.currentUser;
@@ -195,12 +241,28 @@ class NotificationService {
         debugPrint('[Notif] FCM 토큰 null');
         return;
       }
+      // 같은 user+platform 에 stale token row 가 있을 수 있음 (PK 가
+      // (user_id, fcm_token) 이라 token 바뀌면 row 누적). 새 token 등록 전
+      // 기존 다른 token 모두 정리 — notify 가 stale 토큰에 발송하지 않도록.
+      final platform = Platform.isIOS ? 'ios' : 'android';
+      try {
+        await Supabase.instance.client
+            .from('user_devices')
+            .delete()
+            .eq('user_id', user.id)
+            .eq('platform', platform)
+            .neq('fcm_token', token);
+      } catch (e) {
+        debugPrint('[Notif] stale token cleanup 실패: $e');
+      }
       await Supabase.instance.client.from('user_devices').upsert({
         'user_id': user.id,
         'fcm_token': token,
-        'platform': Platform.isIOS ? 'ios' : 'android',
+        'platform': platform,
         'updated_at': DateTime.now().toIso8601String(),
       });
+      _lastRegisteredUserId = user.id;
+      _lastRegisteredToken = token;
       debugPrint('[Notif] FCM 토큰 등록 완료 (${Platform.isIOS ? 'iOS' : 'Android'})');
     } catch (e, st) {
       debugPrint('[Notif] 토큰 등록 실패: $e\n$st');
@@ -208,18 +270,29 @@ class NotificationService {
   }
 
   /// 로그아웃 시 토큰 삭제.
+  /// 마지막 등록된 (userId, token) — signOut 후에도 정리 가능.
+  String? _lastRegisteredUserId;
+  String? _lastRegisteredToken;
+
+  /// signOut 시 호출 — 이전 user 의 fcm_token row 삭제.
+  /// 안 호출하면 같은 device 에 다른 user 로그인 시 두 사용자 모두 같은
+  /// device 에 알림 받음 (privacy leak).
   Future<void> unregister() async {
-    final user = Supabase.instance.client.auth.currentUser;
-    if (user == null) return;
+    final uid =
+        _lastRegisteredUserId ?? Supabase.instance.client.auth.currentUser?.id;
+    final token = _lastRegisteredToken ?? await _fcm.getToken();
+    if (uid == null || token == null) return;
     try {
-      final token = await _fcm.getToken();
-      if (token == null) return;
       await Supabase.instance.client
           .from('user_devices')
           .delete()
-          .eq('user_id', user.id)
+          .eq('user_id', uid)
           .eq('fcm_token', token);
-    } catch (_) {}
+      _lastRegisteredUserId = null;
+      _lastRegisteredToken = null;
+    } catch (e) {
+      debugPrint('[Notif] unregister 실패: $e');
+    }
   }
 
   void _onForegroundMessage(RemoteMessage msg) {
@@ -248,13 +321,74 @@ class NotificationService {
             priority: Priority.high,
           ),
         ),
-        payload: msg.data['kind'] as String?,
+        // 탭 시 deep-link 라우팅에 쓰일 전체 data 를 JSON 으로 박아둠.
+        payload: jsonEncode(msg.data),
       );
     }
   }
 
   void _onMessageOpenedApp(RemoteMessage msg) {
     debugPrint('[Notif] 알림 탭으로 진입: ${msg.data}');
-    // TODO: kind 별 deep navigation (room_message → 룸 화면, friend_request → 친구 화면 등)
+    _routeFromData(Map<String, dynamic>.from(msg.data));
+  }
+
+  /// kind 별 deep navigation. nav 또는 auth 가 아직 없으면 잠시 후 재시도.
+  /// 콜드 스타트 시 알림 탭 → auth restore 전 라우팅 → RLS reject → 빈 화면 방지.
+  int _routeRetryCount = 0;
+  static const int _kMaxRouteRetries = 20; // 약 10초 (500ms × 20)
+
+  void _routeFromData(Map<String, dynamic> data) {
+    final kind = (data['kind'] as String?)?.trim();
+    if (kind == null || kind.isEmpty) return;
+    final nav = rootNavigatorKey.currentState;
+    final authReady = Supabase.instance.client.auth.currentUser != null;
+    if (nav == null || !authReady) {
+      if (_routeRetryCount >= _kMaxRouteRetries) {
+        debugPrint('[Notif] deep-link route 포기 (nav=$nav, auth=$authReady)');
+        _routeRetryCount = 0;
+        return;
+      }
+      _routeRetryCount++;
+      Future.delayed(const Duration(milliseconds: 500),
+          () => _routeFromData(data));
+      return;
+    }
+    _routeRetryCount = 0;
+    debugPrint('[Notif] deep-link route: $kind data=$data');
+    switch (kind) {
+      case 'friend_request':
+      case 'friend_accept':
+      case 'friend_accepted':
+        nav.push(MaterialPageRoute(builder: (_) => const FriendsView()));
+        return;
+      case 'room_message':
+      case 'meetup':
+      case 'meetup_proposed':
+      case 'meetup_accepted':
+      case 'meetup_started':
+        // 채팅 메시지/만남 — 현재 방이 있으면 RoomView 후 ChatSheet 까지.
+        nav.push(MaterialPageRoute(
+          builder: (_) => const MultiplayerHubView(),
+        ));
+        if (MultiplayerService.instance.currentRoom != null) {
+          // hub 마운트 후 RoomView 마운트 후 ChatSheet 마운트.
+          Future.delayed(const Duration(milliseconds: 250), () {
+            final n = rootNavigatorKey.currentState;
+            if (n == null) return;
+            n.push(MaterialPageRoute(builder: (_) => const RoomView()));
+            Future.delayed(const Duration(milliseconds: 250), () {
+              final n2 = rootNavigatorKey.currentState;
+              if (n2 != null) ChatSheet.show(n2.context);
+            });
+          });
+        }
+        return;
+      case 'room_kicked':
+      case 'welcome':
+      default:
+        nav.push(
+            MaterialPageRoute(builder: (_) => const MultiplayerHubView()));
+        return;
+    }
   }
 }

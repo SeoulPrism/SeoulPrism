@@ -1,6 +1,7 @@
 import Flutter
 import UIKit
 import ActivityKit
+import AVFoundation
 
 @main
 @objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
@@ -132,6 +133,45 @@ import ActivityKit
       }
       self.routeActivity = nil
       result(nil)
+    }
+  }
+
+  // MARK: - Audio Session (Gemini Live: record echoCancel + SoLoud 동시 사용)
+  //
+  // record 패키지의 echoCancel: true 는 VoiceProcessingIO (VPIO) 마이크를 쓰는데,
+  // SoLoud 가 별도 카테고리로 audio session 을 잡으면 VPIO 가 render err -1 로 실패한다.
+  // AI 진입 시 .playAndRecord + .voiceChat 으로 통일하고, 이탈 시 다른 앱에
+  // 양보 (notifyOthersOnDeactivation) 한다.
+
+  func handleAudioSessionCall(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+    switch call.method {
+    case "activateVoiceChat":
+      do {
+        let session = AVAudioSession.sharedInstance()
+        try session.setCategory(
+          .playAndRecord,
+          mode: .voiceChat,
+          options: [.defaultToSpeaker, .allowBluetooth, .allowBluetoothA2DP]
+        )
+        try session.setActive(true, options: [])
+        NSLog("[AudioSession] activated playAndRecord/voiceChat")
+        result(nil)
+      } catch {
+        NSLog("[AudioSession] activate error: \(error)")
+        result(FlutterError(code: "audio_session_activate", message: error.localizedDescription, details: nil))
+      }
+    case "deactivate":
+      do {
+        try AVAudioSession.sharedInstance().setActive(false, options: [.notifyOthersOnDeactivation])
+        NSLog("[AudioSession] deactivated")
+        result(nil)
+      } catch {
+        // 다른 앱이 사용 중이거나 이미 비활성이면 deactivate 가 throw 할 수 있음 — 무해.
+        NSLog("[AudioSession] deactivate (suppressed): \(error)")
+        result(nil)
+      }
+    default:
+      result(FlutterMethodNotImplemented)
     }
   }
 }

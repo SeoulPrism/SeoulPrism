@@ -192,6 +192,72 @@ class PlaceSearchService {
     }
   }
 
+  /// 카테고리 코드 1개를 큰 결과 수로 가져옴 (추천 패널 탭별로 사용).
+  /// [codes] 여러 개 주면 합쳐서 반환 (중복 place_url 기준 dedupe).
+  /// 카카오 sort=distance 라 가까운 순 정렬됨.
+  Future<List<PlaceSearchResult>> fetchByCategoryCodes(
+    List<String> codes,
+    double lat,
+    double lng, {
+    int radius = 1500,
+    int sizePerCode = 15,
+  }) async {
+    final results = <String, PlaceSearchResult>{};
+    for (final code in codes) {
+      try {
+        final url =
+            'https://dapi.kakao.com/v2/local/search/category.json'
+            '?category_group_code=$code'
+            '&x=$lng'
+            '&y=$lat'
+            '&radius=$radius'
+            '&size=$sizePerCode'
+            '&sort=distance';
+
+        final response = await http
+            .get(
+              Uri.parse(url),
+              headers: {
+                'Authorization': 'KakaoAK ${ApiKeys.kakaoRestApiKey}'
+              },
+            )
+            .timeout(const Duration(seconds: 4));
+
+        if (response.statusCode != 200) continue;
+        final data = jsonDecode(response.body);
+        final documents = data['documents'] as List? ?? [];
+        for (final doc in documents) {
+          final name = doc['place_name'] ?? '';
+          if (name.toString().isEmpty) continue;
+          final key = (doc['place_url'] ?? '$name-$code').toString();
+          results.putIfAbsent(
+            key,
+            () => PlaceSearchResult(
+              name: name,
+              address:
+                  doc['road_address_name'] ?? doc['address_name'] ?? '',
+              category: doc['category_group_name'] ?? '',
+              lat: double.tryParse(doc['y'] ?? '') ?? 0,
+              lng: double.tryParse(doc['x'] ?? '') ?? 0,
+              phone: doc['phone'],
+              distance: doc['distance'],
+              placeUrl: doc['place_url'],
+            ),
+          );
+        }
+      } catch (e) {
+        DebugLog.log('[PlaceSearch] $code 카테고리 실패: $e');
+      }
+    }
+    final list = results.values.toList();
+    list.sort((a, b) {
+      final da = int.tryParse(a.distance ?? '') ?? 999999;
+      final db = int.tryParse(b.distance ?? '') ?? 999999;
+      return da.compareTo(db);
+    });
+    return list;
+  }
+
   /// 카카오 카테고리에서 간단한 이름 추출
   String _extractCategory(String fullCategory) {
     final parts = fullCategory.split(' > ');
